@@ -325,12 +325,16 @@
             showLoading(true);
             
             try {
-                const projectsData = await getProjectsData(forceRefresh);
-                allProjects = projectsData;
-                renderProjects(projectsData);
+                let projectsData = await getProjectsData(forceRefresh);
                 
-                if (!forceRefresh && projectsData.fromCache) {
+                // Check if the result is from cache and has the fromCache property
+                if (projectsData.fromCache) {
+                    allProjects = projectsData.data;
+                    renderProjects(projectsData.data);
                     showSnackbar('Using cached data from previous visit');
+                } else {
+                    allProjects = projectsData;
+                    renderProjects(projectsData);
                 }
             } catch (error) {
                 console.error('Error fetching projects:', error);
@@ -352,7 +356,7 @@
             if (!forceRefresh) {
                 const cachedData = getCachedData();
                 if (cachedData) {
-                    return { ...cachedData, fromCache: true };
+                    return { data: cachedData, fromCache: true };
                 }
             }
             
@@ -445,6 +449,7 @@
                 return null;
             } catch (error) {
                 console.error('Error parsing cached data:', error);
+                localStorage.removeItem(CACHE_KEY); // Remove invalid cache data
                 return null;
             }
         }
@@ -459,7 +464,7 @@
         }
         
         function renderProjects(projects) {
-            if (projects.length === 0) {
+            if (!projects || projects.length === 0) {
                 emptyState.style.display = 'block';
                 projectsContainer.innerHTML = '';
                 return;
