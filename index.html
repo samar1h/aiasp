@@ -3,414 +3,520 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Assisted Projects</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>AI-Assisted Projects</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
+        :root {
+            --primary: #8b5cf6;
+            --primary-dark: #7c3aed;
+            --bg-dark: #121212;
+            --card-dark: #1e1e1e;
+            --text-light: #e2e8f0;
+            --text-muted: #94a3b8;
+        }
+        
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: #121212;
-            color: #e0e0e0;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
         }
-        .card {
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        
+        .app-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding-bottom: 6rem;
         }
-        .card:hover {
+        
+        .header {
+            position: sticky;
+            top: 0;
+            background-color: rgba(18, 18, 18, 0.95);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 100;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .search-container {
+            position: relative;
+            margin: 1rem auto;
+            max-width: 90%;
+        }
+        
+        .search-input {
+            width: 100%;
+            background-color: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 9999px;
+            padding: 0.75rem 1rem 0.75rem 3rem;
+            color: var(--text-light);
+            transition: all 0.3s ease;
+        }
+        
+        .search-input:focus {
+            background-color: rgba(255, 255, 255, 0.15);
+            outline: none;
+            box-shadow: 0 0 0 2px var(--primary);
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+        
+        .project-card {
+            background-color: var(--card-dark);
+            border-radius: 1rem;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            height: 100%;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .project-card:hover {
             transform: translateY(-5px);
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
         }
-        .loader {
-            border: 4px solid rgba(255, 255, 255, 0.3);
+        
+        .project-header {
+            padding: 1.25rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .project-content {
+            padding: 1.25rem;
+            flex: 1;
+        }
+        
+        .project-links {
+            padding: 1rem 1.25rem;
+            background-color: rgba(0, 0, 0, 0.2);
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+        }
+        
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .btn-outline:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .snackbar {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #333;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            transition: opacity 0.3s, transform 0.3s;
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .snackbar.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        
+        .snackbar-action {
+            color: var(--primary);
+            font-weight: 500;
+            cursor: pointer;
+        }
+        
+        .loading-indicator {
+            display: none;
+            justify-content: center;
+            padding: 2rem 0;
+        }
+        
+        .skeleton {
+            background: linear-gradient(90deg, var(--card-dark) 25%, #2d2d2d 50%, var(--card-dark) 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+            border-radius: 0.5rem;
+        }
+        
+        @keyframes loading {
+            0% {
+                background-position: 200% 0;
+            }
+            100% {
+                background-position: -200% 0;
+            }
+        }
+
+        .loading-spinner {
+            border: 4px solid rgba(255, 255, 255, 0.1);
             border-radius: 50%;
-            border-top: 4px solid #3498db;
+            border-top: 4px solid var(--primary);
             width: 40px;
             height: 40px;
             animation: spin 1s linear infinite;
-            margin: 20px auto;
         }
+        
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        .badge {
-            display: inline-block;
-            padding: 0.25rem 0.5rem;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 500;
+        
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-        .scroll-indicator {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 40px;
-            height: 40px;
-            background: #3498db;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
+        
+        .project-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .project-card {
+            animation: fadeIn 0.5s ease forwards;
             opacity: 0;
-            transition: opacity 0.3s ease;
-            z-index: 100;
         }
-        .scroll-indicator.visible {
-            opacity: 1;
+        
+        .project-card:nth-child(1) { animation-delay: 0.1s; }
+        .project-card:nth-child(2) { animation-delay: 0.2s; }
+        .project-card:nth-child(3) { animation-delay: 0.3s; }
+        .project-card:nth-child(4) { animation-delay: 0.4s; }
+        .project-card:nth-child(5) { animation-delay: 0.5s; }
+        .project-card:nth-child(6) { animation-delay: 0.6s; }
+        .project-card:nth-child(7) { animation-delay: 0.7s; }
+        .project-card:nth-child(8) { animation-delay: 0.8s; }
+        
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--text-muted);
+            display: none;
+        }
+        
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
         }
     </style>
 </head>
-<body class="min-h-screen">
-    <header class="py-6 px-4 bg-gray-900 shadow-md sticky top-0 z-50">
-        <div class="container mx-auto flex justify-between items-center">
-            <h1 class="text-2xl md:text-3xl font-bold text-white">
-                <i class="fas fa-robot mr-2 text-blue-400"></i>AI Assisted Projects
-            </h1>
-            <div>
-                <a href="https://github.com/samar1h/aiasp" target="_blank" 
-                   class="bg-gray-800 hover:bg-gray-700 text-white py-2 px-4 rounded-lg transition-colors flex items-center">
-                    <i class="fab fa-github mr-2"></i>
-                    <span class="hidden sm:inline">GitHub Repo</span>
-                </a>
+<body>
+    <div class="app-container">
+        <header class="header py-4 px-4 md:px-8">
+            <div class="flex justify-between items-center mb-4">
+                <h1 class="text-2xl md:text-3xl font-bold text-center flex-grow">
+                    <i class="fas fa-robot text-purple-500 mr-2"></i>AI-Assisted Projects
+                </h1>
+                <button id="refresh-btn" class="btn btn-outline">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
             </div>
-        </div>
-    </header>
-
-    <main class="container mx-auto px-4 py-8">
-        <div class="bg-gray-800 rounded-lg p-4 mb-8 shadow-lg">
-            
-        </div>
-
-        <div id="search-container" class="mb-6">
-            <div class="relative">
-                <input type="text" id="search-input" placeholder="Search projects..." 
-                       class="w-full p-3 pl-10 rounded-lg bg-gray-800 text-white border border-gray-700 focus:border-blue-500 focus:outline-none">
-                <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500"></i>
+            <div class="search-container">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" id="search-input" class="search-input" placeholder="Search projects...">
             </div>
-        </div>
-
-        <div id="loading" class="flex justify-center">
-            <div class="loader"></div>
-        </div>
-
-        <div id="projects-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <!-- Projects will be loaded here via JavaScript -->
-        </div>
+        </header>
         
-        <div id="no-results" class="hidden text-center py-10">
-            <i class="fas fa-search text-4xl text-gray-600 mb-3"></i>
-            <p class="text-xl text-gray-400">No projects found matching your search</p>
-        </div>
-    </main>
-
-    <div id="scroll-top" class="scroll-indicator">
-        <i class="fas fa-arrow-up text-white"></i>
+        <main class="px-4 md:px-8 mt-6">
+            <div id="loading-indicator" class="loading-indicator">
+                <div class="loading-spinner"></div>
+            </div>
+            
+            <div id="projects-container" class="project-grid">
+                <!-- Projects will be dynamically loaded here -->
+            </div>
+            
+            <div id="empty-state" class="empty-state">
+                <i class="fas fa-search"></i>
+                <h3 class="text-xl font-semibold mb-2">No projects found</h3>
+                <p>Try different search terms or clear the search</p>
+            </div>
+        </main>
     </div>
-
-    <footer class="bg-gray-900 py-6 px-4 mt-8">
-        <div class="container mx-auto text-center">
-            <p class="text-gray-400">
-                Last updated: <span id="last-updated">Loading...</span>
-            </p>
-        </div>
-    </footer>
-
-    <!-- ScrollMagic -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/ScrollMagic/2.0.8/ScrollMagic.min.js"></script>
-
+    
+    <div id="snackbar" class="snackbar">
+        <span id="snackbar-message">Using cached data</span>
+        <span id="snackbar-action" class="snackbar-action">Refresh</span>
+    </div>
+    
     <script>
-        // Cache configuration
         const CACHE_KEY = 'aiasp-cache';
-        const CACHE_EXPIRATION = 5 * 60 * 1000; // 5 minutes in milliseconds
+        const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
+        const REPO_OWNER = 'samar1h';
+        const REPO_NAME = 'aiasp';
         
         // DOM Elements
-        const projectsGrid = document.getElementById('projects-grid');
-        const loadingElement = document.getElementById('loading');
-        const lastUpdatedElement = document.getElementById('last-updated');
+        const projectsContainer = document.getElementById('projects-container');
         const searchInput = document.getElementById('search-input');
-        const noResultsElement = document.getElementById('no-results');
-        const scrollTopButton = document.getElementById('scroll-top');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const emptyState = document.getElementById('empty-state');
+        const snackbar = document.getElementById('snackbar');
+        const snackbarMessage = document.getElementById('snackbar-message');
+        const snackbarAction = document.getElementById('snackbar-action');
+        const refreshBtn = document.getElementById('refresh-btn');
         
-        // Cache functions
-        function saveToCache(data) {
-            const cacheData = {
-                timestamp: Date.now(),
-                data: data
-            };
-            localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+        // State
+        let allProjects = [];
+        
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', initApp);
+        searchInput.addEventListener('input', handleSearch);
+        snackbarAction.addEventListener('click', () => fetchProjects(true));
+        refreshBtn.addEventListener('click', () => fetchProjects(true));
+        
+        function initApp() {
+            fetchProjects();
         }
         
-        function getFromCache() {
-            const cachedData = localStorage.getItem(CACHE_KEY);
-            if (!cachedData) return null;
+        function showLoading(show) {
+            loadingIndicator.style.display = show ? 'flex' : 'none';
+            if (show) {
+                projectsContainer.style.opacity = '0.5';
+            } else {
+                projectsContainer.style.opacity = '1';
+            }
+        }
+        
+        function showSnackbar(message, actionText = 'Refresh') {
+            snackbarMessage.textContent = message;
+            snackbarAction.textContent = actionText;
+            snackbar.classList.add('show');
             
-            const parsedData = JSON.parse(cachedData);
-            const now = Date.now();
+            setTimeout(() => {
+                snackbar.classList.remove('show');
+            }, 5000);
+        }
+        
+        async function fetchProjects(forceRefresh = false) {
+            showLoading(true);
             
-            // Check if cache is still valid
-            if (now - parsedData.timestamp > CACHE_EXPIRATION) {
-                localStorage.removeItem(CACHE_KEY);
+            try {
+                const projectsData = await getProjectsData(forceRefresh);
+                allProjects = projectsData;
+                renderProjects(projectsData);
+                
+                if (!forceRefresh && projectsData.fromCache) {
+                    showSnackbar('Using cached data from previous visit');
+                }
+            } catch (error) {
+                console.error('Error fetching projects:', error);
+                projectsContainer.innerHTML = `
+                    <div class="col-span-full text-center py-8">
+                        <p class="text-red-400"><i class="fas fa-exclamation-triangle mr-2"></i>Failed to load projects</p>
+                        <button class="btn btn-primary mt-4" onclick="fetchProjects(true)">
+                            <i class="fas fa-sync-alt mr-2"></i>Try Again
+                        </button>
+                    </div>
+                `;
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        async function getProjectsData(forceRefresh = false) {
+            // Check cache first if not forcing refresh
+            if (!forceRefresh) {
+                const cachedData = getCachedData();
+                if (cachedData) {
+                    return { ...cachedData, fromCache: true };
+                }
+            }
+            
+            // Fetch data from GitHub API
+            const apiUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents`;
+            const response = await fetch(apiUrl);
+            
+            if (!response.ok) {
+                throw new Error(`GitHub API error: ${response.status}`);
+            }
+            
+            const contents = await response.json();
+            
+            // Filter for directories only (potential projects)
+            const directories = contents.filter(item => item.type === 'dir');
+            
+            // Process each directory to get project details
+            const projectsPromises = directories.map(async (dir) => {
+                try {
+                    // Fetch readme.md for each project
+                    const readmeUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${dir.name}/readme.md`;
+                    const readmeResponse = await fetch(readmeUrl);
+                    
+                    let description = '';
+                    let hasReadme = false;
+                    
+                    if (readmeResponse.ok) {
+                        hasReadme = true;
+                        const readmeData = await readmeResponse.json();
+                        const readmeContent = atob(readmeData.content);
+                        
+                        // Extract description from the second line of the readme
+                        const lines = readmeContent.split('\n');
+                        if (lines.length > 1) {
+                            description = lines[1].trim();
+                        }
+                    }
+                    
+                    // Check if project has index.html
+                    const indexUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${dir.name}/index.html`;
+                    const indexResponse = await fetch(indexUrl);
+                    const hasIndex = indexResponse.ok;
+                    
+                    return {
+                        name: dir.name,
+                        path: dir.path,
+                        description: description,
+                        hasReadme: hasReadme,
+                        hasIndex: hasIndex,
+                        demoUrl: hasIndex ? `https://${REPO_OWNER}.github.io/${REPO_NAME}/${dir.name}/` : null,
+                        readmeUrl: hasReadme ? `https://github.com/${REPO_OWNER}/${REPO_NAME}/blob/main/${dir.name}/readme.md` : null,
+                        sourceUrl: `https://github.com/${REPO_OWNER}/${REPO_NAME}/tree/main/${dir.name}`
+                    };
+                } catch (error) {
+                    console.error(`Error processing project ${dir.name}:`, error);
+                    return {
+                        name: dir.name,
+                        path: dir.path,
+                        description: 'Error loading project details',
+                        hasReadme: false,
+                        hasIndex: false,
+                        sourceUrl: `https://github.com/${REPO_OWNER}/${REPO_NAME}/tree/main/${dir.name}`
+                    };
+                }
+            });
+            
+            const projects = await Promise.all(projectsPromises);
+            
+            // Cache the projects data
+            cacheData(projects);
+            
+            return projects;
+        }
+        
+        function getCachedData() {
+            const cachedDataString = localStorage.getItem(CACHE_KEY);
+            
+            if (!cachedDataString) {
                 return null;
             }
             
-            return parsedData.data;
-        }
-        
-        // Format date for display
-        function formatDate(dateString) {
-            const date = new Date(dateString);
-            return date.toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-        }
-        
-        // Fetch and process repository data
-        async function fetchRepositoryData() {
             try {
-                // Try to get data from cache first
-                const cachedData = getFromCache();
-                if (cachedData) {
-                    processRepositoryData(cachedData);
-                    return;
+                const { timestamp, data } = JSON.parse(cachedDataString);
+                const now = new Date().getTime();
+                
+                if (now - timestamp < CACHE_DURATION) {
+                    return data;
                 }
                 
-                // If not in cache, fetch from GitHub API
-                const response = await fetch('https://api.github.com/repos/samar1h/aiasp/contents');
-                const data = await response.json();
-                
-                // Save to cache
-                saveToCache(data);
-                
-                // Process the data
-                processRepositoryData(data);
-                
+                return null;
             } catch (error) {
-                console.error('Error fetching repository data:', error);
-                projectsGrid.innerHTML = `
-                    <div class="col-span-full text-center py-10">
-                        <i class="fas fa-exclamation-triangle text-4xl text-red-500 mb-3"></i>
-                        <p class="text-xl">Failed to load projects. Please try again later.</p>
-                    </div>
-                `;
-                loadingElement.style.display = 'none';
+                console.error('Error parsing cached data:', error);
+                return null;
             }
         }
         
-        // Process repository data
-        async function processRepositoryData(data) {
-            // Filter only directories (potential projects)
-            const directories = data.filter(item => item.type === 'dir');
+        function cacheData(data) {
+            const cacheData = {
+                timestamp: new Date().getTime(),
+                data: data
+            };
             
-            // Fetch the repo update time
-            try {
-                const repoResponse = await fetch('https://api.github.com/repos/samar1h/aiasp');
-                const repoData = await repoResponse.json();
-                lastUpdatedElement.textContent = formatDate(repoData.updated_at);
-            } catch (error) {
-                lastUpdatedElement.textContent = 'Unknown';
-            }
-            
-            // Process each directory to check for index.html or README.md
-            const projectPromises = directories.map(async directory => {
-                try {
-                    const contentResponse = await fetch(`https://api.github.com/repos/samar1h/aiasp/contents/${directory.path}`);
-                    const contentData = await contentResponse.json();
-                    
-                    // Check for index.html and README.md
-                    const hasIndexHtml = contentData.some(file => file.name.toLowerCase() === 'index.html');
-                    const hasReadme = contentData.some(file => file.name.toLowerCase() === 'readme.md');
-                    
-                    return {
-                        name: directory.name,
-                        path: directory.path,
-                        hasIndexHtml,
-                        hasReadme,
-                        url: directory.html_url,
-                        contents: contentData
-                    };
-                } catch (error) {
-                    console.error(`Error fetching content for ${directory.name}:`, error);
-                    return {
-                        name: directory.name,
-                        path: directory.path,
-                        hasIndexHtml: false,
-                        hasReadme: false,
-                        url: directory.html_url,
-                        error: true
-                    };
-                }
-            });
-            
-            // Wait for all projects to be processed
-            const projects = await Promise.all(projectPromises);
-            
-            // Display projects
-            displayProjects(projects);
-            
-            // Hide loading indicator
-            loadingElement.style.display = 'none';
+            localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
         }
         
-        // Display projects in the grid
-        function displayProjects(projects) {
+        function renderProjects(projects) {
             if (projects.length === 0) {
-                projectsGrid.innerHTML = `
-                    <div class="col-span-full text-center py-10">
-                        <i class="fas fa-folder-open text-4xl text-gray-600 mb-3"></i>
-                        <p class="text-xl text-gray-400">No projects found</p>
-                    </div>
-                `;
+                emptyState.style.display = 'block';
+                projectsContainer.innerHTML = '';
                 return;
             }
+            
+            emptyState.style.display = 'none';
             
             // Sort projects alphabetically
             projects.sort((a, b) => a.name.localeCompare(b.name));
             
-            // Generate HTML for each project
-            projectsGrid.innerHTML = projects.map(project => {
-                // Determine the project description (placeholder for now)
-                const projectDescription = "AI-assisted project";
-                
-                // Generate links based on what's available
-                let links = '';
-                
-                if (project.hasIndexHtml) {
-                    links += `
-                        <a href="https://samar1h.github.io/aiasp/${project.path}" target="_blank" 
-                           class="flex items-center text-blue-400 hover:text-blue-300 mr-4">
-                            <i class="fas fa-globe mr-1"></i> Live Demo
-                        </a>
-                    `;
-                }
-                
-                if (project.hasReadme) {
-                    links += `
-                        <a href="https://github.com/samar1h/aiasp/blob/main/${project.path}/readme.md" target="_blank" 
-                           class="flex items-center text-green-400 hover:text-green-300 mr-4">
-                            <i class="fas fa-book mr-1"></i> README
-                        </a>
-                    `;
-                }
-                
-                links += `
-                    <a href="${project.url}" target="_blank" 
-                       class="flex items-center text-gray-400 hover:text-gray-300">
-                        <i class="fab fa-github mr-1"></i> Code
-                    </a>
-                `;
-                
-                // Determine status badges
-                let badges = '';
-                
-                if (project.hasIndexHtml) {
-                    badges += `<span class="badge bg-blue-900 text-blue-300 mr-2">Demo</span>`;
-                }
-                
-                if (project.hasReadme) {
-                    badges += `<span class="badge bg-green-900 text-green-300 mr-2">Docs</span>`;
-                }
-                
-                if (project.error) {
-                    badges += `<span class="badge bg-red-900 text-red-300">Error</span>`;
-                }
-                
-                // Create card for the project
-                return `
-                    <div class="card bg-gray-800 rounded-lg overflow-hidden shadow-lg" data-project="${project.name.toLowerCase()}">
-                        <div class="p-5">
-                            <div class="flex justify-between items-start mb-2">
-                                <h2 class="text-xl font-semibold text-white">${project.name}</h2>
-                                <div>${badges}</div>
-                            </div>
-                            <p class="text-gray-400 mb-4">${projectDescription}</p>
-                            <div class="flex flex-wrap items-center text-sm">
-                                ${links}
-                            </div>
+            projectsContainer.innerHTML = projects.map((project, index) => `
+                <div class="project-card" style="animation-delay: ${index * 0.1}s;">
+                    <div class="project-header">
+                        <h3 class="text-xl font-bold text-white">${project.name}</h3>
+                    </div>
+                    <div class="project-content">
+                        <p class="text-gray-300">${project.description || 'No description available'}</p>
+                    </div>
+                    <div class="project-links">
+                        <div>
+                            ${project.hasIndex ? `
+                                <a href="${project.demoUrl}" target="_blank" class="btn btn-primary">
+                                    <i class="fas fa-external-link-alt"></i>
+                                    <span>Demo</span>
+                                </a>
+                            ` : ''}
+                        </div>
+                        <div class="flex gap-2">
+                            ${project.hasReadme ? `
+                                <a href="${project.readmeUrl}" target="_blank" class="btn btn-outline">
+                                    <i class="fas fa-book"></i>
+                                </a>
+                            ` : ''}
+                            <a href="${project.sourceUrl}" target="_blank" class="btn btn-outline">
+                                <i class="fab fa-github"></i>
+                            </a>
                         </div>
                     </div>
-                `;
-            }).join('');
-            
-            // Initialize ScrollMagic
-            initScrollMagic();
+                </div>
+            `).join('');
         }
         
-        // Filter projects based on search input
-        function filterProjects() {
-            const searchTerm = searchInput.value.trim().toLowerCase();
-            const projectCards = document.querySelectorAll('.card');
-            let visibleCount = 0;
+        function handleSearch() {
+            const searchTerm = searchInput.value.toLowerCase().trim();
             
-            projectCards.forEach(card => {
-                const projectName = card.getAttribute('data-project');
-                if (projectName.includes(searchTerm)) {
-                    card.style.display = 'block';
-                    visibleCount++;
-                } else {
-                    card.style.display = 'none';
-                }
-            });
-            
-            // Show/hide no results message
-            if (visibleCount === 0 && searchTerm !== '') {
-                noResultsElement.classList.remove('hidden');
-            } else {
-                noResultsElement.classList.add('hidden');
+            if (!searchTerm) {
+                renderProjects(allProjects);
+                return;
             }
-        }
-        
-        // Initialize ScrollMagic
-        function initScrollMagic() {
-            // Controller for ScrollMagic
-            const controller = new ScrollMagic.Controller();
             
-            // Add animations to project cards
-            document.querySelectorAll('.card').forEach((card, index) => {
-                new ScrollMagic.Scene({
-                    triggerElement: card,
-                    triggerHook: 0.9,
-                    reverse: false
-                })
-                .setClassToggle(card, 'animate-fade-in-up')
-                .addTo(controller);
-            });
-        }
-        
-        // Handle scroll events
-        function handleScroll() {
-            if (window.scrollY > 300) {
-                scrollTopButton.classList.add('visible');
-            } else {
-                scrollTopButton.classList.remove('visible');
-            }
-        }
-        
-        // Scroll to top
-        function scrollToTop() {
-            window.scrollTo({
-                top: 0,
-                behavior: 'smooth'
-            });
-        }
-        
-        // Event listeners
-        document.addEventListener('DOMContentLoaded', () => {
-            fetchRepositoryData();
+            const filteredProjects = allProjects.filter(project => 
+                project.name.toLowerCase().includes(searchTerm) || 
+                (project.description && project.description.toLowerCase().includes(searchTerm))
+            );
             
-            searchInput.addEventListener('input', filterProjects);
-            
-            window.addEventListener('scroll', handleScroll);
-            
-            scrollTopButton.addEventListener('click', scrollToTop);
-        });
+            renderProjects(filteredProjects);
+        }
     </script>
 </body>
 </html>
