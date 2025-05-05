@@ -129,34 +129,40 @@
         }
         
         .snackbar {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: #333;
-            color: white;
-            padding: 12px 24px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-            z-index: 1000;
-            transition: opacity 0.3s, transform 0.3s;
-            opacity: 0;
-            pointer-events: none;
-        }
-        
-        .snackbar.show {
-            opacity: 1;
-            pointer-events: auto;
-        }
-        
-        .snackbar-action {
-            color: var(--primary);
-            font-weight: 500;
-            cursor: pointer;
-        }
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #333;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    transition: opacity 0.3s, transform 0.3s;
+    opacity: 0;
+    pointer-events: none;
+    min-width: 300px;
+    max-width: 90%;
+    width: auto;
+    justify-content: space-between;
+}
+
+.snackbar.show {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.snackbar-action {
+    color: var(--primary);
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    margin-left: 12px;
+}
         
         .loading-indicator {
             display: none;
@@ -269,8 +275,8 @@
     </div>
     
     <div id="snackbar" class="snackbar">
-        <span id="snackbar-message">Using cached data</span>
-        <span id="snackbar-action" class="snackbar-action">Refresh</span>
+    <div id="snackbar-message">Using cached data</div>
+    <div id="snackbar-action" class="snackbar-action">Refresh</div>
     </div>
     
     <script>
