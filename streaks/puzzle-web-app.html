@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Streak - Modern Word Search Puzzle</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+        
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --success: #10b981;
+            --background: #1f2937;
+            --surface: #111827;
+            --text: #f3f4f6;
+            --text-secondary: #9ca3af;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--background);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .puzzle-grid {
+            display: grid;
+            gap: 2px;
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+            touch-action: none;
+        }
+
+        .letter-cell {
+            aspect-ratio: 1/1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 1.25rem;
+            background-color: var(--surface);
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            user-select: none;
+            touch-action: none;
+        }
+
+        .letter-cell.selected {
+            background-color: var(--primary);
+            transform: scale(0.95);
+        }
+
+        .word-list-item {
+            transition: all 0.3s ease;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+        }
+
+        .word-list-item.found {
+            text-decoration: line-through;
+            color: var(--success);
+            background-color: rgba(16, 185, 129, 0.1);
+        }
+
+        .btn {
+            transition: all 0.2s ease;
+            transform: translateY(0);
+        }
+
+        .btn:active {
+            transform: translateY(2px);
+        }
+
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            animation: fall 3s ease-in-out forwards;
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        @keyframes fall {
+            0% {
+                transform: translateY(-100vh) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        /* Custom selection line */
+        #selection-line {
+            position: absolute;
+            pointer-events: none;
+            z-index: 10;
+            height: 10px;
+            background-color: rgba(99, 102, 241, 0.7);
+            border-radius: 5px;
+            transform-origin: left center;
+        }
+
+        .loading-dot {
+            animation: pulse 1.5s infinite ease-in-out;
+        }
+
+        .loading-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .loading-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(0.8);
+                opacity: 0.6;
+            }
+            50% {
+                transform: scale(1.2);
+                opacity: 1;
+            }
+        }
+
+        /* Score animation */
+        .score-increase {
+            animation: scoreUp 1s ease-out forwards;
+            position: absolute;
+            pointer-events: none;
+            font-weight: bold;
+            color: var(--success);
+        }
+
+        @keyframes scoreUp {
+            0% {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-50px) scale(1.5);
+                opacity: 0;
+            }
+        }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 1rem;
+            background-color: var(--success);
+            color: white;
+            border-radius: 8px;
+            z-index: 1000;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.3s ease;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body class="p-4">
+    <div id="toast" class="toast">Link copied to clipboard!</div>
+
+    <header class="mb-6 text-center">
+        <h1 class="text-3xl font-bold mb-2">Word Streak</h1>
+        <p class="text-gray-400">Modern Word Search Puzzle</p>
+    </header>
+
+    <!-- Initial screens (welcome or form) -->
+    <div id="welcome-screen" class="max-w-md mx-auto text-center py-8 hidden">
+        <div class="mb-10">
+            <i class="fas fa-search text-5xl text-indigo-500 mb-4"></i>
+            <h2 class="text-2xl font-bold mb-2">Welcome to Word Streak</h2>
+            <p class="text-gray-400 mb-6">Find all the hidden words in the puzzle grid!</p>
+        </div>
+        
+        <div class="flex flex-col gap-4">
+            <button id="play-random" class="bg-indigo-600 hover:bg-indigo-700 text-white py-3 px-6 rounded-lg font-medium btn w-full">
+                <i class="fas fa-dice mr-2"></i>Play Random Puzzle
+            </button>
+            <button id="create-custom" class="bg-gray-700 hover:bg-gray-800 text-white py-3 px-6 rounded-lg font-medium btn w-full">
+                <i class="fas fa-plus mr-2"></i>Create Custom Puzzle
+            </button>
+            <button id="daily-puzzle" class="bg-amber-600 hover:bg-amber-700 text-white py-3 px-6 rounded-lg font-medium btn w-full">
+                <i class="fas fa-calendar-day mr-2"></i>Daily Challenge
+            </button>
+        </div>
+    </div>
+
+    <div id="create-puzzle-form" class="max-w-md mx-auto py-6 hidden">
+        <h2 class="text-2xl font-bold mb-4">Create Custom Puzzle</h2>
+        
+        <div class="mb-4">
+            <label for="word-list" class="block text-gray-300 mb-2">Word List (comma separated)</label>
+            <textarea id="word-list" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-white" rows="4" placeholder="apple,banana,orange,grape..."></textarea>
+        </div>
+        
+        <div class="mb-6">
+            <label for="custom-seed" class="block text-gray-300 mb-2">Seed (optional)</label>
+            <input type="text" id="custom-seed" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-white" placeholder="Leave empty for random seed">
+        </div>
+        
+        <div class="flex gap-3">
+            <button id="back-btn" class="bg-gray-700 hover:bg-gray-800 text-white py-2 px-4 rounded-lg font-medium btn flex-1">
+                <i class="fas fa-arrow-left mr-2"></i>Back
+            </button>
+            <button id="generate-puzzle" class="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg font-medium btn flex-1">
+                <i class="fas fa-play mr-2"></i>Create Puzzle
+            </button>
+        </div>
+    </div>
+
+    <!-- Game screen -->
+    <div id="game-screen" class="hidden">
+        <div class="flex justify-between items-center mb-4">
+            <div>
+                <div class="text-sm text-gray-400">Score</div>
+                <div id="score" class="text-2xl font-bold">0</div>
+            </div>
+            <div class="flex gap-2">
+                <button id="share-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg font-medium btn">
+                    <i class="fas fa-share-alt mr-2"></i>Share
+                </button>
+                <button id="new-game-btn" class="bg-gray-700 hover:bg-gray-800 text-white py-2 px-4 rounded-lg font-medium btn">
+                    <i class="fas fa-sync-alt mr-2"></i>New
+                </button>
+            </div>
+        </div>
+
+        <!-- Timer -->
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <div class="text-sm text-gray-400">Time</div>
+                <div id="timer" class="text-xl font-bold">00:00</div>
+            </div>
+            <div>
+                <div class="text-sm text-gray-400">Words Found</div>
+                <div id="words-found" class="text-xl font-bold">0/0</div>
+            </div>
+        </div>
+
+        <!-- Loading indicator -->
+        <div id="loading" class="flex justify-center items-center py-12 hidden">
+            <div class="flex space-x-2">
+                <div class="w-4 h-4 bg-indigo-500 rounded-full loading-dot"></div>
+                <div class="w-4 h-4 bg-indigo-500 rounded-full loading-dot"></div>
+                <div class="w-4 h-4 bg-indigo-500 rounded-full loading-dot"></div>
+            </div>
+        </div>
+
+        <!-- Puzzle grid -->
+        <div id="puzzle-container" class="relative mb-6">
+            <div id="puzzle-grid" class="puzzle-grid"></div>
+            <div id="selection-line" class="hidden"></div>
+        </div>
+
+        <!-- Word list -->
+        <div class="mt-8">
+            <h3 class="text-lg font-semibold mb-3">Words to Find</h3>
+            <div id="word-list" class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                <!-- Words will be added here dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Complete Screen -->
+    <div id="game-complete" class="max-w-md mx-auto text-center py-8 hidden">
+        <div class="mb-6">
+            <i class="fas fa-trophy text-5xl text-yellow-500 mb-4"></i>
+            <h2 class="text-2xl font-bold mb-2">Puzzle Complete!</h2>
+        </div>
+        
+        <div class="bg-gray-800 rounded-lg p-6 mb-6">
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                    <div class="text-gray-400 text-sm">Score</div>
+                    <div id="final-score" class="text-2xl font-bold">0</div>
+                </div>
+                <div>
+                    <div class="text-gray-400 text-sm">Time</div>
+                    <div id="final-time" class="text-2xl font-bold">00:00</div>
+                </div>
+                <div>
+                    <div class="text-gray-400 text-sm">Words Found</div>
+                    <div id="final-words" class="text-2xl font-bold">0/0</div>
+                </div>
+                <div>
+                    <div class="text-gray-400 text-sm">Best Score</div>
+                    <div id="best-score" class="text-2xl font-bold">0</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="flex flex-col gap-4">
+            <button id="play-again" class="bg-indigo-600 hover:bg-indigo-700 text-white py-3 px-6 rounded-lg font-medium btn w-full">
+                <i class="fas fa-redo mr-2"></i>Play Again
+            </button>
+            <button id="share-results" class="bg-green-600 hover:bg-green-700 text-white py-3 px-6 rounded-lg font-medium btn w-full">
+                <i class="fas fa-share-alt mr-2"></i>Share Results
+            </button>
+            <button id="home-btn" class="bg-gray-700 hover:bg-gray-800 text-white py-3 px-6 rounded-lg font-medium btn w-full">
+                <i class="fas fa-home mr-2"></i>Home
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Core game constants and state
+        const DIRECTIONS = [
+            [0, 1],   // right
+            [1, 0],   // down
+            [0, -1],  // left
+            [-1, 0],  // up
+            [1, 1],   // down-right
+            [1, -1],  // down-left
+            [-1, 1],  // up-right
+            [-1, -1]  // up-left
+        ];
+        
+        const DEFAULT_WORDS = [
+            "puzzle", "search", "hidden", "streak", "challenge",
+            "find", "game", "words", "grid", "mobile"
+        ];
+        
+        const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+          
+        let gameState = {
+            grid: [],
+            gridSize: 0,
+            wordList: [],
+            wordsPlaced: [],
+            foundWords: [],
+            score: 0,
+            startTime: null,
+            endTime: null,
+            elapsedTime: 0,
+            timerInterval: null,
+            seed: '',
+            selection: {
+                start: null,
+                current: null,
+                cells: [],
+                isActive: false
+            }
+        };
+
+        // DOM Elements
+        const welcomeScreen = document.getElementById('welcome-screen');
+        const createPuzzleForm = document.getElementById('create-puzzle-form');
+        const gameScreen = document.getElementById('game-screen');
+        const gameComplete = document.getElementById('game-complete');
+        const puzzleGrid = document.getElementById('puzzle-grid');
+        const wordList = document.getElementById('word-list');
+        const scoreElement = document.getElementById('score');
+        const timerElement = document.getElementById('timer');
+        const wordsFoundElement = document.getElementById('words-found');
+        const loadingElement = document.getElementById('loading');
+        const selectionLine = document.getElementById('selection-line');
+        
+        // Pseudo-random number generator with seed
+        class PRNG {
+            constructor(seed) {
+                this.seed = this.hash(seed || Date.now().toString());
+            }
+            
+            hash(seed) {
+                let hash = 0;
+                for (let i = 0; i < seed.length; i++) {
+                    const char = seed.charCodeAt(i);
+                    hash = ((hash << 5) - hash) + char;
+                    hash = hash & hash; // Convert to 32bit integer
+                }
+                return Math.abs(hash);
+            }
+            
+            next() {
+                const x = Math.sin(this.seed++) * 10000;
+                return x - Math.floor(x);
+            }
+            
+            nextInt(min, max) {
+                return Math.floor(this.next() * (max - min + 1)) + min;
+            }
+            
+            shuffle(array) {
+                const result = [...array];
+                for (let i = result.length - 1; i > 0; i--) {
+                    const j = Math.floor(this.next() * (i + 1));
+                    [result[i], result[j]] = [result[j], result[i]];
+                }
+                return result;
+            }
+        }
+
+        // Grid operations
+        function calculateGridSize(words) {
+            // Find the longest word length
+            const maxWordLength = Math.max(...words.map(word => word.length));
+            
+            // Base grid size on word count and max length
+            let size = Math.max(maxWordLength, Math.ceil(Math.sqrt(words.length * 2)));
+            
+            // Ensure minimum grid size
+            size = Math.max(size, 8);
+            
+            // Ensure grid size is reasonable for mobile
+            size = Math.min(size, 15);
+            
+            return size;
+        }
+
+        function createEmptyGrid(size) {
+            const grid = [];
+            for (let i = 0; i < size; i++) {
+                grid[i] = [];
+                for (let j = 0; j < size; j++) {
+                    grid[i][j] = '';
+                }
+            }
+            return grid;
+        }
+
+        function canPlaceWord(grid, word, row, col, dRow, dCol) {
+            const gridSize = grid.length;
+            
+            // Check if word fits within grid boundaries
+            if (
+                row + dRow * (word.length - 1) < 0 || 
+                row + dRow * (word.length - 1) >= gridSize ||
+                col + dCol * (word.length - 1) < 0 || 
+                col + dCol * (word.length - 1) >= gridSize
+            ) {
+                return false;
+            }
+            
+            // Check if path is clear or has matching letters
+            for (let i = 0; i < word.length; i++) {
+                const r = row + dRow * i;
+                const c = col + dCol * i;
+                
+                if (grid[r][c] !== '' && grid[r][c] !== word[i]) {
+                    return false;
+                }
+            }
+            
+            return true;
+        }
+
+        function placeWordInGrid(grid, word, row, col, dRow, dCol) {
+            for (let i = 0; i < word.length; i++) {
+                const r = row + dRow * i;
+                const c = col + dCol * i;
+                grid[r][c] = word[i];
+            }
+            
+            return {
+                word,
+                start: { row, col },
+                end: { 
+                    row: row + dRow * (word.length - 1), 
+                    col: col + dCol * (word.length - 1) 
+                },
+                direction: { dRow, dCol }
+            };
+        }
+
+        function fillEmptyCells(grid, rng) {
+            const gridSize = grid.length;
+            
+            for (let row = 0; row < gridSize; row++) {
+                for (let col = 0; col < gridSize; col++) {
+                    if (grid[row][col] === '') {
+                        const randomIndex = rng.nextInt(0, ALPHABET.length - 1);
+                        grid[row][col] = ALPHABET[randomIndex];
+                    }
+                }
+            }
+            
+            return grid;
+        }
+
+        function generatePuzzle(words, seed) {
+            const rng = new PRNG(seed);
+            
+            // Normalize and shuffle words
+            const normalizedWords = words.map(word => word.toUpperCase().trim());
+            const shuffledWords = rng.shuffle(normalizedWords);
+            
+            const gridSize = calculateGridSize(shuffledWords);
+            const grid = createEmptyGrid(gridSize);
+            const placedWords = [];
+            
+            // Try to place each word
+            for (const word of shuffledWords) {
+                let placed = false;
+                const attempts = 100; // Maximum placement attempts per word
+                
+                // Try different positions and directions
+                for (let attempt = 0; attempt < attempts && !placed; attempt++) {
+                    const row = rng.nextInt(0, gridSize - 1);
+                    const col = rng.nextInt(0, gridSize - 1);
+                    
+                    // Try all directions
+                    const directions = rng.shuffle([...DIRECTIONS]);
+                    
+                    for (const [dRow, dCol] of directions) {
+                        if (canPlaceWord(grid, word, row, col, dRow, dCol)) {
+                            const placement = placeWordInGrid(grid, word, row, col, dRow, dCol);
+                            placedWords.push(placement);
+                            placed = true;
+                            break;
+                        }
+                    }
+                }
+                
+                // If can't place after multiple attempts, skip this word
+                if (!placed) {
+                    console.warn(`Could not place word: ${word}`);
+                }
+            }
+            
+            // Fill remaining cells with random letters
+            fillEmptyCells(grid, rng);
+            
+            return {
+                grid,
+                gridSize,
+                placedWords,
+                seed
+            };
+        }
+
+        // UI Rendering
+        function renderGrid(grid) {
+            puzzleGrid.innerHTML = '';
+            
+            // Set grid columns based on size
+            puzzleGrid.style.gridTemplateColumns = `repeat(${grid.length}, 1fr)`;
+            
+            for (let row = 0; row < grid.length; row++) {
+                for (let col = 0; col < grid[row].length; col++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'letter-cell';
+                    cell.dataset.row = row;
+                    cell.dataset.col = col;
+                    cell.textContent = grid[row][col];
+                    
+                    // Touch/mouse event handlers
+                    cell.addEventListener('pointerdown', handleCellPointerDown);
+                    
+                    puzzleGrid.appendChild(cell);
+                }
+            }
+            
+            // Add event listeners for selection
+            document.addEventListener('pointermove', handlePointerMove);
+            document.addEventListener('pointerup', handlePointerUp);
+            document.addEventListener('pointercancel', handlePointerUp);
+        }
+
+        function renderWordList(words) {
+            wordList.innerHTML = '';
+            
+            words.forEach(word => {
+                const wordElement = document.createElement('div');
+                wordElement.className = 'word-list-item';
+                wordElement.dataset.word = word;
+                wordElement.textContent = word;
+                wordList.appendChild(wordElement);
+            });
+            
+            updateWordsFoundCount();
+        }
+
+        function updateWordsFoundCount() {
+            const totalWords = gameState.wordList.length;
+            const foundWords = gameState.foundWords.length;
+            
+            wordsFoundElement.textContent = `${foundWords}/${totalWords}`;
+        }
+
+        function markWordAsFound(word) {
+            const wordElements = document.querySelectorAll('.word-list-item');
+            
+            wordElements.forEach(element => {
+                if (element.dataset.word === word) {
+                    element.classList.add('found');
+                }
+            });
+            
+            gameState.foundWords.push(word);
+            updateWordsFoundCount();
+            
+            // Animate score increase
+            const scoreIncrease = word.length * 10;
+            gameState.score += scoreIncrease;
+            scoreElement.textContent = gameState.score;
+            
+            // Create score animation
+            const scoreAnimation = document.createElement('div');
+            scoreAnimation.className = 'score-increase';
+            scoreAnimation.textContent = `+${scoreIncrease}`;
+            
+            // Position near the selection
+            const firstCell = gameState.selection.cells[0];
+            const rect = firstCell.getBoundingClientRect();
+            
+            scoreAnimation.style.left = `${rect.left}px`;
+            scoreAnimation.style.top = `${rect.top}px`;
+            
+            document.body.appendChild(scoreAnimation);
+            
+            // Remove after animation completes
+            setTimeout(() => {
+                scoreAnimation.remove();
+            }, 1000);
+            
+            // Check if game is complete
+            if (gameState.foundWords.length === gameState.wordList.length) {
+                endGame();
+            }
+        }
+
+        function highlightCells(cells, highlight = true) {
+            cells.forEach(cell => {
+                if (highlight) {
+                    cell.classList.add('selected');
+                } else {
+                    cell.classList.remove('selected');
+                }
+            });
+        }
+
+        function updateSelectionLine() {
+            if (!gameState.selection.start || !gameState.selection.current || gameState.selection.cells.length < 2) {
+                selectionLine.classList.add('hidden');
+                return;
+            }
+            
+            const startCell = gameState.selection.cells[0];
+            const currentCell = gameState.selection.current;
+            
+            const startRect = startCell.getBoundingClientRect();
+            const currentRect = currentCell.getBoundingClientRect();
+            
+            // Calculate center points
+            const startX = startRect.left + startRect.width / 2;
+            const startY = startRect.top + startRect.height / 2;
+            const currentX = currentRect.left + currentRect.width / 2;
+            const currentY = currentRect.top + currentRect.height / 2;
+            
+            // Calculate distance and angle
+            const dx = currentX - startX;
+            const dy = currentY - startY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+            
+            // Update line properties
+            selectionLine.style.width = `${distance}px`;
+            selectionLine.style.transform = `translate(${startX}px, ${startY}px) rotate(${angle}deg)`;
+            selectionLine.classList.remove('hidden');
+        }
+
+        // Event handlers
+        function handleCellPointerDown(event) {
+            event.preventDefault();
+            
+            const cell = event.target;
+            const row = parseInt(cell.dataset.row);
+            const col = parseInt(cell.dataset.col);
+            
+            gameState.selection.start = { row, col };
+            gameState.selection.current = cell;
+            gameState.selection.cells = [cell];
+            gameState.selection.isActive = true;
+            
+            highlightCells(gameState.selection.cells);
+            updateSelectionLine();
+        }
+
+        function handlePointerMove(event) {
+            if (!gameState.selection.isActive) return;
+            
+            // Find the cell under the pointer
+            const elements = document.elementsFromPoint(event.clientX, event.clientY);
+            const cell = elements.find(el => el.classList.contains('letter-cell'));
+            
+            if (!cell) return;
+            
+            const row = parseInt(cell.dataset.row);
+            const col = parseInt(cell.dataset.col);
+            const startRow = gameState.selection.start.row;
+            const startCol = gameState.selection.start.col;
+            
+            // Check if we've moved to a new cell
+            if (cell !== gameState.selection.current) {
+                // Determine if this is a valid direction
+                let isValidDirection = false;
+                let dRow = 0;
+                let dCol = 0;
+                
+                // Calculate direction from start cell
+                if (row === startRow) {
+                    dCol = col > startCol ? 1 : -1;
+                    isValidDirection = true;
+                } else if (col === startCol) {
+                    dRow = row > startRow ? 1 : -1;
+                    isValidDirection = true;
+                } else {
+                    // Diagonal
+                    const rowDiff = row - startRow;
+                    const colDiff = col - startCol;
+                    
+                    // Check if it's a perfect diagonal
+                    if (Math.abs(rowDiff) === Math.abs(colDiff)) {
+                        dRow = rowDiff > 0 ? 1 : -1;
+                        dCol = colDiff > 0 ? 1 : -1;
+                        isValidDirection = true;
+                    }
+                }
+                
+                if (isValidDirection) {
+                    // Clear previous selection
+                    highlightCells(gameState.selection.cells, false);
+                    
+                    // Generate new cells in the selection
+                    const newSelection = [];
+                    let current = { row: startRow, col: startCol };
+                    
+                    while (
+                        current.row >= 0 && current.row < gameState.gridSize &&
+                        current.col >= 0 && current.col < gameState.gridSize
+                    ) {
+                        const cellElement = document.querySelector(`.letter-cell[data-row="${current.row}"][data-col="${current.col}"]`);
+                        
+                        if (cellElement) {
+                            newSelection.push(cellElement);
+                        }
+                        
+                        if (current.row === row && current.col === col) {
+                            break;
+                        }
+                        
+                        current.row += dRow;
+                        current.col += dCol;
+                    }
+                    
+                    gameState.selection.cells = newSelection;
+                    gameState.selection.current = cell;
+                    
+                    // Highlight new selection
+                    highlightCells(gameState.selection.cells);
+                    updateSelectionLine();
+                }
+            }
+        }
+
+        function handlePointerUp() {
+            if (!gameState.selection.isActive) return;
+            
+            // Check if we have a word
+            if (gameState.selection.cells.length > 1) {
+                const selectedWord = gameState.selection.cells
+                    .map(cell => cell.textContent)
+                    .join('');
+                
+                // Check if this word is in our word list
+                const wordIndex = gameState.wordList.indexOf(selectedWord);
+                
+                if (wordIndex !== -1 && !gameState.foundWords.includes(selectedWord)) {
+                    markWordAsFound(selectedWord);
+                    
+                    // Play success animation
+                    gameState.selection.cells.forEach((cell, index) => {
+                        setTimeout(() => {
+                            cell.style.backgroundColor = 'var(--success)';
+                            setTimeout(() => {
+                                cell.style.backgroundColor = '';
+                            }, 300);
+                        }, index * 50);
+                    });
+                    
+                    // Keep cells highlighted for a moment
+                    setTimeout(() => {
+                        highlightCells(gameState.selection.cells, false);
+                    }, gameState.selection.cells.length * 50);
+                } else {
+                    // Wrong word animation
+                    gameState.selection.cells.forEach(cell => {
+                        cell.classList.add('shake');
+                        setTimeout(() => {
+                            cell.classList.remove('shake', 'selected');
+                        }, 500);
+                    });
+                }
+            }
+            
+            // Reset selection
+            gameState.selection.isActive = false;
+            gameState.selection.start = null;
+            gameState.selection.current = null;
+            gameState.selection.cells = [];
+            
+            selectionLine.classList.add('hidden');
+            
+            // Remove event listeners
+            document.removeEventListener('pointermove', handlePointerMove);
+            document.removeEventListener('pointerup', handlePointerUp);
+            document.removeEventListener('pointercancel', handlePointerUp);
+            
+            // Re-add event listeners for next selection
+            document.addEventListener('pointermove', handlePointerMove);
+            document.addEventListener('pointerup', handlePointerUp);
+            document.addEventListener('pointercancel', handlePointerUp);
+        }
+
+        // Game state management
+        function startGame(words, seed) {
+            showLoading(true);
+            
+            // Small delay to let the loading animation show
+            setTimeout(() => {
+                // Generate puzzle
+                const { grid, gridSize, placedWords } = generatePuzzle(words, seed);
+                
+                // Update game state
+                gameState.grid = grid;
+                gameState.gridSize = gridSize;
+                gameState.wordList = placedWords.map(p => p.word);
+                gameState.wordsPlaced = placedWords;
+                gameState.foundWords = [];
+                gameState.score = 0;
+                gameState.seed = seed;
+                gameState.startTime = Date.now();
+                gameState.elapsedTime = 0;
+                
+                // Render game elements
+                renderGrid(grid);
+                renderWordList(gameState.wordList);
+                
+                // Update UI
+                scoreElement.textContent = gameState.score;
+                updateTimer();
+                
+                // Start timer
+                if (gameState.timerInterval) {
+                    clearInterval(gameState.timerInterval);
+                }
+                gameState.timerInterval = setInterval(updateTimer, 1000);
+                
+                // Update display
+                showLoading(false);
+                showScreen('game-screen');
+                
+                // Update URL with puzzle parameters
+                updateUrl(words, seed);
+            }, 500);
+        }
+
+        function endGame() {
+            // Stop timer
+            if (gameState.timerInterval) {
+                clearInterval(gameState.timerInterval);
+                gameState.timerInterval = null;
+            }
+            
+            gameState.endTime = Date.now();
+            
+            // Calculate final score with time bonus
+            const timeBonus = Math.max(0, 300 - Math.floor(gameState.elapsedTime / 1000)) * 2;
+            gameState.score += timeBonus;
+            
+            // Save high score
+            const puzzleId = `${gameState.seed}-${gameState.wordList.join(',')}`;
+            const highScores = JSON.parse(localStorage.getItem('wordStreakHighScores') || '{}');
+            
+            if (!highScores[puzzleId] || gameState.score > highScores[puzzleId]) {
+                highScores[puzzleId] = gameState.score;
+                localStorage.setItem('wordStreakHighScores', JSON.stringify(highScores));
+            }
+            
+            // Update completion screen
+            document.getElementById('final-score').textContent = gameState.score;
+            document.getElementById('final-time').textContent = formatTime(Math.floor(gameState.elapsedTime / 1000));
+            document.getElementById('final-words').textContent = `${gameState.foundWords.length}/${gameState.wordList.length}`;
+            document.getElementById('best-score').textContent = highScores[puzzleId] || gameState.score;
+            
+            // Celebrate completion
+            celebrateCompletion();
+            
+            // Show completion screen
+            showScreen('game-complete');
+        }
+
+        function updateTimer() {
+            if (!gameState.startTime) return;
+            
+            gameState.elapsedTime = Date.now() - gameState.startTime;
+            const seconds = Math.floor(gameState.elapsedTime / 1000);
+            timerElement.textContent = formatTime(seconds);
+        }
+
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function showLoading(show) {
+            if (show) {
+                loadingElement.classList.remove('hidden');
+                puzzleGrid.classList.add('hidden');
+            } else {
+                loadingElement.classList.add('hidden');
+                puzzleGrid.classList.remove('hidden');
+            }
+        }
+
+        function showScreen(screenId) {
+            // Hide all screens
+            welcomeScreen.classList.add('hidden');
+            createPuzzleForm.classList.add('hidden');
+            gameScreen.classList.add('hidden');
+            gameComplete.classList.add('hidden');
+            
+            // Show requested screen
+            document.getElementById(screenId).classList.remove('hidden');
+        }
+
+        function generateRandomSeed() {
+            return Math.floor(Math.random() * 1000000000).toString();
+        }
+
+        function celebrateCompletion() {
+            // Create confetti
+            for (let i = 0; i < 100; i++) {
+                createConfetti();
+            }
+            
+            // Play celebration sound (if enabled)
+            if (window.Audio) {
+                try {
+                    const audio = new Audio('data:audio/mp3;base64,SUQzBAAAAAABEVRYWFgAAAAtAAADY29tbWVudABCaWdTb3VuZEJhbmsuY29tIC8gTGFTb25vdGhlcXVlLm9yZwBURU5DAAAAHQAAA1N3aXRjaCBQbHVzIMKpIE5DSCBTb2Z0d2FyZQBUSVQyAAAABgAAAzIyMzUAVFNTRQAAAA8AAANMYXZmNTcuODMuMTAwAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQMSkAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV');
+                    audio.play();
+                } catch (e) {
+                    console.log('Audio play failed:', e);
+                }
+            }
+        }
+
+        function createConfetti() {
+            const confetti = document.createElement('div');
+            confetti.className = 'confetti';
+            
+            // Random position
+            const left = Math.random() * 100;
+            
+            // Random color
+            const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            
+            confetti.style.left = `${left}vw`;
+            confetti.style.backgroundColor = color;
+            
+            // Random size
+            const size = Math.random() * 10 + 5;
+            confetti.style.width = `${size}px`;
+            confetti.style.height = `${size}px`;
+            
+            // Random animation duration
+            const duration = Math.random() * 2 + 2;
+            confetti.style.animationDuration = `${duration}s`;
+            
+            document.body.appendChild(confetti);
+            
+            // Remove after animation
+            setTimeout(() => {
+                confetti.remove();
+            }, duration * 1000);
+        }
+
+        // URL handling
+        function updateUrl(words, seed) {
+            // Create URL with parameters
+            const url = new URL(window.location.href);
+            
+            // Clear existing parameters
+            url.search = '';
+            
+            // Add new parameters
+            url.searchParams.set('wordlist', words.join(','));
+            url.searchParams.set('seed', seed);
+            
+            // Update browser history
+            window.history.replaceState({}, '', url);
+        }
+
+        function parseUrlParams() {
+            const params = new URLSearchParams(window.location.search);
+            
+            const wordlistParam = params.get('wordlist');
+            const seedParam = params.get('seed');
+            
+            if (wordlistParam) {
+                const words = wordlistParam.split(',').filter(word => word.trim() !== '');
+                
+                if (words.length > 0) {
+                    return {
+                        words,
+                        seed: seedParam || generateRandomSeed()
+                    };
+                }
+            }
+            
+            return null;
+        }
+
+        function getDailyPuzzleParams() {
+            // Generate a seed based on the current date
+            const today = new Date();
+            const dateString = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
+            const dailySeed = new PRNG(dateString).seed.toString();
+            
+            // Use a predefined word list for daily challenges
+            const dailyWords = [
+                "daily", "challenge", "puzzle", "streak", "words",
+                "search", "find", "game", "solve", "today"
+            ];
+            
+            return {
+                words: dailyWords,
+                seed: dailySeed
+            };
+        }
+
+        // Clipboard and sharing
+        function copyToClipboard(text) {
+            // Create temporary input
+            const input = document.createElement('input');
+            input.style.position = 'absolute';
+            input.style.left = '-9999px';
+            input.value = text;
+            document.body.appendChild(input);
+            
+            // Select and copy
+            input.select();
+            document.execCommand('copy');
+            document.body.removeChild(input);
+            
+            // Show toast
+            const toast = document.getElementById('toast');
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }
+
+        function shareResults() {
+            const wordsFound = gameState.foundWords.length;
+            const totalWords = gameState.wordList.length;
+            const score = gameState.score;
+            const time = formatTime(Math.floor(gameState.elapsedTime / 1000));
+            
+            // Create share text
+            const shareText = `I just completed a Word Streak puzzle with ${wordsFound}/${totalWords} words found! Score: ${score} Time: ${time}\n\nTry it yourself: ${window.location.href}`;
+            
+            // Try to use Web Share API if available
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Word Streak Puzzle',
+                    text: shareText,
+                    url: window.location.href
+                }).catch(err => {
+                    // Fallback to clipboard
+                    copyToClipboard(shareText);
+                });
+            } else {
+                // Fallback to clipboard
+                copyToClipboard(shareText);
+            }
+        }
+
+        // Event listeners
+        document.getElementById('play-random').addEventListener('click', () => {
+            const randomWords = rng.shuffle([...DEFAULT_WORDS]).slice(0, 8);
+            const randomSeed = generateRandomSeed();
+            startGame(randomWords, randomSeed);
+        });
+
+        document.getElementById('create-custom').addEventListener('click', () => {
+            showScreen('create-puzzle-form');
+        });
+
+        document.getElementById('daily-puzzle').addEventListener('click', () => {
+            const { words, seed } = getDailyPuzzleParams();
+            startGame(words, seed);
+        });
+
+        document.getElementById('back-btn').addEventListener('click', () => {
+            showScreen('welcome-screen');
+        });
+
+        document.getElementById('generate-puzzle').addEventListener('click', () => {
+            const wordListInput = document.getElementById('word-list').value;
+            const customSeedInput = document.getElementById('custom-seed').value;
+            
+            // Parse input
+            const words = wordListInput.split(',')
+                .map(word => word.trim())
+                .filter(word => word !== '');
+            
+            if (words.length === 0) {
+                alert('Please enter at least one word!');
+                return;
+            }
+            
+            const seed = customSeedInput || generateRandomSeed();
+            
+            startGame(words, seed);
+        });
+
+        document.getElementById('share-btn').addEventListener('click', () => {
+            const url = window.location.href;
+            copyToClipboard(url);
+        });
+
+        document.getElementById('new-game-btn').addEventListener('click', () => {
+            showScreen('welcome-screen');
+        });
+
+        document.getElementById('play-again').addEventListener('click', () => {
+            startGame(gameState.wordList, gameState.seed);
+        });
+
+        document.getElementById('share-results').addEventListener('click', shareResults);
+
+        document.getElementById('home-btn').addEventListener('click', () => {
+            showScreen('welcome-screen');
+        });
+
+        // Add shake animation style
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                10%, 30%, 50%, 70%, 90% { transform: translateX(-2px); }
+                20%, 40%, 60%, 80% { transform: translateX(2px); }
+            }
+            
+            .shake {
+                animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Initialize
+        const rng = new PRNG(Date.now().toString());
+        
+        // Check for URL parameters
+        const urlParams = parseUrlParams();
+        
+        if (urlParams) {
+            // Start game with parameters from URL
+            startGame(urlParams.words, urlParams.seed);
+        } else {
+            // Show welcome screen
+            showScreen('welcome-screen');
+        }
+    </script>
+</body>
+</html>
