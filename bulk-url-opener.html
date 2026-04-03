@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bulk URL Opener</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg:        #0a0c0f;
+    --surface:   #111419;
+    --surface2:  #181c23;
+    --border:    #252a35;
+    --accent:    #00e5ff;
+    --accent2:   #7c4dff;
+    --warn:      #ff6b35;
+    --success:   #00e676;
+    --text:      #e8ecf0;
+    --muted:     #6b7685;
+    --card-bg:   #13171f;
+    --mono:      'Space Mono', monospace;
+    --sans:      'Syne', sans-serif;
+    --radius:    10px;
+    --trans:     all 0.2s ease;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+  }
+
+  /* ── NOISE OVERLAY ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    background-size: 200px;
+    pointer-events: none; z-index: 0;
+  }
+
+  /* ── HEADER ── */
+  header {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(10,12,15,0.92);
+    backdrop-filter: blur(18px);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px;
+  }
+
+  .logo {
+    display: flex; align-items: center; gap: 10px;
+  }
+
+  .logo-icon {
+    width: 34px; height: 34px; border-radius: 8px;
+    background: linear-gradient(135deg, var(--accent2), var(--accent));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px; flex-shrink: 0;
+  }
+
+  .logo h1 {
+    font-family: var(--sans);
+    font-size: clamp(1rem, 2.5vw, 1.3rem);
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .logo .tagline {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--muted);
+    display: none;
+  }
+
+  @media (min-width: 500px) { .logo .tagline { display: block; } }
+
+  .header-badge {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--muted);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 10px;
+    white-space: nowrap;
+  }
+
+  /* ── MAIN ── */
+  main {
+    flex: 1;
+    padding: clamp(12px, 3vw, 28px);
+    max-width: 1200px;
+    width: 100%; margin: 0 auto;
+    position: relative; z-index: 1;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+
+  /* ── INPUT SECTION ── */
+  .input-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: var(--trans);
+  }
+
+  .section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .section-title {
+    display: flex; align-items: center; gap: 8px;
+    font-weight: 700; font-size: 0.95rem;
+    color: var(--text);
+  }
+
+  .section-title .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+    flex-shrink: 0;
+  }
+
+  .collapse-btn {
+    display: flex; align-items: center; gap: 6px;
+    font-family: var(--mono);
+    font-size: 0.7rem; color: var(--muted);
+    background: none; border: 1px solid var(--border);
+    border-radius: 6px; padding: 4px 10px;
+    cursor: pointer; transition: var(--trans);
+  }
+  .collapse-btn:hover { color: var(--accent); border-color: var(--accent); }
+  .collapse-btn .chevron { transition: transform 0.25s; display: inline-block; }
+  .collapse-btn.collapsed .chevron { transform: rotate(-90deg); }
+
+  .input-body {
+    padding: 0 18px 18px;
+    transition: all 0.3s ease;
+  }
+  .input-body.hidden { display: none; }
+
+  #urlInput {
+    width: 100%;
+    min-height: 170px;
+    max-height: 380px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: clamp(0.72rem, 1.8vw, 0.82rem);
+    line-height: 1.7;
+    padding: 14px;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  #urlInput:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,229,255,0.1); }
+  #urlInput::placeholder { color: var(--muted); }
+
+  .input-hints {
+    display: flex; align-items: center; gap: 16px;
+    margin-top: 10px; flex-wrap: wrap;
+  }
+  .hint-chip {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--muted);
+    background: var(--bg);
+    border: 1px dashed var(--border);
+    border-radius: 5px; padding: 3px 8px;
+  }
+  .parse-btn {
+    margin-left: auto;
+    background: linear-gradient(135deg, var(--accent2), var(--accent));
+    color: #fff;
+    border: none; border-radius: 8px;
+    padding: 9px 20px;
+    font-family: var(--sans);
+    font-weight: 700; font-size: 0.85rem;
+    cursor: pointer; transition: var(--trans);
+    white-space: nowrap;
+  }
+  .parse-btn:hover { opacity: 0.88; transform: translateY(-1px); }
+  .parse-btn:active { transform: translateY(0); }
+
+  /* ── TOOLBAR ── */
+  .toolbar {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    display: flex; flex-wrap: wrap;
+    align-items: center; gap: 10px;
+  }
+
+  .toolbar-group {
+    display: flex; align-items: center; gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .toolbar-divider {
+    width: 1px; height: 28px;
+    background: var(--border);
+    flex-shrink: 0;
+  }
+  @media (max-width: 600px) { .toolbar-divider { display: none; } }
+
+  .btn {
+    display: flex; align-items: center; gap: 7px;
+    border: none; border-radius: 8px;
+    font-family: var(--sans); font-weight: 600;
+    font-size: 0.82rem; cursor: pointer;
+    transition: var(--trans); padding: 8px 14px;
+    white-space: nowrap;
+  }
+  .btn svg { flex-shrink: 0; }
+  .btn:disabled { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
+
+  .btn-primary {
+    background: var(--accent); color: #000;
+  }
+  .btn-primary:hover { background: #33eaff; transform: translateY(-1px); }
+
+  .btn-seq {
+    background: var(--accent2); color: #fff;
+  }
+  .btn-seq:hover { background: #9c71ff; transform: translateY(-1px); }
+
+  .btn-warn {
+    background: var(--warn); color: #fff;
+  }
+  .btn-warn:hover { opacity: 0.85; }
+
+  .btn-ghost {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:hover { border-color: var(--muted); }
+
+  .btn-danger {
+    background: rgba(255,59,48,0.15);
+    color: #ff3b30;
+    border: 1px solid rgba(255,59,48,0.25);
+  }
+  .btn-danger:hover { background: rgba(255,59,48,0.25); }
+
+  .delay-control {
+    display: flex; align-items: center; gap: 8px;
+    font-family: var(--mono); font-size: 0.72rem; color: var(--muted);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px; padding: 7px 12px;
+  }
+  .delay-control input[type=range] {
+    -webkit-appearance: none; appearance: none;
+    width: 90px; height: 4px;
+    background: var(--border); border-radius: 2px; outline: none;
+  }
+  .delay-control input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 14px; height: 14px;
+    background: var(--accent); border-radius: 50%; cursor: pointer;
+  }
+  .delay-val { color: var(--accent); min-width: 32px; }
+
+  /* ── STATS BAR ── */
+  .stats-bar {
+    display: flex; align-items: center; gap: 14px;
+    flex-wrap: wrap;
+    font-family: var(--mono); font-size: 0.72rem;
+    color: var(--muted);
+    margin-left: auto;
+  }
+  .stat { display: flex; align-items: center; gap: 5px; }
+  .stat-val { color: var(--text); font-weight: 700; }
+
+  /* ── PROGRESS ── */
+  .progress-section {
+    display: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    gap: 10px;
+    flex-direction: column;
+  }
+  .progress-section.active { display: flex; }
+
+  .progress-header {
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 0.8rem;
+  }
+  .progress-label { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+  .spinner {
+    width: 14px; height: 14px; border-radius: 50%;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .progress-pct { font-family: var(--mono); font-size: 0.75rem; color: var(--accent); }
+
+  .progress-track {
+    width: 100%; height: 6px;
+    background: var(--surface2);
+    border-radius: 3px; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; width: 0%;
+    background: linear-gradient(90deg, var(--accent2), var(--accent));
+    border-radius: 3px;
+    transition: width 0.4s ease;
+    position: relative;
+  }
+  .progress-fill::after {
+    content: '';
+    position: absolute; right: 0; top: 0; bottom: 0;
+    width: 40px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2));
+    animation: shimmer 1s infinite;
+  }
+  @keyframes shimmer { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
+
+  .progress-log {
+    font-family: var(--mono); font-size: 0.68rem; color: var(--muted);
+  }
+
+  /* ── RESULTS SECTION ── */
+  .results-section {
+    display: none; flex-direction: column; gap: 14px;
+  }
+  .results-section.active { display: flex; }
+
+  .results-header {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 10px;
+  }
+  .results-title {
+    font-family: var(--sans); font-weight: 700; font-size: 1rem;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .results-count {
+    font-family: var(--mono); font-size: 0.72rem;
+    background: var(--accent2); color: #fff;
+    padding: 2px 8px; border-radius: 20px;
+  }
+
+  .search-filter {
+    display: flex; align-items: center; gap: 8px;
+    flex-wrap: wrap;
+  }
+  .filter-input {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: var(--mono); font-size: 0.75rem;
+    padding: 7px 12px; outline: none;
+    width: 200px; max-width: 100%;
+    transition: border-color 0.2s;
+  }
+  .filter-input:focus { border-color: var(--accent); }
+  .filter-input::placeholder { color: var(--muted); }
+
+  /* ── GRID ── */
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+    gap: 12px;
+  }
+
+  /* ── CARD ── */
+  .url-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: var(--trans);
+    display: flex; flex-direction: column;
+    animation: fadeUp 0.3s ease both;
+  }
+  .url-card:hover {
+    border-color: rgba(0,229,255,0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  .url-card.selected {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent) inset;
+  }
+  .url-card.opened { border-color: rgba(0,230,118,0.4); }
+  .url-card.failed { border-color: rgba(255,59,48,0.4); }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .card-thumb {
+    height: 6px;
+    background: linear-gradient(90deg, var(--accent2), var(--accent));
+    flex-shrink: 0;
+  }
+  .url-card.opened .card-thumb { background: var(--success); }
+  .url-card.failed  .card-thumb { background: var(--warn); }
+
+  .card-body {
+    padding: 12px 14px;
+    display: flex; flex-direction: column; gap: 8px;
+    flex: 1;
+  }
+
+  .card-top {
+    display: flex; align-items: center; gap: 10px;
+  }
+
+  .card-favicon {
+    width: 28px; height: 28px; border-radius: 6px;
+    background: var(--surface2);
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden; flex-shrink: 0;
+    font-size: 14px;
+  }
+  .card-favicon img {
+    width: 100%; height: 100%; object-fit: contain;
+    border-radius: 4px;
+  }
+
+  .card-info { flex: 1; min-width: 0; }
+  .card-domain {
+    font-weight: 700; font-size: 0.82rem;
+    color: var(--text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .card-index {
+    font-family: var(--mono); font-size: 0.62rem; color: var(--muted);
+  }
+
+  .card-status {
+    font-family: var(--mono); font-size: 0.65rem;
+    padding: 2px 7px; border-radius: 4px;
+    flex-shrink: 0;
+  }
+  .status-pending  { background: var(--surface2); color: var(--muted); }
+  .status-opened   { background: rgba(0,230,118,0.15); color: var(--success); }
+  .status-failed   { background: rgba(255,59,48,0.15); color: #ff3b30; }
+  .status-skipped  { background: rgba(255,107,53,0.15); color: var(--warn); }
+
+  .card-url {
+    font-family: var(--mono); font-size: 0.67rem;
+    color: var(--muted);
+    word-break: break-all;
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .card-footer {
+    display: flex; align-items: center; gap: 7px;
+    padding: 9px 14px;
+    border-top: 1px solid var(--border);
+    background: rgba(0,0,0,0.12);
+  }
+
+  .check-wrap {
+    display: flex; align-items: center; cursor: pointer;
+    padding: 2px;
+  }
+  .check-wrap input[type=checkbox] {
+    width: 16px; height: 16px;
+    accent-color: var(--accent); cursor: pointer;
+  }
+
+  .btn-open-single {
+    margin-left: auto;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--accent);
+    font-family: var(--mono); font-size: 0.68rem;
+    padding: 5px 11px; cursor: pointer;
+    transition: var(--trans);
+    display: flex; align-items: center; gap: 5px;
+  }
+  .btn-open-single:hover {
+    background: rgba(0,229,255,0.12);
+    border-color: var(--accent);
+  }
+
+  .btn-copy-url {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--muted);
+    font-family: var(--mono); font-size: 0.68rem;
+    padding: 5px 9px; cursor: pointer;
+    transition: var(--trans);
+  }
+  .btn-copy-url:hover { color: var(--text); border-color: var(--muted); }
+
+  /* ── BOTTOM BAR ── */
+  .bottom-bar {
+    display: none;
+    position: sticky; bottom: 0; z-index: 90;
+    background: rgba(10,12,15,0.95);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border);
+    padding: 12px clamp(12px, 3vw, 28px);
+    align-items: center; gap: 10px;
+    flex-wrap: wrap;
+  }
+  .bottom-bar.active { display: flex; }
+
+  .bottom-sel-info {
+    font-family: var(--mono); font-size: 0.75rem; color: var(--muted);
+    margin-right: auto;
+  }
+  .bottom-sel-info strong { color: var(--accent); }
+
+  /* ── EMPTY STATE ── */
+  .empty-state {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 14px;
+    padding: 60px 20px; text-align: center;
+    background: var(--surface);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+  }
+  .empty-icon { font-size: 2.5rem; opacity: 0.35; }
+  .empty-title { font-weight: 700; font-size: 1rem; color: var(--muted); }
+  .empty-sub { font-family: var(--mono); font-size: 0.72rem; color: var(--muted); opacity: 0.6; }
+
+  /* ── TOAST ── */
+  #toast {
+    position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 9px 20px;
+    font-family: var(--mono); font-size: 0.75rem;
+    color: var(--text);
+    white-space: nowrap;
+    z-index: 9999;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.25s;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  }
+  #toast.show { opacity: 1; }
+
+  /* ── POPUP BLOCKER WARNING ── */
+  .popup-warning {
+    display: none;
+    align-items: center; gap: 10px;
+    background: rgba(255,107,53,0.12);
+    border: 1px solid rgba(255,107,53,0.3);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-family: var(--mono); font-size: 0.72rem;
+    color: var(--warn);
+  }
+  .popup-warning.show { display: flex; }
+  .popup-warning a { color: var(--accent); text-decoration: underline; }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 480px) {
+    .delay-control input[type=range] { width: 60px; }
+    .btn { padding: 8px 10px; font-size: 0.76rem; }
+    .btn span.btn-label { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">⚡</div>
+    <div>
+      <h1>Bulk URL Opener</h1>
+      <div class="tagline">// paste → parse → launch</div>
+    </div>
+  </div>
+  <div class="header-badge" id="headerBadge">0 URLs ready</div>
+</header>
+
+<main>
+
+  <!-- INPUT SECTION -->
+  <div class="input-section" id="inputSection">
+    <div class="section-header" onclick="toggleInput()">
+      <div class="section-title">
+        <span class="dot"></span>
+        URL Input
+      </div>
+      <button class="collapse-btn" id="collapseBtn">
+        <span class="chevron">▼</span>
+        <span id="collapseTxt">Collapse</span>
+      </button>
+    </div>
+    <div class="input-body" id="inputBody">
+      <textarea id="urlInput"
+        placeholder="Paste your URLs here — one per line, or separated by spaces, commas, or mixed text. The parser will extract all valid URLs automatically.
+
+Example:
+https://github.com
+https://news.ycombinator.com
+https://wikipedia.org  https://reddit.com
+Visit https://google.com for search and https://youtube.com for videos."
+        spellcheck="false"
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="off"></textarea>
+      <div class="input-hints">
+        <span class="hint-chip">One per line</span>
+        <span class="hint-chip">Comma / space separated</span>
+        <span class="hint-chip">Mixed text OK</span>
+        <span class="hint-chip">Duplicates removed</span>
+        <button class="parse-btn" onclick="parseAndRender()">
+          ⚡ Parse URLs
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- POPUP WARNING -->
+  <div class="popup-warning" id="popupWarning">
+    <span>⚠</span>
+    <span>Your browser may block pop-ups. Please <strong>allow pop-ups for this page</strong> to open tabs in bulk. Check the address bar for a blocked pop-up icon.</span>
+  </div>
+
+  <!-- TOOLBAR -->
+  <div class="toolbar" id="toolbar" style="display:none">
+    <div class="toolbar-group">
+      <button class="btn btn-primary" onclick="openAll()" id="btnOpenAll">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-1 16H6V6h12v13z"/><path d="M10 10h4v4h-4z"/></svg>
+        <span class="btn-label">Open All Tabs</span>
+      </button>
+      <button class="btn btn-seq" onclick="openSequential()" id="btnSeq">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/></svg>
+        <span class="btn-label">Open in Sequence</span>
+      </button>
+      <button class="btn btn-warn" onclick="pauseResume()" id="btnPause" style="display:none">
+        <svg id="pauseIcon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+        <span class="btn-label" id="pauseLabel">Pause</span>
+      </button>
+    </div>
+
+    <div class="toolbar-divider"></div>
+
+    <div class="delay-control">
+      <span>Delay:</span>
+      <input type="range" id="delaySlider" min="0" max="5000" step="250" value="500"
+        oninput="document.getElementById('delayVal').textContent = this.value/1000 + 's'" />
+      <span class="delay-val" id="delayVal">0.5s</span>
+    </div>
+
+    <div class="toolbar-divider"></div>
+
+    <div class="toolbar-group">
+      <button class="btn btn-ghost" onclick="selectAll()" id="btnSelAll">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-2-7H7v-2h10v2z"/></svg>
+        <span class="btn-label">Select All</span>
+      </button>
+      <button class="btn btn-ghost" onclick="deselectAll()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/></svg>
+        <span class="btn-label">Deselect</span>
+      </button>
+      <button class="btn btn-danger" onclick="clearAll()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        <span class="btn-label">Clear</span>
+      </button>
+    </div>
+
+    <div class="stats-bar" id="statsBar">
+      <div class="stat">Total <span class="stat-val" id="statTotal">0</span></div>
+      <div class="stat">Opened <span class="stat-val" id="statOpened" style="color:var(--success)">0</span></div>
+      <div class="stat">Pending <span class="stat-val" id="statPending" style="color:var(--accent)">0</span></div>
+    </div>
+  </div>
+
+  <!-- PROGRESS -->
+  <div class="progress-section" id="progressSection">
+    <div class="progress-header">
+      <div class="progress-label">
+        <div class="spinner"></div>
+        <span id="progressText">Opening URLs…</span>
+      </div>
+      <div class="progress-pct" id="progressPct">0%</div>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+    <div class="progress-log" id="progressLog">Starting…</div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="results-section" id="resultsSection">
+    <div class="results-header">
+      <div class="results-title">
+        Parsed URLs
+        <span class="results-count" id="resultsCount">0</span>
+      </div>
+      <div class="search-filter">
+        <input type="text" class="filter-input" id="filterInput"
+          placeholder="🔍 Filter URLs…"
+          oninput="filterCards()" />
+        <button class="btn btn-ghost" onclick="openSelected()" id="btnOpenSel">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-1 10h-4v4h-2v-4H8v-2h4V7h2v4h4v2z"/></svg>
+          Open Selected
+        </button>
+      </div>
+    </div>
+    <div class="cards-grid" id="cardsGrid"></div>
+  </div>
+
+  <!-- EMPTY STATE (initial) -->
+  <div class="empty-state" id="emptyState">
+    <div class="empty-icon">🔗</div>
+    <div class="empty-title">No URLs parsed yet</div>
+    <div class="empty-sub">Paste your URLs above and hit "Parse URLs"</div>
+  </div>
+
+</main>
+
+<!-- BOTTOM BAR -->
+<div class="bottom-bar" id="bottomBar">
+  <div class="bottom-sel-info">
+    <strong id="bottomCount">0</strong> selected
+  </div>
+  <button class="btn btn-primary" onclick="openSelected()">
+    ⚡ Open Selected
+  </button>
+  <button class="btn btn-seq" onclick="openSelectedSeq()">
+    ⏱ Open Selected (Sequential)
+  </button>
+  <button class="btn btn-ghost" onclick="markAllPending()">
+    ↺ Reset Status
+  </button>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+// ── STATE ──
+let urls = [];
+let openedCount = 0;
+let seqInterval = null;
+let seqPaused = false;
+let seqQueue = [];
+let seqIndex = 0;
+
+// ── INPUT TOGGLE ──
+function toggleInput() {
+  const body = document.getElementById('inputBody');
+  const btn  = document.getElementById('collapseBtn');
+  const txt  = document.getElementById('collapseTxt');
+  body.classList.toggle('hidden');
+  btn.classList.toggle('collapsed');
+  txt.textContent = body.classList.contains('hidden') ? 'Expand' : 'Collapse';
+}
+
+// ── URL EXTRACTION ──
+function extractURLs(text) {
+  const regex = /https?:\/\/[^\s,<>"'}\]|\\]+/gi;
+  const found = text.match(regex) || [];
+  const cleaned = found.map(u => u.replace(/[.,;:!?)]+$/, ''));
+  return [...new Set(cleaned)];
+}
+
+// ── PARSE ──
+function parseAndRender() {
+  const raw = document.getElementById('urlInput').value;
+  urls = extractURLs(raw);
+
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('resultsSection').classList.remove('active');
+  document.getElementById('progressSection').classList.remove('active');
+
+  if (!urls.length) {
+    showToast('No valid URLs found in the input');
+    document.getElementById('emptyState').style.display = 'flex';
+    return;
+  }
+
+  openedCount = 0;
+  renderCards();
+  document.getElementById('toolbar').style.display = 'flex';
+  document.getElementById('resultsSection').classList.add('active');
+  document.getElementById('emptyState').style.display = 'none';
+
+  // collapse input after parse
+  const body = document.getElementById('inputBody');
+  const btn  = document.getElementById('collapseBtn');
+  const txt  = document.getElementById('collapseTxt');
+  body.classList.add('hidden');
+  btn.classList.add('collapsed');
+  txt.textContent = 'Expand';
+
+  updateStats();
+  updateHeaderBadge();
+  showToast(`✓ Parsed ${urls.length} URL${urls.length !== 1 ? 's' : ''}`);
+}
+
+// ── RENDER CARDS ──
+function renderCards() {
+  const grid = document.getElementById('cardsGrid');
+  grid.innerHTML = '';
+  document.getElementById('resultsCount').textContent = urls.length;
+
+  urls.forEach((url, i) => {
+    const card = buildCard(url, i);
+    grid.appendChild(card);
+  });
+}
+
+function buildCard(url, index) {
+  let domain = '';
+  try { domain = new URL(url).hostname.replace(/^www\./, ''); } catch { domain = url; }
+
+  const card = document.createElement('div');
+  card.className = 'url-card';
+  card.id = `card-${index}`;
+  card.style.animationDelay = `${Math.min(index * 30, 400)}ms`;
+
+  card.innerHTML = `
+    <div class="card-thumb"></div>
+    <div class="card-body">
+      <div class="card-top">
+        <div class="card-favicon" id="fav-${index}">
+          <img src="https://www.google.com/s2/favicons?domain=${domain}&sz=32"
+               alt=""
+               onerror="this.parentElement.textContent='🔗'"
+               onload="this.parentElement.style.background='transparent'" />
+        </div>
+        <div class="card-info">
+          <div class="card-domain">${domain}</div>
+          <div class="card-index">#${index + 1}</div>
+        </div>
+        <span class="card-status status-pending" id="status-${index}">pending</span>
+      </div>
+      <div class="card-url">${url}</div>
+    </div>
+    <div class="card-footer">
+      <label class="check-wrap" title="Select this URL">
+        <input type="checkbox" class="url-check" data-index="${index}"
+          onchange="onCheckChange()" checked />
+      </label>
+      <button class="btn-copy-url" onclick="copyURL(${index})" title="Copy URL">⎘</button>
+      <button class="btn-open-single" onclick="openSingle(${index})">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+        Open
+      </button>
+    </div>
+  `;
+
+  return card;
+}
+
+// ── OPEN SINGLE ──
+function openSingle(index) {
+  const url = urls[index];
+  const w = window.open(url, '_blank');
+  if (!w) { showPopupWarning(); return; }
+  setCardStatus(index, 'opened');
+  openedCount++;
+  updateStats();
+}
+
+// ── OPEN ALL (INSTANT) ──
+function openAll() {
+  const checks = document.querySelectorAll('.url-check:checked');
+  if (!checks.length) { showToast('No URLs selected'); return; }
+  let blocked = false;
+  checks.forEach(c => {
+    const i = +c.dataset.index;
+    const w = window.open(urls[i], '_blank');
+    if (!w) { blocked = true; setCardStatus(i, 'failed'); }
+    else { setCardStatus(i, 'opened'); openedCount++; }
+  });
+  if (blocked) showPopupWarning();
+  updateStats();
+  showToast(`Opened ${openedCount} tabs`);
+}
+
+// ── OPEN SELECTED ──
+function openSelected() {
+  const checks = document.querySelectorAll('.url-check:checked');
+  if (!checks.length) { showToast('No URLs selected'); return; }
+  let blocked = false;
+  checks.forEach(c => {
+    const i = +c.dataset.index;
+    const w = window.open(urls[i], '_blank');
+    if (!w) { blocked = true; setCardStatus(i, 'failed'); }
+    else { setCardStatus(i, 'opened'); openedCount++; }
+  });
+  if (blocked) showPopupWarning();
+  updateStats();
+}
+
+// ── OPEN SEQUENTIAL ──
+function openSequential() {
+  const checks = Array.from(document.querySelectorAll('.url-check:checked'));
+  if (!checks.length) { showToast('No URLs selected'); return; }
+
+  seqQueue = checks.map(c => +c.dataset.index);
+  seqIndex = 0;
+  seqPaused = false;
+
+  showProgress(seqQueue.length);
+  document.getElementById('btnPause').style.display = 'flex';
+  document.getElementById('btnSeq').disabled = true;
+  document.getElementById('btnOpenAll').disabled = true;
+
+  runNextSeq();
+}
+
+function openSelectedSeq() { openSequential(); }
+
+function runNextSeq() {
+  if (seqPaused) return;
+  if (seqIndex >= seqQueue.length) {
+    finishProgress();
+    return;
+  }
+
+  const i = seqQueue[seqIndex];
+  const url = urls[i];
+  updateProgressLog(`Opening #${seqIndex + 1}/${seqQueue.length}: ${url.substring(0, 60)}…`);
+  updateProgressBar(seqIndex, seqQueue.length);
+
+  const w = window.open(url, '_blank');
+  if (!w) { setCardStatus(i, 'failed'); showPopupWarning(); }
+  else { setCardStatus(i, 'opened'); openedCount++; }
+  updateStats();
+
+  seqIndex++;
+
+  const delay = parseInt(document.getElementById('delaySlider').value) || 0;
+  seqInterval = setTimeout(runNextSeq, delay || 100);
+}
+
+function pauseResume() {
+  seqPaused = !seqPaused;
+  const icon = document.getElementById('pauseIcon');
+  const lbl  = document.getElementById('pauseLabel');
+  if (seqPaused) {
+    clearTimeout(seqInterval);
+    icon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+    lbl.textContent = 'Resume';
+    updateProgressLog('Paused. Click Resume to continue.');
+  } else {
+    icon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+    lbl.textContent = 'Pause';
+    runNextSeq();
+  }
+}
+
+// ── PROGRESS ──
+function showProgress(total) {
+  const s = document.getElementById('progressSection');
+  s.classList.add('active');
+  updateProgressBar(0, total);
+  updateProgressLog('Initialising…');
+}
+
+function updateProgressBar(done, total) {
+  const pct = total ? Math.round((done / total) * 100) : 0;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressPct').textContent = pct + '%';
+  document.getElementById('progressText').textContent = `Opening ${done} / ${total} URLs…`;
+}
+
+function updateProgressLog(msg) {
+  document.getElementById('progressLog').textContent = msg;
+}
+
+function finishProgress() {
+  document.getElementById('progressFill').style.width = '100%';
+  document.getElementById('progressPct').textContent = '100%';
+  document.getElementById('progressText').textContent = `Done! Opened ${openedCount} tabs.`;
+  document.getElementById('progressLog').textContent = 'All done ✓';
+  document.querySelector('.spinner').style.display = 'none';
+  document.getElementById('btnPause').style.display = 'none';
+  document.getElementById('btnSeq').disabled = false;
+  document.getElementById('btnOpenAll').disabled = false;
+  showToast(`✓ All ${openedCount} tabs opened`);
+}
+
+// ── CARD STATUS ──
+function setCardStatus(index, status) {
+  const card   = document.getElementById(`card-${index}`);
+  const badge  = document.getElementById(`status-${index}`);
+  if (!card) return;
+  card.classList.remove('opened','failed');
+  badge.className = `card-status status-${status}`;
+  badge.textContent = status;
+  if (status === 'opened') card.classList.add('opened');
+  if (status === 'failed') card.classList.add('failed');
+}
+
+function markAllPending() {
+  urls.forEach((_, i) => setCardStatus(i, 'pending'));
+  openedCount = 0;
+  updateStats();
+  document.getElementById('progressSection').classList.remove('active');
+  document.querySelector('.spinner') && (document.querySelector('.spinner').style.display = '');
+}
+
+// ── SELECT / DESELECT ──
+function selectAll() {
+  document.querySelectorAll('.url-check').forEach(c => c.checked = true);
+  onCheckChange();
+}
+
+function deselectAll() {
+  document.querySelectorAll('.url-check').forEach(c => c.checked = false);
+  onCheckChange();
+}
+
+function onCheckChange() {
+  const total = document.querySelectorAll('.url-check:checked').length;
+  document.getElementById('bottomCount').textContent = total;
+  const bar = document.getElementById('bottomBar');
+  bar.classList.toggle('active', urls.length > 0);
+
+  // card selected highlight
+  document.querySelectorAll('.url-check').forEach(c => {
+    const card = c.closest('.url-card');
+    if (card) card.classList.toggle('selected', c.checked);
+  });
+}
+
+// ── FILTER ──
+function filterCards() {
+  const q = document.getElementById('filterInput').value.toLowerCase();
+  document.querySelectorAll('.url-card').forEach((card, i) => {
+    const url = urls[i] || '';
+    card.style.display = url.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+
+// ── CLEAR ──
+function clearAll() {
+  urls = [];
+  openedCount = 0;
+  document.getElementById('cardsGrid').innerHTML = '';
+  document.getElementById('resultsSection').classList.remove('active');
+  document.getElementById('progressSection').classList.remove('active');
+  document.getElementById('toolbar').style.display = 'none';
+  document.getElementById('bottomBar').classList.remove('active');
+  document.getElementById('emptyState').style.display = 'flex';
+  document.getElementById('urlInput').value = '';
+
+  // re-expand input
+  const body = document.getElementById('inputBody');
+  const btn  = document.getElementById('collapseBtn');
+  const txt  = document.getElementById('collapseTxt');
+  body.classList.remove('hidden');
+  btn.classList.remove('collapsed');
+  txt.textContent = 'Collapse';
+
+  updateHeaderBadge();
+  showToast('Cleared');
+}
+
+// ── COPY ──
+function copyURL(index) {
+  navigator.clipboard.writeText(urls[index]).then(() => {
+    showToast('URL copied!');
+  });
+}
+
+// ── STATS ──
+function updateStats() {
+  const total   = urls.length;
+  const opened  = openedCount;
+  const pending = total - opened;
+  document.getElementById('statTotal').textContent   = total;
+  document.getElementById('statOpened').textContent  = opened;
+  document.getElementById('statPending').textContent = Math.max(0, pending);
+}
+
+function updateHeaderBadge() {
+  document.getElementById('headerBadge').textContent =
+    urls.length ? `${urls.length} URL${urls.length !== 1 ? 's' : ''} ready` : '0 URLs ready';
+}
+
+// ── TOAST ──
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ── POPUP WARNING ──
+function showPopupWarning() {
+  document.getElementById('popupWarning').classList.add('show');
+}
+
+// ── INIT: handle Enter in textarea ──
+document.getElementById('urlInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+    e.preventDefault();
+    parseAndRender();
+  }
+});
+</script>
+</body>
+</html>
