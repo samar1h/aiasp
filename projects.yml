@@ -92,7 +92,7 @@
 
 - title: PDF Merge
   description: Merge pdf files together.
-  icon: fa-solid fa-file-pdf
+  icon: fa-regular fa-file-pdf
   tags: [pdf]
   url: https://samar1h.github.io/aiasp/projects/merge-pdf/
 
