@@ -10,7 +10,7 @@
 
 - title: Counter
   description: Perfect for keeping count of anything—workouts, habits, inventory, and more!
-  icon: https://raw.githubusercontent.com/samar1h/aiasp/refs/heads/main/projects/counter/favicon.ico
+  icon: fa-regular fa-plus-square
   url: https://samar1h.github.io/aiasp/projects/counter/
 
 - title: Barcode Generator
@@ -44,7 +44,7 @@
   url: https://samar1h.github.io/aiasp/projects/age-calculator
 
 - title: Quick Question
-  description: Quick Question is a lightweight web app that lets you create a single multiple-choice question, generate a shareable link, and let others answer it. No tracking, no data storage—just a fun and quick way to ask questions!
+  description: Quick Question is a lightweight web app that lets you create a single multiple-choice question, generate a shareable link, and let others answer it.
   icon: https://raw.githubusercontent.com/samar1h/aiasp/refs/heads/main/projects/quick-question/favicon.ico
   url: https://samar1h.github.io/aiasp/projects/quick-question/
 
