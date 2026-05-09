@@ -7,3 +7,11 @@
   description: Outdated Syllabus of BPharmacy 
   icon: fa-regular fa-file
   url: https://samar1h.github.io/aiasp/projects/bpharm-syllabus/
+
+  
+- title: Counter
+  description: A simple yet useful application built with HTML, CSS, and JavaScript. Perfect for keeping count of anything—workouts, habits, inventory, and more!
+  icon: fa-regular fa-plus
+  url: https://samar1h.github.io/aiasp/projects/counter/
+
+  
