@@ -1,0 +1,161 @@
+{
+  "semester": 4,
+  "program": "Bachelor of Pharmacy (B. Pharm)",
+  "subjects": [
+    {
+      "title": "Pharmaceutical Organic Chemistry –III (Theory)",
+      "course_code": "BP401T",
+      "units": [
+        {
+          "unit": 1,
+          "title": "Stereo isomerism - Optical isomerism",
+          "content": "Optical isomerism –\nOptical activity, enantiomerism, diastereoisomerism, meso compounds\nElements of symmetry, chiral and achiral molecules\nDL system of nomenclature of optical isomers, sequence rules, RS system of nomenclature of optical isomers\nReactions of chiral molecules\nRacemic modification and resolution of racemic mixture.\nAsymmetric synthesis: partial and absolute"
+        },
+        {
+          "unit": 2,
+          "title": "Stereo isomerism - Geometrical isomerism, Conformational isomerism",
+          "content": "Geometrical isomerism\nNomenclature of geometrical isomers (Cis Trans, EZ, Syn Anti systems)\nMethods of determination of configuration of geometrical isomers.\nConformational isomerism in Ethane, n-Butane and Cyclohexane.\nStereo isomerism in biphenyl compounds (Atropisomerism) and conditions for optical activity.\nStereospecific and stereoselective reactions"
+        },
+        {
+          "unit": 3,
+          "title": "Heterocyclic compounds - Part 1",
+          "content": "Heterocyclic compounds:\nNomenclature and classification\nSynthesis, reactions and medicinal uses of following compounds/derivatives\nPyrrole, Furan, and Thiophene\nRelative aromaticity and reactivity of Pyrrole, Furan and Thiophene"
+        },
+        {
+          "unit": 4,
+          "title": "Heterocyclic compounds - Part 2",
+          "content": "Synthesis, reactions and medicinal uses of following compounds/derivatives\nPyrazole, Imidazole, Oxazole and Thiazole.\nPyridine, Quinoline, Isoquinoline, Acridine and Indole. Basicity of pyridine"
+        },
+        {
+          "unit": 5,
+          "title": "Heterocyclic compounds - Part 3 and Reactions of synthetic importance",
+          "content": "Synthesis and medicinal uses of Pyrimidine, Purine, azepines and their derivatives\nReactions of synthetic importance\nMetal hydride reduction (NaBH4 and LiAlH4), Clemmensen reduction, Birch reduction, Wolff Kishner reduction.\nOppenauer-oxidation and Dakin reaction.\nBeckmanns rearrangement and Schmidt rearrangement.\nClaisen-Schmidt condensation"
+        }
+      ]
+    },
+    {
+      "title": "Medicinal Chemistry – I (Theory)",
+      "course_code": "BP402T",
+      "units": [
+        {
+          "unit": 1,
+          "title": "Introduction to Medicinal Chemistry and Drug metabolism",
+          "content": "Introduction to Medicinal Chemistry\nHistory and development of medicinal chemistry\nPhysicochemical properties in relation to biological action\nIonization, Solubility, Partition Coefficient, Hydrogen bonding, Protein binding, Chelation, Bioisosterism, Optical and Geometrical isomerism.\nDrug metabolism\nDrug metabolism principles- Phase I and Phase II.\nFactors affecting drug metabolism including stereo chemical aspects."
+        },
+        {
+          "unit": 2,
+          "title": "Drugs acting on Autonomic Nervous System - Adrenergic",
+          "content": "Drugs acting on Autonomic Nervous System\nAdrenergic Neurotransmitters:\nBiosynthesis and catabolism of catecholamine.\nAdrenergic receptors (Alpha & Beta) and their distribution.\nSympathomimetic agents: SAR of Sympathomimetic agents\nDirect acting: Nor-epinephrine, Epinephrine, Phenylephrine*, Dopamine, Methyldopa, Clonidine, Dobutamine, Isoproterenol, Terbutaline, Salbutamol*, Bitolterol, Naphazoline, Oxymetazoline and Xylometazoline.\nIndirect acting agents: Hydroxyamphetamine, Pseudoephedrine, Propylhexedrine.\nAgents with mixed mechanism: Ephedrine, Metaraminol.\nAdrenergic Antagonists:\nAlpha adrenergic blockers: Tolazoline*, Phentolamine, Phenoxybenzamine, Prazosin, Dihydroergotamine, Methysergide.\nBeta adrenergic blockers: SAR of beta blockers, Propranolol*, Metibranolol, Atenolol, Betazolol, Bisoprolol, Esmolol, Metoprolol, Labetolol, Carvedilol."
+        },
+        {
+          "unit": 3,
+          "title": "Drugs acting on Autonomic Nervous System - Cholinergic",
+          "content": "Cholinergic neurotransmitters:\nBiosynthesis and catabolism of acetylcholine.\nCholinergic receptors (Muscarinic & Nicotinic) and their distribution.\nParasympathomimetic agents: SAR of Parasympathomimetic agents\nDirect acting agents: Acetylcholine, Carbachol*, Bethanechol, Methacholine, Pilocarpine.\nIndirect acting/ Cholinesterase inhibitors (Reversible & Irreversible): Physostigmine, Neostigmine*, Pyridostigmine, Edrophonium chloride, Tacrine hydrochloride, Ambenonium chloride, Isofluorphate, Echothiophate iodide, Parathione, Malathion.\nCholinesterase reactivator: Pralidoxime chloride.\nCholinergic Blocking agents: SAR of cholinolytic agents\nSolanaceous alkaloids and analogues: Atropine sulphate, Hyoscyamine sulphate, Scopolamine hydrobromide, Homatropine hydrobromide, Ipratropium bromide*.\nSynthetic cholinergic blocking agents: Tropicamide, Cyclopentolate hydrochloride, Clidinium bromide, Dicyclomine hydrochloride*, Glycopyrrolate, Methantheline bromide, Propantheline bromide, Benztropine mesylate, Orphenadrine citrate, Biperidine hydrochloride, Procyclidine hydrochloride*, Tridihexethyl chloride, Isopropamide iodide, Ethopropazine hydrochloride."
+        },
+        {
+          "unit": 4,
+          "title": "Drugs acting on Central Nervous System - Sedatives, Hypnotics, Antipsychotics, Anticonvulsants",
+          "content": "A. Sedatives and Hypnotics:\nBenzodiazepines: SAR of Benzodiazepines, Chlordiazepoxide, Diazepam*, Oxazepam, Chlorazepate, Lorazepam, Alprazolam, Zolpidem\nBarbiturtes: SAR of barbiturates, Barbital*, Phenobarbital, Mephobarbital, Amobarbital, Butabarbital, Pentobarbital, Secobarbital\nMiscelleneous:\nAmides & imides: Glutethmide.\nAlcohol & their carbamate derivatives: Meprobomate, Ethchlorvynol.\nAldehyde & their derivatives: Triclofos sodium, Paraldehyde.\nB. Antipsychotics\nPhenothiazeines: SAR of Phenothiazeines - Promazine hydrochloride, Chlorpromazine hydrochloride*, Triflupromazine, Thioridazine hydrochloride, Piperacetazine hydrochloride, Prochlorperazine maleate, Trifluoperazine hydrochloride.\nRing Analogues of Phenothiazeines: Chlorprothixene, Thiothixene, Loxapine succinate, Clozapine.\nFluro buterophenones: Haloperidol, Droperidol, Risperidone.\nBeta amino ketones: Molindone hydrochloride.\nBenzamides: Sulpieride.\nC. Anticonvulsants: SAR of Anticonvulsants, mechanism of anticonvulsant action\nBarbiturates: Phenobarbitone, Methabarbital. Hydantoins:\nPhenytoin*, Mephenytoin, Ethotoin Oxazolidine diones:\nTrimethadione, Paramethadione Succinimides:\nPhensuximide, Methsuximide, Ethosuximide* Urea and monoacylureas: Phenacemide, Carbamazepine*\nBenzodiazepines: Clonazepam\nMiscellaneous: Primidone, Valproic acid , Gabapentin, Felbamate"
+        },
+        {
+          "unit": 5,
+          "title": "Drugs acting on Central Nervous System - General anesthetics, Analgesics, Anti-inflammatory agents",
+          "content": "General anesthetics:\nInhalation anesthetics: Halothane*, Methoxyflurane, Enflurane, Sevoflurane, Isoflurane, Desflurane.\nUltra short acting barbitutrates: Methohexital sodium*, Thiamylal sodium, Thiopental sodium.\nDissociative anesthetics: Ketamine hydrochloride.*\nNarcotic and non-narcotic analgesics\nMorphine and related drugs: SAR of Morphine analogues, Morphine sulphate, Codeine, Meperidine hydrochloride, Anilerdine hydrochloride, Diphenoxylate hydrochloride, Loperamide hydrochloride, Fentanyl citrate*, Methadone hydrochloride*, Propoxyphene hydrochloride, Pentazocine, Levorphanol tartarate.\nNarcotic antagonists: Nalorphine hydrochloride, Levallorphan tartarate, Naloxone hydrochloride.\nAnti-inflammatory agents: Sodium salicylate, Aspirin, Mefenamic acid*, Meclofenamate, Indomethacin, Sulindac, Tolmetin, Zomepriac, Diclofenac, Ketorolac, Ibuprofen*, Naproxen, Piroxicam, Phenacetin, Acetaminophen, Antipyrine, Phenylbutazone."
+        }
+      ]
+    },
+    {
+      "title": "Physical Pharmaceutics-II (Theory)",
+      "course_code": "BP403T",
+      "units": [
+        {
+          "unit": 1,
+          "title": "Colloidal dispersions",
+          "content": "Colloidal dispersions: Classification of dispersed systems & their general characteristics, size & shapes of colloidal particles, classification of colloids & comparative account of their general properties. Optical, kinetic & electrical properties. Effect of electrolytes, coacervation, peptization& protective action."
+        },
+        {
+          "unit": 2,
+          "title": "Rheology and Deformation of solids",
+          "content": "Rheology: Newtonian systems, law of flow, kinematic viscosity, effect of temperature, non-Newtonian systems, pseudoplastic, dilatant, plastic, thixotropy, thixotropy in formulation, determination of viscosity, capillary, falling Sphere, rotational viscometers\nDeformation of solids: Plastic and elastic deformation, Heckel equation, Stress, Strain, Elastic Modulus"
+        },
+        {
+          "unit": 3,
+          "title": "Coarse dispersion",
+          "content": "Coarse dispersion: Suspension, interfacial properties of suspended particles, settling in suspensions, formulation of flocculated and deflocculated suspensions. Emulsions and theories of emulsification, microemulsion and multiple emulsions; Stability of emulsions, preservation of emulsions, rheological properties of emulsions and emulsion formulation by HLB method."
+        },
+        {
+          "unit": 4,
+          "title": "Micromeretics",
+          "content": "Micromeretics: Particle size and distribution, mean particle size, number and weight distribution, particle number, methods for determining particle size by different methods, counting and separation method, particle shape, specific surface, methods for determining surface area, permeability, adsorption, derived properties of powders, porosity, packing arrangement, densities, bulkiness & flow properties."
+        },
+        {
+          "unit": 5,
+          "title": "Drug stability",
+          "content": "Drug stability: Reaction kinetics: zero, pseudo-zero, first & second order, units of basic rate constants, determination of reaction order. Physical and chemical factors influencing the chemical degradation of pharmaceutical product: temperature, solvent, ionic strength, dielectric constant, specific & general acid base catalysis, Simple numerical problems. Stabilization of medicinal agents against common reactions like hydrolysis & oxidation. Accelerated stability testing in expiration dating of pharmaceutical dosage forms. Photolytic degradation and its prevention"
+        }
+      ]
+    },
+    {
+      "title": "Pharmacology-I (Theory)",
+      "course_code": "BP404T",
+      "units": [
+        {
+          "unit": 1,
+          "title": "General Pharmacology - Introduction and Pharmacokinetics",
+          "content": "1. General Pharmacology\na. Introduction to Pharmacology- Definition, historical landmarks and scope of pharmacology, nature and source of drugs, essential drugs concept and routes of drug administration, Agonists, antagonists( competitive and non competitive), spare receptors, addiction, tolerance, dependence, tachyphylaxis, idiosyncrasy, allergy.\nb. Pharmacokinetics- Membrane transport, absorption, distribution, metabolism and excretion of drugs .Enzyme induction, enzyme inhibition, kinetics of elimination"
+        },
+        {
+          "unit": 2,
+          "title": "General Pharmacology - Pharmacodynamics and Drug Discovery",
+          "content": "General Pharmacology\na. Pharmacodynamics- Principles and mechanisms of drug action. Receptor theories and classification of receptors, regulation of receptors. drug receptors interactions signal transduction mechanisms, G-protein–coupled receptors, ion channel receptor, transmembrane enzyme linked receptors, transmembrane JAK-STAT binding receptor and receptors that regulate transcription factors, dose response relationship, therapeutic index, combined effects of drugs and factors modifying drug action.\nb. Adverse drug reactions.\nc. Drug interactions (pharmacokinetic and pharmacodynamic)\nd. Drug discovery and clinical evaluation of new drugs -Drug discovery phase, preclinical evaluation phase, clinical trial phase, phases of clinical trials and pharmacovigilance."
+        },
+        {
+          "unit": 3,
+          "title": "Pharmacology of drugs acting on peripheral nervous system",
+          "content": "2. Pharmacology of drugs acting on peripheral nervous system\na. Organization and function of ANS.\nb.Neurohumoral transmission,co-transmission and classification of neurotransmitters.\nc. Parasympathomimetics, Parasympatholytics, Sympathomimetics, sympatholytics.\nd. Neuromuscular blocking agents and skeletal muscle relaxants (peripheral).\ne. Local anesthetic agents.\nf. Drugs used in myasthenia gravis and glaucoma"
+        },
+        {
+          "unit": 4,
+          "title": "Pharmacology of drugs acting on central nervous system - Part 1",
+          "content": "3. Pharmacology of drugs acting on central nervous system\na. Neurohumoral transmission in the C.N.S.special emphasis on importance of various neurotransmitters like with GABA, Glutamate, Glycine, serotonin, dopamine.\nb. General anesthetics and pre-anesthetics.\nc. Sedatives, hypnotics and centrally acting muscle relaxants.\nd. Anti-epileptics\ne. Alcohols and disulfiram"
+        },
+        {
+          "unit": 5,
+          "title": "Pharmacology of drugs acting on central nervous system - Part 2",
+          "content": "3. Pharmacology of drugs acting on central nervous system\na. Psychopharmacological agents: Antipsychotics, antidepressants, anti-anxiety agents, anti-manics and hallucinogens.\nb. Drugs used in Parkinsons disease and Alzheimer’s disease.\nc. CNS stimulants and nootropics.\nd. Opioid analgesics and antagonists\ne. Drug addiction, drug abuse, tolerance and dependence."
+        }
+      ]
+    },
+    {
+      "title": "Pharmacognosy and Phytochemistry I (Theory)",
+      "course_code": "BP405T",
+      "units": [
+        {
+          "unit": 1,
+          "title": "Introduction to Pharmacognosy, Classification, Quality control",
+          "content": "Introduction to Pharmacognosy:\n(a) Definition, history, scope and development of Pharmacognosy\n(b) Sources of Drugs – Plants, Animals, Marine & Tissue culture\n(c) Organized drugs, unorganized drugs (dried latex, dried juices, dried extracts, gums and mucilages, oleoresins and oleo- gum -resins).\nClassification of drugs:\nAlphabetical, morphological, taxonomical, chemical, pharmacological, chemo and sero taxonomical classification of drugs\nQuality control of Drugs of Natural Origin:\nAdulteration of drugs of natural origin. Evaluation by organoleptic, microscopic, physical, chemical and biological methods and properties.\nQuantitative microscopy of crude drugs including lycopodium spore method, leafconstants, camera lucida and diagrams of microscopic objects to scale with camera lucida."
+        },
+        {
+          "unit": 2,
+          "title": "Cultivation, Collection, Processing and Storage of Natural Drugs",
+          "content": "Cultivation, Collection, Processing and storage of drugs of natural origin:\nCultivation and Collection of drugs of natural origin\nFactors influencing cultivation of medicinal plants.\nPlant hormones and their applications.\nPolyploidy, mutation and hybridization with reference to medicinal plants\nConservation of medicinal plants"
+        },
+        {
+          "unit": 3,
+          "title": "Plant tissue culture",
+          "content": "Plant tissue culture:\nHistorical development of plant tissue culture, types of cultures, Nutritional requirements, growth and their maintenance.\nApplications of plant tissue culture in pharmacognosy.\nEdible vaccines"
+        },
+        {
+          "unit": 4,
+          "title": "Pharmacognosy in various systems of medicine, Introduction to secondary metabolites",
+          "content": "Pharmacognosy in various systems of medicine:\nRole of Pharmacognosy in allopathy and traditional systems of medicine namely, Ayurveda, Unani, Siddha, Homeopathy and Chinese systems of medicine.\nIntroduction to secondary metabolites:\nDefinition, classification, properties and test for identification of Alkaloids, Glycosides, Flavonoids, Tannins, Volatile oil and Resins"
+        },
+        {
+          "unit": 5,
+          "title": "Study of drugs of natural origin - Plant Products and Primary metabolites",
+          "content": "Study of biological source, chemical nature and uses of drugs of natural origin containing following drugs\nPlant Products:\nFibers - Cotton, Jute, Hemp\nHallucinogens, Teratogens, Natural allergens\nPrimary metabolites:\nGeneral introduction, detailed study with respect to chemistry, sources, preparation, evaluation, preservation, storage, therapeutic used and commercial utility as Pharmaceutical Aids and/or Medicines for the following Primary metabolites:\nCarbohydrates: Acacia, Agar, Tragacanth, Honey\nProteins and Enzymes : Gelatin, casein, proteolytic enzymes (Papain, bromelain, serratiopeptidase, urokinase, streptokinase, pepsin).\nLipids(Waxes, fats, fixed oils) : Castor oil, Chaulmoogra oil, Wool Fat, Bees Wax\nMarine Drugs:\nNovel medicinal agents from marine sources"
+        }
+      ]
+    }
+  ]
+}

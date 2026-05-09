@@ -1,0 +1,141 @@
+{
+  "semester": 7,
+  "program": "Bachelor of Pharmacy (B. Pharm)",
+  "subjects": [
+    {
+      "title": "Instrumental Methods of Analysis (Theory)",
+      "course_code": "BP701T",
+      "units": [
+        {
+          "unit": 1,
+          "title": "UV Visible spectroscopy, Fluorimetry",
+          "content": "UV Visible spectroscopy\nElectronic transitions, chromophores, auxochromes, spectral shifts, solvent effect on absorption spectra, Beer and Lambert’s law, Derivation and deviations.\nInstrumentation - Sources of radiation, wavelength selectors, sample cells, detectors- Photo tube, Photomultiplier tube, Photo voltaic cell, Silicon Photodiode.\nApplications - Spectrophotometric titrations, Single component and multi component analysis\nFluorimetry\nTheory, Concepts of singlet, doublet and triplet electronic states, internal and external conversions, factors affecting fluorescence, quenching, instrumentation and applications"
+        },
+        {
+          "unit": 2,
+          "title": "IR spectroscopy, Flame Photometry, Atomic absorption spectroscopy, Nepheloturbidometry",
+          "content": "IR spectroscopy\nIntroduction, fundamental modes of vibrations in poly atomic molecules, sample handling, factors affecting vibrations\nInstrumentation - Sources of radiation, wavelength selectors, detectors - Golay cell, Bolometer, Thermocouple, Thermister, Pyroelectric detector and applications\nFlame Photometry-Principle, interferences, instrumentation and applications\nAtomic absorption spectroscopy- Principle, interferences, instrumentation and applications\nNepheloturbidometry- Principle, instrumentation and applications"
+        },
+        {
+          "unit": 3,
+          "title": "Introduction to chromatography",
+          "content": "Introduction to chromatography\nAdsorption and partition column chromatography-Methodology, advantages, disadvantages and applications.\nThin layer chromatography- Introduction, Principle, Methodology, Rf values, advantages, disadvantages and applications.\nPaper chromatography-Introduction, methodology, development techniques, advantages, disadvantages and applications\nElectrophoresis– Introduction, factors affecting electrophoretic mobility, Techniques of paper, gel, capillary electrophoresis, applications"
+        },
+        {
+          "unit": 4,
+          "title": "Gas chromatography, High performance liquid chromatography (HPLC)",
+          "content": "Gas chromatography - Introduction, theory, instrumentation, derivatization, temperature programming, advantages, disadvantages and applications\nHigh performance liquid chromatography (HPLC)-Introduction, theory, instrumentation, advantages and applications."
+        },
+        {
+          "unit": 5,
+          "title": "Ion exchange chromatography, Gel chromatography, Affinity chromatography",
+          "content": "Ion exchange chromatography- Introduction, classification, ion exchange resins, properties, mechanism of ion exchange process, factors affecting ion exchange, methodology and applications\nGel chromatography- Introduction, theory, instrumentation and applications\nAffinity chromatography- Introduction, theory, instrumentation and applications"
+        }
+      ]
+    },
+    {
+      "title": "Industrial PharmacyII (Theory)",
+      "course_code": "BP702T",
+      "units": [
+        {
+          "unit": 1,
+          "title": "Pilot plant scale up techniques",
+          "content": "Pilot plant scale up techniques: General considerations - including significance of personnel requirements, space requirements, raw materials, Pilot plant scale up considerations for solids, liquid orals, semi solids and relevant documentation, SUPAC guidelines, Introduction to platform technology"
+        },
+        {
+          "unit": 2,
+          "title": "Technology development and transfer",
+          "content": "Technology development and transfer: WHO guidelines for Technology Transfer(TT): Terminology, Technology transfer protocol, Quality risk management, Transfer from R & D to production (Process, packaging and cleaning), Granularity of TT Process (API, excipients, finished products, packaging materials) Documentation, Premises and equipments, qualification and validation, quality control, analytical method transfer, Approved regulatory bodies and agencies, Commercialization - practical aspects and problems (case studies), TT agencies in India - APCTD, NRDC, TIFAC, BCIL, TBSE / SIDBI; TT related documentation - confidentiality agreement, licensing, MoUs, legal issues"
+        },
+        {
+          "unit": 3,
+          "title": "Regulatory affairs and requirements for drug approval",
+          "content": "Regulatory affairs: Introduction, Historical overview of Regulatory Affairs, Regulatory authorities, Role of Regulatory affairs department, Responsibility of Regulatory Affairs Professionals\nRegulatory requirements for drug approval: Drug Development Teams, Non-Clinical Drug Development, Pharmacology, Drug Metabolism and Toxicology, General considerations of Investigational New Drug (IND) Application, Investigator’s Brochure (IB) and New Drug Application (NDA), Clinical research / BE studies, Clinical Research Protocols, Biostatistics in Pharmaceutical Product Development, Data Presentation for FDA Submissions, Management of Clinical Studies."
+        },
+        {
+          "unit": 4,
+          "title": "Quality management systems",
+          "content": "Quality management systems: Quality management & Certifications: Concept of Quality, Total Quality Management, Quality by Design (QbD), Six Sigma concept, Out of Specifications (OOS), Change control, Introduction to ISO 9000 series of quality systems standards, ISO 14000, NABL, GLP"
+        },
+        {
+          "unit": 5,
+          "title": "Indian Regulatory Requirements",
+          "content": "Indian Regulatory Requirements: Central Drug Standard Control Organization (CDSCO) and State Licensing Authority: Organization, Responsibilities, Certificate of Pharmaceutical Product (COPP), Regulatory requirements and approval procedures for New Drugs."
+        }
+      ]
+    },
+    {
+      "title": "Pharmacy Practice (Theory)",
+      "course_code": "BP703T",
+      "units": [
+        {
+          "unit": 1,
+          "title": "Hospital organization, Hospital pharmacy, Adverse drug reaction, Community Pharmacy",
+          "content": "a) Hospital and it’s organization\nDefinition, Classification of hospital- Primary, Secondary and Tertiary hospitals, Classification based on clinical and non- clinical basis, Organization Structure of a Hospital, and Medical staffs involved in the hospital and their functions.\nb) Hospital pharmacy and its organization\nDefinition, functions of hospital pharmacy, Organization structure, Location, Layout and staff requirements, and Responsibilities and functions of hospital pharmacists.\nc) Adverse drug reaction\nClassifications - Excessive pharmacological effects, secondary pharmacological effects, idiosyncrasy, allergic drug reactions, genetically determined toxicity, toxicity following sudden withdrawal of drugs, Drug interaction- beneficial interactions, adverse interactions, and pharmacokinetic drug interactions, Methods for detecting drug interactions, spontaneous case reports and record linkage studies, and Adverse drug reaction reporting and management.\nd) Community Pharmacy\nOrganization and structure of retail and wholesale drug store, types and design, Legal requirements for establishment and maintenance of a drug store, Dispensing of proprietary products, maintenance of records of retail and wholesale drug store."
+        },
+        {
+          "unit": 2,
+          "title": "Drug distribution, Hospital formulary, Therapeutic drug monitoring, Medication adherence, Patient medication history, Community pharmacy management",
+          "content": "a) Drug distribution system in a hospital\nDispensing of drugs to inpatients, types of drug distribution systems, charging policy and labelling, Dispensing of drugs to ambulatory patients, and Dispensing of controlled drugs.\nb) Hospital formulary\nDefinition, contents of hospital formulary, Differentiation of hospital formulary and Drug list, preparation and revision, and addition and deletion of drug from hospital formulary.\nc) Therapeutic drug monitoring\nNeed for Therapeutic Drug Monitoring, Factors to be considered during the Therapeutic Drug Monitoring, and Indian scenario for Therapeutic Drug Monitoring.\nd) Medication adherence\nCauses of medication non-adherence, pharmacist role in the medication adherence, and monitoring of patient medication adherence.\ne) Patient medication history interview\nNeed for the patient medication history interview, medication interview forms.\nf) Community pharmacy management\nFinancial, materials, staff, and infrastructure requirements."
+        },
+        {
+          "unit": 3,
+          "title": "Pharmacy and therapeutic committee, Drug information services, Patient counseling, Education and training program, Prescribed medication order",
+          "content": "a) Pharmacy and therapeutic committee\nOrganization, functions, Policies of the pharmacy and therapeutic committee in including drugs into formulary, inpatient and outpatient prescription, automatic stop order, and emergency drug list preparation.\nb) Drug information services\nDrug and Poison information centre, Sources of drug information, Computerised services, and storage and retrieval of information.\nc) Patient counseling\nDefinition of patient counseling; steps involved in patient counseling, and Special cases that require the pharmacist\nd) Education and training program in the hospital\nRole of pharmacist in the education and training program, Internal and external training program, Services to the nursing homes/clinics, Code of ethics for community pharmacy, and Role of pharmacist in the interdepartmental communication and community health education.\ne) Prescribed medication order and communication skills\nPrescribed medication order- interpretation and legal requirements, and Communication skills- communication with prescribers and patients."
+        },
+        {
+          "unit": 4,
+          "title": "Budget preparation, Clinical Pharmacy, Over the counter (OTC) sales",
+          "content": "a) Budget preparation and implementation\nBudget preparation and implementation\nb) Clinical Pharmacy\nIntroduction to Clinical Pharmacy, Concept of clinical pharmacy, functions and responsibilities of clinical pharmacist, Drug therapy monitoring - medication chart review, clinical review, pharmacist intervention, Ward round participation, Medication history and Pharmaceutical care.\nDosing pattern and drug therapy based on Pharmacokinetic & disease pattern.\nc) Over the counter (OTC) sales\nIntroduction and sale of over the counter, and Rational use of common over the counter medications."
+        },
+        {
+          "unit": 5,
+          "title": "Drug store management, Investigational use of drugs, Interpretation of Clinical Laboratory Tests",
+          "content": "a) Drug store management and inventory control\nOrganisation of drug store, types of materials stocked and storage conditions, Purchase and inventory control: principles, purchase procedure, purchase order, procurement and stocking, Economic order quantity, Reorder quantity level, and Methods used for the analysis of the drug expenditure\nb) Investigational use of drugs\nDescription, principles involved, classification, control, identification, role of hospital pharmacist, advisory committee.\nc) Interpretation of Clinical Laboratory Tests\nBlood chemistry, hematology, and urinalysis"
+        }
+      ]
+    },
+    {
+      "title": "Novel Drug Delivery Systems (Theory)",
+      "course_code": "BP704T",
+      "units": [
+        {
+          "unit": 1,
+          "title": "Controlled drug delivery systems, Polymers",
+          "content": "Controlled drug delivery systems: Introduction, terminology/definitions and rationale, advantages, disadvantages, selection of drug candidates.Approaches to design controlled release formulations based on diffusion, dissolution and ion exchange principles. Physicochemical and biological properties of drugs relevant to controlled release formulations\nPolymers: Introduction, classification, properties, advantages and application of polymers in formulation of controlled release drug delivery systems."
+        },
+        {
+          "unit": 2,
+          "title": "Microencapsulation, Mucosal Drug Delivery system, Implantable Drug Delivery Systems",
+          "content": "Microencapsulation: Definition, advantages and disadvantages, microspheres /microcapsules, microparticles, methods of microencapsulation, applications\nMucosal Drug Delivery system: Introduction, Principles of bioadhesion / mucoadhesion, concepts, advantages and disadvantages, transmucosal permeability and formulation considerations of buccal delivery systems\nImplantable Drug Delivery Systems:Introduction, advantages and disadvantages, concept of implantsand osmotic pump"
+        },
+        {
+          "unit": 3,
+          "title": "Transdermal Drug Delivery Systems, Gastroretentive drug delivery systems, Nasopulmonary drug delivery system",
+          "content": "Transdermal Drug Delivery Systems: Introduction, Permeation through skin, factors affecting permeation, permeation enhancers, basic components of TDDS, formulation approaches\nGastroretentive drug delivery systems: Introduction, advantages, disadvantages, approaches for GRDDS – Floating, high density systems, inflatable and gastroadhesive systems and their applications\nNasopulmonary drug delivery system: Introduction to Nasal and Pulmonary routes of drug delivery, Formulation of Inhalers (dry powder and metered dose), nasal sprays, nebulizers"
+        },
+        {
+          "unit": 4,
+          "title": "Targeted drug Delivery",
+          "content": "Targeted drug Delivery: Concepts and approaches advantages and disadvantages, introduction to liposomes, niosomes, nanoparticles, monoclonal antibodies and their applications"
+        },
+        {
+          "unit": 5,
+          "title": "Ocular Drug Delivery Systems, Intrauterine Drug Delivery Systems",
+          "content": "Ocular Drug Delivery Systems: Introduction, intra ocular barriers and methods to overcome –Preliminary study, ocular formulations and ocuserts\nIntrauterine Drug Delivery Systems: Introduction, advantages and disadvantages, development of intra uterine devices (IUDs) and applications"
+        }
+      ]
+    },
+    {
+      "title": "Practice School*",
+      "course_code": "BP706PS",
+      "units": [
+        {
+          "unit": 1,
+          "title": "Practice School Activities",
+          "content": "Every candidate shall undergo practice school for a period of 150 hours evenly distributed throughout the semester. The student shall opt any one of the domains for practice school declared by the program committee from time to time. At the end of the practice school, every student shall submit a printed report (in triplicate) on the practice school he/she attended (not more than 25 pages). The report submitted by the student, knowledge and skills acquired by the student through practice school shall be evaluated by the subject experts at college level and grade point shall be awarded. (Note: This is a Non University Examination)"
+        }
+      ]
+    }
+  ]
+}

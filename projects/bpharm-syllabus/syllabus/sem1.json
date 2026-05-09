@@ -1,0 +1,265 @@
+{
+  "semester": 1,
+  "program": "Bachelor of Pharmacy (B. Pharm)",
+  "subjects": [
+    {
+      "title": "Human Anatomy and Physiology I – Theory",
+      "course_code": "BP101T",
+      "total_hours": 45,
+      "units": [
+        {
+          "unit": 1,
+          "title": "Introduction to human body, Cellular level of organization, Tissue level of organization",
+          "hours": 10,
+          "content": "Introduction to human body\nDefinition and scope of anatomy and physiology, levels of structural organization and body systems, basic life processes, homeostasis, basic anatomical terminology.\nCellular level of organization\nStructure and functions of cell, transport across cell membrane, cell division, cell junctions. General principles of cell communication, intracellular signaling pathway activation by extracellular signal molecule, Forms of intracellular signaling: a) Contact-dependent b) Paracrine c) Synaptic d) Endocrine\nTissue level of organization\nClassification of tissues, structure, location and functions of epithelial, muscular and nervous and connective tissues."
+        },
+        {
+          "unit": 2,
+          "title": "Integumentary system, Skeletal system",
+          "hours": 10,
+          "content": "Integumentary system\nStructure and functions of skin\nSkeletal system\nDivisions of skeletal system, types of bone, salient features and functions of bones of axial and appendicular skeletal system\nOrganization of skeletal muscle, physiology of muscle contraction, neuromuscular junction"
+        },
+        {
+          "unit": 3,
+          "title": "Joints, Body fluids and blood, Lymphatic system",
+          "hours": 10,
+          "content": "Joints\nStructural and functional classification, types of joints movements and its articulation\nBody fluids and blood\nBody fluids, composition and functions of blood, hemopoeisis, formation of hemoglobin, anemia, mechanisms of coagulation, blood grouping, Rh factors, transfusion, its significance and disorders of blood, Reticulo endothelial system.\nLymphatic system\nLymphatic organs and tissues, lymphatic vessels, lymph circulation and functions of lymphatic system"
+        },
+        {
+          "unit": 4,
+          "title": "Peripheral nervous system, Special senses",
+          "hours": 8,
+          "content": "Peripheral nervous system:\nClassification of peripheral nervous system: Structure and functions of sympathetic and parasympathetic nervous system.\nOrigin and functions of spinal and cranial nerves.\nSpecial senses\nStructure and functions of eye, ear, nose and tongue and their disorders."
+        },
+        {
+          "unit": 5,
+          "title": "Cardiovascular system",
+          "hours": 7,
+          "content": "Cardiovascular system\nHeart – anatomy of heart, blood circulation, blood vessels, structure and functions of artery, vein and capillaries, elements of conduction system of heart and heart beat, its regulation by autonomic nervous system, cardiac output, cardiac cycle. Regulation of blood pressure, pulse, electrocardiogram and disorders of heart."
+        }
+      ]
+    },
+    {
+      "title": "Pharmaceutical Analysis I – Theory",
+      "course_code": "BP102T",
+      "total_hours": 45,
+      "units": [
+        {
+          "unit": 1,
+          "title": "Pharmaceutical analysis, Errors, Pharmacopoeia",
+          "hours": 10,
+          "content": "(a) Pharmaceutical analysis- Definition and scope\ni) Different techniques of analysis\nii) Methods of expressing concentration\niii) Primary and secondary standards.\niv) Preparation and standardization of various molar and normal solutions- Oxalic acid, sodium hydroxide, hydrochloric acid, sodium thiosulphate, sulphuric acid, potassium permanganate and ceric ammonium sulphate\n(b)Errors: Sources of errors, types of errors, methods of minimizing errors, accuracy, precision and significant figures\n(c)Pharmacopoeia, Sources of impurities in medicinal agents,limit tests."
+        },
+        {
+          "unit": 2,
+          "title": "Acid base titration, Non aqueous titration",
+          "hours": 10,
+          "content": "Acid base titration: Theories of acid base indicators, classification of acid base titrations and theory involved in titrations of strong, weak, and very weak acids and bases, neutralization curves\nNon aqueous titration: Solvents, acidimetry and alkalimetry titration and estimation of Sodium benzoate and Ephedrine HCl"
+        },
+        {
+          "unit": 3,
+          "title": "Precipitation titrations, Complexometric titration, Gravimetry, Diazotisation titration",
+          "hours": 10,
+          "content": "Precipitation titrations: Mohr’s method, Volhard’s, Modified Volhard’s, Fajans method, estimation of sodium chloride.\nComplexometric titration: Classification, metal ion indicators, masking and demasking reagents, estimation of Magnesium sulphate, and calcium gluconate.\nGravimetry: Principle and steps involved in gravimetric analysis. Purity of the precipitate: co-precipitation and post precipitation, Estimation of barium sulphate.\nBasic Principles,methods and application of diazotisation titration."
+        },
+        {
+          "unit": 4,
+          "title": "Redox titrations",
+          "hours": 8,
+          "content": "Redox titrations\n(a) Concepts of oxidation and reduction\n(b) Types of redox titrations (Principles and applications)\nCerimetry, Iodimetry, Iodometry, Bromatometry, Dichrometry, Titration with potassium iodate"
+        },
+        {
+          "unit": 5,
+          "title": "Electrochemical methods of analysis",
+          "hours": 7,
+          "content": "Electrochemical methods of analysis\nConductometry- Introduction, Conductivity cell, Conductometric titrations, applications.\nPotentiometry - Electrochemical cell, construction and working of reference (Standard hydrogen, silver chloride electrode and calomel electrode) and indicator electrodes (metal electrodes and glass electrode), methods to determine end point of potentiometric titration and applications.\nPolarography - Principle, Ilkovic equation, construction and working of dropping mercury electrode and rotating platinum electrode, applications"
+        }
+      ]
+    },
+    {
+      "title": "Pharmaceutics I – Theory",
+      "course_code": "BP103T",
+      "total_hours": 45,
+      "units": [
+        {
+          "unit": 1,
+          "title": "Historical background, Dosage forms, Prescription, Posology",
+          "hours": 10,
+          "content": "Historical background and development of profession of pharmacy: History of profession of Pharmacy in India in relation to pharmacy education, industry and organization, Pharmacy as a career, Pharmacopoeias: Introduction to IP, BP, USP and Extra Pharmacopoeia.\nDosage forms: Introduction to dosage forms, classification and definitions\nPrescription: Definition, Parts of prescription, handling of Prescription and Errors in prescription.\nPosology: Definition, Factors affecting posology. Pediatric dose calculations based on age, body weight and body surface area."
+        },
+        {
+          "unit": 2,
+          "title": "Pharmaceutical calculations, Powders, Liquid dosage forms",
+          "hours": 10,
+          "content": "Pharmaceutical calculations: Weights and measures – Imperial & Metric system, Calculations involving percentage solutions, alligation, proof spirit and isotonic solutions based on freezing point and molecular weight.\nPowders: Definition, classification, advantages and disadvantages,Simple & compound powders – official preparations, dusting powders, effervescent, efflorescent and hygroscopic powders, eutectic mixtures. Geometric dilutions.\nLiquid dosage forms: Advantages and disadvantages of liquid dosage forms. Excipients used in formulation of liquid dosage forms. Solubility enhancement techniques"
+        },
+        {
+          "unit": 3,
+          "title": "Monophasic liquids, Biphasic liquids",
+          "hours": 8,
+          "content": "Monophasic liquids: Definitions and preparations of Gargles, Mouthwashes, Throat Paint, Eardrops, Nasal drops, Enemas, Syrups, Elixirs, Liniments and Lotions.\nBiphasic liquids:\nSuspensions: Definition, advantages and disadvantages, classifications, Preparation of suspensions; Flocculated and Deflocculated suspension & stability problems and methods to overcome.\nEmulsions: Definition, classification, emulsifying agent, test for the identification of type ofEmulsion, Methods of preparation & stability problems and methods to overcome."
+        },
+        {
+          "unit": 4,
+          "title": "Suppositories, Pharmaceutical incompatibilities",
+          "hours": 8,
+          "content": "Suppositories: Definition, types, advantages and disadvantages, types of bases, methods of preparations. Displacement value & its calculations, evaluation of suppositories.\nPharmaceutical incompatibilities: Definition, classification, physical, chemical and therapeutic incompatibilities with examples."
+        },
+        {
+          "unit": 5,
+          "title": "Semisolid dosage forms",
+          "hours": 7,
+          "content": "Semisolid dosage forms: Definitions, classification, mechanisms and factors influencing dermal penetration of drugs. Preparation of ointments, pastes, creams and gels. Excipients used in semi solid dosage forms. Evaluation of semi solid dosages forms"
+        }
+      ]
+    },
+    {
+      "title": "Pharmaceutical Inorganic Chemistry – Theory",
+      "course_code": "BP104T",
+      "total_hours": 45,
+      "units": [
+        {
+          "unit": 1,
+          "title": "Impurities in pharmaceutical substances, General methods of preparation",
+          "hours": 10,
+          "content": "Impurities in pharmaceutical substances: History of Pharmacopoeia, Sources and types of impurities, principle involved in the limit test for Chloride, Sulphate, Iron, Arsenic, Lead and Heavy metals, modified limit test for Chloride and Sulphate\nGeneral methods of preparation, assay for the compounds superscripted with asterisk (*), properties and medicinal uses of inorganic compounds belonging to the following classes"
+        },
+        {
+          "unit": 2,
+          "title": "Acids, Bases and Buffers, Major extra and intracellular electrolytes, Dental products",
+          "hours": 10,
+          "content": "Acids, Bases and Buffers: Buffer equations and buffer capacity in general, buffers in pharmaceutical systems, preparation, stability, buffered isotonic solutions, measurements of tonicity, calculations and methods of adjusting isotonicity.\nMajor extra and intracellular electrolytes: Functions of major physiological ions, Electrolytes used in the replacement therapy: Sodium chloride*, Potassium chloride, Calcium gluconate* and Oral Rehydration Salt (ORS), Physiological acid base balance.\nDental products: Dentifrices, role of fluoride in the treatment of dental caries, Desensitizing agents, Calcium carbonate, Sodium fluoride, and Zinc eugenol cement."
+        },
+        {
+          "unit": 3,
+          "title": "Gastrointestinal agents",
+          "hours": 10,
+          "content": "Gastrointestinal agents\nAcidifiers: Ammonium chloride* and Dil. HCl\nAntacid: Ideal properties of antacids, combinations of antacids, Sodium Bicarbonate*, Aluminum hydroxide gel, Magnesium hydroxide mixture\nCathartics: Magnesium sulphate, Sodium orthophosphate, Kaolin and Bentonite\nAntimicrobials: Mechanism, classification, Potassium permanganate, Boric acid, Hydrogen peroxide*, Chlorinated lime*, Iodine and its preparations"
+        },
+        {
+          "unit": 4,
+          "title": "Miscellaneous compounds",
+          "hours": 8,
+          "content": "Miscellaneous compounds\nExpectorants: Potassium iodide, Ammonium chloride*.\nEmetics: Copper sulphate*, Sodium potassium tartarate\nHaematinics: Ferrous sulphate*, Ferrous gluconate\nPoison and Antidote: Sodium thiosulphate*, Activated charcoal, Sodium nitrite333\nAstringents: Zinc Sulphate, Potash Alum"
+        },
+        {
+          "unit": 5,
+          "title": "Radiopharmaceuticals",
+          "hours": 7,
+          "content": "Radiopharmaceuticals: Radio activity, Measurement of radioactivity, Properties of α, β, γ radiations, Half life, radio isotopes and study of radio isotopes - Sodium iodide I131, Storage conditions, precautions & pharmaceutical application of radioactive substances."
+        }
+      ]
+    },
+    {
+      "title": "Communication skills – Theory*",
+      "course_code": "BP105T",
+      "total_hours": 30,
+      "units": [
+        {
+          "unit": 1,
+          "title": "Communication Skills Basics, Barriers, Perspectives",
+          "hours": 7,
+          "content": "Communication Skills: Introduction, Definition, The Importance of Communication, The Communication Process – Source, Message, Encoding, Channel, Decoding, Receiver, Feedback, Context\nBarriers to communication: Physiological Barriers, Physical Barriers, Cultural Barriers, Language Barriers, Gender Barriers, Interpersonal Barriers, Psychological Barriers, Emotional barriers\nPerspectives in Communication: Introduction, Visual Perception, Language, Other factors affecting our perspective - Past Experiences, Prejudices, Feelings, Environment"
+        },
+        {
+          "unit": 2,
+          "title": "Elements of Communication, Communication Styles",
+          "hours": 7,
+          "content": "Elements of Communication: Introduction, Face to Face Communication - Tone of Voice, Body Language (Non-verbal communication), Verbal Communication, Physical Communication\nCommunication Styles: Introduction, The Communication Styles Matrix with example for each -Direct Communication Style, Spirited Communication Style, Systematic Communication Style, Considerate Communication Style"
+        },
+        {
+          "unit": 3,
+          "title": "Listening Skills, Written Communication",
+          "hours": 7,
+          "content": "Basic Listening Skills: Introduction, Self-Awareness, Active Listening, Becoming an Active Listener, Listening in Difficult Situations\nEffective Written Communication: Introduction, When and When Not to Use Written Communication - Complexity of the Topic, Amount of Discussion’ Required, Shades of Meaning, Formal Communication\nWriting Effectively: Subject Lines, Put the Main Point First, Know Your Audience, Organization of the Message"
+        },
+        {
+          "unit": 4,
+          "title": "Interview Skills, Presentations",
+          "hours": 5,
+          "content": "Interview Skills: Purpose of an interview, Do’s and Dont’s of an interview\nGiving Presentations: Dealing with Fears, Planning your Presentation, Structuring Your Presentation, Delivering Your Presentation, Techniques of Delivery"
+        },
+        {
+          "unit": 5,
+          "title": "Group Discussion",
+          "hours": 4,
+          "content": "Group Discussion: Introduction, Communication skills in group discussion, Do’s and Dont’s of group discussion"
+        }
+      ]
+    },
+    {
+      "title": "Remedial Biology – Theory*",
+      "course_code": "BP106RBT",
+      "total_hours": 30,
+      "units": [
+        {
+          "unit": 1,
+          "title": "Living world, Morphology of Flowering plants",
+          "hours": 7,
+          "content": "Living world:\nDefinition and characters of living organisms\nDiversity in the living world\nBinomial nomenclature\nFive kingdoms of life and basis of classification. Salient features of Monera, Potista, Fungi, Animalia and Plantae, Virus,\nMorphology of Flowering plants\nMorphology of different parts of flowering plants – Root, stem, inflorescence, flower, leaf, fruit, seed.\nGeneral Anatomy of Root, stem, leaf of monocotyledons & Dicotylidones."
+        },
+        {
+          "unit": 2,
+          "title": "Body fluids and circulation, Digestion and Absorption, Breathing and respiration",
+          "hours": 7,
+          "content": "Body fluids and circulation\nComposition of blood, blood groups, coagulation of blood\nComposition and functions of lymph\nHuman circulatory system\nStructure of human heart and blood vessels\nCardiac cycle, cardiac output and ECG\nDigestion and Absorption\nHuman alimentary canal and digestive glands\nRole of digestive enzymes\nDigestion, absorption and assimilation of digested food\nBreathing and respiration\nHuman respiratory system\nMechanism of breathing and its regulation\nExchange of gases, transport of gases and regulation of respiration\nRespiratory volumes"
+        },
+        {
+          "unit": 3,
+          "title": "Excretory products, Neural control, Chemical coordination, Human reproduction",
+          "hours": 7,
+          "content": "Excretory products and their elimination\nModes of excretion\nHuman excretory system- structure and function\nUrine formation\nRennin angiotensin system\nNeural control and coordination\nDefinition and classification of nervous system\nStructure of a neuron\nGeneration and conduction of nerve impulse\nStructure of brain and spinal cord\nFunctions of cerebrum, cerebellum, hypothalamus and medulla oblongata\nChemical coordination and regulation\nEndocrine glands and their secretions\nFunctions of hormones secreted by endocrine glands\nHuman reproduction\nParts of female reproductive system\nParts of male reproductive system\nSpermatogenesis and Oogenesis\nMenstrual cycle"
+        },
+        {
+          "unit": 4,
+          "title": "Plants and mineral nutrition, Photosynthesis",
+          "hours": 5,
+          "content": "Plants and mineral nutrition:\nEssential mineral, macro and micronutrients\nNitrogen metabolism, Nitrogen cycle, biological nitrogen fixation\nPhotosynthesis\nAutotrophic nutrition, photosynthesis, Photosynthetic pigments, Factors affecting photosynthesis."
+        },
+        {
+          "unit": 5,
+          "title": "Plant respiration, Plant growth, Cell, Tissues",
+          "hours": 4,
+          "content": "Plant respiration:Respiration, glycolysis, fermentation (anaerobic).\nPlant growth and development\nPhases and rate of plant growth, Condition of growth,Introduction to plant growth regulators\nCell - The unit of life\nStructure and functions of cell and cell organelles.Cell division\nTissues\nDefinition, types of tissues, location and functions."
+        }
+      ]
+    },
+    {
+      "title": "Remedial Mathematics – Theory*",
+      "course_code": "BP106RMT",
+      "total_hours": 30,
+      "units": [
+        {
+          "unit": 1,
+          "title": "Partial fraction, Logarithms, Function, Limits and continuity",
+          "hours": 6,
+          "content": "Partial fraction\nIntroduction, Polynomial, Rational fractions, Proper and Improper fractions, Partial fraction , Resolving into Partial fraction, Application of Partial Fraction in Chemical Kinetics and Pharmacokinetics\nLogarithms\nIntroduction, Definition, Theorems/Properties of logarithms, Common logarithms, Characteristic and Mantissa, worked examples, application of logarithm to solve pharmaceutical problems.\nFunction:\nReal Valued function, Classification of real valued functions,\nLimits and continuity :\nIntroduction , Limit of a function, Definition of limit of a function ( -  definition) , lim (x^n - a^n)/(x - a) = na^(n-1), lim (sinθ)/θ = 1 as θ→0"
+        },
+        {
+          "unit": 2,
+          "title": "Matrices and Determinant",
+          "hours": 6,
+          "content": "Matrices and Determinant:\nIntroduction matrices, Types of matrices, Operation on matrices, Transpose of a matrix, Matrix Multiplication, Determinants, Properties of determinants , Product of determinants, Minors and co-Factors, Adjoint or adjugate of a square matrix , Singular and non-singular matrices, Inverse of a matrix, Solution of system of linear of equations using matrix method, Cramer’s rule, Characteristic equation and roots of a square matrix, Cayley–Hamilton theorem,Applicationof Matrices in solving Pharmacokinetic equations"
+        },
+        {
+          "unit": 3,
+          "title": "Calculus: Differentiation",
+          "hours": 6,
+          "content": "Calculus\nDifferentiation : Introductions, Derivative of a function, Derivative of a constant, Derivative of a product of a constant and a function , Derivative of the sum or difference of two functions, Derivative of the product of two functions (product formula), Derivative of the quotient of two functions (Quotient formula) – Without Proof, Derivative of x^n w.r.t x, where n is any rational number, Derivative of e^x, Derivative of loge x , Derivative of a^x, Derivative of trigonometric functions from first principles (without Proof), Successive Differentiation, Conditions for a function to be a maximum or a minimum at a point. Application"
+        },
+        {
+          "unit": 4,
+          "title": "Analytical Geometry, Integration",
+          "hours": 6,
+          "content": "Analytical Geometry\nIntroduction: Signs of the Coordinates, Distance formula,\nStraight Line : Slope or gradient of a straight line, Conditions for parallelism and perpendicularity of two lines, Slope of a line joining two points, Slope – intercept form of a straight line\nIntegration:\nIntroduction, Definition, Standard formulae, Rules of integration , Method of substitution, Method of Partial fractions, Integration by parts, definite integrals, application"
+        },
+        {
+          "unit": 5,
+          "title": "Differential Equations, Laplace Transform",
+          "hours": 6,
+          "content": "Differential Equations : Some basic definitions, Order and degree, Equations in separable form , Homogeneous equations, Linear Differential equations, Exact equations, Application in solving Pharmacokinetic equations\nLaplace Transform : Introduction, Definition, Properties of Laplace transform, Laplace Transforms of elementary functions, Inverse Laplace transforms, Laplace transform of derivatives, Application to solve Linear differential equations, Application in solving Chemical kinetics and Pharmacokinetics equations"
+        }
+      ]
+    }
+  ]
+}

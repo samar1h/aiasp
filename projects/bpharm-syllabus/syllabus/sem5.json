@@ -1,0 +1,161 @@
+{
+  "semester": 5,
+  "program": "Bachelor of Pharmacy (B. Pharm)",
+  "subjects": [
+    {
+      "title": "Medicinal Chemistry – II (Theory)",
+      "course_code": "BP501T",
+      "units": [
+        {
+          "unit": 1,
+          "title": "Antihistaminic agents, Gastric Proton pump inhibitors, Anti-neoplastic agents",
+          "content": "Antihistaminic agents: Histamine, receptors and their distribution in the humanbody\nH1–antagonists: Diphenhydramine hydrochloride*, Dimenhydrinate, Doxylamines cuccinate, Clemastine fumarate, Diphenylphyraline hydrochloride, Tripelenamine hydrochloride, Chlorcyclizine hydrochloride, Meclizine hydrochloride, Buclizine hydrochloride, Chlorpheniramine maleate, Triprolidine hydrochloride*, Phenidamine tartarate, Promethazine hydrochloride*, Trimeprazine tartrate, Cyproheptadine hydrochloride, Azatidine maleate, Astemizole, Loratadine, Cetirizine, Levocetrazine Cromolyn sodium\nH2-antagonists: Cimetidine*, Famotidine, Ranitidin.\nGastric Proton pump inhibitors: Omeprazole, Lansoprazole, Rabeprazole, Pantoprazole\nAnti-neoplastic agents:\nAlkylating agents: Meclorethamine*, Cyclophosphamide, Melphalan, Chlorambucil, Busulfan, Thiotepa"
+        },
+        {
+          "unit": 2,
+          "title": "Anti-neoplastic agents (contd.), Anti-anginal, Diuretics",
+          "content": "Antimetabolites: Mercaptopurine*, Thioguanine, Fluorouracil, Floxuridine, Cytarabine, Methotrexate*, Azathioprine\nAntibiotics: Dactinomycin, Daunorubicin, Doxorubicin, Bleomycin\nPlant products: Etoposide, Vinblastin sulphate, Vincristin sulphate\nMiscellaneous: Cisplatin, Mitotane.\nAnti-anginal:\nVasodilators: Amyl nitrite, Nitroglycerin*, Pentaerythritol tetranitrate, Isosorbide dinitrite*, Dipyridamole.\nCalcium channel blockers: Verapamil, Bepridil hydrochloride, Diltiazem hydrochloride, Nifedipine, Amlodipine, Felodipine, Nicardipine, Nimodipine.\nDiuretics:\nCarbonic anhydrase inhibitors: Acetazolamide*, Methazolamide, Dichlorphenamide.\nThiazides: Chlorthiazide*, Hydrochlorothiazide, Hydroflumethiazide, Cyclothiazide,\nLoop diuretics: Furosemide*, Bumetanide, Ethacrynic acid.\nPotassium sparing Diuretics: Spironolactone, Triamterene, Amiloride.\nOsmotic Diuretics: Mannitol"
+        },
+        {
+          "unit": 3,
+          "title": "Anti-hypertensive Agents, Anti-arrhythmic Drugs, Anti-hyperlipidemic agents, Coagulant & Anticoagulants, Drugs used in Congestive Heart Failure",
+          "content": "Anti-hypertensive Agents: Timolol, Captopril, Lisinopril, Enalapril, Benazepril hydrochloride, Quinapril hydrochloride, Methyldopate hydrochloride,* Clonidine hydrochloride, Guanethidine monosulphate, Guanabenz acetate, Sodium nitroprusside, Diazoxide, Minoxidil, Reserpine, Hydralazine hydrochloride.\nAnti-arrhythmic Drugs: Quinidine sulphate, Procainamide hydrochloride, Disopyramide phosphate*, Phenytoin sodium, Lidocaine hydrochloride, Tocainide hydrochloride, Mexiletine hydrochloride, Lorcainide hydrochloride, Amiodarone, Sotalol.\nAnti-hyperlipidemic agents: Clofibrate, Lovastatin, Cholesteramine and Cholestipol\nCoagulant & Anticoagulants: Menadione, Acetomenadione, Warfarin*, Anisindione, clopidogrel\nDrugs used in Congestive Heart Failure: Digoxin, Digitoxin, Nesiritide, Bosentan, Tezosentan."
+        },
+        {
+          "unit": 4,
+          "title": "Drugs acting on Endocrine system",
+          "content": "Drugs acting on Endocrine system\nNomenclature, Stereochemistry and metabolism of steroids\nSex hormones: Testosterone, Nandralone, Progestrones, Oestriol, Oestradiol, Oestrione, Diethyl stilbestrol.\nDrugs for erectile dysfunction: Sildenafil, Tadalafil.\nOral contraceptives: Mifepristone, Norgestril, Levonorgestrol\nCorticosteroids: Cortisone, Hydrocortisone, Prednisolone, Betamethasone, Dexamethasone\nThyroid and antithyroid drugs: L-Thyroxine, L-Thyronine, Propylthiouracil, Methimazole."
+        },
+        {
+          "unit": 5,
+          "title": "Antidiabetic agents, Local Anesthetics",
+          "content": "Antidiabetic agents:\nInsulin and its preparations\nSulfonyl ureas: Tolbutamide*, Chlorpropamide, Glipizide, Glimepiride.\nBiguanides: Metformin.\nThiazolidinediones: Pioglitazone, Rosiglitazone.\nMeglitinides: Repaglinide, Nateglinide.\nGlucosidase inhibitors: Acrabose, Voglibose.\nLocal Anesthetics: SAR of Local anesthetics\nBenzoic Acid derivatives; Cocaine, Hexylcaine, Meprylcaine, Cyclomethycaine, Piperocaine.\nAmino Benzoic acid derivatives: Benzocaine*, Butamben, Procaine*, Butacaine, Propoxycaine, Tetracaine, Benoxinate.\nLidocaine/Anilide derivatives: Lignocaine, Mepivacaine, Prilocaine, Etidocaine.\nMiscellaneous: Phenacaine, Diperodon, Dibucaine.*"
+        }
+      ]
+    },
+    {
+      "title": "Industrial PharmacyI (Theory)",
+      "course_code": "BP502T",
+      "units": [
+        {
+          "unit": 1,
+          "title": "Preformulation Studies",
+          "content": "Introduction to preformulation, goals and objectives, study of physicochemical characteristics of drug substances.\na. Physical properties: Physical form (crystal & amorphous), particle size, shape, flow properties, solubility profile (pKa, pH, partition coefficient), polymorphism\nb. Chemical Properties: Hydrolysis, oxidation, reduction, racemisation, polymerization\nBCS classification of drugs & its significant\nApplication of preformulation considerations in the development of solid, liquid oral and parenteral dosage forms and its impact on stability of dosage forms."
+        },
+        {
+          "unit": 2,
+          "title": "Tablets, Liquid orals",
+          "content": "Tablets:\na. Introduction, ideal characteristics of tablets, classification of tablets. Excipients, Formulation of tablets, granulation methods, compression and processing problems. Equipments and tablet tooling.\nb. Tablet coating: Types of coating, coating materials, formulation of coating composition, methods of coating, equipment employed and defects in coating.\nc. Quality control tests: In process and finished product tests\nLiquid orals: Formulation and manufacturing consideration of syrups and elixirs suspensions and emulsions; Filling and packaging; evaluation of liquid orals official in pharmacopoeia"
+        },
+        {
+          "unit": 3,
+          "title": "Capsules, Pellets",
+          "content": "Capsules:\na. Hard gelatin capsules: Introduction, Production of hard gelatin capsule shells. size of capsules, Filling, finishing and special techniques of formulation of hard gelatin capsules, manufacturing defects. In process and final product quality control tests for capsules.\nb. Soft gelatin capsules: Nature of shell and capsule content, size of capsules,importance of base adsorption and minim/gram factors, production, in process and final product quality control tests. Packing, storage and stability testing of soft gelatin capsules and their applications.\nPellets: Introduction, formulation requirements, pelletization process, equipments for manufacture of pellets"
+        },
+        {
+          "unit": 4,
+          "title": "Parenteral Products, Ophthalmic Preparations",
+          "content": "Parenteral Products:\na. Definition, types, advantages and limitations. Preformulation factors and essential requirements, vehicles, additives, importance of isotonicity\nb. Production procedure, production facilities and controls, aseptic processing\nc. Formulation of injections, sterile powders, large volume parenterals and lyophilized products.\nd. Containers and closures selection, filling and sealing of ampoules, vials and infusion fluids. Quality control tests of parenteral products.\nOphthalmic Preparations: Introduction, formulation considerations; formulation of eye drops, eye ointments and eye lotions; methods of preparation; labeling, containers; evaluation of ophthalmic preparations"
+        },
+        {
+          "unit": 5,
+          "title": "Cosmetics, Pharmaceutical Aerosols, Packaging Materials Science",
+          "content": "Cosmetics: Formulation and preparation of the following cosmetic preparations: lipsticks, shampoos, cold cream and vanishing cream, tooth pastes, hair dyes and sunscreens.\nPharmaceutical Aerosols: Definition, propellants, containers, valves, types of aerosol systems; formulation and manufacture of aerosols; Evaluation of aerosols; Quality control and stability studies.\nPackaging Materials Science: Materials used for packaging of pharmaceutical products, factors influencing choice of containers, legal and official requirements for containers, stability aspects of packaging materials, quality control tests."
+        }
+      ]
+    },
+    {
+      "title": "Pharmacology-II (Theory)",
+      "course_code": "BP503T",
+      "units": [
+        {
+          "unit": 1,
+          "title": "Pharmacology of drugs acting on cardio vascular system - Part 1",
+          "content": "1. Pharmacology of drugs acting on cardio vascular system\na. Introduction to hemodynamic and electrophysiology of heart.\nb. Drugs used in congestive heart failure\nc. Anti-hypertensive drugs.\nd. Anti-anginal drugs.\ne. Anti-arrhythmic drugs.\nf. Anti-hyperlipidemic drugs."
+        },
+        {
+          "unit": 2,
+          "title": "Pharmacology of drugs acting on cardio vascular system - Part 2 and Urinary System",
+          "content": "1. Pharmacology of drugs acting on cardio vascular system\na. Drug used in the therapy of shock.\nb. Hematinics, coagulants and anticoagulants.\nc. Fibrinolytics and anti-platelet drugs\nd. Plasma volume expanders\n2. Pharmacology of drugs acting on urinary system\na. Diuretics\nb. Anti-diuretics."
+        },
+        {
+          "unit": 3,
+          "title": "Autocoids and related drugs",
+          "content": "3. Autocoids and related drugs\na. Introduction to autacoids and classification\nb. Histamine, 5-HT and their antagonists.\nc. Prostaglandins, Thromboxanes and Leukotrienes.\nd. Angiotensin, Bradykinin and Substance P.\ne. Non-steroidal anti-inflammatory agents\nf. Anti-gout drugs\ng. Antirheumatic drugs"
+        },
+        {
+          "unit": 4,
+          "title": "Pharmacology of drugs acting on endocrine system - Part 1",
+          "content": "5. Pharmacology of drugs acting on endocrine system\na. Basic concepts in endocrine pharmacology.\nb. Anterior Pituitary hormones- analogues and their inhibitors.\nc. Thyroid hormones- analogues and their inhibitors.\nd. Hormones regulating plasma calcium level- Parathormone, Calcitonin and Vitamin-D.\nd. Insulin, Oral Hypoglycemic agents and glucagon.\ne. ACTH and corticosteroids."
+        },
+        {
+          "unit": 5,
+          "title": "Pharmacology of drugs acting on endocrine system - Part 2 and Bioassay",
+          "content": "5. Pharmacology of drugs acting on endocrine system\na. Androgens and Anabolic steroids.\nb. Estrogens, progesterone and oral contraceptives.\nc. Drugs acting on the uterus.\n6. Bioassay\na. Principles and applications of bioassay.\nb.Types of bioassay\nc. Bioassay of insulin, oxytocin, vasopressin, ACTH,d-tubocurarine,digitalis, histamine and 5-HT"
+        }
+      ]
+    },
+    {
+      "title": "Pharmacognosy and Phytochemistry II (Theory)",
+      "course_code": "BP504T",
+      "units": [
+        {
+          "unit": 1,
+          "title": "Metabolic pathways in higher plants and their determination",
+          "content": "a) Brief study of basic metabolic pathways and formation of different secondary metabolites through these pathways- Shikimic acid pathway, Acetate pathways and Amino acid pathway.\nb) Study of utilization of radioactive isotopes in the investigation of Biogenetic studies."
+        },
+        {
+          "unit": 2,
+          "title": "General introduction to secondary metabolites",
+          "content": "General introduction, composition, chemistry & chemical classes, biosources, therapeutic uses and commercial applications of following secondary metabolites:\nAlkaloids: Vinca, Rauwolfia, Belladonna, Opium,\nPhenylpropanoids and Flavonoids: Lignans, Tea, Ruta\nSteroids, Cardiac Glycosides & Triterpenoids: Liquorice, Dioscorea, Digitalis\nVolatile oils: Mentha, Clove, Cinnamon, Fennel, Coriander,\nTannins: Catechu, Pterocarpus\nResins: Benzoin, Guggul, Ginger, Asafoetida, Myrrh, Colophony\nGlycosides: Senna, Aloes, Bitter Almond\nIridoids, Other terpenoids & Naphthaquinones: Gentian, Artemisia, taxus, carotenoids"
+        },
+        {
+          "unit": 3,
+          "title": "Isolation, Identification and Analysis of Phytoconstituents",
+          "content": "a) Terpenoids: Menthol, Citral, Artemisin\nb) Glycosides: Glycyrhetinic acid & Rutin\nc) Alkaloids: Atropine,Quinine,Reserpine,Caffeine\nd) Resins: Podophyllotoxin, Curcumin"
+        },
+        {
+          "unit": 4,
+          "title": "Industrial production, estimation and utilization of phytoconstituents",
+          "content": "Industrial production, estimation and utilization of the following phytoconstituents:\nForskolin, Sennoside, Artemisinin, Diosgenin, Digoxin, Atropine, Podophyllotoxin, Caffeine, Taxol, Vincristine and Vinblastine"
+        },
+        {
+          "unit": 5,
+          "title": "Basics of Phytochemistry",
+          "content": "Modern methods of extraction, application of latest techniques like Spectroscopy, chromatography and electrophoresis in the isolation, purification and identification of crude drugs."
+        }
+      ]
+    },
+    {
+      "title": "Pharmaceutical Jurisprudence (Theory)",
+      "course_code": "BP505T",
+      "units": [
+        {
+          "unit": 1,
+          "title": "Drugs and Cosmetics Act, 1940 and its rules 1945 (Part 1)",
+          "content": "Objectives, Definitions, Legal definitions of schedules to the Act and Rules\nImport of drugs – Classes of drugs and cosmetics prohibited from import, Import under license or permit. Offences and penalties.\nManufacture of drugs – Prohibition of manufacture and sale of certain drugs,\nConditions for grant of license and conditions of license for manufacture of drugs, Manufacture of drugs for test, examination and analysis, manufacture of new drug, loan license and repacking license."
+        },
+        {
+          "unit": 2,
+          "title": "Drugs and Cosmetics Act, 1940 and its rules 1945 (Part 2)",
+          "content": "Detailed study of Schedule G, H, M, N, P,T,U, V, X, Y, Part XII B, Sch F & DMR (OA)\nSale of Drugs – Wholesale, Retail sale and Restricted license. Offences and penalties\nLabeling & Packing of drugs- General labeling requirements and specimen labels for drugs and cosmetics, List of permitted colors. Offences and penalties.\nAdministration of the Act and Rules – Drugs Technical Advisory Board, Central drugs Laboratory, Drugs Consultative Committee, Government drug analysts, Licensing authorities, controlling authorities, Drugs Inspectors"
+        },
+        {
+          "unit": 3,
+          "title": "Pharmacy Act –1948, Medicinal and Toilet Preparation Act –1955, Narcotic Drugs and Psychotropic substances Act-1985",
+          "content": "Pharmacy Act –1948: Objectives, Definitions, Pharmacy Council of India; its constitution and functions, Education Regulations, State and Joint state pharmacy councils; constitution and functions, Registration of Pharmacists, Offences and Penalties\nMedicinal and Toilet Preparation Act –1955: Objectives, Definitions, Licensing, Manufacture In bond and Outside bond, Export of alcoholic preparations, Manufacture of Ayurvedic, Homeopathic, Patent & Proprietary Preparations. Offences and Penalties.\nNarcotic Drugs and Psychotropic substances Act-1985 and Rules: Objectives, Definitions, Authorities and Officers, Constitution and Functions of narcotic & Psychotropic Consultative Committee, National Fund for Controlling the Drug Abuse, Prohibition, Control and Regulation, opium poppy cultivation and production of poppy straw, manufacture, sale and export of opium, Offences and Penalties"
+        },
+        {
+          "unit": 4,
+          "title": "Drugs and Magic Remedies Act, Prevention of Cruelty to animals Act, National Pharmaceutical Pricing Authority",
+          "content": "Study of Salient Features of Drugs and Magic Remedies Act and its rules: Objectives, Definitions, Prohibition of certain advertisements, Classes of Exempted advertisements, Offences and Penalties\nPrevention of Cruelty to animals Act-1960: Objectives, Definitions, Institutional Animal Ethics Committee, CPCSEA guidelines for Breeding and Stocking of Animals, Performance of Experiments, Transfer and acquisition of animals for experiment, Records, Power to suspend or revoke registration, Offences and Penalties\nNational Pharmaceutical Pricing Authority: Drugs Price Control Order (DPCO)- 2013. Objectives, Definitions, Sale prices of bulk drugs, Retail price of formulations, Retail price and ceiling price of scheduled formulations, National List of Essential Medicines (NLEM)"
+        },
+        {
+          "unit": 5,
+          "title": "Pharmaceutical Legislations, Code of Ethics, Related Acts",
+          "content": "Pharmaceutical Legislations – A brief review, Introduction, Study of drugs enquiry committee, Health survey and development committee, Hathi committee and Mudaliar committee\nCode of Pharmaceutical ethics Definition, Pharmacist in relation to his job, trade, medical profession and his profession, Pharmacist’s oath\nMedical Termination of Pregnancy Act\nRight to Information Act\nIntroduction to Intellectual Property Rights (IPR)"
+        }
+      ]
+    }
+  ]
+}

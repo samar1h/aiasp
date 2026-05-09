@@ -1,0 +1,389 @@
+{
+  "semester": 8,
+  "program": "Bachelor of Pharmacy (B. Pharm)",
+  "subjects": [
+    {
+      "title": "Biostatisitcs and Research Methodology (Theory)",
+      "course_code": "BP801T",
+      "units": [
+        {
+          "unit": 1,
+          "title": "Introduction, Measures of Central Tendency and Dispersion, Correlation",
+          "content": "Introduction: Statistics, Biostatistics, Frequency distribution\nMeasures of central tendency: Mean, Median, Mode- Pharmaceutical examples\nMeasures of dispersion: Dispersion, Range, standard deviation, Pharmaceutical problems\nCorrelation: Definition, Karl Pearson’s coefficient of correlation, Multiple correlation - Pharmaceuticals examples"
+        },
+        {
+          "unit": 2,
+          "title": "Regression, Probability, Sampling, Parametric Tests",
+          "content": "Regression: Curve fitting by the method of least squares, fitting the lines y= a + bx and x = a + by, Multiple regression, standard error of regression– Pharmaceutical Examples\nProbability:Definition of probability, Binomial distribution, Normal distribution, Poisson’s distribution, properties - problems\nSample, Population, large sample, small sample, Null hypothesis, alternative hypothesis, sampling, essence of sampling, types of sampling, Error-I type, Error-II type, Standard error of mean (SEM) - Pharmaceutical examples\nParametric test: t-test(Sample, Pooled or Unpaired and Paired) , ANOVA, (One way and Two way), Least Significance difference"
+        },
+        {
+          "unit": 3,
+          "title": "Non Parametric tests",
+          "content": "Non Parametric tests: Wilcoxon Rank Sum Test, Mann-Whitney U test, Kruskal-Wallis test, Friedman Test"
+        },
+        {
+          "unit": 4,
+          "title": "Introduction to Research, Methodology, Statistical Analysis Tools",
+          "content": "Introduction to Research: Need for research, Need for design of Experiments, Experiential Design Technique, plagiarism\nGraphs: Histogram, Pie Chart, Cubic Graph, response surface plot, Counter Plot graph\nDesigning the methodology: Sample size determination and Power of a study, Report writing and presentation of data, Protocol, Cohorts studies, Observational studies, Experimental studies, Designing clinical trial, various phases.\nBlocking and confounding system for Two-level factorials\nRegression modeling: Hypothesis testing in Simple and Multiple regressionmodels\nIntroduction to Practical components of Industrial and Clinical Trials Problems: Statistical Analysis Using Excel, SPSS, MINITAB®, DESIGN OF EXPERIMENTS, R - Online Statistical Software’s to Industrial and Clinical trial approach"
+        },
+        {
+          "unit": 5,
+          "title": "Design and Analysis of experiments",
+          "content": "Design and Analysis of experiments:\nFactorial Design: Definition, 2², 2³ design. Advantage of factorial design\nResponse Surface methodology: Central composite design, Historical design, Optimization Techniques"
+        }
+      ]
+    },
+    {
+      "title": "Social and Preventive Pharmacy (Theory)",
+      "course_code": "BP802T",
+      "units": [
+        {
+          "unit": 1,
+          "title": "Concept of health and disease, Social and health education, Sociology and health, Hygiene and health",
+          "content": "Concept of health and disease: Definition, concepts and evaluation of public health. Understanding the concept of prevention and control of disease, social causes of diseases and social problems of the sick.\nSocial and health education: Food in relation to nutrition and health, Balanced diet, Nutritional deficiencies, Vitamin deficiencies, Malnutrition and its prevention.\nSociology and health: Socio cultural factors related to health and disease, Impact of urbanization on health and disease, Poverty and health\nHygiene and health: personal hygiene and health care; avoidable habits"
+        },
+        {
+          "unit": 2,
+          "title": "Preventive medicine",
+          "content": "Preventive medicine: General principles of prevention and control of diseases such as cholera, SARS, Ebola virus, influenza, acute respiratory infections, malaria, chicken guinea, dengue, lymphatic filariasis, pneumonia, hypertension, diabetes mellitus, cancer, drug addiction-drug substance abuse"
+        },
+        {
+          "unit": 3,
+          "title": "National health programs - Part 1",
+          "content": "National health programs, its objectives, functioning and outcome of the following: HIV AND AIDS control programme, TB, Integrated disease surveillance program (IDSP), National leprosy control programme, National mental health program, National programme for prevention and control of deafness, Universal immunization programme, National programme for control of blindness, Pulse polio programme."
+        },
+        {
+          "unit": 4,
+          "title": "National health programs - Part 2",
+          "content": "National health intervention programme for mother and child, National family welfare programme, National tobacco control programme, National Malaria Prevention Program, National programme for the health care for the elderly, Social health programme; role of WHO in Indian national program"
+        },
+        {
+          "unit": 5,
+          "title": "Community services in health",
+          "content": "Community services in rural, urban and school health: Functions of PHC, Improvement in rural sanitation, national urban health mission, Health promotion and education in school."
+        }
+      ]
+    },
+    {
+      "title": "Pharma Marketing Management (Theory)",
+      "course_code": "BP803ET",
+      "units": [
+        {
+          "unit": 1,
+          "title": "Marketing, Pharmaceutical market",
+          "content": "Marketing:\nDefinition, general concepts and scope of marketing; Distinction between marketing & selling; Marketing environment; Industry and competitive analysis; Analyzing consumer buying behavior; industrial buying behavior.\nPharmaceutical market:\nQuantitative and qualitative aspects; size and composition of the market; demographic descriptions and socio-psychological characteristics of the consumer; market segmentation& targeting.Consumer profile; Motivation and prescribing habits of the physician; patients' choice of physician and retail pharmacist.Analyzing the Market;Role of market research."
+        },
+        {
+          "unit": 2,
+          "title": "Product decision",
+          "content": "Classification, product line and product mix decisions, product life cycle,product portfolio analysis; product positioning; New product decisions; Product branding, packaging and labeling decisions, Product management in pharmaceutical industry."
+        },
+        {
+          "unit": 3,
+          "title": "Promotion",
+          "content": "Methods, determinants of promotional mix, promotional budget; An overview of personal selling, advertising, direct mail, journals, sampling, retailing, medical exhibition, public relations, online promotional techniques for OTC Products."
+        },
+        {
+          "unit": 4,
+          "title": "Pharmaceutical marketing channels, Professional sales representative (PSR)",
+          "content": "Pharmaceutical marketing channels:\nDesigning channel, channel members, selecting the appropriate channel, conflict in channels, physical distribution management: Strategic importance, tasks in physical distribution management.\nProfessional sales representative (PSR):\nDuties of PSR, purpose of detailing, selection and training, supervising, norms for customer calls, motivating, evaluating, compensation and future prospects of the PSR."
+        },
+        {
+          "unit": 5,
+          "title": "Pricing, Emerging concepts in marketing",
+          "content": "Pricing:\nMeaning, importance, objectives, determinants of price; pricing methods and strategies, issues in price management in pharmaceutical industry. An overview of DPCO (Drug Price Control Order)and NPPA (National Pharmaceutical Pricing Authority).\nEmerging concepts in marketing:\nVertical & Horizontal Marketing; RuralMarketing; Consumerism; Industrial Marketing; Global Marketing."
+        }
+      ]
+    },
+    {
+      "title": "Pharmaceutical Regulatory Science (Theory)",
+      "course_code": "BP804ET",
+      "units": [
+        {
+          "unit": 1,
+          "title": "New Drug Discovery and development",
+          "content": "Stages of drug discovery, Drug development process, pre-clinical studies, non-clinical activities, clinical studies, Innovator and generics, Concept of generics, Generic drug product development."
+        },
+        {
+          "unit": 2,
+          "title": "Regulatory Approval Process, Regulatory authorities and agencies",
+          "content": "Regulatory Approval Process\nApproval processes and timelines involved in Investigational New Drug (IND), New Drug Application (NDA), Abbreviated New Drug Application (ANDA). Changes to an approved NDA / ANDA.\nRegulatory authorities and agencies\nOverview of regulatory authorities of India, United States, European Union, Australia, Japan, Canada (Organization structure and types of applications)"
+        },
+        {
+          "unit": 3,
+          "title": "Registration of Indian drug product in overseas market",
+          "content": "Procedure for export of pharmaceutical products, Technical documentation, Drug Master Files (DMF), Common Technical Document (CTD), electronic Common Technical Document (eCTD), ASEAN Common Technical Document (ACTD)research."
+        },
+        {
+          "unit": 4,
+          "title": "Clinical trials",
+          "content": "Developing clinical trial protocols, Institutional Review Board / Independent Ethics committee - formation and working procedures, Informed consent process and procedures, GCP obligations of Investigators, sponsors & Monitors, Managing and Monitoring clinical trials, Pharmacovigilance - safety monitoring in clinical trials"
+        },
+        {
+          "unit": 5,
+          "title": "Regulatory Concepts",
+          "content": "Basic terminology, guidance, guidelines, regulations, Laws and Acts, Orange book, Federal Register, Code of Federal Regulatory, Purple book"
+        }
+      ]
+    },
+    {
+      "title": "Pharmacovigilance (Theory)",
+      "course_code": "BP805T",
+      "units": [
+        {
+          "unit": 1,
+          "title": "Introduction to Pharmacovigilance and Adverse Drug Reactions",
+          "content": "Introduction to Pharmacovigilance\nHistory and development of Pharmacovigilance\nImportance of safety monitoring of Medicine\nWHO international drug monitoring programme\nPharmacovigilance Program of India(PvPI)\nIntroduction to adverse drug reactions\nDefinitions and classification of ADRs\nDetection and reporting\nMethods in Causality assessment\nSeverity and seriousness assessment\nPredictability and preventability assessment\nManagement of adverse drug reactions\nBasic terminologies used in pharmacovigilance\nTerminologies of adverse medication related events\nRegulatory terminologies"
+        },
+        {
+          "unit": 2,
+          "title": "Drug Classification, Dictionaries, Information Resources, Establishing PV Programme",
+          "content": "Drug and disease classification\nAnatomical, therapeutic and chemical classification of drugs\nInternational classification of diseases\nDaily defined doses\nInternational Non proprietary Names for drugs\nDrug dictionaries and coding in pharmacovigilance\nWHO adverse reaction terminologies\nMedDRA and Standardised MedDRA queries\nWHO drug dictionary\nEudravigilance medicinal product dictionary\nInformation resources in pharmacovigilance\nBasic drug information resources\nSpecialised resources for ADRs\nEstablishing pharmacovigilance programme\nEstablishing in a hospital\nEstablishment & operation of drug safety department in industry\nContract Research Organisations (CROs)\nEstablishing a national programme"
+        },
+        {
+          "unit": 3,
+          "title": "Vaccine Safety, PV Methods, Communication in PV",
+          "content": "Vaccine safety surveillance\nVaccine Pharmacovigilance\nVaccination failure\nAdverse events following immunization\nPharmacovigilance methods\nPassive surveillance – Spontaneous reports and case series\nStimulated reporting\nActive surveillance – Sentinel sites, drug event monitoring and registries\nComparative observational studies – Cross sectional study, case control study and cohort study\nTargeted clinical investigations\nCommunication in pharmacovigilance\nEffective communication in Pharmacovigilance\nCommunication in Drug Safety Crisis management\nCommunicating with Regulatory Agencies, Business Partners, Healthcare facilities & Media"
+        },
+        {
+          "unit": 4,
+          "title": "Safety Data Generation and ICH Guidelines for PV",
+          "content": "Safety data generation\nPre clinical phase\nClinical phase\nPost approval phase (PMS)\nICH Guidelines for Pharmacovigilance\nOrganization and objectives of ICH\nExpedited reporting\nIndividual case safety reports\nPeriodic safety update reports\nPost approval expedited reporting\nPharmacovigilance planning\nGood clinical practice in pharmacovigilance studies"
+        },
+        {
+          "unit": 5,
+          "title": "Pharmacogenomics, Special Populations, CIOMS, Indian PV Regulations",
+          "content": "Pharmacogenomics of adverse drug reactions\nGenetics related ADR with example focusing PK parameters.\nDrug safety evaluation in special population\nPaediatrics\nPregnancy and lactation\nGeriatrics\nCIOMS\nCIOMS Working Groups\nCIOMS Form\nCDSCO (India) and Pharmacovigilance\nD&C Act and Schedule Y\nDifferences in Indian and global pharmacovigilance requirements"
+        }
+      ]
+    },
+    {
+      "title": "Quality Control and Standardization of Herbals (Theory)",
+      "course_code": "BP806ET",
+      "units": [
+        {
+          "unit": 1,
+          "title": "Basic Tests and WHO Guidelines for Herbal Drugs",
+          "content": "Basic tests for drugs – Pharmaceutical substances, Medicinal plants materials and dosage forms\nWHO guidelines for quality control of herbal drugs.\nEvaluation of commercial crude drugs intended for use"
+        },
+        {
+          "unit": 2,
+          "title": "Quality Assurance in Herbal Drug Industry",
+          "content": "Quality assurance in herbal drug industry of cGMP, GAP, GMP and GLP in traditional system of medicine.\nWHO Guidelines on current good manufacturing Practices (cGMP) for Herbal Medicines\nWHO Guidelines on GACP for Medicinal Plants."
+        },
+        {
+          "unit": 3,
+          "title": "EU and ICH Guidelines, Research Guidelines",
+          "content": "EU and ICH guidelines for quality control of herbal drugs.\nResearch Guidelines for Evaluating the Safety and Efficacy of Herbal Medicines"
+        },
+        {
+          "unit": 4,
+          "title": "Stability Testing, Chromatographic Techniques, Regulatory Documentation",
+          "content": "Stability testing of herbal medicines.Application of various chromatographic techniques in standardization of herbal products.\nPreparation of documents for new drug application and export registration\nGMP requirements and Drugs & Cosmetics Act provisions."
+        },
+        {
+          "unit": 5,
+          "title": "Regulatory Requirements, Safety Monitoring, Pharmacopoeias, Markers",
+          "content": "Regulatory requirements for herbal medicines.\nWHO guidelines on safety monitoring of herbal medicines in pharmacovigilance systems\nComparison of various Herbal Pharmacopoeias.\nRole of chemical and biological markers in standardization of herbal products"
+        }
+      ]
+    },
+    {
+      "title": "Computer Aided Drug Design (Theory)",
+      "course_code": "BP807ET",
+      "units": [
+        {
+          "unit": 1,
+          "title": "Introduction to Drug Discovery and Development, Lead Discovery, Analog Based Drug Design",
+          "content": "Introduction to Drug Discovery and Development\nStages of drug discovery and development\nLead discovery and Analog Based Drug Design\nRational approaches to lead discovery based on traditional medicine, Random screening, Non-random screening, serendipitous drug discovery, lead discovery based on drug metabolism, lead discovery based on clinical observation.\nAnalog Based Drug Design:Bioisosterism, Classification, Bioisosteric replacement. Any three case studies"
+        },
+        {
+          "unit": 2,
+          "title": "Quantitative Structure Activity Relationship (QSAR)",
+          "content": "SAR versus QSAR, History and development of QSAR, Types of physicochemical parameters, experimental and theoretical approaches for the determination of physicochemical parameters such as Partition coefficient, Hammet’s substituent constant and Tafts steric constant.\nHansch analysis, Free Wilson analysis, 3D-QSAR approaches like COMFA and COMSIA."
+        },
+        {
+          "unit": 3,
+          "title": "Molecular Modeling and virtual screening techniques",
+          "content": "Virtual Screening techniques: Drug likeness screening, Concept of pharmacophore mapping and pharmacophore based Screening,\nMolecular docking: Rigid docking, flexible docking, manual docking, Docking based screening. De novo drug design."
+        },
+        {
+          "unit": 4,
+          "title": "Informatics & Methods in drug design",
+          "content": "Introduction to Bioinformatics, chemoinformatics. ADME databases, chemical, biochemical and pharmaceutical databases."
+        },
+        {
+          "unit": 5,
+          "title": "Molecular Modeling",
+          "content": "Molecular Modeling: Introduction to molecular mechanics and quantum mechanics.Energy Minimization methods and Conformational Analysis, global conformational minima determination."
+        }
+      ]
+    },
+    {
+      "title": "Cell and Molecular Biology (Elective subject)",
+      "course_code": "BP808ET",
+      "units": [
+        {
+          "unit": 1,
+          "title": "Fundamentals of Cell and Molecular Biology",
+          "content": "a) Cell and Molecular Biology: Definitions theory and basics and Applications.\nb) Cell and Molecular Biology: History and Summation.\nc) Properties of cells and cell membrane.\nd) Prokaryotic versus Eukaryotic\ne) Cellular Reproduction\nf) Chemical Foundations – an Introduction and Reactions (Types)"
+        },
+        {
+          "unit": 2,
+          "title": "DNA and RNA Structure and Function",
+          "content": "a) DNA and the Flow of Molecular Information\nb) DNA Functioning\nc) DNA and RNA\nd) Types of RNA\ne) Transcription and Translation"
+        },
+        {
+          "unit": 3,
+          "title": "Proteins: Structure and Function",
+          "content": "a) Proteins: Defined and Amino Acids\nb) Protein Structure\nc) Regularities in Protein Pathways\nd) Cellular Processes\ne) Positive Control and significance of Protein Synthesis"
+        },
+        {
+          "unit": 4,
+          "title": "Genetics, Genomics, Cell Cycle",
+          "content": "a) Science of Genetics\nb) Transgenics and Genomic Analysis\nc) Cell Cycle analysis\nd) Mitosis and Meiosis\ne) Cellular Activities and Checkpoints"
+        },
+        {
+          "unit": 5,
+          "title": "Cell Signaling",
+          "content": "a) Cell Signals: Introduction\nb) Receptors for Cell Signals\nc) Signaling Pathways: Overview\nd) Misregulation of Signaling Pathways\ne) Protein-Kinases: Functioning"
+        }
+      ]
+    },
+    {
+      "title": "Cosmetic Science (Theory)",
+      "course_code": "BP809ET",
+      "units": [
+        {
+          "unit": 1,
+          "title": "Classification, Regulation, Excipients, Skin, Hair, Oral Cavity Basics",
+          "content": "Classification of cosmetic and cosmeceutical products\nDefinition of cosmetics as per Indian and EU regulations, Evolution of cosmeceuticals from cosmetics, cosmetics as quasi and OTC drugs\nCosmetic excipients: Surfactants, rheology modifiers, humectants, emollients, preservatives. Classification and application\nSkin: Basic structure and function of skin.\nHair: Basic structure of hair. Hair growth cycle.\nOral Cavity: Common problem associated with teeth and gums."
+        },
+        {
+          "unit": 2,
+          "title": "Formulation Principles: Skin Care, Hair Care, Oral Care",
+          "content": "Principles of formulation and building blocks of skin care products:\nFace wash,\nMoisturizing cream, Cold Cream, Vanishing cream and their advantages and disadvantages.Application of these products in formulation of cosmecuticals.\nAntiperspants & deodorants- Actives & mechanism of action.\nPrinciples of formulation and building blocks of Hair care products:\nConditioning shampoo, Hair conditioner,anti-dandruff shampoo.\nHair oils.\nChemistry and formulation of Para-phylene diamine based hair dye.\nPrinciples of formulation and building blocks of oral care products:\nToothpaste for bleeding gums, sensitive teeth. Teeth whitening, Mouthwash."
+        },
+        {
+          "unit": 3,
+          "title": "Sun Protection, Herbal Cosmetics, Analytical Cosmetics",
+          "content": "Sun protection, Classification of Sunscreens and SPF.\nRole of herbs in cosmetics:\nSkin Care: Aloe and turmeric\nHair care: Henna and amla.\nOral care: Neem and clove\nAnalytical cosmetics: BIS specification and analytical methods for shampoo, skin-cream and toothpaste."
+        },
+        {
+          "unit": 4,
+          "title": "Cosmetic Evaluation",
+          "content": "Principles of Cosmetic Evaluation:Principles of sebumeter, corneometer. Measurement of TEWL, Skin Color, Hair tensile strength, Hair combing properties\nSoaps,and syndet bars. Evolution and skin benfits."
+        },
+        {
+          "unit": 5,
+          "title": "Cosmetic Problems and Actives",
+          "content": "Oily and dry skin, causes leading to dry skin, skin moisturisation. Basic understanding of the terms Comedogenic, dermatitis.\nCosmetic problems associated with Hair and scalp: Dandruff, Hair fall causes\nCosmetic problems associated with skin: blemishes, wrinkles, acne, prickly heat and body odor.\nAntiperspirants and Deodorants- Actives and mechanism of action"
+        }
+      ]
+    },
+    {
+      "title": "Pharmacological Screening Methods",
+      "course_code": "BP810ET",
+      "units": [
+        {
+          "unit": 1,
+          "title": "Laboratory Animals",
+          "content": "Study of CPCSEA and OECD guidelines for maintenance, breeding and conduct of experiments on laboratory animals, Common lab animals: Description and applications of different species and strains of animals. Popular transgenic and mutant animals.\nTechniques for collection of blood and common routes of drug administration in laboratory animals, Techniques of blood collection and euthanasia."
+        },
+        {
+          "unit": 2,
+          "title": "Preclinical screening models - Part 1",
+          "content": "a. Introduction: Dose selection, calculation and conversions, preparation of drug solution/suspensions, grouping of animals and importance of sham negative and positive control groups. Rationale for selection of animal species and sex for the study.\nb. Study of screening animal models for\nDiuretics, nootropics, anti-Parkinson’s,antiasthmatics,\nPreclinical screening models: for CNS activity- analgesic, antipyretic,anti-inflammatory, general anaesthetics, sedative and hypnotics, antipsychotic, antidepressant, antiepileptic, antiparkinsonism, alzheimer’s disease"
+        },
+        {
+          "unit": 3,
+          "title": "Preclinical screening models - Part 2",
+          "content": "Preclinical screening models: for ANS activity, sympathomimetics, sympatholytics, parasympathomimetics, parasympatholytics, skeletal muscle relaxants, drugs acting on eye, local anaethetics"
+        },
+        {
+          "unit": 4,
+          "title": "Preclinical screening models - Part 3",
+          "content": "Preclinical screening models: for CVS activity- antihypertensives, diuretics, antiarrhythmic, antidyslepidemic, anti aggregatory, coagulants, and anticoagulants\nPreclinical screening models for other important drugs like antiulcer, antidiabetic, anticancer and antiasthmatics."
+        },
+        {
+          "unit": 5,
+          "title": "Research methodology and Bio-statistics",
+          "content": "Research methodology and Bio-statistics\nSelection of research topic, review of literature, research hypothesis and study design\nPre-clinical data analysis and interpretation using Students ‘t’ test and One-way ANOVA. Graphical representation of data"
+        }
+      ]
+    },
+    {
+      "title": "Advanced Instrumentation Techniques",
+      "course_code": "BP811ET",
+      "units": [
+        {
+          "unit": 1,
+          "title": "Nuclear Magnetic Resonance spectroscopy, Mass Spectrometry",
+          "content": "Nuclear Magnetic Resonance spectroscopy\nPrinciples of H-NMR and C-NMR, chemical shift, factors affecting chemical shift, coupling constant, Spin - spin coupling, relaxation, instrumentation and applications\nMass Spectrometry- Principles, Fragmentation, Ionization techniques – Electron impact, chemical ionization, MALDI, FAB, Analyzers-Time of flight and Quadrupole, instrumentation, applications"
+        },
+        {
+          "unit": 2,
+          "title": "Thermal Methods of Analysis, X-Ray Diffraction Methods",
+          "content": "Thermal Methods of Analysis: Principles, instrumentation and applications of ThermogravimetricAnalysis (TGA), Differential Thermal Analysis (DTA), Differential Scanning Calorimetry (DSC)\nX-Ray Diffraction Methods: Origin of X-rays, basic aspects of crystals, X ray Crystallography, rotating crystal technique, single crystal diffraction,powder diffraction, structural elucidation and applications."
+        },
+        {
+          "unit": 3,
+          "title": "Calibration and validation",
+          "content": "Calibration and validation-as per ICH and USFDA guidelines\nCalibration of following Instruments\nElectronic balance, UV-Visible spectrophotometer, IR spectrophotometer, Fluorimeter, Flame Photometer, HPLC and GC"
+        },
+        {
+          "unit": 4,
+          "title": "Radio immune assay, Extraction techniques",
+          "content": "Radio immune assay:Importance, various components, Principle, different methods, Limitation and Applications of Radio immuno assay\nExtraction techniques:General principle and procedure involved in the solid phase extraction and liquid-liquid extraction"
+        },
+        {
+          "unit": 5,
+          "title": "Hyphenated techniques",
+          "content": "Hyphenated techniques-LC-MS/MS, GC-MS/MS, HPTLC-MS."
+        }
+      ]
+    },
+    {
+      "title": "Dietary Supplements and Nutraceuticals",
+      "course_code": "BP812ET",
+      "units": [
+        {
+          "unit": 1,
+          "title": "Introduction to Functional Foods, Nutraceuticals and Dietary Supplements",
+          "content": "a. Definitions of Functional foods, Nutraceuticals and Dietary supplements. Classification of Nutraceuticals, Health problems and diseases that can be prevented or cured by Nutraceuticals i.e. weight control, diabetes, cancer, heart disease, stress, osteoarthritis, hypertension etc.\nb. Public health nutrition, maternal and child nutrition, nutrition and ageing, nutrition education in community.\nc. Source, Name of marker compounds and their chemical nature, Medicinal uses and health benefits of following used as nutraceuticals/functional foods: Spirulina, Soyabean, Ginseng, Garlic, Broccoli, Gingko, Flaxseeds"
+        },
+        {
+          "unit": 2,
+          "title": "Phytochemicals as nutraceuticals",
+          "content": "Occurrence and characteristic features(chemical nature medicinal benefits) of following\na) Carotenoids- α and β-Carotene, Lycopene, Xanthophylls, leutin\nb) Sulfides: Diallyl sulfides, Allyl trisulfide.\nc) Polyphenolics: Reservetrol\nd) Flavonoids- Rutin , Naringin, Quercitin, Anthocyanidins, catechins, Flavones\ne) Prebiotics / Probiotics.: Fructo oligosaccharides, Lacto bacillum\nf) Phyto estrogens : Isoflavones, daidzein, Geebustin, lignans\ng) Tocopherols\nh) Proteins, vitamins, minerals, cereal, vegetables and beverages as functional foods: oats, wheat bran, rice bran, sea foods, coffee, tea and the like."
+        },
+        {
+          "unit": 3,
+          "title": "Free Radicals and Antioxidants",
+          "content": "a) Introduction to free radicals: Free radicals, reactive oxygen species, production of free radicals in cells, damaging reactions of free radicals on lipids, proteins, Carbohydrates, nucleic acids.\nb) Dietary fibres and complex carbohydrates as functional food ingredients.."
+        },
+        {
+          "unit": 4,
+          "title": "Free Radicals in Disease and Health, Antioxidants",
+          "content": "a) Free radicals in Diabetes mellitus, Inflammation, Ischemic reperfusion injury, Cancer, Atherosclerosis, Free radicals in brain metabolism and pathology, kidney damage, muscle damage. Free radicals involvement in other disorders. Free radicals theory of ageing.\nb) Antioxidants: Endogenous antioxidants – enzymatic and nonenzymatic antioxidant defence, Superoxide dismutase, catalase, Glutathione peroxidase, Glutathione Vitamin C, Vitamin E, α- Lipoic acid, melatonin\nSynthetic antioxidants: Butylated hydroxy Toluene, Butylated hydroxy Anisole.\nc) Functional foods for chronic disease prevention"
+        },
+        {
+          "unit": 5,
+          "title": "Processing Effects, Regulatory Aspects, Specifications",
+          "content": "a) Effect of processing, storage and interactions of various environmental factors on the potential of nutraceuticals.\nb) Regulatory Aspects; FSSAI, FDA, FPO, MPO, AGMARK. HACCP and GMPs on Food Safety. Adulteration of foods.\nc) Pharmacopoeial Specifications for dietary supplements and nutraceuticals."
+        }
+      ]
+    },
+    {
+      "title": "Project Work",
+      "course_code": "BP813PW",
+      "units": [
+        {
+          "unit": 1,
+          "title": "Project Work Execution and Reporting",
+          "content": "All the students shall undertake a projectunder the supervision of a teacher and submit a report. The area of the project shall directly relate any one of the elective subject opted by the student in semester VIII. The project shall be carried out in group not exceeding 5 in number. The project report shall be submitted in triplicate (typed & bound copy not less than 25 pages). The internal and external examiner appointed by the University shall evaluate the project at the time of the Practical examinations of other semester(s). Students shall be evaluated in groups for four hours (i.e., about half an hour for a group of five students)."
+        }
+      ]
+    }
+  ]
+}

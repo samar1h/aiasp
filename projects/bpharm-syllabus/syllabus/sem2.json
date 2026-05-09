@@ -1,0 +1,182 @@
+{
+  "semester": 2,
+  "program": "Bachelor of Pharmacy (B. Pharm)",
+  "subjects": [
+    {
+      "title": "Human Anatomy and Physiology-II (Theory)",
+      "course_code": "BP201T",
+      "units": [
+        {
+          "unit": 1,
+          "title": "Nervous system",
+          "content": "Organization of nervous system, neuron, neuroglia, classification and properties of nerve fibre, electrophysiology, action potential, nerve impulse, receptors, synapse, neurotransmitters.\nCentral nervous system: Meninges, ventricles of brain and cerebrospinal fluid.structure and functions of brain (cerebrum, brain stem, cerebellum), spinal cord (gross structure, functions of afferent and efferent nerve tracts,reflex activity)"
+        },
+        {
+          "unit": 2,
+          "title": "Digestive system, Energetics",
+          "content": "Digestive system\nAnatomy of GI Tract with special reference to anatomy and functions of stomach, ( Acid production in the stomach, regulation of acid production through parasympathetic nervous system, pepsin role in protein digestion) small intestine and large intestine, anatomy and functions of salivary glands, pancreas and liver, movements of GIT, digestion and absorption of nutrients and disorders of GIT.\nEnergetics\nFormation and role of ATP, Creatinine Phosphate and BMR."
+        },
+        {
+          "unit": 3,
+          "title": "Respiratory system, Urinary system",
+          "content": "Respiratory system\nAnatomy of respiratory system with special reference to anatomy of lungs, mechanism of respiration, regulation of respiration\nLung Volumes and capacities transport of respiratory gases, artificial respiration, and resuscitation methods.\nUrinary system\nAnatomy of urinary tract with special reference to anatomy of kidney and nephrons, functions of kidney and urinary tract, physiology of urine formation, micturition reflex and role of kidneys in acid base balance, role of RAS in kidney and disorders of kidney."
+        },
+        {
+          "unit": 4,
+          "title": "Endocrine system",
+          "content": "Endocrine system\nClassification of hormones, mechanism of hormone action, structure and functions of pituitary gland, thyroid gland, parathyroid gland, adrenal gland, pancreas, pineal gland, thymus and their disorders."
+        },
+        {
+          "unit": 5,
+          "title": "Reproductive system, Introduction to genetics",
+          "content": "Reproductive system\nAnatomy of male and female reproductive system, Functions of male and female reproductive system, sex hormones, physiology of menstruation, fertilization, spermatogenesis, oogenesis, pregnancy and parturition\nIntroduction to genetics\nChromosomes, genes and DNA, protein synthesis, genetic pattern of inheritance"
+        }
+      ]
+    },
+    {
+      "title": "Pharmaceutical Organic Chemistry –I (Theory)",
+      "course_code": "BP202T",
+      "units": [
+        {
+          "unit": 1,
+          "title": "Classification, nomenclature and isomerism",
+          "content": "Classification of Organic Compounds\nCommon and IUPAC systems of nomenclature of organic compounds (up to 10 Carbons open chain and carbocyclic compounds)\nStructural isomerisms in organic compounds"
+        },
+        {
+          "unit": 2,
+          "title": "Alkanes*, Alkenes* and Conjugated dienes*",
+          "content": "SP3 hybridization in alkanes, Halogenation of alkanes, uses of paraffins.\nStabilities of alkenes, SP2 hybridization in alkenes\nE1 and E2 reactions – kinetics, order of reactivity of alkyl halides, rearrangement of carbocations, Saytzeffs orientation and evidences. E1 verses E2 reactions, Factors affecting E1 and E2 reactions. Ozonolysis, electrophilic addition reactions of alkenes, Markownikoff’s orientation, free radical addition reactions of alkenes, Anti Markownikoff’s orientation.\nStability of conjugated dienes, Diel-Alder, electrophilic addition, free radical addition reactions of conjugated dienes, allylic rearrangement"
+        },
+        {
+          "unit": 3,
+          "title": "Alkyl halides*, Alcohols*",
+          "content": "Alkyl halides*\nSN1 and SN2 reactions - kinetics, order of reactivity of alkyl halides, stereochemistry and rearrangement of carbocations.\nSN1 versus SN2 reactions, Factors affecting SN1 and SN2 reactions\nStructure and uses of ethylchloride, Chloroform, trichloroethylene, tetrachloroethylene, dichloromethane, tetrachloromethane and iodoform.\nAlcohols*- Qualitative tests, Structure and uses of Ethyl alcohol, Methyl alcohol, chlorobutanol, Cetosteryl alcohol, Benzyl alcohol, Glycerol, Propylene glycol"
+        },
+        {
+          "unit": 4,
+          "title": "Carbonyl compounds* (Aldehydes and ketones)",
+          "content": "Nucleophilic addition, Electromeric effect, aldol condensation, Crossed Aldol condensation, Cannizzaro reaction, Crossed Cannizzaro reaction, Benzoin condensation, Perkin condensation, qualitative tests, Structure and uses of Formaldehyde, Paraldehyde, Acetone, Chloral hydrate, Hexamine, Benzaldehyde, Vanilin, Cinnamaldehyde."
+        },
+        {
+          "unit": 5,
+          "title": "Carboxylic acids*, Aliphatic amines*",
+          "content": "Carboxylic acids*\nAcidity of carboxylic acids, effect of substituents on acidity, inductive effect and qualitative tests for carboxylic acids ,amide and ester\nStructure and Uses of Acetic acid, Lactic acid, Tartaric acid, Citric acid, Succinic acid. Oxalic acid, Salicylic acid, Benzoic acid, Benzyl benzoate, Dimethyl phthalate, Methyl salicylate and Acetyl salicylic acid\nAliphatic amines* - Basicity, effect of substituent on Basicity. Qualitative test, Structure and uses of Ethanolamine, Ethylenediamine, Amphetamine"
+        }
+      ]
+    },
+    {
+      "title": "Biochemistry (Theory)",
+      "course_code": "BP203T",
+      "units": [
+        {
+          "unit": 1,
+          "title": "Biomolecules, Bioenergetics",
+          "content": "Biomolecules\nIntroduction, classification, chemical nature and biological role of carbohydrate, lipids, nucleic acids, amino acids and proteins.\nBioenergetics\nConcept of free energy, endergonic and exergonic reaction, Relationship between free energy, enthalpy and entropy; Redox potential.\nEnergy rich compounds; classification; biological significances of ATP and cyclic AMP"
+        },
+        {
+          "unit": 2,
+          "title": "Carbohydrate metabolism, Biological oxidation",
+          "content": "Carbohydrate metabolism\nGlycolysis – Pathway, energetics and significance\nCitric acid cycle- Pathway, energetics and significance\nHMP shunt and its significance; Glucose-6-Phosphate dehydrogenase (G6PD) deficiency\nGlycogen metabolism Pathways and glycogen storage diseases (GSD)\nGluconeogenesis- Pathway and its significance\nHormonal regulation of blood glucose level and Diabetes mellitus\nBiological oxidation\nElectron transport chain (ETC) and its mechanism.\nOxidative phosphorylation & its mechanism and substrate level phosphorylation\nInhibitors ETC and oxidative phosphorylation/Uncouplers"
+        },
+        {
+          "unit": 3,
+          "title": "Lipid metabolism, Amino acid metabolism",
+          "content": "Lipid metabolism\nβ-Oxidation of saturated fatty acid (Palmitic acid)\nFormation and utilization of ketone bodies; ketoacidosis\nDe novo synthesis of fatty acids (Palmitic acid)\nBiological significance of cholesterol and conversion of cholesterol into bile acids, steroid hormone and vitamin D\nDisorders of lipid metabolism: Hypercholesterolemia, atherosclerosis, fatty liver and obesity.\nAmino acid metabolism\nGeneral reactions of amino acid metabolism: Transamination, deamination & decarboxylation, urea cycle and its disorders\nCatabolism of phenylalanine and tyrosine and their metabolic disorders (Phenyketonuria, Albinism, alkeptonuria, tyrosinemia)\nSynthesis and significance of biological substances; 5-HT, melatonin, dopamine, noradrenaline, adrenaline\nCatabolism of heme; hyperbilirubinemia and jaundice"
+        },
+        {
+          "unit": 4,
+          "title": "Nucleic acid metabolism and genetic information transfer",
+          "content": "Biosynthesis of purine and pyrimidine nucleotides\nCatabolism of purine nucleotides and Hyperuricemia and Gout disease\nOrganization of mammalian genome\nStructure of DNA and RNA and their functions\nDNA replication (semi conservative model)\nTranscription or RNA synthesis\nGenetic code, Translation or Protein synthesis and inhibitors"
+        },
+        {
+          "unit": 5,
+          "title": "Enzymes",
+          "content": "Enzymes\nIntroduction, properties, nomenclature and IUB classification of enzymes\nEnzyme kinetics (Michaelis plot, Line Weaver Burke plot)\nEnzyme inhibitors with examples\nRegulation of enzymes: enzyme induction and repression, allosteric enzymes regulation\nTherapeutic and diagnostic applications of enzymes and isoenzymes\nCoenzymes –Structure and biochemical functions"
+        }
+      ]
+    },
+    {
+      "title": "Pathophysiology (Theory)",
+      "course_code": "BP204T",
+      "units": [
+        {
+          "unit": 1,
+          "title": "Basic principles of Cell injury and Adaptation",
+          "content": "Introduction, definitions, Homeostasis, Components and Types of Feedback systems, Causes of cellular injury,Pathogenesis (Cell membrane damage, Mitochondrial damage, Ribosome damage, Nuclear damage),Morphology of cell injury – Adaptive changes (Atrophy, Hypertrophy, hyperplasia, Metaplasia, Dysplasia),Cell swelling, Intra cellular accumulation, Calcification, Enzyme leakage and Cell Death Acidosis &Alkalosis,Electrolyte imbalance"
+        },
+        {
+          "unit": 2,
+          "title": "Inflammation, Repair, Cardiovascular, Respiratory, Renal Systems",
+          "content": "Basic mechanism involved in the process of inflammation and repair:\nIntroduction, Clinical signs of inflammation, Different types of Inflammation,Mechanism of Inflammation – Alteration in vascular permeability and blood flow, migration of WBC’s,Mediators of inflammation,Basic principles of wound healing in the skin,Pathophysiology of Atherosclerosis\nCardiovascular System:\nHypertension, congestive heart failure, ischemic heart disease (angina,myocardial infarction, atherosclerosis and arteriosclerosis)\nRespiratory system:Asthma, Chronic obstructive airways diseases.\nRenal system:Acute and chronic renal failure ."
+        },
+        {
+          "unit": 3,
+          "title": "Haematological, Endocrine, Nervous, Gastrointestinal Systems",
+          "content": "Haematological Diseases:\nIron deficiency, megaloblastic anemia (Vit B12 and folic acid), sickle cell anemia, thalasemia, hereditary acquired anemia, hemophilia\nEndocrine system: Diabetes, thyroid diseases, disorders of sex hormones\nNervous system: Epilepsy, Parkinson’s disease, stroke, psychiatric disorders: depression, schizophrenia and Alzheimer’s disease.\nGastrointestinal system: Peptic Ulcer"
+        },
+        {
+          "unit": 4,
+          "title": "Inflammatory bowel diseases, Bone/Joint Diseases, Cancer Principles",
+          "content": "Inflammatory bowel diseases, jaundice, hepatitis (A,B,C,D,E,F) alcoholic liver disease.\nDisease of bones and joints: Rheumatoid arthritis, osteoporosis and gout\nPrinciples of cancer: classification, etiology and pathogenesis of cancer\nDiseases of bones and joints:Rheumatoid Arthritis, Osteoporosis,Gout\nPrinciples of Cancer: Classification, etiology and pathogenesis of Cancer"
+        },
+        {
+          "unit": 5,
+          "title": "Infectious diseases, Sexually transmitted diseases",
+          "content": "Infectious diseases:Meningitis,Typhoid, Leprosy, Tuberculosis\nUrinary tract infections\nSexually transmitted diseases:AIDS, Syphilis, Gonorrhea"
+        }
+      ]
+    },
+    {
+      "title": "Computer Applications in Pharmacy (Theory)*",
+      "course_code": "BP205T",
+      "units": [
+        {
+          "unit": 1,
+          "title": "Number system, Information Systems and Software",
+          "content": "Number system: Binary number system, Decimal number system, Octal number system, Hexadecimal number systems, conversion decimal to binary, binary to decimal, octal to binary etc, binary addition, binary subtraction – One’s complement ,Two’s complement method, binary multiplication, binary division\nConcept of Information Systems and Software : Information gathering, requirement and feasibility analysis, data flow diagrams, process specifications, input/output design, process life cycle, planning and managing the project"
+        },
+        {
+          "unit": 2,
+          "title": "Web technologies, Databases",
+          "content": "Web technologies:Introduction to HTML, XML,CSS and Programming languages, introduction to web servers and Server Products\nIntroduction to databases, MYSQL, MS ACCESS, Pharmacy Drug database"
+        },
+        {
+          "unit": 3,
+          "title": "Application of computers in Pharmacy",
+          "content": "Application of computers in Pharmacy – Drug information storage and retrieval, Pharmacokinetics, Mathematical model in Drug design, Hospital and Clinical Pharmacy, Electronic Prescribing and discharge (EP) systems, barcode medicine identification and automated dispensing of drugs, mobile technology and adherence monitoring\nDiagnostic System, Lab-diagnostic System, Patient Monitoring System, Pharma Information System"
+        },
+        {
+          "unit": 4,
+          "title": "Bioinformatics",
+          "content": "Bioinformatics: Introduction, Objective of Bioinformatics, Bioinformatics Databases, Concept of Bioinformatics, Impact of Bioinformatics in Vaccine Discovery"
+        },
+        {
+          "unit": 5,
+          "title": "Computers as data analysis in Preclinical development",
+          "content": "Computers as data analysis in Preclinical development:\nChromatographic dada analysis(CDS), Laboratory Information management System (LIMS) and Text Information Management System(TIMS)"
+        }
+      ]
+    },
+    {
+      "title": "Environmental sciences (Theory)*",
+      "course_code": "BP206T",
+      "units": [
+        {
+          "unit": 1,
+          "title": "Multidisciplinary nature, Natural Resources",
+          "content": "The Multidisciplinary nature of environmental studies\nNatural Resources\nRenewable and non-renewable resources:\nNatural resources and associated problems\na) Forest resources; b) Water resources; c) Mineral resources; d) Food resources; e) Energy resources; f) Land resources: Role of an individual in conservation of natural resources."
+        },
+        {
+          "unit": 2,
+          "title": "Ecosystems",
+          "content": "Ecosystems\nConcept of an ecosystem.\nStructure and function of an ecosystem.\nIntroduction, types, characteristic features, structure and function of the ecosystems: Forest ecosystem; Grassland ecosystem; Desert ecosystem; Aquatic ecosystems (ponds, streams, lakes, rivers, oceans, estuaries)"
+        },
+        {
+          "unit": 3,
+          "title": "Environmental Pollution",
+          "content": "Environmental Pollution: Air pollution; Water pollution; Soil pollution"
+        }
+      ]
+    }
+  ]
+}

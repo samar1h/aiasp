@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BPharm Syllabus Viewer</title>
+  <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-GGQNG055W0"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-GGQNG055W0');
+</script>
+  <style>
+    :root { --primary: #4a6da7; --bg: #ffffff; --text: #333333; --card: #f8f9fa; --border: #dee2e6; --hover: #e9ecef; --shadow: rgba(0,0,0,0.05); } 
+    @media (prefers-color-scheme: dark) { :root:not([data-theme]) { --primary: #6d8fc8; --bg: #121212; --text: #e0e0e0; --card: #1e1e1e; --border: #333333; --hover: #2a2a2a; --shadow: rgba(0,0,0,0.2); } }
+    [data-theme="dark"] { --primary: #6d8fc8; --bg: #121212; --text: #e0e0e0; --card: #1e1e1e; --border: #333333; --hover: #2a2a2a; --shadow: rgba(0,0,0,0.2); }
+    [data-theme="light"] { --primary: #4a6da7; --bg: #ffffff; --text: #333333; --card: #f8f9fa; --border: #dee2e6; --hover: #e9ecef; --shadow: rgba(0,0,0,0.05); }
+    * { margin: 0; padding: 0; box-sizing: border-box; transition: background-color 0.3s, color 0.3s; }
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: var(--bg); color: var(--text); line-height: 1.6; padding: 1rem; min-height: 100vh; font-size: 16px; }
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
+    h1 { font-size: 1.75rem; color: var(--primary); margin: 0; }
+    select, button { background-color: var(--card); border: 1px solid var(--border); padding: 0.5rem; border-radius: 0.25rem; color: var(--text); font-size: 1rem; cursor: pointer; }
+    select:hover, button:hover { background-color: var(--hover); }
+    select:focus, button:focus { outline: 2px solid var(--primary); outline-offset: 2px; }
+    .settings-btn { display: flex; align-items: center; gap: 0.5rem; }
+    .settings-panel { background-color: var(--card); border: 1px solid var(--border); padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem; box-shadow: 0 4px 6px var(--shadow); display: none; }
+    .settings-panel.active { display: block; }
+    .settings-group { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem; align-items: center; }
+    .settings-group:last-child { margin-bottom: 0; }
+    .settings-group label { min-width: 100px; }
+    .main-content { max-width: 1200px; margin: 0 auto; }
+    .subject { background-color: var(--card); border: 1px solid var(--border); border-radius: 0.5rem; margin-bottom: 1.5rem; overflow: hidden; box-shadow: 0 2px 4px var(--shadow); }
+    .subject-header { padding: 1rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: bold; background-color: var(--primary); color: white; }
+    .subject-content { padding: 0; max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
+    .subject-content.active { max-height: 5000px; padding: 1rem; transition: max-height 0.6s ease-in; }
+    .unit { margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; }
+    .unit:last-child { margin-bottom: 0; border-bottom: none; padding-bottom: 0; }
+    .unit-header { font-weight: bold; margin-bottom: 0.5rem; cursor: pointer; display: flex; justify-content: space-between; }
+    .unit-content { display: none; white-space: pre-line; }
+    .unit-content.active { display: block; }
+    .toggle-icon { transition: transform 0.3s; }
+    .toggle-icon.active { transform: rotate(180deg); }
+    .loader { display: flex; justify-content: center; padding: 2rem; }
+    .error-msg { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem; }
+    @media (max-width: 600px) { 
+      header { flex-direction: column; align-items: flex-start; }
+      .settings-group { flex-direction: column; align-items: flex-start; }
+      .settings-group label { margin-bottom: 0.25rem; }
+    }
+    .empty-state { text-align: center; padding: 3rem 1rem; color: var(--text); opacity: 0.7; }
+  </style>
+</head>
+<body>
+  <div class="main-content">
+    <header>
+      <h1>BPharm Syllabus Viewer</h1>
+      <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+        <select id="semSelect">
+          <option value="">Select Semester</option>
+          <option value="1">Semester 1</option>
+          <option value="2">Semester 2</option>
+          <option value="3">Semester 3</option>
+          <option value="4">Semester 4</option>
+          <option value="5">Semester 5</option>
+          <option value="6">Semester 6</option>
+          <option value="7">Semester 7</option>
+          <option value="8">Semester 8</option>
+        </select>
+        <button class="settings-btn" id="settingsBtn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492zM5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0z"/>
+            <path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52l-.094-.319zm-2.633.283c.246-.835 1.428-.835 1.674 0l.094.319a1.873 1.873 0 0 0 2.693 1.115l.291-.16c.764-.415 1.6.42 1.184 1.185l-.159.292a1.873 1.873 0 0 0 1.116 2.692l.318.094c.835.246.835 1.428 0 1.674l-.319.094a1.873 1.873 0 0 0-1.115 2.693l.16.291c.415.764-.42 1.6-1.185 1.184l-.291-.159a1.873 1.873 0 0 0-2.693 1.116l-.094.318c-.246.835-1.428.835-1.674 0l-.094-.319a1.873 1.873 0 0 0-2.692-1.115l-.292.16c-.764.415-1.6-.42-1.184-1.185l.159-.291A1.873 1.873 0 0 0 1.945 8.93l-.319-.094c-.835-.246-.835-1.428 0-1.674l.319-.094A1.873 1.873 0 0 0 3.06 4.377l-.16-.292c-.415-.764.42-1.6 1.185-1.184l.292.159a1.873 1.873 0 0 0 2.692-1.115l.094-.319z"/>
+          </svg>
+          Settings
+        </button>
+      </div>
+    </header>
+
+    <div id="settingsPanel" class="settings-panel">
+      <div class="settings-group">
+        <label for="fontSize">Text Size:</label>
+        <input type="range" id="fontSize" min="12" max="24" value="16">
+        <span id="fontSizeValue">16px</span>
+      </div>
+      <div class="settings-group">
+        <label for="fontFamily">Font:</label>
+        <select id="fontFamily">
+          <option value="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif">System</option>
+          <option value="'Segoe UI', Tahoma, Geneva, Verdana, sans-serif">Segoe UI</option>
+          <option value="Arial, sans-serif">Arial</option>
+          <option value="'Times New Roman', Times, serif">Times New Roman</option>
+          <option value="Georgia, serif">Georgia</option>
+          <option value="monospace">Monospace</option>
+        </select>
+      </div>
+      <div class="settings-group">
+        <label for="theme">Theme:</label>
+        <select id="theme">
+          <option value="system">System Default</option>
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+        </select>
+      </div>
+      <div class="settings-group">
+        <button id="expandAllBtn">Expand All</button>
+        <button id="collapseAllBtn">Collapse All</button>
+      </div>
+    </div>
+
+    <div id="errorContainer"></div>
+    <div id="content">
+      <div class="empty-state">
+        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" viewBox="0 0 16 16" style="opacity: 0.5; margin-bottom: 1rem;">
+          <path d="M5 4a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1H5zm-.5 2.5A.5.5 0 0 1 5 6h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5zM5 8a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1H5zm0 2a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1H5z"/>
+          <path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2zm10-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1z"/>
+        </svg>
+        <h2>Select a semester to view syllabus</h2>
+        <p>Choose from the dropdown menu above</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Utility functions
+    const $ = document.querySelector.bind(document);
+    const $$ = document.querySelectorAll.bind(document);
+    const $id = document.getElementById.bind(document);
+    
+    // App state
+    const s = {
+      currentSem: null,
+      expanded: {}
+    };
+    
+    // DOM elements
+    const e = {
+      semSelect: $id('semSelect'),
+      content: $id('content'),
+      settingsBtn: $id('settingsBtn'),
+      settingsPanel: $id('settingsPanel'),
+      fontSize: $id('fontSize'),
+      fontSizeValue: $id('fontSizeValue'),
+      fontFamily: $id('fontFamily'),
+      theme: $id('theme'),
+      expandAllBtn: $id('expandAllBtn'),
+      collapseAllBtn: $id('collapseAllBtn'),
+      errorContainer: $id('errorContainer')
+    };
+    
+    // Initialize app
+    function init() {
+      loadSettings();
+      setupEventListeners();
+    }
+    
+    // Event listeners
+    function setupEventListeners() {
+      e.semSelect.addEventListener('change', loadSyllabus);
+      e.settingsBtn.addEventListener('click', toggleSettings);
+      e.fontSize.addEventListener('input', updateFontSize);
+      e.fontFamily.addEventListener('change', updateFontFamily);
+      e.theme.addEventListener('change', updateTheme);
+      e.expandAllBtn.addEventListener('click', expandAll);
+      e.collapseAllBtn.addEventListener('click', collapseAll);
+    }
+    
+    // Load syllabus data
+    async function loadSyllabus() {
+      const sem = e.semSelect.value;
+      if (!sem) {
+        e.content.innerHTML = `
+          <div class="empty-state">
+            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" viewBox="0 0 16 16" style="opacity: 0.5; margin-bottom: 1rem;">
+              <path d="M5 4a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1H5zm-.5 2.5A.5.5 0 0 1 5 6h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5zM5 8a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1H5zm0 2a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1H5z"/>
+              <path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2zm10-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1z"/>
+            </svg>
+            <h2>Select a semester to view syllabus</h2>
+            <p>Choose from the dropdown menu above</p>
+          </div>
+        `;
+        return;
+      }
+      
+      e.content.innerHTML = `<div class="loader">Loading semester ${sem} syllabus...</div>`;
+      s.currentSem = sem;
+      
+      try {
+        const response = await fetch(`https://samar1h.github.io/bpharm-syllabus/syllabus/sem${sem}.json`);
+        if (!response.ok) {
+          throw new Error(`Failed to load syllabus for semester ${sem}`);
+        }
+        
+        const data = await response.json();
+        renderSyllabus(data);
+      } catch (err) {
+        showError(`Error: ${err.message}. Try checking if the syllabus files are correctly placed in /syllabus/ directory.`);
+        e.content.innerHTML = `
+          <div class="empty-state">
+            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" viewBox="0 0 16 16" style="opacity: 0.5; margin-bottom: 1rem;">
+              <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+              <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 4.995z"/>
+            </svg>
+            <h2>Could not load syllabus</h2>
+            <p>Please ensure the syllabus files are correctly placed in the /syllabus/ directory</p>
+          </div>
+        `;
+      }
+    }
+    
+    // Render syllabus data
+    function renderSyllabus(data) {
+      const { semester, program, subjects } = data;
+      
+      let html = `
+        <div class="program-info">
+          <h2>${program} - Semester ${semester}</h2>
+          <p>${subjects.length} subjects found</p>
+        </div>
+      `;
+      
+      subjects.forEach((subject, i) => {
+        const subjectId = `subject-${i}`;
+        
+        html += `
+          <div class="subject" id="${subjectId}">
+            <div class="subject-header" onclick="toggleSubject('${subjectId}')">
+              <div>${subject.course_code} - ${subject.title}</div>
+              <div class="toggle-icon">▼</div>
+            </div>
+            <div class="subject-content">
+        `;
+        
+        subject.units.forEach((unit, j) => {
+          const unitId = `${subjectId}-unit-${j}`;
+          
+          html += `
+            <div class="unit">
+              <div class="unit-header" onclick="toggleUnit('${unitId}')">
+                <div>${unit.unit}: ${unit.title}</div>
+                <div class="toggle-icon">▼</div>
+              </div>
+              <div class="unit-content" id="${unitId}">
+                ${unit.content}
+              </div>
+            </div>
+          `;
+        });
+        
+        html += `
+            </div>
+          </div>
+        `;
+      });
+      
+      e.content.innerHTML = html;
+    }
+    
+    // Toggle settings panel
+    function toggleSettings() {
+      e.settingsPanel.classList.toggle('active');
+    }
+    
+    // Update font size
+    function updateFontSize() {
+      const size = e.fontSize.value;
+      document.body.style.fontSize = `${size}px`;
+      e.fontSizeValue.textContent = `${size}px`;
+      saveSettings();
+    }
+    
+    // Update font family
+    function updateFontFamily() {
+      document.body.style.fontFamily = e.fontFamily.value;
+      saveSettings();
+    }
+    
+    // Update theme
+    function updateTheme() {
+      const theme = e.theme.value;
+      if (theme === 'system') {
+        document.documentElement.removeAttribute('data-theme');
+      } else {
+        document.documentElement.setAttribute('data-theme', theme);
+      }
+      saveSettings();
+    }
+    
+    // Toggle subject content
+    function toggleSubject(id) {
+      const subject = $id(id);
+      const content = subject.querySelector('.subject-content');
+      const icon = subject.querySelector('.subject-header .toggle-icon');
+      
+      content.classList.toggle('active');
+      icon.classList.toggle('active');
+      
+      // Save expanded state
+      s.expanded[id] = content.classList.contains('active');
+      saveExpandedState();
+    }
+    
+    // Toggle unit content
+    function toggleUnit(id) {
+      const content = $id(id);
+      const icon = content.parentNode.querySelector('.unit-header .toggle-icon');
+      
+      content.classList.toggle('active');
+      icon.classList.toggle('active');
+      
+      // Save expanded state
+      s.expanded[id] = content.classList.contains('active');
+      saveExpandedState();
+    }
+    
+    // Expand all sections
+    function expandAll() {
+      $$('.subject-content').forEach(el => el.classList.add('active'));
+      $$('.unit-content').forEach(el => el.classList.add('active'));
+      $$('.toggle-icon').forEach(el => el.classList.add('active'));
+      
+      // Update expanded state
+      updateAllExpandedState(true);
+    }
+    
+    // Collapse all sections
+    function collapseAll() {
+      $$('.subject-content').forEach(el => el.classList.remove('active'));
+      $$('.unit-content').forEach(el => el.classList.remove('active'));
+      $$('.toggle-icon').forEach(el => el.classList.remove('active'));
+      
+      // Update expanded state
+      updateAllExpandedState(false);
+    }
+    
+    // Update all expanded states
+    function updateAllExpandedState(state) {
+      $$('.subject').forEach(subject => {
+        const id = subject.id;
+        s.expanded[id] = state;
+        
+        subject.querySelectorAll('.unit-content').forEach(unit => {
+          s.expanded[unit.id] = state;
+        });
+      });
+      
+      saveExpandedState();
+    }
+    
+    // Show error message
+    function showError(message) {
+      e.errorContainer.innerHTML = `<div class="error-msg">${message}</div>`;
+      setTimeout(() => {
+        e.errorContainer.innerHTML = '';
+      }, 5000);
+    }
+    
+    // Save settings to localStorage
+    function saveSettings() {
+      const settings = {
+        fontSize: e.fontSize.value,
+        fontFamily: e.fontFamily.value,
+        theme: e.theme.value
+      };
+      
+      try {
+        localStorage.setItem('bpharmSettings', JSON.stringify(settings));
+      } catch (err) {
+        console.error('Could not save settings:', err);
+      }
+    }
+    
+    // Save expanded state to localStorage
+    function saveExpandedState() {
+      try {
+        localStorage.setItem(`bpharmExpanded-${s.currentSem}`, JSON.stringify(s.expanded));
+      } catch (err) {
+        console.error('Could not save expanded state:', err);
+      }
+    }
+    
+    // Load settings from localStorage
+    function loadSettings() {
+      try {
+        const settings = JSON.parse(localStorage.getItem('bpharmSettings'));
+        if (settings) {
+          e.fontSize.value = settings.fontSize || 16;
+          e.fontFamily.value = settings.fontFamily || 'system-ui, -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif';
+          e.theme.value = settings.theme || 'system';
+          
+          // Apply settings
+          updateFontSize();
+          updateFontFamily();
+          updateTheme();
+        }
+      } catch (err) {
+        console.error('Could not load settings:', err);
+      }
+    }
+    
+    // Load expanded state from localStorage
+    function loadExpandedState() {
+      try {
+        const expanded = JSON.parse(localStorage.getItem(`bpharmExpanded-${s.currentSem}`));
+        if (expanded) {
+          s.expanded = expanded;
+          
+          // Apply expanded state
+          Object.entries(s.expanded).forEach(([id, isExpanded]) => {
+            if (isExpanded) {
+              const el = $id(id);
+              if (el) {
+                if (id.includes('-unit-')) {
+                  el.classList.add('active');
+                  const icon = el.parentNode.querySelector('.unit-header .toggle-icon');
+                  if (icon) icon.classList.add('active');
+                } else {
+                  const content = el.querySelector('.subject-content');
+                  const icon = el.querySelector('.subject-header .toggle-icon');
+                  if (content) content.classList.add('active');
+                  if (icon) icon.classList.add('active');
+                }
+              }
+            }
+          });
+        }
+      } catch (err) {
+        console.error('Could not load expanded state:', err);
+      }
+    }
+    
+    // Make functions available globally
+    window.toggleSubject = toggleSubject;
+    window.toggleUnit = toggleUnit;
+    
+    // Initialize app
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
+

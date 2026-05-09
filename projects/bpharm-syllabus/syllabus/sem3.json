@@ -1,0 +1,130 @@
+{
+  "semester": 3,
+  "program": "Bachelor of Pharmacy (B. Pharm)",
+  "subjects": [
+    {
+      "title": "Pharmaceutical Organic Chemistry –II (Theory)",
+      "course_code": "BP301T",
+      "units": [
+        {
+          "unit": 1,
+          "title": "Benzene and its derivatives",
+          "content": "A. Analytical, synthetic and other evidences in the derivation of structure of benzene, Orbital picture, resonance in benzene, aromatic characters, Huckel’s rule\nB. Reactions of benzene - nitration, sulphonation, halogenation- reactivity, Friedelcrafts alkylation- reactivity, limitations, Friedelcrafts acylation.\nC. Substituents, effect of substituents on reactivity and orientation of mono substituted benzene compounds towards electrophilic substitution reaction\nD. Structure and uses of DDT, Saccharin, BHC and Chloramine"
+        },
+        {
+          "unit": 2,
+          "title": "Phenols*, Aromatic Amines*, Aromatic Acids*",
+          "content": "Phenols* - Acidity of phenols, effect of substituents on acidity, qualitative tests, Structure and uses of phenol, cresols, resorcinol, naphthols\nAromatic Amines* - Basicity of amines, effect of substituents on basicity, and synthetic uses of aryl diazonium salts\nAromatic Acids* –Acidity, effect of substituents on acidity and important reactions of benzoic acid."
+        },
+        {
+          "unit": 3,
+          "title": "Fats and Oils",
+          "content": "a. Fatty acids – reactions.\nb. Hydrolysis, Hydrogenation, Saponification and Rancidity of oils, Drying oils.\nc. Analytical constants – Acid value, Saponification value, Ester value, Iodine value, Acetyl value, Reichert Meissl (RM) value – significance and principle involved in their determination."
+        },
+        {
+          "unit": 4,
+          "title": "Polynuclear hydrocarbons",
+          "content": "a. Synthesis, reactions\nb. Structure and medicinal uses of Naphthalene, Phenanthrene, Anthracene, Diphenylmethane, Triphenylmethane and their derivatives"
+        },
+        {
+          "unit": 5,
+          "title": "Cyclo alkanes*",
+          "content": "Stabilities – Baeyer’s strain theory, limitation of Baeyer’s strain theory, Coulson and Moffitt’s modification, Sachse Mohr’s theory (Theory of strainless rings), reactions of cyclopropane and cyclobutane only"
+        }
+      ]
+    },
+    {
+      "title": "Physical Pharmaceutics-I (Theory)",
+      "course_code": "BP302T",
+      "units": [
+        {
+          "unit": 1,
+          "title": "Solubility of drugs",
+          "content": "Solubility expressions, mechanisms of solute solvent interactions, ideal solubility parameters, solvation & association, quantitative approach to the factors influencing solubility of drugs, diffusion principles in biological systems. Solubility of gas in liquids, solubility of liquids in liquids, (Binary solutions, ideal solutions) Raoult’s law, real solutions. Partially miscible liquids, Critical solution temperature and applications. Distribution law, its limitations and applications"
+        },
+        {
+          "unit": 2,
+          "title": "States of Matter and properties of matter, Physicochemical properties of drug molecules",
+          "content": "States of Matter and properties of matter:State of matter, changes in the state of matter, latent heats, vapour pressure, sublimation critical point, eutectic mixtures, gases, aerosols – inhalers, relative humidity, liquid complexes, liquid crystals, glassy states, solid- crystalline, amorphous & polymorphism.\nPhysicochemical properties of drug molecules: Refractive index, optical rotation, dielectric constant, dipole moment, dissociation constant, determinations and applications"
+        },
+        {
+          "unit": 3,
+          "title": "Surface and interfacial phenomenon",
+          "content": "Liquid interface, surface & interfacial tensions, surface free energy, measurement of surface & interfacial tensions, spreading coefficient, adsorption at liquid interfaces, surface active agents, HLB Scale, solubilisation, detergency, adsorption at solid interface."
+        },
+        {
+          "unit": 4,
+          "title": "Complexation and protein binding",
+          "content": "Introduction, Classification of Complexation, Applications, methods of analysis, protein binding, Complexation and drug action, crystalline structures of complexes and thermodynamic treatment of stability constants."
+        },
+        {
+          "unit": 5,
+          "title": "pH, buffers and Isotonic solutions",
+          "content": "Sorensen’s pH scale, pH determination (electrometric and calorimetric), applications of buffers, buffer equation, buffer capacity, buffers in pharmaceutical and biological systems, buffered isotonic solutions."
+        }
+      ]
+    },
+    {
+      "title": "Pharmaceutical Microbiology (Theory)",
+      "course_code": "BP303T",
+      "units": [
+        {
+          "unit": 1,
+          "title": "Introduction and Bacterial Morphology/Physiology",
+          "content": "Introduction, history of microbiology, its branches, scope and its importance.\nIntroduction to Prokaryotes and Eukaryotes\nStudy of ultra-structure and morphological classification of bacteria, nutritional requirements, raw materials used for culture media and physical parameters for growth, growth curve, isolation and preservation methods for pure cultures, cultivation of anaerobes, quantitative measurement of bacterial growth (total & viable count).\nStudy of different types of phase constrast microscopy, dark field microscopy and electron microscopy."
+        },
+        {
+          "unit": 2,
+          "title": "Bacterial Identification and Sterilization",
+          "content": "Identification of bacteria using staining techniques (simple, Gram’s &Acid fast staining) and biochemical tests (IMViC).\nStudy of principle, procedure, merits, demerits and applications of physical, chemical gaseous,radiation and mechanical method of sterilization.\nEvaluation of the efficiency of sterilization methods.\nEquipments employed in large scale sterilization.\nSterility indicators."
+        },
+        {
+          "unit": 3,
+          "title": "Fungi, Viruses and Disinfection",
+          "content": "Study of morphology, classification, reproduction/replication and cultivation of Fungi and Viruses.\nClassification and mode of action of disinfectants\nFactors influencing disinfection, antiseptics and their evaluation. For bacteriostatic and bactericidal actions\nEvaluation of bactericidal & Bacteriostatic.\nSterility testing of products (solids, liquids, ophthalmic and other sterile products) according to IP, BP and USP."
+        },
+        {
+          "unit": 4,
+          "title": "Aseptic Techniques and Microbiological Assay",
+          "content": "Designing of aseptic area, laminar flow equipments; study of different sources of contamination in an aseptic area and methods of prevention, clean area classification.\nPrinciples and methods of different microbiological assay. Methods for standardization of antibiotics, vitamins and amino acids.\nAssessment of a new antibiotic."
+        },
+        {
+          "unit": 5,
+          "title": "Microbial Spoilage and Cell Culture",
+          "content": "Types of spoilage, factors affecting the microbial spoilage of pharmaceutical products, sources and types of microbial contaminants, assessment of microbial contamination and spoilage.\nPreservation of pharmaceutical products using antimicrobial agents, evaluation of microbial stability of formulations.\nGrowth of animal cells in culture, general procedure for cell culture, Primary, established and transformed cell cultures.\nApplication of cell cultures in pharmaceutical industry and research."
+        }
+      ]
+    },
+    {
+      "title": "Pharmaceutical Engineering (Theory)",
+      "course_code": "BP304T",
+      "units": [
+        {
+          "unit": 1,
+          "title": "Fluid Flow, Size Reduction and Size Separation",
+          "content": "Flow of fluids: Types of manometers, Reynolds number and its significance, Bernoulli’s theorem and its applications, Energy losses, Orifice meter, Venturimeter, Pitot tube and Rotometer.\nSize Reduction: Objectives, Mechanisms & Laws governing size reduction, factors affecting size reduction, principles, construction, working, uses, merits and demerits of Hammer mill, ball mill, fluid energy mill, Edge runner mill & end runner mill.\nSize Separation: Objectives, applications & mechanism of size separation, official standards of powders, sieves, size separation Principles, construction, working, uses, merits and demerits of Sieve shaker, cyclone separator, Air separator, Bag filter & elutriation tank."
+        },
+        {
+          "unit": 2,
+          "title": "Heat Transfer, Evaporation, Distillation",
+          "content": "Heat Transfer: Objectives, applications & Heat transfer mechanisms. Fourier’s law, Heat transfer by conduction, convection & radiation. Heat interchangers & heat exchangers.\nEvaporation: Objectives, applications and factors influencing evaporation, differences between evaporation and other heat process. principles, construction, working, uses, merits and demerits of Steam jacketed kettle, horizontal tube evaporator, climbing film evaporator, forced circulation evaporator, multiple effect evaporator& Economy of multiple effect evaporator.\nDistillation: Basic Principles and methodology of simple distillation,flash distillation, fractional distillation, distillation under reduced pressure, steam distillation & molecular distillation"
+        },
+        {
+          "unit": 3,
+          "title": "Drying and Mixing",
+          "content": "Drying: Objectives, applications & mechanism of drying process, measurements & applications of Equilibrium Moisture content, rate of drying curve. principles, construction, working, uses, merits and demerits of Tray dryer, drum dryer spray dryer, fluidized bed dryer, vacuum dryer, freeze dryer.\nMixing: Objectives, applications & factors affecting mixing, Difference between solid and liquid mixing, mechanism of solid mixing, liquids mixing and semisolids mixing. Principles, Construction, Working, uses, Merits and Demerits of Double cone blender, twin shell blender, ribbon blender, Sigma blade mixer, planetary mixers, Propellers, Turbines, Paddles & Silverson Emulsifier,"
+        },
+        {
+          "unit": 4,
+          "title": "Filtration and Centrifugation",
+          "content": "Filtration: Objectives, applications, Theories & Factors influencing filtration, filter aids, filter medias. Principle, Construction, Working, Uses, Merits and demerits of plate & frame filter, filter leaf, rotary drum filter, Meta filter & Cartridge filter, membrane filters and Seidtz filter.\nCentrifugation: Objectives, principle & applications of Centrifugation, principles, construction, working, uses, merits and demerits of Perforated basket centrifuge, Non-perforated basket centrifuge, semi continuous centrifuge & super centrifuge."
+        },
+        {
+          "unit": 5,
+          "title": "Materials of Construction and Corrosion",
+          "content": "Materials of pharmaceutical plant construction, Corrosion and its prevention: Factors affecting during materials selected for Pharmaceutical plant construction, Theories of corrosion, types of corrosion and there prevention. Ferrous and nonferrous metals, inorganic and organic non metals, basic of material handling systems."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,192 @@
+{
+  "semester": 6,
+  "program": "Bachelor of Pharmacy (B. Pharm)",
+  "subjects": [
+    {
+      "title": "Medicinal Chemistry – III (Theory)",
+      "course_code": "BP601T",
+      "units": [
+        {
+          "unit": 1,
+          "title": "Antibiotics - Part 1",
+          "content": "Historical background, Nomenclature, Stereochemistry, Structure activity relationship, Chemical degradation classification and important products of the following classes.\nβ-Lactam antibiotics: Penicillin, Cepholosporins, β- Lactamase inhibitors, Monobactams\nAminoglycosides: Streptomycin, Neomycin, Kanamycin\nTetracyclines: Tetracycline,Oxytetracycline, Chlortetracycline, Minocycline, Doxycycline"
+        },
+        {
+          "unit": 2,
+          "title": "Antibiotics - Part 2, Prodrugs, Antimalarials",
+          "content": "Antibiotics\nHistorical background, Nomenclature, Stereochemistry, Structure activity relationship, Chemical degradation classification and important products of the following classes.\nMacrolide: Erythromycin Clarithromycin, Azithromycin.\nMiscellaneous: Chloramphenicol*, Clindamycin.\nProdrugs: Basic concepts and application of prodrugs design.\nAntimalarials: Etiology of malaria.\nQuinolines: SAR, Quinine sulphate, Chloroquine*, Amodiaquine, Primaquine phosphate, Pamaquine*, Quinacrine hydrochloride, Mefloquine.\nBiguanides and dihydro triazines: Cycloguanil pamoate, Proguanil.\nMiscellaneous: Pyrimethamine, Artesunete, Artemether, Atovoquone."
+        },
+        {
+          "unit": 3,
+          "title": "Anti-tubercular Agents, Urinary tract anti-infective agents, Antiviral agents",
+          "content": "Anti-tubercular Agents\nSynthetic anti tubercular agents: Isoniozid*, Ethionamide, Ethambutol, Pyrazinamide, Para amino salicylic acid.*\nAnti tubercular antibiotics: Rifampicin, Rifabutin, Cycloserine Streptomycine, Capreomycin sulphate.\nUrinary tract anti-infective agents\nQuinolones: SAR of quinolones, Nalidixic Acid,Norfloxacin, Enoxacin, Ciprofloxacin*, Ofloxacin, Lomefloxacin, Sparfloxacin, Gatifloxacin, Moxifloxacin\nMiscellaneous: Furazolidine, Nitrofurantoin*, Methanamine.\nAntiviral agents:\nAmantadine hydrochloride, Rimantadine hydrochloride, Idoxuridine trifluoride, Acyclovir*, Gancyclovir, Zidovudine, Didanosine, Zalcitabine, Lamivudine, Loviride, Delavirding, Ribavirin, Saquinavir, Indinavir, Ritonavir."
+        },
+        {
+          "unit": 4,
+          "title": "Antifungal agents, Anti-protozoal Agents, Anthelmintics",
+          "content": "Antifungal agents:\nAntifungal antibiotics: Amphotericin-B, Nystatin, Natamycin, Griseofulvin.\nSynthetic Antifungal agents: Clotrimazole, Econazole, Butoconazole, Oxiconazole Tioconozole, Miconazole*, Ketoconazole, Terconazole, Itraconazole, Fluconazole, Naftifine hydrochloride, Tolnaftate*.\nAnti-protozoal Agents: Metronidazole*, Tinidazole, Ornidazole, Diloxanide, Iodoquinol, Pentamidine Isethionate, Atovaquone, Eflornithine.\nAnthelmintics: Diethylcarbamazine citrate*, Thiabendazole, Mebendazole*, Albendazole, Niclosamide, Oxamniquine, Praziquantal, Ivermectin."
+        },
+        {
+          "unit": 5,
+          "title": "Sulphonamides, Sulfones, Introduction to Drug Design, Combinatorial Chemistry",
+          "content": "Sulphonamides and Sulfones\nHistorical development, chemistry, classification and SAR of Sulfonamides: Sulphamethizole, Sulfisoxazole, Sulphamethizine, Sulfacetamide*, Sulphapyridine, Sulfamethoxaole*, Sulphadiazine, Mefenide acetate, Sulfasalazine.\nFolate reductase inhibitors: Trimethoprim*, Cotrimoxazole.\nSulfones: Dapsone*.\nIntroduction to Drug Design\nVarious approaches used in drug design.\nPhysicochemical parameters used in quantitative structure activity relationship (QSAR) such as partition coefficient, Hammet’s electronic parameter, Tafts steric parameter and Hansch analysis.\nPharmacophore modeling and docking techniques.\nCombinatorial Chemistry: Concept and applications of combinatorial chemistry: solid phase and solution phase synthesis."
+        }
+      ]
+    },
+    {
+      "title": "Pharmacology-III (Theory)",
+      "course_code": "BP602T",
+      "units": [
+        {
+          "unit": 1,
+          "title": "Pharmacology of drugs acting on Respiratory system & Gastrointestinal Tract",
+          "content": "1. Pharmacology of drugs acting on Respiratory system\na. Anti -asthmatic drugs\nb. Drugs used in the management of COPD\nc. Expectorants and antitussives\nd. Nasal decongestants\ne. Respiratory stimulants\n2. Pharmacology of drugs acting on the Gastrointestinal Tract\na. Antiulcer agents.\nb. Drugs for constipation and diarrhoea.\nc. Appetite stimulants and suppressants.\nd. Digestants and carminatives.\ne. Emetics and anti-emetics."
+        },
+        {
+          "unit": 2,
+          "title": "Chemotherapy - Part 1",
+          "content": "3. Chemotherapy\na. General principles of chemotherapy.\nb. Sulfonamides and cotrimoxazole.\nc. Antibiotics- Penicillins, cephalosporins, chloramphenicol, macrolides, quinolones and fluoroquinolins, tetracycline and aminoglycosides"
+        },
+        {
+          "unit": 3,
+          "title": "Chemotherapy - Part 2",
+          "content": "3. Chemotherapy\na. Antitubercular agents\nb. Antileprotic agents\nc. Antifungal agents\nd. Antiviral drugs\ne.Anthelmintics\nf. Antimalarial drugs\ng. Antiamoebic agents"
+        },
+        {
+          "unit": 4,
+          "title": "Chemotherapy - Part 3 & Immunopharmacology",
+          "content": "3. Chemotherapy\nl. Urinary tract infections and sexually transmitted diseases.\nm. Chemotherapy of malignancy.\n4. Immunopharmacology\na. Immunostimulants\nb. Immunosuppressant\nProtein drugs, monoclonal antibodies, target drugs to antigen, biosimilars"
+        },
+        {
+          "unit": 5,
+          "title": "Principles of toxicology & Chronopharmacology",
+          "content": "5. Principles of toxicology\na. Definition and basic knowledge of acute, subacute and chronic toxicity.\nb. Definition and basic knowledge of genotoxicity, carcinogenicity, teratogenicity and mutagenicity\nc. General principles of treatment of poisoning\nd. Clinical symptoms and management of barbiturates, morphine, organophosphosphorus compound and lead, mercury and arsenic poisoning.\n6. Chronopharmacology\na. Definition of rhythm and cycles.\nb. Biological clock and their significance leading to chronotherapy."
+        }
+      ]
+    },
+    {
+      "title": "Herbal Drug Technology (Theory)",
+      "course_code": "BP603T",
+      "units": [
+        {
+          "unit": 1,
+          "title": "Herbs as raw materials, Biodynamic Agriculture, Indian Systems of Medicine",
+          "content": "Herbs as raw materials\nDefinition of herb, herbal medicine, herbal medicinal product, herbal drug preparation\nSource of Herbs\nSelection, identification and authentication of herbal materials\nProcessing of herbal raw material\nBiodynamic Agriculture\nGood agricultural practices in cultivation of medicinal plants including Organic farming.\nPest and Pest management in medicinal plants: Biopesticides/Bioinsecticides.\nIndian Systems of Medicine\na) Basic principles involved in Ayurveda, Siddha, Unani and Homeopathy\nb) Preparation and standardization of Ayurvedic formulations viz Aristas and Asawas, Ghutika,Churna, Lehya and Bhasma."
+        },
+        {
+          "unit": 2,
+          "title": "Nutraceuticals, Herbal-Drug and Herb-Food Interactions",
+          "content": "Nutraceuticals\nGeneral aspects, Market, growth, scope and types of products available in the market. Health benefits and role of Nutraceuticals in ailments like Diabetes, CVS diseases, Cancer, Irritable bowel syndrome and various Gastro intestinal diseases.\nStudy of following herbs as health food: Alfaalfa, Chicory, Ginger, Fenugreek, Garlic, Honey, Amla, Ginseng, Ashwagandha, Spirulina\nHerbal-Drug and Herb-Food Interactions: General introduction to interaction and classification. Study of following drugs and their possible side effects and interactions: Hypercium, kava-kava, Ginkobiloba, Ginseng, Garlic, Pepper & Ephedra."
+        },
+        {
+          "unit": 3,
+          "title": "Herbal Cosmetics, Herbal excipients, Herbal formulations",
+          "content": "Herbal Cosmetics\nSources and description of raw materials of herbal origin used via, fixed oils, waxes, gums colours, perfumes, protective agents, bleaching agents, antioxidants in products such as skin care, hair care and oral hygiene products.\nHerbal excipients:\nHerbal Excipients – Significance of substances of natural origin as excipients – colorants, sweeteners, binders, diluents, viscosity builders, disintegrants, flavors & perfumes.\nHerbal formulations :\nConventional herbal formulations like syrups, mixtures and tablets and Novel dosage forms like phytosomes"
+        },
+        {
+          "unit": 4,
+          "title": "Evaluation of Drugs, Patenting and Regulatory requirements",
+          "content": "Evaluation of Drugs WHO & ICH guidelines for the assessment of herbal drugs\nStability testing of herbal drugs.\nPatenting and Regulatory requirements of natural products:\na) Definition of the terms: Patent, IPR, Farmers right, Breeder’s right, Bioprospecting and Biopiracy\nb) Patenting aspects of Traditional Knowledge and Natural Products. Case study of Curcuma & Neem."
+        },
+        {
+          "unit": 5,
+          "title": "Regulatory Issues, Herbal Industry, Schedule T",
+          "content": "Regulatory Issues - Regulations in India (ASU DTAB, ASU DCC), Regulation of manufacture of ASU drugs - Schedule Z of Drugs & Cosmetics Act for ASU drugs.\nGeneral Introduction to Herbal Industry\nHerbal drugs industry: Present scope and future prospects.\nA brief account of plant based industries and institutions involved in work on medicinal and aromatic plants in India.\nSchedule T – Good Manufacturing Practice of Indian systems of medicine\nComponents of GMP (Schedule – T) and its objectives\nInfrastructural requirements, working space, storage area, machinery and equipments, standard operating procedures, health and hygiene, documentation and records."
+        }
+      ]
+    },
+    {
+      "title": "Biopharmaceutics and Pharmacokinetics (Theory)",
+      "course_code": "BP604T",
+      "units": [
+        {
+          "unit": 1,
+          "title": "Introduction to Biopharmaceutics and Absorption",
+          "content": "Introduction to Biopharmaceutics\nAbsorption; Mechanisms of drug absorption through GIT, factors influencing drug absorption though GIT, absorption of drug from Non per oral extra-vascular routes,"
+        },
+        {
+          "unit": 2,
+          "title": "Distribution, Elimination, Bioavailability and Bioequivalence",
+          "content": "Distribution Tissue permeability of drugs, binding of drugs, apparent, volume of drug distribution, plasma and tissue protein binding of drugs, factors affecting protein-drug binding. Kinetics of protein binding, Clinical significance of protein binding of drugs\nElimination: Drug metabolism and basic understanding metabolic pathways renal excretion of drugs, factors affecting renal excretion of drugs, renal clearance, Non renal routes of drug excretion of drugs\nBioavailability and Bioequivalence: Definition and Objectives of bioavailability, absolute and relative bioavailability, measurement of bioavailability, in-vitro drug dissolution models, in-vitro-in-vivo correlations, bioequivalence studies, methods to enhance the dissolution rates and bioavailability of poorly soluble drugs."
+        },
+        {
+          "unit": 3,
+          "title": "Pharmacokinetics - One compartment model",
+          "content": "Pharmacokinetics: Definition and introduction to Pharmacokinetics, Compartment models, Non compartment models, physiological models, One compartment open model. (a). Intravenous Injection (Bolus) (b). Intravenous infusion and (c) Extra vascular administrations. Pharmacokinetics parameters - KE ,t1/2,Vd,AUC,Ka, Clt and CLR- definitions methods of eliminations, understanding of their significance and application"
+        },
+        {
+          "unit": 4,
+          "title": "Pharmacokinetics - Multicompartment models",
+          "content": "Multicompartment models: Two compartment open model. IV bolus\nKinetics of multiple dosing, steady state drug levels, calculation of loading and mainetnance doses and their significance in clinical settins."
+        },
+        {
+          "unit": 5,
+          "title": "Nonlinear Pharmacokinetics",
+          "content": "Nonlinear Pharmacokinetics: a. Introduction, b. Factors causing Non-linearity.\nc. Michaelis-menton method of estimating parameters, Explanation with example of drugs."
+        }
+      ]
+    },
+    {
+      "title": "Pharmaceutical Biotechnology (Theory)",
+      "course_code": "BP605T",
+      "units": [
+        {
+          "unit": 1,
+          "title": "Introduction to Biotechnology and Enzyme Technology",
+          "content": "a) Brief introduction to Biotechnology with reference to Pharmaceutical Sciences.\nb) Enzyme Biotechnology- Methods of enzyme immobilization and applications.\nc) Biosensors- Working and applications of biosensors in Pharmaceutical Industries.\nd) Brief introduction to Protein Engineering.\ne) Use of microbes in industry. Production of Enzymes- General consideration - Amylase, Catalase, Peroxidase, Lipase, Protease, Penicillinase.\nf) Basic principles of genetic engineering."
+        },
+        {
+          "unit": 2,
+          "title": "Recombinant DNA Technology",
+          "content": "a) Study of cloning vectors, restriction endonucleases and DNA ligase.\nb) Recombinant DNA technology. Application of genetic engineering in medicine.\nc) Application of r DNA technology and genetic engineering in the production of:\ni) Interferon ii) Vaccines- hepatitis- B iii) Hormones-Insulin.\nd) Brief introduction to PCR"
+        },
+        {
+          "unit": 3,
+          "title": "Immunology and Immunological Products",
+          "content": "Types of immunity- humoral immunity, cellular immunity\na) Structure of Immunoglobulins\nb) Structure and Function of MHC\nc) Hypersensitivity reactions, Immune stimulation and Immune suppressions.\nd) General method of the preparation of bacterial vaccines, toxoids, viral vaccine, antitoxins, serum-immune blood derivatives and other products relative to immunity.\ne) Storage conditions and stability of official vaccines\nf) Hybridoma technology- Production, Purification and Applications\ng) Blood products and Plasma Substituties."
+        },
+        {
+          "unit": 4,
+          "title": "Immuno blotting, Genetics, Biotransformation, Mutation",
+          "content": "a) Immuno blotting techniques- ELISA, Western blotting, Southern blotting.\nb) Genetic organization of Eukaryotes and Prokaryotes\nc) Microbial genetics including transformation, transduction, conjugation, plasmids and transposons.\nd) Introduction to Microbial biotransformation and applications.\ne) Mutation: Types of mutation/mutants."
+        },
+        {
+          "unit": 5,
+          "title": "Fermentation Technology and Blood Products",
+          "content": "a) Fermentation methods and general requirements, study of media, equipments, sterilization methods, aeration process, stirring.\nb) Large scale production fermenter design and its various controls.\nc) Study of the production of - penicillins, citric acid, Vitamin B12, Glutamic acid, Griseofulvin,\nd) Blood Products: Collection, Processing and Storage of whole human blood, dried human plasma, plasma Substituties."
+        }
+      ]
+    },
+    {
+      "title": "Pharmaceutical Quality Assurance (Theory)",
+      "course_code": "BP606T",
+      "units": [
+        {
+          "unit": 1,
+          "title": "Quality Management Concepts and Guidelines",
+          "content": "Quality Assurance and Quality Management concepts: Definition and concept of Quality control, Quality assurance and GMP\nTotal Quality Management (TQM): Definition, elements, philosophies\nICH Guidelines: purpose, participants, process of harmonization, Brief overview of QSEM, with special emphasis on Q-series guidelines, ICH stability testing guidelines\nQuality by design (QbD): Definition, overview, elements of QbD program, tools\nISO 9000 & ISO14000: Overview, Benefits, Elements, steps for registration\nNABL accreditation : Principles and procedures"
+        },
+        {
+          "unit": 2,
+          "title": "GMP Infrastructure and Materials",
+          "content": "Organization and personnel: Personnel responsibilities, training, hygiene and personal records.\nPremises: Design, construction and plant layout, maintenance, sanitation, environmental control, utilities and maintenance of sterile areas, control of contamination.\nEquipments and raw materials: Equipment selection, purchase specifications, maintenance, purchase specifications and maintenance of stores for raw materials."
+        },
+        {
+          "unit": 3,
+          "title": "Quality Control and Good Laboratory Practices",
+          "content": "Quality Control: Quality control test for containers, rubber closures and secondary packing materials.\nGood Laboratory Practices: General Provisions, Organization and Personnel, Facilities, Equipment, Testing Facilities Operation, Test and Control Articles, Protocol for Conduct of a Nonclinical Laboratory Study, Records and Reports, Disqualification of Testing Facilities"
+        },
+        {
+          "unit": 4,
+          "title": "Complaints and Document Maintenance",
+          "content": "Complaints: Complaints and evaluation of complaints, Handling of return good, recalling and waste disposal.\nDocument maintenance in pharmaceutical industry: Batch Formula Record, Master Formula Record, SOP, Quality audit, Quality Review and Quality documentation, Reports and documents, distribution records."
+        },
+        {
+          "unit": 5,
+          "title": "Calibration, Validation and Warehousing",
+          "content": "Calibration and Validation: Introduction, definition and general principles of calibration, qualification and validation, importance and scope of validation, types of validation, validation master plan. Calibration of pH meter, Qualification of UV-Visible spectrophotometer, General principles of Analytical method Validation.\nWarehousing: Good warehousing practice, materials management"
+        }
+      ]
+    }
+  ]
+}
