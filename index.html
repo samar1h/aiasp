@@ -6,7 +6,6 @@
   <link rel="icon" type="image/png" href="favicon.png">
   <title>AI Assisted Projects</title>
 
-  <!-- 1 font, 1 icon lib, 1 data lib — nothing else -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -14,16 +13,17 @@
 
   <style>
     :root {
-      --bg:         #0d0d11;
-      --surface:    #16161d;
-      --border:     #242430;
-      --border-hi:  #38384a;
-      --text-1:     #e0e0ea;
-      --text-2:     #888898;
-      --text-3:     #4c4c5e;
-      --accent:     #9f7aea;
-      --accent-bg:  rgba(159,122,234,.1);
-      --r:          14px;
+      --bg:        #0d0d11;
+      --surface:   #16161d;
+      --border:    #242430;
+      --border-hi: #38384a;
+      --text-1:    #e0e0ea;
+      --text-2:    #888898;
+      --text-3:    #4c4c5e;
+      --accent:    #9f7aea;
+      --accent-bg: rgba(159,122,234,.1);
+      --accent-br: rgba(159,122,234,.35);
+      --r:         14px;
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -45,7 +45,7 @@
     /* ── Search ── */
     .search-wrap {
       position: relative;
-      margin-bottom: 20px;
+      margin-bottom: 14px;
     }
     .search-wrap svg {
       position: absolute;
@@ -73,6 +73,65 @@
     #search::placeholder { color: var(--text-3); }
     #search:focus { border-color: var(--accent); }
 
+    /* ── Filter chips ── */
+    .chips {
+      display: flex;
+      gap: 7px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+      margin-bottom: 16px;
+      padding-bottom: 2px;
+    }
+    .chips::-webkit-scrollbar { display: none; }
+
+    .chip {
+      flex-shrink: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      padding: 6px 14px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-2);
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .chip.active {
+      background: var(--accent-bg);
+      border-color: var(--accent-br);
+      color: var(--accent);
+    }
+    .chip:active { opacity: .6; }
+
+    /* ── Toolbar (count + sort) ── */
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    #count {
+      font-size: 12px;
+      color: var(--text-3);
+    }
+    #sortBtn {
+      background: none;
+      border: none;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-2);
+      cursor: pointer;
+      padding: 4px 0 4px 12px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    #sortBtn:active { color: var(--accent); }
+    #sortBtn svg { width: 11px; height: 11px; flex-shrink: 0; }
+
     /* ── Card list ── */
     #list { display: flex; flex-direction: column; gap: 16px; }
 
@@ -96,10 +155,7 @@
       scale: .975;
     }
     @media (hover: hover) {
-      .card:hover {
-        background: #1c1c25;
-        border-color: var(--border-hi);
-      }
+      .card:hover { background: #1c1c25; border-color: var(--border-hi); }
     }
     @keyframes up {
       from { opacity: 0; translate: 0 6px; }
@@ -119,20 +175,12 @@
       color: var(--accent);
       overflow: hidden;
     }
-    .card-icon img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-    /* Fallback initial letter */
-    .card-icon.initial {
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--accent);
-    }
+    .card-icon img { width: 100%; height: 100%; object-fit: cover; }
+    .card-icon.initial { font-size: 14px; font-weight: 600; }
 
     /* ── Content ── */
     .card-body { flex: 1; min-width: 0; }
+
     .card-title {
       font-size: 15px;
       font-weight: 600;
@@ -141,6 +189,8 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
+
+    /* clamped by default; .open overrides */
     .card-desc {
       font-size: 13px;
       color: var(--text-2);
@@ -151,19 +201,30 @@
       -webkit-box-orient: vertical;
       overflow: hidden;
     }
-    .card-domain {
-      font-size: 11.5px;
-      color: var(--text-3);
-      margin-top: 6px;
-      letter-spacing: .02em;
+    .card-desc.open {
+      display: block;
+      overflow: visible;
     }
+
+    .more-btn {
+      background: none;
+      border: none;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--accent);
+      cursor: pointer;
+      padding: 0;
+      line-height: inherit;
+    }
+    .more-btn:active { opacity: .6; }
 
     /* ── Arrow ── */
     .card-arrow {
       flex-shrink: 0;
       color: var(--text-3);
-      margin-top: 2px;
-      font-size: 12px;
+      margin-top: 3px;
+      font-size: 11px;
       transition: color .15s;
     }
     .card:active .card-arrow,
@@ -177,146 +238,296 @@
       font-size: 14px;
       line-height: 1.6;
     }
-    .state i { display: block; font-size: 28px; margin-bottom: 12px; }
+    .state i { display: block; font-size: 26px; margin-bottom: 12px; }
     .state strong { color: var(--text-2); display: block; margin-bottom: 6px; }
-    .state code {
-      background: rgba(255,255,255,.05);
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-size: 12px;
-    }
 
     /* ── Loader ── */
     .loader {
-      width: 32px; height: 32px;
+      width: 30px; height: 30px;
       border: 2.5px solid var(--border);
       border-top-color: var(--accent);
       border-radius: 50%;
       margin: 60px auto;
-      animation: spin 0.8s linear infinite;
+      animation: spin .8s linear infinite;
     }
-    @keyframes spin {
-      to { rotate: 360deg; }
+    @keyframes spin { to { rotate: 360deg; } }
+
+    /* ── Footer ── */
+    .page-footer {
+      text-align: center;
+      padding: 28px 0 4px;
     }
+    #reloadBtn {
+      background: none;
+      border: none;
+      font-family: inherit;
+      font-size: 12px;
+      color: var(--text-3);
+      cursor: pointer;
+      padding: 8px 20px;
+      border-radius: 50px;
+      transition: color .15s;
+    }
+    #reloadBtn:active { color: var(--text-2); }
   </style>
 </head>
 <body>
-  <main>
-    <div class="search-wrap">
-      <!-- inline SVG — no extra request -->
-      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-        <circle cx="8.5" cy="8.5" r="5.5"/><path d="m14 14 3 3"/>
+<main>
+
+  <div class="search-wrap">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="8.5" cy="8.5" r="5.5"/><path d="m14 14 3 3"/>
+    </svg>
+    <input type="search" id="search" placeholder="Search projects…" autocomplete="off" spellcheck="false">
+  </div>
+
+  <div class="chips" id="chips"></div>
+
+  <div class="toolbar" id="toolbar" hidden>
+    <span id="count"></span>
+    <button id="sortBtn">
+      <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+        <path d="M1 3h10M3 6h6M5 9h2"/>
       </svg>
-      <input type="search" id="search" placeholder="Search projects…" autocomplete="off" spellcheck="false">
-    </div>
-    <div id="list"><div class="loader"></div></div>
-  </main>
+      <span id="sortLabel">Default</span>
+    </button>
+  </div>
 
-  <script>
-    const YAML_PATH = 'projects.yml';
-    let all = [];
+  <div id="list"><div class="loader"></div></div>
 
-    // ── Icon helpers ──────────────────────────────────────────────
-    const isURL = s => s && /^(https?:|data:)/.test(s);
+  <div class="page-footer" id="pageFooter" hidden>
+    <button id="reloadBtn">↻ refresh</button>
+  </div>
 
-    // Normalize any FA icon string to fa-solid.
-    // Also fixes FA5→FA6 renames we know about.
-    const FA6_RENAMES = {
-      'fa-plus-square':   'fa-square-plus',
-      'fa-minus-square':  'fa-square-minus',
-      'fa-times':         'fa-xmark',
-      'fa-inr':           'fa-indian-rupee-sign',
-    };
-    function normalizeFA(icon) {
-      if (!icon) return 'fa-solid fa-cube';
-      let cls = icon.trim();
-      // Rename old icon names
-      for (const [old, neo] of Object.entries(FA6_RENAMES)) {
-        cls = cls.replace(old, neo);
+</main>
+<script>
+  const YAML_PATH  = 'projects.yml';
+  const CACHE_KEY  = 'aiasp_v1';
+  const CACHE_TTL  = 3_600_000; // 1 hour ms
+  const DESC_LIMIT = 95;        // chars before "more" appears
+
+  let all         = [];
+  let activeTag   = 'all';
+  let sortMode    = 'default'; // 'default' | 'az' | 'za'
+  let searchQuery = '';
+  const expanded  = new Set(); // _idx values of expanded cards
+
+  const SORT_CYCLE  = ['default', 'az', 'za'];
+  const SORT_LABELS = { default: 'Default', az: 'A → Z', za: 'Z → A' };
+
+  // ── Cache ──────────────────────────────────────────────────────
+  function saveCache(text) {
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify({ t: Date.now(), v: text })); } catch {}
+  }
+  function loadCache() {
+    try {
+      const c = JSON.parse(localStorage.getItem(CACHE_KEY));
+      if (c && Date.now() - c.t < CACHE_TTL) return c.v;
+    } catch {}
+    return null;
+  }
+  function clearCache() { try { localStorage.removeItem(CACHE_KEY); } catch {} }
+
+  // ── Icon ───────────────────────────────────────────────────────
+  const isURL = s => s && /^(https?:|data:)/.test(s);
+  const FA6   = {
+    'fa-plus-square':  'fa-square-plus',
+    'fa-minus-square': 'fa-square-minus',
+    'fa-times':        'fa-xmark',
+    'fa-inr':          'fa-indian-rupee-sign',
+  };
+  function normalizeFA(icon) {
+    if (!icon) return 'fa-solid fa-cube';
+    let s = icon.trim();
+    for (const [k, v] of Object.entries(FA6)) s = s.replace(k, v);
+    s = s.replace(/\bfa-(regular|light|thin|duotone)\b/, '').trim();
+    if (!s.includes('fa-solid')) s = 'fa-solid ' + s;
+    return s;
+  }
+
+  // ── Escape ─────────────────────────────────────────────────────
+  function esc(s) {
+    return String(s ?? '').replace(/[&<>"']/g,
+      c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+  }
+
+  // ── Derived list ───────────────────────────────────────────────
+  function getVisible() {
+    let list = activeTag === 'all' ? all : all.filter(p => p.tags.includes(activeTag));
+    const q = searchQuery.trim().toLowerCase();
+    if (q) list = list.filter(p =>
+      p.title.toLowerCase().includes(q) ||
+      p.description.toLowerCase().includes(q)
+    );
+    if (sortMode === 'az') list = [...list].sort((a, b) => a.title.localeCompare(b.title));
+    if (sortMode === 'za') list = [...list].sort((a, b) => b.title.localeCompare(a.title));
+    return list;
+  }
+
+  // ── Card HTML ──────────────────────────────────────────────────
+  function cardHtml(p, i) {
+    const initial  = esc(p.title[0] ?? '?');
+    const iconHtml = isURL(p.icon)
+      ? `<img src="${esc(p.icon)}" alt=""
+             onerror="this.parentNode.classList.add('initial');this.parentNode.textContent='${initial}';">`
+      : `<i class="${esc(normalizeFA(p.icon))}"></i>`;
+
+    const isLong = p.description.length > DESC_LIMIT;
+    const isOpen = expanded.has(p._idx);
+    let descHtml;
+    if (!isLong) {
+      descHtml = `<div class="card-desc">${esc(p.description)}</div>`;
+    } else if (isOpen) {
+      descHtml = `<div class="card-desc open">${esc(p.description)}&nbsp;<button class="more-btn" data-more="${p._idx}">less</button></div>`;
+    } else {
+      descHtml = `<div class="card-desc">${esc(p.description.slice(0, DESC_LIMIT))}…&nbsp;<button class="more-btn" data-more="${p._idx}">more</button></div>`;
+    }
+
+    return `
+      <a class="card" href="${esc(p.url)}" target="_blank" rel="noopener noreferrer"
+         style="animation-delay:${Math.min(i * 25, 180)}ms">
+        <div class="card-icon">${iconHtml}</div>
+        <div class="card-body">
+          <div class="card-title">${esc(p.title)}</div>
+          ${descHtml}
+        </div>
+        <div class="card-arrow"><i class="fa-solid fa-arrow-up-right-from-square"></i></div>
+      </a>`;
+  }
+
+  // ── Render ─────────────────────────────────────────────────────
+  function render() {
+    const visible = getVisible();
+    document.getElementById('list').innerHTML = visible.length
+      ? visible.map(cardHtml).join('')
+      : `<div class="state"><i class="fa-solid fa-magnifying-glass"></i>No results</div>`;
+    document.getElementById('count').textContent =
+      `${visible.length} of ${all.length}`;
+  }
+
+  function buildChips() {
+    const tags    = [...new Set(all.flatMap(p => p.tags))].sort();
+    const chipsEl = document.getElementById('chips');
+    // hide chips entirely if no project has tags
+    chipsEl.hidden = tags.length === 0;
+    if (tags.length === 0) return;
+    chipsEl.innerHTML = ['all', ...tags].map(t =>
+      `<button class="chip${t === activeTag ? ' active' : ''}" data-tag="${esc(t)}">
+        ${t === 'all' ? 'All' : esc(t)}
+      </button>`
+    ).join('');
+  }
+
+  // ── Events ─────────────────────────────────────────────────────
+
+  // Read more / less  (delegation; prevent card link from firing)
+  document.getElementById('list').addEventListener('click', e => {
+    const btn = e.target.closest('[data-more]');
+    if (!btn) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const idx = +btn.dataset.more;
+    expanded.has(idx) ? expanded.delete(idx) : expanded.add(idx);
+    render();
+  });
+
+  // Filter chips
+  document.getElementById('chips').addEventListener('click', e => {
+    const chip = e.target.closest('[data-tag]');
+    if (!chip || chip.dataset.tag === activeTag) return;
+    activeTag = chip.dataset.tag;
+    document.querySelectorAll('.chip').forEach(c =>
+      c.classList.toggle('active', c.dataset.tag === activeTag));
+    expanded.clear();
+    render();
+  });
+
+  // Sort (cycles default → A–Z → Z–A → default)
+  document.getElementById('sortBtn').addEventListener('click', () => {
+    sortMode = SORT_CYCLE[(SORT_CYCLE.indexOf(sortMode) + 1) % SORT_CYCLE.length];
+    document.getElementById('sortLabel').textContent = SORT_LABELS[sortMode];
+    render();
+  });
+
+  // Search
+  let searchTimer;
+  document.getElementById('search').addEventListener('input', e => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => {
+      searchQuery = e.target.value;
+      expanded.clear();
+      render();
+    }, 150);
+  });
+
+  // Refresh button — clear cache, reset state, re-fetch
+  document.getElementById('reloadBtn').addEventListener('click', async () => {
+    clearCache();
+    expanded.clear();
+    activeTag   = 'all';
+    sortMode    = 'default';
+    searchQuery = '';
+    document.getElementById('search').value = '';
+    document.getElementById('sortLabel').textContent = SORT_LABELS.default;
+    await loadProjects(true);
+  });
+
+  // ── Parse ──────────────────────────────────────────────────────
+  function parseYAML(text) {
+    const parsed = jsyaml.load(text);
+    if (!Array.isArray(parsed)) throw new Error('YAML root must be an array');
+    return parsed.map((p, i) => ({
+      _idx:        i,
+      title:       String(p.title       ?? 'Untitled'),
+      description: String(p.description ?? ''),
+      icon:        p.icon ?? null,
+      url:         String(p.url         ?? '#'),
+      tags: Array.isArray(p.tags) ? p.tags.map(String)
+          : p.tags                ? [String(p.tags)]
+          : [],
+    }));
+  }
+
+  // ── Load ───────────────────────────────────────────────────────
+  async function loadProjects(force = false) {
+    const footer  = document.getElementById('pageFooter');
+    const toolbar = document.getElementById('toolbar');
+    footer.hidden = toolbar.hidden = true;
+
+    if (!force) {
+      const cached = loadCache();
+      if (cached) {
+        try {
+          all = parseYAML(cached);
+          buildChips();
+          render();
+          footer.hidden = toolbar.hidden = false;
+          return;
+        } catch { /* stale/corrupt cache — fall through to fetch */ }
       }
-      // Strip non-solid prefixes
-      cls = cls.replace(/\bfa-(regular|light|thin|duotone)\b/, '').trim();
-      // Ensure fa-solid is present
-      if (!cls.includes('fa-solid')) cls = 'fa-solid ' + cls;
-      return cls;
     }
 
-    // ── Render ───────────────────────────────────────────────────
-    function getDomain(url) {
-      try { return new URL(url).hostname.replace('www.', ''); }
-      catch { return ''; }
+    document.getElementById('list').innerHTML = `<div class="loader"></div>`;
+    try {
+      const res = await fetch(`${YAML_PATH}?_=${Date.now()}`); // bust browser cache on force reload
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const text = await res.text();
+      saveCache(text);
+      all = parseYAML(text);
+      buildChips();
+      render();
+      footer.hidden = toolbar.hidden = false;
+    } catch (err) {
+      document.getElementById('list').innerHTML = `
+        <div class="state">
+          <i class="fa-solid fa-triangle-exclamation" style="color:#f87171"></i>
+          <strong>Failed to load projects</strong>
+          <small style="color:var(--text-3)">${esc(err.message)}</small>
+        </div>`;
     }
+  }
 
-    function html(projects) {
-      if (!projects.length) {
-        return `<div class="state"><i class="fa-solid fa-magnifying-glass"></i>No results</div>`;
-      }
-      return projects.map((p, i) => {
-        const delay = Math.min(i * 30, 200);
-        const iconHtml = isURL(p.icon)
-          ? `<img src="${esc(p.icon)}" alt="" onerror="this.parentNode.className+=' initial';this.parentNode.textContent='${p.title[0]}';">`
-          : `<i class="${esc(normalizeFA(p.icon))}"></i>`;
-
-        return `
-        <a class="card" href="${esc(p.url)}" target="_blank" rel="noopener noreferrer"
-           style="animation-delay:${delay}ms">
-          <div class="card-icon">${iconHtml}</div>
-          <div class="card-body">
-            <div class="card-title">${esc(p.title)}</div>
-            <div class="card-desc">${esc(p.description)}</div>
-          </div>
-          <div class="card-arrow"><i class="fa-solid fa-arrow-up-right-from-square"></i></div>
-        </a>`;
-      }).join('');
-    }
-
-    function render(list) {
-      document.getElementById('list').innerHTML = html(list);
-    }
-
-    // ── Search ───────────────────────────────────────────────────
-    let timer;
-    document.getElementById('search').addEventListener('input', e => {
-      clearTimeout(timer);
-      timer = setTimeout(() => {
-        const q = e.target.value.trim().toLowerCase();
-        render(q ? all.filter(p =>
-          p.title.toLowerCase().includes(q) ||
-          p.description.toLowerCase().includes(q)
-        ) : all);
-      }, 150);
-    });
-
-    // ── Load ─────────────────────────────────────────────────────
-    function esc(s) {
-      return String(s ?? '').replace(/[&<>"']/g, c =>
-        ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    }
-
-    (async () => {
-      try {
-        const res = await fetch(YAML_PATH);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const parsed = jsyaml.load(await res.text());
-        if (!Array.isArray(parsed)) throw new Error('YAML root must be an array');
-
-        all = parsed.map(p => ({
-          title:       String(p.title       ?? 'Untitled'),
-          description: String(p.description ?? ''),
-          icon:        p.icon  ?? null,
-          url:         String(p.url         ?? '#'),
-        }));
-
-        render(all);
-      } catch (err) {
-        document.getElementById('list').innerHTML = `
-          <div class="state">
-            <i class="fa-solid fa-triangle-exclamation" style="color:#f87171"></i>
-            <strong>Couldn't load projects.yml</strong>
-            <br><br><small style="color:#4c4c5e">${esc(err.message)}</small>
-          </div>`;
-      }
-    })();
-  </script>
+  loadProjects();
+</script>
 </body>
 </html>
