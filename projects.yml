@@ -96,8 +96,8 @@
   tags: [pdf]
   url: https://samar1h.github.io/aiasp/projects/merge-pdf/
 
-- title: PDF Merge
-  description: Merge pdf files together.
+- title: PDF Squeeze
+  description: Compress pdf files.
   icon: fa-solid fa-file-pdf
   tags: [pdf]
-  url: https://samar1h.github.io/aiasp/projects/merge-pdf/
+  url: https://samar1h.github.io/aiasp/projects/pdf-squeeze/
