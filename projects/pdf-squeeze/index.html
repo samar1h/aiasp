@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>PDF Squeeze</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #F2F4F8;
+    --surface: #FFFFFF;
+    --surface2: #EEF1F7;
+    --accent: #4361EE;
+    --accent2: #3A0CA3;
+    --green: #06D6A0;
+    --red: #EF476F;
+    --text: #0D1117;
+    --text2: #6B7280;
+    --border: #E5E9F2;
+    --shadow: 0 2px 16px rgba(67,97,238,0.10);
+    --radius: 20px;
+    --radius-sm: 12px;
+  }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 0 40px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* TOP BAR */
+  .topbar {
+    width: 100%;
+    max-width: 420px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 20px 8px;
+  }
+  .topbar-title {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: var(--text);
+  }
+  .topbar-title span { color: var(--accent); }
+  .topbar-icon {
+    width: 40px; height: 40px;
+    border-radius: 12px;
+    background: var(--surface);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: var(--shadow);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .topbar-icon:active { background: var(--surface2); }
+
+  .app {
+    width: 100%;
+    max-width: 420px;
+    padding: 8px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  /* DROP ZONE */
+  .dropzone {
+    background: var(--surface);
+    border: 2.5px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 36px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s, transform 0.15s;
+    position: relative;
+    overflow: hidden;
+  }
+  .dropzone.dragging {
+    border-color: var(--accent);
+    background: #EEF2FF;
+    transform: scale(1.01);
+  }
+  .dropzone:active { transform: scale(0.99); }
+  .dropzone input[type="file"] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+  }
+  .dz-icon {
+    width: 64px; height: 64px;
+    background: linear-gradient(135deg, #EEF2FF, #E0E7FF);
+    border-radius: 18px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 4px;
+  }
+  .dz-icon svg { width: 32px; height: 32px; }
+  .dz-title {
+    font-size: 16px; font-weight: 700; color: var(--text);
+  }
+  .dz-sub {
+    font-size: 13px; color: var(--text2); font-weight: 500;
+  }
+
+  /* FILE CARD */
+  .file-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: var(--shadow);
+    animation: slideIn 0.3s cubic-bezier(.34,1.56,.64,1);
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(12px) scale(0.97); }
+    to   { opacity: 1; transform: none; }
+  }
+  .file-thumb {
+    width: 48px; height: 56px;
+    background: linear-gradient(145deg, #EEF2FF, #C7D2FE);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .file-thumb svg { width: 26px; height: 26px; }
+  .file-info { flex: 1; min-width: 0; }
+  .file-name {
+    font-size: 14px; font-weight: 700;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    color: var(--text);
+  }
+  .file-size { font-size: 12px; color: var(--text2); font-weight: 600; margin-top: 3px; }
+  .remove-btn {
+    width: 32px; height: 32px; border-radius: 10px;
+    background: #FEE2E2; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: background 0.15s;
+  }
+  .remove-btn:hover { background: #FECACA; }
+  .remove-btn svg { width: 16px; height: 16px; }
+
+  /* QUALITY SECTION */
+  .section-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 18px;
+    box-shadow: var(--shadow);
+  }
+  .section-label {
+    font-size: 13px; font-weight: 700; color: var(--text2);
+    text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 14px;
+  }
+
+  /* Preset chips */
+  .presets {
+    display: flex; gap: 8px; flex-wrap: wrap;
+  }
+  .preset-chip {
+    flex: 1; min-width: 80px;
+    padding: 10px 8px;
+    border-radius: var(--radius-sm);
+    border: 2px solid var(--border);
+    background: var(--surface2);
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.18s;
+    user-select: none;
+  }
+  .preset-chip.active {
+    border-color: var(--accent);
+    background: #EEF2FF;
+  }
+  .preset-chip:active { transform: scale(0.96); }
+  .preset-chip .chip-label {
+    font-size: 12px; font-weight: 800; color: var(--text);
+    display: block;
+  }
+  .preset-chip .chip-sub {
+    font-size: 10px; color: var(--text2); font-weight: 600;
+    display: block; margin-top: 2px;
+  }
+  .preset-chip.active .chip-label { color: var(--accent); }
+
+  /* Slider row */
+  .slider-row {
+    margin-top: 16px;
+  }
+  .slider-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 10px;
+  }
+  .slider-name { font-size: 13px; font-weight: 700; color: var(--text); }
+  .slider-val {
+    font-size: 13px; font-weight: 800; color: var(--accent);
+    background: #EEF2FF; padding: 2px 10px; border-radius: 8px;
+  }
+  input[type="range"] {
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 6px;
+    border-radius: 999px;
+    background: var(--surface2);
+    outline: none;
+    cursor: pointer;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 3px solid #fff;
+    box-shadow: 0 2px 8px rgba(67,97,238,0.35);
+    cursor: pointer;
+    transition: transform 0.1s;
+  }
+  input[type="range"]::-webkit-slider-thumb:active { transform: scale(1.2); }
+  .slider-track-wrap {
+    position: relative;
+  }
+  .slider-ticks {
+    display: flex; justify-content: space-between;
+    margin-top: 6px;
+    padding: 0 4px;
+  }
+  .slider-tick { font-size: 10px; color: var(--text2); font-weight: 600; }
+
+  /* COMPRESS BUTTON */
+  .compress-btn {
+    width: 100%;
+    padding: 18px;
+    border-radius: var(--radius);
+    border: none;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff;
+    font-family: 'Nunito', sans-serif;
+    font-size: 16px; font-weight: 800;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    box-shadow: 0 6px 24px rgba(67,97,238,0.38);
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+    position: relative; overflow: hidden;
+  }
+  .compress-btn:hover { transform: translateY(-1px); box-shadow: 0 10px 28px rgba(67,97,238,0.45); }
+  .compress-btn:active { transform: scale(0.98); box-shadow: 0 4px 16px rgba(67,97,238,0.3); }
+  .compress-btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+  .btn-ripple {
+    position: absolute; border-radius: 50%; background: rgba(255,255,255,0.25);
+    transform: scale(0); animation: ripple 0.5s linear;
+    pointer-events: none;
+  }
+  @keyframes ripple {
+    to { transform: scale(4); opacity: 0; }
+  }
+
+  /* PROGRESS */
+  .progress-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow);
+    animation: slideIn 0.3s cubic-bezier(.34,1.56,.64,1);
+  }
+  .progress-label {
+    font-size: 13px; font-weight: 700; color: var(--text2);
+    display: flex; justify-content: space-between; margin-bottom: 10px;
+  }
+  .progress-label span:last-child { color: var(--accent); font-weight: 800; }
+  .progress-bar-bg {
+    width: 100%; height: 8px; background: var(--surface2); border-radius: 999px; overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%; border-radius: 999px;
+    background: linear-gradient(90deg, var(--accent), #7C3AED);
+    transition: width 0.3s ease;
+    width: 0%;
+  }
+  .progress-step {
+    font-size: 12px; color: var(--text2); font-weight: 600; margin-top: 8px;
+    min-height: 18px;
+  }
+
+  /* RESULT CARD */
+  .result-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow);
+    animation: slideIn 0.4s cubic-bezier(.34,1.56,.64,1);
+  }
+  .result-header {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
+  }
+  .result-badge {
+    width: 36px; height: 36px; border-radius: 12px;
+    background: #D1FAE5;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .result-badge svg { width: 20px; height: 20px; }
+  .result-title { font-size: 15px; font-weight: 800; color: var(--text); }
+  .result-sub { font-size: 12px; color: var(--text2); font-weight: 600; }
+
+  .stats-row {
+    display: flex; gap: 10px; margin-bottom: 16px;
+  }
+  .stat-box {
+    flex: 1; padding: 12px; border-radius: var(--radius-sm);
+    background: var(--surface2); text-align: center;
+  }
+  .stat-val { font-size: 16px; font-weight: 800; color: var(--text); }
+  .stat-label { font-size: 10px; color: var(--text2); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+  .stat-box.saving .stat-val { color: var(--green); }
+
+  .saving-bar-wrap { margin-bottom: 16px; }
+  .saving-bar-label {
+    display: flex; justify-content: space-between;
+    font-size: 12px; font-weight: 700; color: var(--text2); margin-bottom: 6px;
+  }
+  .saving-bar-bg {
+    width: 100%; height: 10px; background: var(--surface2); border-radius: 999px; overflow: hidden;
+  }
+  .saving-bar-fill {
+    height: 100%; border-radius: 999px;
+    background: linear-gradient(90deg, var(--green), #059669);
+    transition: width 0.8s cubic-bezier(.34,1.56,.64,1);
+  }
+
+  .download-btn {
+    width: 100%; padding: 15px;
+    border-radius: var(--radius-sm);
+    border: none;
+    background: var(--green);
+    color: #fff;
+    font-family: 'Nunito', sans-serif;
+    font-size: 15px; font-weight: 800;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: transform 0.12s, box-shadow 0.12s;
+    box-shadow: 0 4px 16px rgba(6,214,160,0.35);
+  }
+  .download-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(6,214,160,0.45); }
+  .download-btn:active { transform: scale(0.98); }
+
+  .reset-btn {
+    width: 100%; padding: 12px;
+    border-radius: var(--radius-sm);
+    border: 2px solid var(--border);
+    background: transparent;
+    color: var(--text2);
+    font-family: 'Nunito', sans-serif;
+    font-size: 14px; font-weight: 700;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: background 0.15s;
+  }
+  .reset-btn:hover { background: var(--surface2); }
+
+  .hidden { display: none !important; }
+
+  /* Error */
+  .error-card {
+    background: #FFF5F5; border: 2px solid #FECACA;
+    border-radius: var(--radius-sm); padding: 14px 16px;
+    display: flex; align-items: center; gap: 10px;
+    animation: slideIn 0.3s ease;
+  }
+  .error-card svg { width: 20px; height: 20px; flex-shrink: 0; }
+  .error-text { font-size: 13px; font-weight: 600; color: #DC2626; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-title">PDF <span>Squeeze</span></div>
+  <div class="topbar-icon">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#4361EE" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 1 0 21 12"/>
+    </svg>
+  </div>
+</div>
+
+<div class="app">
+
+  <!-- DROP ZONE -->
+  <div class="dropzone" id="dropzone">
+    <input type="file" accept="application/pdf" id="fileInput">
+    <div class="dz-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#4361EE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+        <line x1="12" y1="18" x2="12" y2="12"/>
+        <line x1="9" y1="15" x2="15" y2="15"/>
+      </svg>
+    </div>
+    <div class="dz-title">Drop your PDF here</div>
+    <div class="dz-sub">or tap to browse files</div>
+  </div>
+
+  <!-- FILE CARD -->
+  <div class="file-card hidden" id="fileCard">
+    <div class="file-thumb">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#4361EE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+        <path d="M9 13h6M9 17h4"/>
+      </svg>
+    </div>
+    <div class="file-info">
+      <div class="file-name" id="fileName">—</div>
+      <div class="file-size" id="fileSize">—</div>
+    </div>
+    <button class="remove-btn" id="removeBtn" aria-label="Remove file">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#EF476F" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="section-card" id="settingsCard">
+    <div class="section-label">Compression Level</div>
+    <div class="presets" id="presets">
+      <div class="preset-chip" data-q="0.85" data-dpi="150">
+        <span class="chip-label">Light</span>
+        <span class="chip-sub">Best quality</span>
+      </div>
+      <div class="preset-chip active" data-q="0.60" data-dpi="120">
+        <span class="chip-label">Balanced</span>
+        <span class="chip-sub">Recommended</span>
+      </div>
+      <div class="preset-chip" data-q="0.35" data-dpi="96">
+        <span class="chip-label">Strong</span>
+        <span class="chip-sub">Smallest file</span>
+      </div>
+    </div>
+
+    <div class="slider-row">
+      <div class="slider-header">
+        <span class="slider-name">Image Quality</span>
+        <span class="slider-val" id="qualityVal">60%</span>
+      </div>
+      <div class="slider-track-wrap">
+        <input type="range" id="qualitySlider" min="15" max="95" value="60" step="5">
+      </div>
+      <div class="slider-ticks">
+        <span class="slider-tick">Smaller</span>
+        <span class="slider-tick">Better</span>
+      </div>
+    </div>
+
+    <div class="slider-row">
+      <div class="slider-header">
+        <span class="slider-name">Resolution (DPI)</span>
+        <span class="slider-val" id="dpiVal">120</span>
+      </div>
+      <div class="slider-track-wrap">
+        <input type="range" id="dpiSlider" min="72" max="200" value="120" step="12">
+      </div>
+      <div class="slider-ticks">
+        <span class="slider-tick">72</span>
+        <span class="slider-tick">200</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ERROR -->
+  <div class="error-card hidden" id="errorCard">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+    </svg>
+    <div class="error-text" id="errorText">Something went wrong.</div>
+  </div>
+
+  <!-- COMPRESS BUTTON -->
+  <button class="compress-btn" id="compressBtn" disabled>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/>
+      <path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"/>
+    </svg>
+    Compress PDF
+  </button>
+
+  <!-- PROGRESS -->
+  <div class="progress-card hidden" id="progressCard">
+    <div class="progress-label">
+      <span>Processing…</span>
+      <span id="progressPct">0%</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" id="progressFill"></div>
+    </div>
+    <div class="progress-step" id="progressStep">Initializing…</div>
+  </div>
+
+  <!-- RESULT -->
+  <div class="result-card hidden" id="resultCard">
+    <div class="result-header">
+      <div class="result-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      </div>
+      <div>
+        <div class="result-title">Compression Complete!</div>
+        <div class="result-sub" id="resultSub">File ready to download</div>
+      </div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-box">
+        <div class="stat-val" id="origSize">—</div>
+        <div class="stat-label">Original</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val" id="compSize">—</div>
+        <div class="stat-label">Compressed</div>
+      </div>
+      <div class="stat-box saving">
+        <div class="stat-val" id="savingPct">—</div>
+        <div class="stat-label">Saved</div>
+      </div>
+    </div>
+
+    <div class="saving-bar-wrap">
+      <div class="saving-bar-label">
+        <span>Space saved</span>
+        <span id="savedBytes">—</span>
+      </div>
+      <div class="saving-bar-bg">
+        <div class="saving-bar-fill" id="savingBarFill"></div>
+      </div>
+    </div>
+
+    <button class="download-btn" id="downloadBtn">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+      Download Compressed PDF
+    </button>
+    <button class="reset-btn" id="resetBtn">Compress Another File</button>
+  </div>
+
+</div>
+
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+let currentFile = null;
+let compressedBlob = null;
+
+const $ = id => document.getElementById(id);
+
+// ---- UI helpers ----
+function fmtBytes(b) {
+  if (b < 1024) return b + ' B';
+  if (b < 1048576) return (b/1024).toFixed(1) + ' KB';
+  return (b/1048576).toFixed(2) + ' MB';
+}
+
+function setProgress(pct, step) {
+  $('progressPct').textContent = Math.round(pct) + '%';
+  $('progressFill').style.width = pct + '%';
+  if (step) $('progressStep').textContent = step;
+}
+
+function showError(msg) {
+  $('errorCard').classList.remove('hidden');
+  $('errorText').textContent = msg;
+}
+function hideError() { $('errorCard').classList.add('hidden'); }
+
+// ---- Ripple ----
+$('compressBtn').addEventListener('click', function(e) {
+  const r = document.createElement('span');
+  const d = Math.max(this.clientWidth, this.clientHeight);
+  const rect = this.getBoundingClientRect();
+  r.className = 'btn-ripple';
+  r.style.cssText = `width:${d}px;height:${d}px;left:${e.clientX-rect.left-d/2}px;top:${e.clientY-rect.top-d/2}px`;
+  this.appendChild(r);
+  setTimeout(() => r.remove(), 600);
+});
+
+// ---- Presets ----
+document.querySelectorAll('.preset-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('.preset-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    $('qualitySlider').value = parseFloat(chip.dataset.q) * 100;
+    $('dpiSlider').value = chip.dataset.dpi;
+    $('qualityVal').textContent = Math.round(parseFloat(chip.dataset.q)*100) + '%';
+    $('dpiVal').textContent = chip.dataset.dpi;
+  });
+});
+
+$('qualitySlider').addEventListener('input', () => {
+  $('qualityVal').textContent = $('qualitySlider').value + '%';
+  document.querySelectorAll('.preset-chip').forEach(c => c.classList.remove('active'));
+});
+$('dpiSlider').addEventListener('input', () => {
+  $('dpiVal').textContent = $('dpiSlider').value;
+  document.querySelectorAll('.preset-chip').forEach(c => c.classList.remove('active'));
+});
+
+// ---- File handling ----
+const dropzone = $('dropzone');
+const fileInput = $('fileInput');
+
+dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('dragging'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragging'));
+dropzone.addEventListener('drop', e => {
+  e.preventDefault(); dropzone.classList.remove('dragging');
+  const f = e.dataTransfer.files[0];
+  if (f && f.type === 'application/pdf') loadFile(f);
+  else showError('Please drop a valid PDF file.');
+});
+fileInput.addEventListener('change', () => {
+  if (fileInput.files[0]) loadFile(fileInput.files[0]);
+});
+
+function loadFile(file) {
+  hideError();
+  currentFile = file;
+  compressedBlob = null;
+  $('resultCard').classList.add('hidden');
+  $('progressCard').classList.add('hidden');
+
+  $('fileName').textContent = file.name;
+  $('fileSize').textContent = fmtBytes(file.size);
+  $('fileCard').classList.remove('hidden');
+  $('dropzone').classList.add('hidden');
+  $('compressBtn').disabled = false;
+}
+
+$('removeBtn').addEventListener('click', resetAll);
+
+function resetAll() {
+  currentFile = null; compressedBlob = null;
+  fileInput.value = '';
+  $('fileCard').classList.add('hidden');
+  $('dropzone').classList.remove('hidden');
+  $('progressCard').classList.add('hidden');
+  $('resultCard').classList.add('hidden');
+  $('compressBtn').disabled = true;
+  hideError();
+}
+
+$('resetBtn').addEventListener('click', resetAll);
+
+// ---- Compression core ----
+$('compressBtn').addEventListener('click', async () => {
+  if (!currentFile) return;
+  hideError();
+  $('compressBtn').disabled = true;
+  $('settingsCard').style.opacity = '0.5';
+  $('progressCard').classList.remove('hidden');
+  $('resultCard').classList.add('hidden');
+
+  const quality = parseInt($('qualitySlider').value) / 100;
+  const dpi = parseInt($('dpiSlider').value);
+  const scale = dpi / 72;
+
+  try {
+    setProgress(2, 'Loading PDF…');
+    const arrayBuffer = await currentFile.arrayBuffer();
+    const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const numPages = pdfDoc.numPages;
+
+    const { PDFDocument } = PDFLib;
+    const newPdf = await PDFDocument.create();
+
+    for (let i = 1; i <= numPages; i++) {
+      const pct = 5 + ((i - 1) / numPages) * 88;
+      setProgress(pct, `Compressing page ${i} of ${numPages}…`);
+
+      const page = await pdfDoc.getPage(i);
+      const vp = page.getViewport({ scale });
+      const canvas = document.createElement('canvas');
+      canvas.width = vp.width; canvas.height = vp.height;
+      const ctx = canvas.getContext('2d');
+      await page.render({ canvasContext: ctx, viewport: vp }).promise;
+
+      const imgDataUrl = canvas.toDataURL('image/jpeg', quality);
+      const base64 = imgDataUrl.split(',')[1];
+      const imgBytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+      const jpgImage = await newPdf.embedJpg(imgBytes);
+
+      const pw = vp.width * (72 / dpi);
+      const ph = vp.height * (72 / dpi);
+      const newPage = newPdf.addPage([pw, ph]);
+      newPage.drawImage(jpgImage, { x: 0, y: 0, width: pw, height: ph });
+    }
+
+    setProgress(96, 'Saving compressed PDF…');
+    const pdfBytes = await newPdf.save();
+    compressedBlob = new Blob([pdfBytes], { type: 'application/pdf' });
+
+    setProgress(100, 'Done!');
+    setTimeout(() => showResult(), 400);
+
+  } catch (err) {
+    console.error(err);
+    showError('Compression failed: ' + (err.message || 'Unknown error. Try a different file.'));
+    $('progressCard').classList.add('hidden');
+    $('compressBtn').disabled = false;
+    $('settingsCard').style.opacity = '1';
+  }
+});
+
+function showResult() {
+  $('progressCard').classList.add('hidden');
+  $('settingsCard').style.opacity = '1';
+  $('compressBtn').disabled = false;
+
+  const orig = currentFile.size;
+  const comp = compressedBlob.size;
+  const saved = Math.max(0, orig - comp);
+  const pct = orig > 0 ? (saved / orig * 100).toFixed(1) : 0;
+
+  $('origSize').textContent = fmtBytes(orig);
+  $('compSize').textContent = fmtBytes(comp);
+  $('savingPct').textContent = pct + '%';
+  $('savedBytes').textContent = fmtBytes(saved) + ' freed';
+
+  const barPct = Math.min(100, parseFloat(pct));
+  $('resultCard').classList.remove('hidden');
+  setTimeout(() => { $('savingBarFill').style.width = barPct + '%'; }, 100);
+
+  if (comp >= orig) {
+    $('resultSub').textContent = 'File could not be reduced further';
+    $('savingPct').textContent = '~0%';
+  } else {
+    $('resultSub').textContent = `${pct}% smaller · Ready to download`;
+  }
+}
+
+$('downloadBtn').addEventListener('click', () => {
+  if (!compressedBlob) return;
+  const url = URL.createObjectURL(compressedBlob);
+  const a = document.createElement('a');
+  const name = currentFile.name.replace(/\.pdf$/i, '') + '_compressed.pdf';
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+});
+</script>
+</body>
+</html>
