@@ -1,4 +1,4 @@
 - title: Bulk URL Opener
-  description: Parses text, extracts urls then can open in bulk
+  description: Extracts URLs from any text and opens them simultaneously in bulk
   icon: fa-regular fa-link
   url: https://samar1h.github.io/aiasp/projects/bulk-url-opener/
