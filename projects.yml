@@ -89,3 +89,15 @@
   icon: fa-solid fa-pencil
   tags: [utility]
   url: https://samar1h.github.io/aiasp/projects/onepage/
+
+- title: PDF Merge
+  description: Merge pdf files together.
+  icon: fa-solid fa-file-pdf
+  tags: [pdf]
+  url: https://samar1h.github.io/aiasp/projects/merge-pdf/
+
+- title: PDF Merge
+  description: Merge pdf files together.
+  icon: fa-solid fa-file-pdf
+  tags: [pdf]
+  url: https://samar1h.github.io/aiasp/projects/merge-pdf/
