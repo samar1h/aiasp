@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interest Calculator</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --primary: #4f46e5;
+            --primary-light: #6366f1;
+            --text: #e0e0e0;
+            --text-secondary: #a0a0a0;
+            --border: #2a2a2a;
+            --danger: #ef4444;
+            --success: #22c55e;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--bg-color);
+            color: var(--text);
+            padding: 16px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        h1, h2 {
+            text-align: center;
+            margin-bottom: 16px;
+        }
+        
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 16px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background-color: #2d2d2d;
+            color: var(--text);
+            font-size: 1rem;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 6px;
+            color: var(--text-secondary);
+        }
+        
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            width: 100%;
+            transition: background-color 0.2s;
+        }
+        
+        button:hover {
+            background-color: var(--primary-light);
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .button-group button {
+            flex: 1;
+        }
+        
+        .remove-btn {
+            background-color: var(--danger);
+        }
+        
+        .remove-btn:hover {
+            background-color: #f87171;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        th, td {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        th {
+            color: var(--text-secondary);
+        }
+        
+        .investment-row {
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .investment-row:last-child {
+            border-bottom: none;
+        }
+        
+        .result-card {
+            margin-top: 20px;
+        }
+        
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .result-total {
+            font-weight: bold;
+            color: var(--success);
+            padding-top: 10px;
+            font-size: 1.1rem;
+        }
+        
+        .toggle-btn {
+            background-color: transparent;
+            border: 1px solid var(--border);
+            margin-bottom: 16px;
+        }
+        
+        .toggle-btn:hover {
+            background-color: #2d2d2d;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .tab-button {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid var(--border);
+            background-color: var(--card-bg);
+            color: var(--text);
+            cursor: pointer;
+            border-radius: 6px;
+        }
+        
+        .tab-button.active {
+            background-color: var(--primary);
+            border-color: var(--primary);
+        }
+        
+        .results-table {
+            width: 100%;
+            overflow-x: auto;
+        }
+        
+        .breakdown-table {
+            font-size: 0.9rem;
+        }
+        
+        .breakdown-table th, .breakdown-table td {
+            padding: 8px;
+        }
+        
+        @media (max-width: 480px) {
+            .card {
+                padding: 16px;
+            }
+            
+            input, select, button {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Interest Calculator</h1>
+    
+    <div class="tab-buttons">
+        <button class="tab-button active" data-tab="calculator">Calculator</button>
+        <button class="tab-button" data-tab="info">Info</button>
+    </div>
+    
+    <div id="calculator-tab">
+        <div class="card">
+            <h2>Add Investments</h2>
+            <div id="investments-container">
+                <div class="investment-row">
+                    <label for="principal-0">Principal Amount</label>
+                    <input type="number" id="principal-0" placeholder="e.g. 500000" min="0" step="1000">
+                    
+                    <label for="rate-0">Interest Rate</label>
+                    <input type="number" id="rate-0" placeholder="e.g. 7" min="0" step="0.1">
+                    
+                    <div class="row">
+                        <label for="period-type-0">Rate Period</label>
+                        <select id="period-type-0">
+                            <option value="yearly">Per Year</option>
+                            <option value="monthly">Per Month</option>
+                            <option value="quarterly">Per Quarter</option>
+                            <option value="daily">Per Day</option>
+                        </select>
+                    </div>
+                    
+                    <div class="row">
+                        <label for="time-0">Investment Duration</label>
+                        <input type="number" id="time-0" placeholder="e.g. 5" min="0" step="1">
+                        
+                        <label for="duration-type-0">Duration Unit</label>
+                        <select id="duration-type-0">
+                            <option value="years">Years</option>
+                            <option value="months">Months</option>
+                            <option value="days">Days</option>
+                        </select>
+                    </div>
+                    
+                    <div class="row">
+                        <label for="compound-0">Compounding</label>
+                        <select id="compound-0">
+                            <option value="annually">Annually</option>
+                            <option value="semi-annually">Semi-Annually</option>
+                            <option value="quarterly">Quarterly</option>
+                            <option value="monthly">Monthly</option>
+                            <option value="daily">Daily</option>
+                            <option value="simple">Simple Interest</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <button id="add-investment-btn">+ Add Another Investment</button>
+            
+            <div class="button-group">
+                <button id="calculate-btn">Calculate</button>
+                <button id="reset-btn" class="remove-btn">Reset</button>
+            </div>
+        </div>
+        
+        <div id="results-container" class="card hidden">
+            <h2>Results</h2>
+            <div id="summary-results"></div>
+            
+            <button id="view-breakdown-btn" class="toggle-btn">View Detailed Breakdown</button>
+            
+            <div id="breakdown-container" class="hidden">
+                <div class="results-table">
+                    <table class="breakdown-table">
+                        <thead>
+                            <tr>
+                                <th>Investment</th>
+                                <th>Principal</th>
+                                <th>Interest</th>
+                                <th>Final Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody id="breakdown-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="info-tab" class="hidden">
+        <div class="card">
+            <h2>About Interest Calculator</h2>
+            <p>This calculator helps you calculate interest for multiple investments with different rates and compounding periods. You can:</p>
+            <ul style="margin-left: 20px; margin-top: 10px; margin-bottom: 10px;">
+                <li>Add multiple investments with different rates</li>
+                <li>Choose between simple and compound interest</li>
+                <li>Set different compounding frequencies</li>
+                <li>Calculate for various time periods (days, months, years)</li>
+                <li>View detailed breakdowns of each investment</li>
+            </ul>
+            
+            <h3 style="margin-top: 20px; margin-bottom: 10px;">Definitions</h3>
+            <p><strong>Simple Interest:</strong> Interest calculated only on the initial principal.</p>
+            <p><strong>Compound Interest:</strong> Interest calculated on the initial principal and on the accumulated interest.</p>
+            
+            <h3 style="margin-top: 20px; margin-bottom: 10px;">Formulas Used</h3>
+            <p><strong>Simple Interest:</strong> A = P(1 + rt)</p>
+            <p><strong>Compound Interest:</strong> A = P(1 + r/n)^(nt)</p>
+            <p>Where:</p>
+            <ul style="margin-left: 20px; margin-top: 10px;">
+                <li>A = Final amount</li>
+                <li>P = Principal</li>
+                <li>r = Interest rate (decimal)</li>
+                <li>t = Time</li>
+                <li>n = Number of times interest is compounded per period</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            let investmentCount = 1;
+            const investmentsContainer = document.getElementById('investments-container');
+            const addInvestmentBtn = document.getElementById('add-investment-btn');
+            const calculateBtn = document.getElementById('calculate-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const resultsContainer = document.getElementById('results-container');
+            const summaryResults = document.getElementById('summary-results');
+            const viewBreakdownBtn = document.getElementById('view-breakdown-btn');
+            const breakdownContainer = document.getElementById('breakdown-container');
+            const breakdownTableBody = document.getElementById('breakdown-table-body');
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const calculatorTab = document.getElementById('calculator-tab');
+            const infoTab = document.getElementById('info-tab');
+            
+            // Tab switching
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    
+                    const tabName = button.getAttribute('data-tab');
+                    if (tabName === 'calculator') {
+                        calculatorTab.classList.remove('hidden');
+                        infoTab.classList.add('hidden');
+                    } else {
+                        calculatorTab.classList.add('hidden');
+                        infoTab.classList.remove('hidden');
+                    }
+                });
+            });
+            
+            // Add investment
+            addInvestmentBtn.addEventListener('click', function() {
+                const newInvestment = document.createElement('div');
+                newInvestment.className = 'investment-row';
+                newInvestment.innerHTML = `
+                    <hr style="border-color: var(--border); margin: 20px 0;">
+                    <div class="row" style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3>Investment ${investmentCount + 1}</h3>
+                        <button class="remove-investment remove-btn" style="width: auto; padding: 6px 12px; margin-bottom: 10px;">Remove</button>
+                    </div>
+                    
+                    <label for="principal-${investmentCount}">Principal Amount</label>
+                    <input type="number" id="principal-${investmentCount}" placeholder="e.g. 200000" min="0" step="1000">
+                    
+                    <label for="rate-${investmentCount}">Interest Rate</label>
+                    <input type="number" id="rate-${investmentCount}" placeholder="e.g. 5" min="0" step="0.1">
+                    
+                    <div class="row">
+                        <label for="period-type-${investmentCount}">Rate Period</label>
+                        <select id="period-type-${investmentCount}">
+                            <option value="yearly">Per Year</option>
+                            <option value="monthly">Per Month</option>
+                            <option value="quarterly">Per Quarter</option>
+                            <option value="daily">Per Day</option>
+                        </select>
+                    </div>
+                    
+                    <div class="row">
+                        <label for="time-${investmentCount}">Investment Duration</label>
+                        <input type="number" id="time-${investmentCount}" placeholder="e.g. 3" min="0" step="1">
+                        
+                        <label for="duration-type-${investmentCount}">Duration Unit</label>
+                        <select id="duration-type-${investmentCount}">
+                            <option value="years">Years</option>
+                            <option value="months">Months</option>
+                            <option value="days">Days</option>
+                        </select>
+                    </div>
+                    
+                    <div class="row">
+                        <label for="compound-${investmentCount}">Compounding</label>
+                        <select id="compound-${investmentCount}">
+                            <option value="annually">Annually</option>
+                            <option value="semi-annually">Semi-Annually</option>
+                            <option value="quarterly">Quarterly</option>
+                            <option value="monthly">Monthly</option>
+                            <option value="daily">Daily</option>
+                            <option value="simple">Simple Interest</option>
+                        </select>
+                    </div>
+                `;
+                
+                investmentsContainer.appendChild(newInvestment);
+                investmentCount++;
+                
+                // Add remove button functionality
+                const removeButtons = document.querySelectorAll('.remove-investment');
+                removeButtons.forEach(button => {
+                    button.addEventListener('click', function() {
+                        this.closest('.investment-row').remove();
+                    });
+                });
+            });
+            
+            // Calculate interest
+            calculateBtn.addEventListener('click', function() {
+                const investments = [];
+                const rows = document.querySelectorAll('.investment-row');
+                
+                rows.forEach((row, index) => {
+                    const principal = parseFloat(document.getElementById(`principal-${index}`).value);
+                    const rate = parseFloat(document.getElementById(`rate-${index}`).value);
+                    const periodType = document.getElementById(`period-type-${index}`).value;
+                    const time = parseFloat(document.getElementById(`time-${index}`).value);
+                    const durationType = document.getElementById(`duration-type-${index}`).value;
+                    const compounding = document.getElementById(`compound-${index}`).value;
+                    
+                    if (!isNaN(principal) && !isNaN(rate) && !isNaN(time)) {
+                        investments.push({
+                            id: index + 1,
+                            principal,
+                            rate,
+                            periodType,
+                            time,
+                            durationType,
+                            compounding
+                        });
+                    }
+                });
+                
+                if (investments.length > 0) {
+                    const results = calculateInterest(investments);
+                    displayResults(results);
+                } else {
+                    alert('Please enter valid investment details');
+                }
+            });
+            
+            // Reset form
+            resetBtn.addEventListener('click', function() {
+                document.querySelectorAll('.investment-row').forEach((row, index) => {
+                    if (index === 0) {
+                        document.getElementById(`principal-${index}`).value = '';
+                        document.getElementById(`rate-${index}`).value = '';
+                        document.getElementById(`time-${index}`).value = '';
+                        document.getElementById(`period-type-${index}`).selectedIndex = 0;
+                        document.getElementById(`duration-type-${index}`).selectedIndex = 0;
+                        document.getElementById(`compound-${index}`).selectedIndex = 0;
+                    } else {
+                        row.remove();
+                    }
+                });
+                
+                investmentCount = 1;
+                resultsContainer.classList.add('hidden');
+            });
+            
+            // Toggle breakdown
+            viewBreakdownBtn.addEventListener('click', function() {
+                breakdownContainer.classList.toggle('hidden');
+                viewBreakdownBtn.textContent = breakdownContainer.classList.contains('hidden') 
+                    ? 'View Detailed Breakdown' 
+                    : 'Hide Detailed Breakdown';
+            });
+            
+            // Calculate interest for all investments
+            function calculateInterest(investments) {
+                const results = [];
+                let totalPrincipal = 0;
+                let totalInterest = 0;
+                let totalFinalAmount = 0;
+                
+                investments.forEach(inv => {
+                    let annualRate = inv.rate / 100;
+                    let timeInYears = inv.time;
+                    
+                    // Convert time to years based on duration type
+                    if (inv.durationType === 'months') {
+                        timeInYears = inv.time / 12;
+                    } else if (inv.durationType === 'days') {
+                        timeInYears = inv.time / 365;
+                    }
+                    
+                    // Convert rate to annual rate based on period type
+                    if (inv.periodType === 'monthly') {
+                        annualRate = annualRate * 12;
+                    } else if (inv.periodType === 'quarterly') {
+                        annualRate = annualRate * 4;
+                    } else if (inv.periodType === 'daily') {
+                        annualRate = annualRate * 365;
+                    }
+                    
+                    let finalAmount = 0;
+                    
+                    // Calculate based on compounding
+                    if (inv.compounding === 'simple') {
+                        finalAmount = inv.principal * (1 + annualRate * timeInYears);
+                    } else {
+                        let n = 1;
+                        switch (inv.compounding) {
+                            case 'annually':
+                                n = 1;
+                                break;
+                            case 'semi-annually':
+                                n = 2;
+                                break;
+                            case 'quarterly':
+                                n = 4;
+                                break;
+                            case 'monthly':
+                                n = 12;
+                                break;
+                            case 'daily':
+                                n = 365;
+                                break;
+                        }
+                        
+                        finalAmount = inv.principal * Math.pow((1 + annualRate / n), n * timeInYears);
+                    }
+                    
+                    const interest = finalAmount - inv.principal;
+                    
+                    results.push({
+                        id: inv.id,
+                        principal: inv.principal,
+                        rate: inv.rate,
+                        periodType: inv.periodType,
+                        time: inv.time,
+                        durationType: inv.durationType,
+                        compounding: inv.compounding,
+                        interest: interest,
+                        finalAmount: finalAmount
+                    });
+                    
+                    totalPrincipal += inv.principal;
+                    totalInterest += interest;
+                    totalFinalAmount += finalAmount;
+                });
+                
+                return {
+                    investments: results,
+                    totalPrincipal,
+                    totalInterest,
+                    totalFinalAmount
+                };
+            }
+            
+            // Display results
+            function displayResults(results) {
+                summaryResults.innerHTML = '';
+                breakdownTableBody.innerHTML = '';
+                
+                // Format currency
+                const formatCurrency = (amount) => {
+                    return new Intl.NumberFormat('en-IN', {
+                        style: 'currency',
+                        currency: 'INR',
+                        maximumFractionDigits: 2
+                    }).format(amount);
+                };
+                
+                // Summary
+                summaryResults.innerHTML = `
+                    <div class="result-row">
+                        <span>Total Principal:</span>
+                        <span>${formatCurrency(results.totalPrincipal)}</span>
+                    </div>
+                    <div class="result-row">
+                        <span>Total Interest:</span>
+                        <span>${formatCurrency(results.totalInterest)}</span>
+                    </div>
+                    <div class="result-total">
+                        <span>Total Final Amount:</span>
+                        <span>${formatCurrency(results.totalFinalAmount)}</span>
+                    </div>
+                `;
+                
+                // Breakdown
+                results.investments.forEach(inv => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>Investment ${inv.id}</td>
+                        <td>${formatCurrency(inv.principal)}</td>
+                        <td>${formatCurrency(inv.interest)}</td>
+                        <td>${formatCurrency(inv.finalAmount)}</td>
+                    `;
+                    breakdownTableBody.appendChild(row);
+                });
+                
+                resultsContainer.classList.remove('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
