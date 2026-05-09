@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hush Image</title>
+    <link rel="icon" type="image/x-icon" href="https://samar1h.github.io/hush-image/favicon.ico">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: #1e1e1e;
+            border-radius: 12px;
+            padding: 30px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            color: #bb86fc;
+        }
+
+        .app-description {
+            text-align: center;
+            color: #888;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+        }
+
+        .tab-container {
+            display: flex;
+            margin-bottom: 20px;
+            overflow-x: auto;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            background-color: #2c2c2c;
+            color: #888;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .tab.active {
+            background-color: #bb86fc;
+            color: #121212;
+        }
+
+        input, textarea, button {
+            width: 100%;
+            background-color: #2c2c2c;
+            border: none;
+            color: #e0e0e0;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 6px;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        button {
+            background-color: #bb86fc;
+            color: #121212;
+            cursor: pointer;
+            transition: opacity 0.3s ease;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        #outputImage {
+            max-width: 100%;
+            margin-top: 20px;
+            border-radius: 6px;
+        }
+
+        .error {
+            color: #cf6679;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .message-length {
+            color: #888;
+            text-align: right;
+            font-size: 0.8em;
+            margin-top: -10px;
+            margin-bottom: 10px;
+        }
+
+        #shareImageButton {
+            background-color: #4caf50;
+            margin-top: 10px;
+        }
+
+        #faqContent {
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .faq-item {
+            margin-bottom: 15px;
+        }
+
+        .faq-question {
+            color: #bb86fc;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .faq-answer {
+            display: none;
+            color: #e0e0e0;
+            margin-top: 5px;
+            background-color: #2c2c2c;
+            padding: 10px;
+            border-radius: 6px;
+        }
+
+        .faq-question.active + .faq-answer {
+            display: block;
+        }
+
+        #faqContent::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #faqContent::-webkit-scrollbar-track {
+            background: #2c2c2c;
+        }
+
+        #faqContent::-webkit-scrollbar-thumb {
+            background-color: #bb86fc;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Hush Image</h1>
+        <div class="app-description">A steganography tool for embedding hidden text within images.</div>
+        
+        <div class="tab-container">
+            <div class="tab active" data-tab="hide">Hide</div>
+            <div class="tab" data-tab="reveal">Reveal</div>
+            <div class="tab" data-tab="faq">FAQ</div>
+        </div>
+
+        <div id="hideTab">
+            <input type="file" id="imageInput" accept="image/*">
+            <textarea id="secretMessage" placeholder="Enter your secret message" maxlength="1000"></textarea>
+            <div class="message-length" id="messageLength">0 / 1000 characters</div>
+            <button id="hideButton">Hide Message</button>
+            <img id="outputImage" style="display:none;">
+            <button id="downloadButton" style="display:none;">Download Image</button>
+            <button id="shareImageButton" style="display:none;">Share Image</button>
+        </div>
+
+        <div id="revealTab" style="display:none;">
+            <input type="file" id="revealImageInput" accept="image/*">
+            <textarea id="revealedMessage" placeholder="Revealed message will appear here" readonly></textarea>
+            <button id="revealButton">Reveal Message</button>
+        </div>
+
+        <div id="faqTab" style="display:none;">
+            <div id="faqContent">
+                <div class="faq-item">
+                    <div class="faq-question">How does Hush Image work?</div>
+                    <div class="faq-answer">
+                        Hush Image uses Least Significant Bit (LSB) Steganography to hide messages by subtly modifying the least significant bits of an image's pixel data, making the changes invisible to the human eye.
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question">How long can my message be?</div>
+                    <div class="faq-answer">
+                        You can hide up to 1000 characters. The actual hiding capacity may vary slightly depending on the image size and format.
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question">Is my message secure?</div>
+                    <div class="faq-answer">
+                        While this method visually hides messages, it's not encryption. Anyone with technical knowledge could potentially extract the message. For sensitive information, use professional encryption methods.
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question">Which image formats work best?</div>
+                    <div class="faq-answer">
+                        PNG images work best as they provide lossless compression. JPEG and WebP are also supported, but may have slight quality variations.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="errorMessage" class="error"></div>
+    </div>
+
+    <script>
+        const tabs = document.querySelectorAll('.tab');
+        const hideTab = document.getElementById('hideTab');
+        const revealTab = document.getElementById('revealTab');
+        const faqTab = document.getElementById('faqTab');
+        const errorMessage = document.getElementById('errorMessage');
+        const outputImage = document.getElementById('outputImage');
+        const downloadButton = document.getElementById('downloadButton');
+        const shareImageButton = document.getElementById('shareImageButton');
+        const secretMessage = document.getElementById('secretMessage');
+        const messageLength = document.getElementById('messageLength');
+
+        // Character count for message
+        secretMessage.addEventListener('input', () => {
+            const currentLength = secretMessage.value.length;
+            messageLength.textContent = `${currentLength} / 1000 characters`;
+            
+            if (currentLength > 1000) {
+                secretMessage.value = secretMessage.value.slice(0, 1000);
+                messageLength.textContent = '1000 / 1000 characters';
+            }
+        });
+
+        // FAQ Toggle
+        const faqQuestions = document.querySelectorAll('.faq-question');
+        faqQuestions.forEach(question => {
+            question.addEventListener('click', () => {
+                question.classList.toggle('active');
+            });
+        });
+
+        // Tab switching function
+        function switchTab(tabName) {
+            tabs.forEach(t => t.classList.remove('active'));
+            document.querySelector(`.tab[data-tab="${tabName}"]`).classList.add('active');
+            
+            hideTab.style.display = tabName === 'hide' ? 'block' : 'none';
+            revealTab.style.display = tabName === 'reveal' ? 'block' : 'none';
+            faqTab.style.display = tabName === 'faq' ? 'block' : 'none';
+            
+            // Reset inputs and states
+            errorMessage.textContent = '';
+            document.getElementById('imageInput').value = '';
+            document.getElementById('revealImageInput').value = '';
+            document.getElementById('secretMessage').value = '';
+            document.getElementById('revealedMessage').value = '';
+            messageLength.textContent = '0 / 1000 characters';
+            outputImage.style.display = 'none';
+            downloadButton.style.display = 'none';
+            shareImageButton.style.display = 'none';
+        }
+
+        // Tab click event listeners
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+        });
+
+        // Hide Message Function
+        document.getElementById('hideButton').addEventListener('click', () => {
+            const imageInput = document.getElementById('imageInput');
+            
+            // Clear previous error and output
+            errorMessage.textContent = '';
+            
+            // Validate inputs
+            if (!imageInput.files.length) {
+                errorMessage.textContent = 'Please select an image.';
+                return;
+            }
+            
+            if (!secretMessage.value.trim()) {
+                errorMessage.textContent = 'Please enter a secret message.';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+
+                    // Encode message using LSB steganography
+                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const message = secretMessage.value;
+                    const maxMessageLength = Math.floor((imageData.data.length / 4) / 8);
+
+                    if (message.length > maxMessageLength) {
+                        errorMessage.textContent = `Message too long. Max length for this image is ${maxMessageLength} characters.`;
+                        return;
+                    }
+
+                    let messageIndex = 0;
+                    let bitIndex = 0;
+
+                    for (let i = 0; i < imageData.data.length; i += 4) {
+                        if (messageIndex < message.length) {
+                            const charCode = message.charCodeAt(messageIndex);
+                            const bit = (charCode >> bitIndex) & 1;
+                            
+                            // Modify least significant bit
+                            imageData.data[i] = (imageData.data[i] & 0xFE) | bit;
+
+                            bitIndex++;
+                            if (bitIndex === 8) {
+                                bitIndex = 0;
+                                messageIndex++;
+                            }
+                        } else {
+                            // Add termination character
+                            imageData.data[i] = (imageData.data[i] & 0xFE) | 0;
+                        }
+                    }
+
+                    ctx.putImageData(imageData, 0, 0);
+                    outputImage.src = canvas.toDataURL('image/png');
+                    outputImage.style.display = 'block';
+                    downloadButton.style.display = 'block';
+                    shareImageButton.style.display = 'block';
+                };
+                img.onerror = function() {
+                    errorMessage.textContent = 'Error processing image. Please try a different image.';
+                };
+                img.src = e.target.result;
+            };
+            reader.onerror = function() {
+                errorMessage.textContent = 'Error reading image file.';
+            };
+            reader.readAsDataURL(imageInput.files[0]);
+        });
+
+        // Download Image
+        downloadButton.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = 'hush_image.png';
+            link.href = outputImage.src;
+            link.click();
+        });
+
+        // Share Image (Web Share API)
+        shareImageButton.addEventListener('click', async () => {
+            try {
+                // Convert data URL to blob
+                const response = await fetch(outputImage.src);
+                const blob = await response.blob();
+                const file = new File([blob], 'hush_image.png', { type: 'image/png' });
+
+                if (navigator.share) {
+                    await navigator.share({
+                        title: 'Hush Image',
+                        text: 'A secret message is hidden in this image!',
+                        files: [file]
+                    });
+                } else {
+                    errorMessage.textContent = 'Web Share API not supported on this device.';
+                }
+            } catch (error) {
+                errorMessage.textContent = 'Error sharing image: ' + error.message;
+            }
+        });
+
+        // Reveal Message Function
+        document.getElementById('revealButton').addEventListener('click', () => {
+            const imageInput = document.getElementById('revealImageInput');
+            const revealedMessage = document.getElementById('revealedMessage');
+            
+            // Clear previous error and output
+            errorMessage.textContent = '';
+            revealedMessage.value = '';
+            
+            // Validate input
+            if (!imageInput.files.length) {
+                errorMessage.textContent = 'Please select an image.';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+
+                    // Decode message using LSB steganography
+                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    let message = '';
+                    let currentChar = 0;
+                    let bitCount = 0;
+
+                    for (let i = 0; i < imageData.data.length; i += 4) {
+                        // Extract least significant bit
+                        const bit = imageData.data[i] & 1;
+                        currentChar |= (bit << bitCount);
+                        bitCount++;
+
+                        if (bitCount === 8) {
+                            // Stop if null character is found
+                            if (currentChar === 0) break;
+                            
+                            message += String.fromCharCode(currentChar);
+                            currentChar = 0;
+                            bitCount = 0;
+                        }
+                    }
+
+                    // Display the revealed message
+                    revealedMessage.value = message;
+                };
+                img.onerror = function() {
+                    errorMessage.textContent = 'Error processing image. No message found or invalid image.';
+                };
+                img.src = e.target.result;
+            };
+            reader.onerror = function() {
+                errorMessage.textContent = 'Error reading image file.';
+            };
+            reader.readAsDataURL(imageInput.files[0]);
+        });
+    </script>
+</body>
+</html>
