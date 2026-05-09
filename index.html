@@ -264,7 +264,6 @@
           <div class="card-body">
             <div class="card-title">${esc(p.title)}</div>
             <div class="card-desc">${esc(p.description)}</div>
-            <div class="card-domain">${getDomain(p.url)}</div>
           </div>
           <div class="card-arrow"><i class="fa-solid fa-arrow-up-right-from-square"></i></div>
         </a>`;
@@ -314,7 +313,6 @@
           <div class="state">
             <i class="fa-solid fa-triangle-exclamation" style="color:#f87171"></i>
             <strong>Couldn't load projects.yml</strong>
-            Make sure <code>projects.yml</code> lives next to <code>index.html</code>
             <br><br><small style="color:#4c4c5e">${esc(err.message)}</small>
           </div>`;
       }
