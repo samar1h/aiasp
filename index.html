@@ -1,289 +1,324 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <link rel="icon" type="image/png" href="favicon.png" />
-    <title>AI Assisted Projects</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'card-bg': '#1e1f28',
-                        'surface': '#2a2b36',
-                    }
-                }
-            }
-        }
-    </script>
-    <!-- Font Awesome 6 FREE (Solid + Brands only, Regular requires PRO or different setup) -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <!-- js-yaml -->
-    <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
-    <style>
-        * {
-            -webkit-tap-highlight-color: transparent;
-        }
-        body {
-            background: #0f0f14;
-            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, sans-serif;
-        }
-        @media (hover: hover) {
-            .card-hover:hover {
-                transform: translateY(-2px);
-                transition: all 0.2s ease;
-                background-color: #2d2e3a;
-            }
-        }
-        .card-hover {
-            transition: all 0.2s ease;
-        }
-        .loader {
-            border: 3px solid #2a2b36;
-            border-top: 3px solid #8b5cf6;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 2rem auto;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        input:focus {
-            outline: none;
-            ring: 2px solid #8b5cf6;
-            border-color: #8b5cf6;
-        }
-        /* Fix for line-clamp (Tailwind doesn't include by default via CDN) */
-        .line-clamp-2 {
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <title>AI Assisted Projects</title>
+
+  <!-- 1 font, 1 icon lib, 1 data lib — nothing else -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
+
+  <style>
+    :root {
+      --bg:         #0d0d11;
+      --surface:    #16161d;
+      --border:     #242430;
+      --border-hi:  #38384a;
+      --text-1:     #e0e0ea;
+      --text-2:     #888898;
+      --text-3:     #4c4c5e;
+      --accent:     #9f7aea;
+      --accent-bg:  rgba(159,122,234,.1);
+      --r:          14px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text-1);
+      font-family: 'Figtree', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      min-height: 100dvh;
+    }
+
+    main {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 20px 16px max(80px, env(safe-area-inset-bottom));
+    }
+
+    /* ── Search ── */
+    .search-wrap {
+      position: relative;
+      margin-bottom: 20px;
+    }
+    .search-wrap svg {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      translate: 0 -50%;
+      color: var(--text-3);
+      width: 16px;
+      height: 16px;
+      pointer-events: none;
+    }
+    #search {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      padding: 13px 16px 13px 42px;
+      color: var(--text-1);
+      font-family: inherit;
+      font-size: 15px;
+      outline: none;
+      transition: border-color .15s;
+      -webkit-appearance: none;
+    }
+    #search::placeholder { color: var(--text-3); }
+    #search:focus { border-color: var(--accent); }
+
+    /* ── Card list ── */
+    #list { display: flex; flex-direction: column; gap: 10px; }
+
+    /* ── Card ── */
+    .card {
+      display: flex;
+      align-items: flex-start;
+      gap: 13px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 14px 15px;
+      text-decoration: none;
+      color: inherit;
+      transition: border-color .15s, background .15s, scale .1s;
+      animation: up .3s ease both;
+    }
+    .card:active {
+      background: #1c1c25;
+      border-color: var(--border-hi);
+      scale: .975;
+    }
+    @media (hover: hover) {
+      .card:hover {
+        background: #1c1c25;
+        border-color: var(--border-hi);
+      }
+    }
+    @keyframes up {
+      from { opacity: 0; translate: 0 6px; }
+      to   { opacity: 1; translate: 0 0; }
+    }
+
+    /* ── Icon ── */
+    .card-icon {
+      flex-shrink: 0;
+      width: 36px;
+      height: 36px;
+      border-radius: 9px;
+      background: var(--accent-bg);
+      display: grid;
+      place-items: center;
+      font-size: 15px;
+      color: var(--accent);
+      overflow: hidden;
+    }
+    .card-icon img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    /* Fallback initial letter */
+    .card-icon.initial {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    /* ── Content ── */
+    .card-body { flex: 1; min-width: 0; }
+    .card-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-1);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .card-desc {
+      font-size: 13px;
+      color: var(--text-2);
+      margin-top: 3px;
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .card-domain {
+      font-size: 11.5px;
+      color: var(--text-3);
+      margin-top: 6px;
+      letter-spacing: .02em;
+    }
+
+    /* ── Arrow ── */
+    .card-arrow {
+      flex-shrink: 0;
+      color: var(--text-3);
+      margin-top: 2px;
+      font-size: 12px;
+      transition: color .15s;
+    }
+    .card:active .card-arrow,
+    .card:hover .card-arrow { color: var(--accent); }
+
+    /* ── States ── */
+    .state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-3);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .state i { display: block; font-size: 28px; margin-bottom: 12px; }
+    .state strong { color: var(--text-2); display: block; margin-bottom: 6px; }
+    .state code {
+      background: rgba(255,255,255,.05);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+
+    /* ── Loader ── */
+    .loader {
+      width: 32px; height: 32px;
+      border: 2.5px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      margin: 60px auto;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+      to { rotate: 360deg; }
+    }
+  </style>
 </head>
-<body class="bg-[#0f0f14] text-gray-200 antialiased">
-    <main class="max-w-3xl mx-auto px-4 py-6 pb-20">
-        <div class="relative mb-6">
-            <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm"></i>
-            <input type="text" id="searchInput" placeholder="Search projects..." 
-                   class="w-full bg-[#1e1f28] border border-gray-700 rounded-2xl py-3.5 pl-11 pr-4 text-base text-gray-200 placeholder:text-gray-500 focus:border-purple-500/70 transition-all">
-        </div>
-        <div id="cardsContainer" class="space-y-3">
-            <div class="loader"></div>
-        </div>
-    </main>
+<body>
+  <main>
+    <div class="search-wrap">
+      <!-- inline SVG — no extra request -->
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <circle cx="8.5" cy="8.5" r="5.5"/><path d="m14 14 3 3"/>
+      </svg>
+      <input type="search" id="search" placeholder="Search projects…" autocomplete="off" spellcheck="false">
+    </div>
+    <div id="list"><div class="loader"></div></div>
+  </main>
 
-    <script>
-        const YAML_PATH = 'projects.yml';
-        let projects = [];
-        let renderTimeout = null;
+  <script>
+    const YAML_PATH = 'projects.yml';
+    let all = [];
 
-        // Mapping from simple icon names to Font Awesome solid icons
-        function getIconClass(iconName) {
-            // If it's already a full FA class (starts with fa-)
-            if (iconName && iconName.startsWith('fa-')) {
-                // Convert fa-regular to fa-solid if needed
-                let fixed = iconName.replace('fa-regular', 'fa-solid');
-                // Ensure fa-solid is present
-                if (!fixed.includes('fa-solid')) {
-                    fixed = 'fa-solid ' + fixed;
-                }
-                return fixed;
-            }
-            
-            // Default icon mapping based on keywords
-            const iconMap = {
-                'link': 'fa-solid fa-link',
-                'url': 'fa-solid fa-link',
-                'code': 'fa-solid fa-code',
-                'terminal': 'fa-solid fa-terminal',
-                'json': 'fa-solid fa-brackets-curly',
-                'database': 'fa-solid fa-database',
-                'folder': 'fa-solid fa-folder',
-                'file': 'fa-solid fa-file',
-                'image': 'fa-solid fa-image',
-                'video': 'fa-solid fa-video',
-                'music': 'fa-solid fa-music',
-                'settings': 'fa-solid fa-gear',
-                'user': 'fa-solid fa-user',
-                'home': 'fa-solid fa-house',
-                'download': 'fa-solid fa-download',
-                'upload': 'fa-solid fa-upload',
-                'copy': 'fa-solid fa-copy',
-                'paste': 'fa-solid fa-paste',
-                'save': 'fa-solid fa-floppy-disk',
-                'delete': 'fa-solid fa-trash',
-                'edit': 'fa-solid fa-pen',
-                'add': 'fa-solid fa-plus',
-                'remove': 'fa-solid fa-minus',
-                'check': 'fa-solid fa-check',
-                'close': 'fa-solid fa-xmark',
-                'warning': 'fa-solid fa-triangle-exclamation',
-                'info': 'fa-solid fa-circle-info',
-                'help': 'fa-solid fa-circle-question',
-                'calendar': 'fa-solid fa-calendar',
-                'clock': 'fa-solid fa-clock',
-                'location': 'fa-solid fa-location-dot',
-                'email': 'fa-solid fa-envelope',
-                'phone': 'fa-solid fa-phone',
-                'lock': 'fa-solid fa-lock',
-                'unlock': 'fa-solid fa-unlock',
-                'eye': 'fa-solid fa-eye',
-                'eye-slash': 'fa-solid fa-eye-slash',
-                'heart': 'fa-solid fa-heart',
-                'star': 'fa-solid fa-star',
-                'cube': 'fa-solid fa-cube',
-                'cubes': 'fa-solid fa-cubes',
-                'box': 'fa-solid fa-box',
-                'archive': 'fa-solid fa-box-archive'
-            };
-            
-            if (iconName && iconMap[iconName.toLowerCase()]) {
-                return iconMap[iconName.toLowerCase()];
-            }
-            
-            // Default fallback
-            return 'fa-solid fa-cube';
-        }
+    // ── Icon helpers ──────────────────────────────────────────────
+    const isURL = s => s && /^(https?:|data:)/.test(s);
 
-        async function loadProjects() {
-            const container = document.getElementById('cardsContainer');
-            try {
-                container.innerHTML = `<div class="loader"></div>`;
-                
-                const response = await fetch(YAML_PATH);
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: Could not load projects.yml`);
-                }
-                const yamlText = await response.text();
-                const parsed = jsyaml.load(yamlText);
-                
-                if (!Array.isArray(parsed)) {
-                    throw new Error('YAML root must be an array of projects');
-                }
-                
-                projects = parsed.map((item, idx) => ({
-                    id: idx,
-                    title: item.title || 'Untitled',
-                    description: item.description || 'No description provided',
-                    icon: item.icon || null,
-                    url: item.url || '#'
-                }));
-                
-                if (projects.length === 0) {
-                    container.innerHTML = `<div class="text-center py-12 text-gray-500"><i class="fa-regular fa-folder-open text-3xl mb-2 block"></i> No projects found in YAML.</div>`;
-                    return;
-                }
-                
-                renderProjects(projects);
-                
-            } catch (err) {
-                console.error('YAML load error:', err);
-                container.innerHTML = `
-                    <div class="bg-red-950/30 border border-red-800/50 rounded-2xl p-5 text-center">
-                        <i class="fa-solid fa-triangle-exclamation text-red-400 text-2xl mb-2 block"></i>
-                        <p class="text-red-300 font-medium">Failed to load projects.yml</p>
-                        <p class="text-gray-400 text-xs mt-2">${escapeHtml(err.message)}</p>
-                        <p class="text-gray-500 text-xs mt-3">Make sure <span class="font-mono bg-black/30 px-1 rounded">projects.yml</span> exists in the same folder as index.html</p>
-                    </div>
-                `;
-            }
-        }
-        
-        function renderProjects(projectsToRender) {
-            const container = document.getElementById('cardsContainer');
-            
-            if (!projectsToRender.length) {
-                container.innerHTML = `<div class="text-center py-12 text-gray-500"><i class="fa-solid fa-magnifying-glass text-3xl mb-2 block"></i> No matching projects</div>`;
-                return;
-            }
-            
-            let html = '';
-            for (const proj of projectsToRender) {
-                let iconHtml = '';
-                
-                // Case 1: Icon is an image URL
-                if (proj.icon && (proj.icon.startsWith('http://') || proj.icon.startsWith('https://') || proj.icon.startsWith('data:'))) {
-                    iconHtml = `<img src="${escapeHtml(proj.icon)}" class="w-8 h-8 rounded-full object-cover bg-gray-800 flex-shrink-0" alt="icon" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">`;
-                    iconHtml += `<div class="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center flex-shrink-0 hidden"><i class="fa-solid fa-cube text-purple-400 text-sm"></i></div>`;
-                } 
-                // Case 2: Icon is a simple name or FA class
-                else {
-                    let finalIconClass = getIconClass(proj.icon);
-                    iconHtml = `<div class="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center flex-shrink-0"><i class="${finalIconClass} text-purple-400 text-sm"></i></div>`;
-                }
-                
-                html += `
-                    <div class="card-hover bg-[#1e1f28] rounded-2xl border border-gray-800 p-4 transition-all duration-200">
-                        <a href="${escapeHtml(proj.url)}" target="_blank" rel="noopener noreferrer" class="block">
-                            <div class="flex gap-3 items-start">
-                                <div class="flex-shrink-0">
-                                    ${iconHtml}
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <h3 class="font-semibold text-base text-gray-100 truncate">${escapeHtml(proj.title)}</h3>
-                                    <p class="text-gray-400 text-sm mt-1 break-words line-clamp-2">${escapeHtml(proj.description)}</p>
-                                    <div class="flex items-center gap-1 mt-2 text-xs text-purple-400/70">
-                                        <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
-                                        <span>open</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
-                `;
-            }
-            container.innerHTML = html;
-        }
-        
-        function escapeHtml(str) {
-            if (!str) return '';
-            return str.replace(/[&<>]/g, function(m) {
-                if (m === '&') return '&amp;';
-                if (m === '<') return '&lt;';
-                if (m === '>') return '&gt;';
-                return m;
-            });
-        }
-        
-        function filterProjects(searchTerm) {
-            if (!searchTerm.trim()) {
-                renderProjects(projects);
-                return;
-            }
-            const term = searchTerm.trim().toLowerCase();
-            const filtered = projects.filter(proj => 
-                proj.title.toLowerCase().includes(term) || 
-                proj.description.toLowerCase().includes(term)
-            );
-            renderProjects(filtered);
-        }
-        
-        function setupSearch() {
-            const searchInput = document.getElementById('searchInput');
-            if (!searchInput) return;
-            
-            searchInput.addEventListener('input', (e) => {
-                if (renderTimeout) clearTimeout(renderTimeout);
-                renderTimeout = setTimeout(() => {
-                    filterProjects(e.target.value);
-                }, 200);
-            });
-        }
-        
-        async function init() {
-            setupSearch();
-            await loadProjects();
-        }
-        
-        init();
-    </script>
+    // Normalize any FA icon string to fa-solid.
+    // Also fixes FA5→FA6 renames we know about.
+    const FA6_RENAMES = {
+      'fa-plus-square':   'fa-square-plus',
+      'fa-minus-square':  'fa-square-minus',
+      'fa-times':         'fa-xmark',
+      'fa-inr':           'fa-indian-rupee-sign',
+    };
+    function normalizeFA(icon) {
+      if (!icon) return 'fa-solid fa-cube';
+      let cls = icon.trim();
+      // Rename old icon names
+      for (const [old, neo] of Object.entries(FA6_RENAMES)) {
+        cls = cls.replace(old, neo);
+      }
+      // Strip non-solid prefixes
+      cls = cls.replace(/\bfa-(regular|light|thin|duotone)\b/, '').trim();
+      // Ensure fa-solid is present
+      if (!cls.includes('fa-solid')) cls = 'fa-solid ' + cls;
+      return cls;
+    }
+
+    // ── Render ───────────────────────────────────────────────────
+    function getDomain(url) {
+      try { return new URL(url).hostname.replace('www.', ''); }
+      catch { return ''; }
+    }
+
+    function html(projects) {
+      if (!projects.length) {
+        return `<div class="state"><i class="fa-solid fa-magnifying-glass"></i>No results</div>`;
+      }
+      return projects.map((p, i) => {
+        const delay = Math.min(i * 30, 200);
+        const iconHtml = isURL(p.icon)
+          ? `<img src="${esc(p.icon)}" alt="" onerror="this.parentNode.className+=' initial';this.parentNode.textContent='${p.title[0]}';">`
+          : `<i class="${esc(normalizeFA(p.icon))}"></i>`;
+
+        return `
+        <a class="card" href="${esc(p.url)}" target="_blank" rel="noopener noreferrer"
+           style="animation-delay:${delay}ms">
+          <div class="card-icon">${iconHtml}</div>
+          <div class="card-body">
+            <div class="card-title">${esc(p.title)}</div>
+            <div class="card-desc">${esc(p.description)}</div>
+            <div class="card-domain">${getDomain(p.url)}</div>
+          </div>
+          <div class="card-arrow"><i class="fa-solid fa-arrow-up-right-from-square"></i></div>
+        </a>`;
+      }).join('');
+    }
+
+    function render(list) {
+      document.getElementById('list').innerHTML = html(list);
+    }
+
+    // ── Search ───────────────────────────────────────────────────
+    let timer;
+    document.getElementById('search').addEventListener('input', e => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        const q = e.target.value.trim().toLowerCase();
+        render(q ? all.filter(p =>
+          p.title.toLowerCase().includes(q) ||
+          p.description.toLowerCase().includes(q)
+        ) : all);
+      }, 150);
+    });
+
+    // ── Load ─────────────────────────────────────────────────────
+    function esc(s) {
+      return String(s ?? '').replace(/[&<>"']/g, c =>
+        ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    (async () => {
+      try {
+        const res = await fetch(YAML_PATH);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const parsed = jsyaml.load(await res.text());
+        if (!Array.isArray(parsed)) throw new Error('YAML root must be an array');
+
+        all = parsed.map(p => ({
+          title:       String(p.title       ?? 'Untitled'),
+          description: String(p.description ?? ''),
+          icon:        p.icon  ?? null,
+          url:         String(p.url         ?? '#'),
+        }));
+
+        render(all);
+      } catch (err) {
+        document.getElementById('list').innerHTML = `
+          <div class="state">
+            <i class="fa-solid fa-triangle-exclamation" style="color:#f87171"></i>
+            <strong>Couldn't load projects.yml</strong>
+            Make sure <code>projects.yml</code> lives next to <code>index.html</code>
+            <br><br><small style="color:#4c4c5e">${esc(err.message)}</small>
+          </div>`;
+      }
+    })();
+  </script>
 </body>
 </html>
