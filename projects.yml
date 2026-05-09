@@ -25,15 +25,16 @@
 
 - title: Investment Calculator
   description: A simple and easy-to-use Interest Calculator that helps you calculate interest for different investments. 🚀
-  icon: https://raw.githubusercontent.com/samar1h/aiasp/refs/heads/main/projects/investment-calculator/favicon.ico
+  icon: fa-regular fa-money
   url: https://samar1h.github.io/aiasp/projects/investment-calculator/
 
-- title: Hush Iamge
-  description: A steganography tool for embedding hidden text within images.
-  icon: https://raw.githubusercontent.com/samar1h/aiasp/refs/heads/main/projects/hush-image/favicon.ico
-  url: https://samar1h.github.io/aiasp/projects/hush-image/
+- title: QR Code Generator
+  description: A simple QR Code Generator that lets you create customizable QR codes for URLs, text, WiFi, payments, and more. 🚀
+  icon: https://raw.githubusercontent.com/samar1h/aiasp/refs/heads/main/projects/qrcode-generator/favicon.ico
+  url: https://samar1h.github.io/aiasp/projects/qrcode-generator/
 
-- title: Hush Iamge
-  description: A steganography tool for embedding hidden text within images.
-  icon: https://raw.githubusercontent.com/samar1h/aiasp/refs/heads/main/projects/hush-image/favicon.ico
-  url: https://samar1h.github.io/aiasp/projects/hush-image/
+- title: Age Calculator
+  description: A simple web app that calculates your exact age. It generates a shareable link without storing any data—your date of birth stays in the URL query and is only visible to those you share it with, ensuring full privacy.
+  icon: https://raw.githubusercontent.com/samar1h/aiasp/refs/heads/main/projects/age-calculator/favicon.ico
+  url: https://samar1h.github.io/aiasp/projects/age-calculator
+
