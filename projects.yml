@@ -1,75 +1,92 @@
+# Icons: fa-solid class names (FA6 free), an https:// image URL, or omit for default.
+# Tags: optional list for filtering. Example — tags: [utility, security]
 
 - title: Bulk URL Opener
   description: Extracts URLs from any text and opens them simultaneously in bulk
   icon: fa-solid fa-link
+  tags: [utility]
   url: https://samar1h.github.io/aiasp/projects/bulk-url-opener/
 
 - title: BPharm Syllabus
   description: Outdated Syllabus of BPharmacy
   icon: fa-solid fa-file-lines
+  tags: [education]
   url: https://samar1h.github.io/aiasp/projects/bpharm-syllabus/
 
 - title: Counter
   description: Perfect for keeping count of anything—workouts, habits, inventory, and more!
   icon: fa-solid fa-square-plus
+  tags: [utility]
   url: https://samar1h.github.io/aiasp/projects/counter/
 
 - title: Barcode Generator
   description: A simple and easy to use program to generate barcodes.
   icon: fa-solid fa-barcode
+  tags: [generator]
   url: https://samar1h.github.io/aiasp/projects/barcode-generator/
 
 - title: QR Code Generator
   description: A simple QR Code Generator that lets you create customizable QR codes for URLs, text, WiFi, payments, and more.
   icon: https://raw.githubusercontent.com/samar1h/aiasp/refs/heads/main/projects/qrcode-generator/favicon.ico
+  tags: [generator]
   url: https://samar1h.github.io/aiasp/projects/qrcode-generator/
 
 - title: Hush Image
   description: A steganography tool for embedding hidden text within images.
   icon: https://raw.githubusercontent.com/samar1h/aiasp/refs/heads/main/projects/hush-image/favicon.ico
+  tags: [security]
   url: https://samar1h.github.io/aiasp/projects/hush-image/
 
 - title: Hush Link
   description: Create and share end-to-end encrypted messages with AES-256 encryption. Built with plain HTML, CSS, and JS.
   icon: https://raw.githubusercontent.com/samar1h/aiasp/refs/heads/main/projects/hush-link/favicon.ico
+  tags: [security]
   url: https://samar1h.github.io/aiasp/projects/hush-link/
 
 - title: Investment Calculator
   description: A simple interest calculator that helps you compare different investment scenarios.
   icon: fa-solid fa-indian-rupee-sign
+  tags: [calculator]
   url: https://samar1h.github.io/aiasp/projects/investment-calculator/
 
 - title: Age Calculator
   description: A simple web app that calculates your exact age.
   icon: https://raw.githubusercontent.com/samar1h/aiasp/refs/heads/main/projects/age-calculator/favicon.ico
+  tags: [calculator]
   url: https://samar1h.github.io/aiasp/projects/age-calculator
 
 - title: Quick Question
   description: Create a single multiple-choice question, generate a shareable link, and let others answer it instantly.
   icon: https://raw.githubusercontent.com/samar1h/aiasp/refs/heads/main/projects/quick-question/favicon.ico
+  tags: [utility]
   url: https://samar1h.github.io/aiasp/projects/quick-question/
 
 - title: Equation Plotter
-  description: A web-based tool for graphing and visualizing mathematical equations.
+  description: A web-based tool for graphing and visualizing mathematical equations interactively.
   icon: https://raw.githubusercontent.com/samar1h/aiasp/refs/heads/main/projects/equation-plotter/build/favicon.ico
+  tags: [math]
   url: https://samar1h.github.io/aiasp/projects/equation-plotter/build/
 
 - title: Permutation Finder
   description: A web-based tool designed to generate all possible permutations of a given word or phrase.
   icon: https://raw.githubusercontent.com/samar1h/aiasp/refs/heads/main/projects/permutation-finder/dark/favicon-32x32.png
+  tags: [math]
   url: https://samar1h.github.io/aiasp/projects/permutation-finder/
 
 - title: Pediatric Dosage
   description: Calculate medication dosage for a child based on various pharmaceutical formulas.
   icon: https://raw.githubusercontent.com/samar1h/aiasp/refs/heads/main/projects/pediatric-dosage/favicon.ico
+  tags: [calculator]
   url: https://samar1h.github.io/aiasp/projects/pediatric-dosage/
 
 - title: Pediatric Dosage V2
   description: Updated version of the pediatric dosage calculator with improved formulas and UI.
   icon: https://raw.githubusercontent.com/samar1h/aiasp/refs/heads/main/projects/pediatric-dosage/favicon.ico
+  tags: [calculator]
   url: https://samar1h.github.io/aiasp/projects/pediatric-dosage/v2.html
 
 - title: Onepage
   description: A minimalistic note-taking app.
   icon: fa-solid fa-pencil
+  tags: [utility]
   url: https://samar1h.github.io/aiasp/projects/onepage/
