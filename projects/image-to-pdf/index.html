@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>img → pdf</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap');
+
+  :root {
+    --bg: #0c0c0d;
+    --surface: #131315;
+    --border: #222226;
+    --border-hover: #3a3a40;
+    --text: #e8e8ea;
+    --muted: #55555f;
+    --accent: #c8f150;
+    --accent-dim: rgba(200,241,80,0.08);
+    --accent-dim2: rgba(200,241,80,0.15);
+    --danger: #ff4d4d;
+    --radius: 14px;
+    --mono: 'DM Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 15px;
+    -webkit-font-smoothing: antialiased;
+    overscroll-behavior: none;
+  }
+
+  .app {
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 0 16px 32px;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 22px 0 20px;
+  }
+
+  .logo {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--accent);
+    letter-spacing: 0.04em;
+  }
+
+  .count-badge {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 10px;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .count-badge.has-items {
+    color: var(--accent);
+    border-color: rgba(200,241,80,0.3);
+  }
+
+  /* DROP ZONE */
+  .drop-zone {
+    border: 1.5px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 36px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    position: relative;
+    margin-bottom: 20px;
+    background: var(--surface);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .drop-zone.dragging {
+    border-color: var(--accent);
+    background: var(--accent-dim);
+  }
+  .drop-zone input[type=file] {
+    position: absolute; inset: 0;
+    opacity: 0; cursor: pointer;
+    width: 100%; height: 100%;
+  }
+
+  .drop-icon {
+    width: 40px; height: 40px;
+    margin: 0 auto 14px;
+    color: var(--muted);
+  }
+
+  .drop-text {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .drop-sub {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: var(--mono);
+  }
+
+  /* GRID */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .thumb {
+    aspect-ratio: 1;
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    animation: pop 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  @keyframes pop {
+    from { transform: scale(0.85); opacity: 0; }
+    to   { transform: scale(1); opacity: 1; }
+  }
+
+  .thumb img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .thumb-del {
+    position: absolute;
+    top: 5px; right: 5px;
+    width: 22px; height: 22px;
+    background: rgba(0,0,0,0.75);
+    border: none;
+    border-radius: 50%;
+    color: #fff;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    line-height: 1;
+    -webkit-tap-highlight-color: transparent;
+    backdrop-filter: blur(4px);
+    transition: background 0.15s;
+  }
+  .thumb-del:active { background: var(--danger); }
+
+  .thumb-num {
+    position: absolute;
+    bottom: 5px; left: 6px;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: rgba(255,255,255,0.6);
+    background: rgba(0,0,0,0.5);
+    border-radius: 4px;
+    padding: 1px 5px;
+    backdrop-filter: blur(4px);
+  }
+
+  /* SETTINGS */
+  .settings {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .setting-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .setting-label {
+    font-size: 13px;
+    color: var(--muted);
+    font-family: var(--mono);
+  }
+
+  .seg {
+    display: flex;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .seg button {
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 6px 12px;
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .seg button.active {
+    background: var(--accent-dim2);
+    color: var(--accent);
+  }
+
+  /* ACTIONS */
+  .actions { display: flex; gap: 10px; margin-top: auto; }
+
+  .btn-clear {
+    flex: 0 0 auto;
+    padding: 0 18px;
+    height: 52px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--muted);
+    font-family: var(--sans);
+    font-size: 14px;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-clear:active { color: var(--danger); border-color: var(--danger); }
+
+  .btn-gen {
+    flex: 1;
+    height: 52px;
+    background: var(--accent);
+    border: none;
+    border-radius: var(--radius);
+    color: #0c0c0d;
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    -webkit-tap-highlight-color: transparent;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-gen:disabled { opacity: 0.35; pointer-events: none; }
+  .btn-gen:active { transform: scale(0.97); }
+
+  .spinner {
+    width: 16px; height: 16px;
+    border: 2px solid rgba(0,0,0,0.25);
+    border-top-color: #0c0c0d;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: none;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .btn-gen.loading .btn-label { display: none; }
+  .btn-gen.loading .spinner { display: block; }
+
+  /* EMPTY STATE */
+  .empty {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 0;
+    gap: 8px;
+    color: var(--muted);
+    font-size: 13px;
+    font-family: var(--mono);
+    display: none;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="logo">img → pdf</span>
+    <span class="count-badge" id="badge">0 images</span>
+  </header>
+
+  <div class="drop-zone" id="dropZone">
+    <input type="file" id="fileInput" accept="image/*" multiple>
+    <svg class="drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <path d="M12 16V8m0 0-3 3m3-3 3 3" stroke-linecap="round" stroke-linejoin="round"/>
+      <rect x="3" y="3" width="18" height="18" rx="4" stroke-linecap="round"/>
+      <path d="M3 15l4-4 3 3 3-4 5 6" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <p class="drop-text">Tap to add images</p>
+    <p class="drop-sub">jpg · png · webp · heic</p>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="settings" id="settings" style="display:none">
+    <div class="setting-row">
+      <span class="setting-label">page size</span>
+      <div class="seg" id="pageSeg">
+        <button class="active" data-val="a4">A4</button>
+        <button data-val="letter">Letter</button>
+        <button data-val="square">Square</button>
+      </div>
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">layout</span>
+      <div class="seg" id="layoutSeg">
+        <button class="active" data-val="fit">Fit</button>
+        <button data-val="fill">Fill</button>
+        <button data-val="one">1/page</button>
+      </div>
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">orientation</span>
+      <div class="seg" id="orientSeg">
+        <button class="active" data-val="portrait">↕ Port</button>
+        <button data-val="landscape">↔ Land</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn-clear" id="clearBtn" style="display:none" onclick="clearAll()">Clear</button>
+    <button class="btn-gen" id="genBtn" disabled onclick="generatePDF()">
+      <span class="btn-label">Generate PDF</span>
+      <div class="spinner"></div>
+    </button>
+  </div>
+</div>
+
+<script>
+const { jsPDF } = window.jspdf;
+let images = []; // {file, url}
+let pageSize = 'a4', layout = 'fit', orient = 'portrait';
+
+const grid = document.getElementById('grid');
+const badge = document.getElementById('badge');
+const genBtn = document.getElementById('genBtn');
+const clearBtn = document.getElementById('clearBtn');
+const settings = document.getElementById('settings');
+const fileInput = document.getElementById('fileInput');
+const dropZone = document.getElementById('dropZone');
+
+// FILE INPUT
+fileInput.addEventListener('change', e => addFiles(e.target.files));
+
+// DRAG DROP (desktop bonus)
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragging'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragging'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('dragging');
+  addFiles(e.dataTransfer.files);
+});
+
+function addFiles(files) {
+  [...files].filter(f => f.type.startsWith('image/')).forEach(f => {
+    const url = URL.createObjectURL(f);
+    images.push({ file: f, url });
+    addThumb(url, images.length - 1);
+  });
+  fileInput.value = '';
+  updateUI();
+}
+
+function addThumb(url, idx) {
+  const div = document.createElement('div');
+  div.className = 'thumb';
+  div.dataset.idx = idx;
+  div.innerHTML = `
+    <img src="${url}" loading="lazy">
+    <button class="thumb-del" onclick="removeImg(${idx})">×</button>
+    <span class="thumb-num">${idx + 1}</span>`;
+  grid.appendChild(div);
+}
+
+function removeImg(idx) {
+  URL.revokeObjectURL(images[idx].url);
+  images.splice(idx, 1);
+  rebuildGrid();
+  updateUI();
+}
+
+function rebuildGrid() {
+  grid.innerHTML = '';
+  images.forEach((img, i) => addThumb(img.url, i));
+}
+
+function clearAll() {
+  images.forEach(img => URL.revokeObjectURL(img.url));
+  images = [];
+  grid.innerHTML = '';
+  updateUI();
+}
+
+function updateUI() {
+  const n = images.length;
+  badge.textContent = n + (n === 1 ? ' image' : ' images');
+  badge.className = 'count-badge' + (n ? ' has-items' : '');
+  genBtn.disabled = n === 0;
+  clearBtn.style.display = n ? 'block' : 'none';
+  settings.style.display = n ? 'flex' : 'none';
+}
+
+// SEGMENTED CONTROLS
+function makeSeg(id, setter) {
+  document.getElementById(id).addEventListener('click', e => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    [...e.currentTarget.querySelectorAll('button')].forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    setter(btn.dataset.val);
+  });
+}
+makeSeg('pageSeg', v => pageSize = v);
+makeSeg('layoutSeg', v => layout = v);
+makeSeg('orientSeg', v => orient = v);
+
+// PDF GENERATION
+async function generatePDF() {
+  if (!images.length) return;
+  genBtn.classList.add('loading');
+
+  await new Promise(r => setTimeout(r, 50)); // let UI update
+
+  try {
+    const sizes = { a4: [210, 297], letter: [215.9, 279.4], square: [210, 210] };
+    const [pw, ph] = sizes[pageSize];
+    const isLand = orient === 'landscape';
+    const docW = isLand ? ph : pw;
+    const docH = isLand ? pw : ph;
+    const margin = 8;
+
+    const doc = new jsPDF({ orientation: orient === 'landscape' ? 'l' : 'p', unit: 'mm', format: pageSize === 'square' ? [210,210] : pageSize });
+
+    const loadImg = url => new Promise((res, rej) => {
+      const img = new Image();
+      img.onload = () => res(img);
+      img.onerror = rej;
+      img.src = url;
+    });
+
+    if (layout === 'one') {
+      // One image per page, full page
+      for (let i = 0; i < images.length; i++) {
+        if (i > 0) doc.addPage();
+        const img = await loadImg(images[i].url);
+        const { x, y, w, h } = fitOrFill(img, margin, docW, docH, 'fit');
+        doc.addImage(img, 'JPEG', x, y, w, h);
+      }
+    } else {
+      // Grid layout: try to pack images
+      const cols = Math.min(images.length, images.length <= 4 ? 2 : 3);
+      const rows = Math.ceil(images.length / cols);
+      const cellW = (docW - margin * (cols + 1)) / cols;
+      const cellH = (docH - margin * (rows + 1)) / rows;
+
+      for (let i = 0; i < images.length; i++) {
+        const col = i % cols;
+        const row = Math.floor(i / cols);
+        const cx = margin + col * (cellW + margin);
+        const cy = margin + row * (cellH + margin);
+        const img = await loadImg(images[i].url);
+        const { x, y, w, h } = fitOrFill(img, 0, cellW, cellH, layout);
+        doc.addImage(img, 'JPEG', cx + x, cy + y, w, h);
+      }
+    }
+
+    const name = 'images-' + Date.now() + '.pdf';
+    doc.save(name);
+  } catch(e) {
+    alert('Error generating PDF. Please try again.');
+    console.error(e);
+  }
+
+  genBtn.classList.remove('loading');
+}
+
+function fitOrFill(img, margin, maxW, maxH, mode) {
+  const iw = img.naturalWidth, ih = img.naturalHeight;
+  const ratio = iw / ih;
+  let w, h;
+
+  if (mode === 'fill') {
+    if (maxW / maxH > ratio) { w = maxW; h = maxW / ratio; }
+    else { h = maxH; w = maxH * ratio; }
+    // clip to cell (jsPDF addImage supports clipping via offset if we pass position)
+    w = Math.min(w, maxW); h = Math.min(h, maxH);
+  } else {
+    if (maxW / ratio <= maxH) { w = maxW; h = maxW / ratio; }
+    else { h = maxH; w = maxH * ratio; }
+  }
+
+  return { x: (maxW - w) / 2, y: (maxH - h) / 2, w, h };
+}
+</script>
+</body>
+</html>
