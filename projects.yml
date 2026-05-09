@@ -93,11 +93,17 @@
 - title: PDF Merge
   description: Merge pdf files together.
   icon: fa-regular fa-file-pdf
-  tags: [pdf]
+  tags: [pdf, utility]
   url: https://samar1h.github.io/aiasp/projects/merge-pdf/
 
 - title: PDF Squeeze
   description: Compress pdf files.
   icon: fa-solid fa-file-pdf
-  tags: [pdf]
+  tags: [pdf, utility]
+  url: https://samar1h.github.io/aiasp/projects/pdf-squeeze/
+
+- title: Imgconv
+  description: An app that converts any image format to JPG, PNG, or WebP.
+  icon: fa-solid fa-image
+  tags: [utility]
   url: https://samar1h.github.io/aiasp/projects/pdf-squeeze/
