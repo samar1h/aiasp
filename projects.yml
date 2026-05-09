@@ -1,5 +1,3 @@
-
-
 - title: Bulk URL Opener
   description: Extracts URLs from any text and opens them simultaneously in bulk
   icon: fa-solid fa-link
@@ -116,6 +114,12 @@
 
 - title: PDF To Image
   description: An app to turn PDF pages into images.
-  icon: fa-solid fa-file-pdf
+  icon: fa-solid fa-image
   tags: [document]
   url: https://samar1h.github.io/aiasp/projects/pdf-to-image/
+
+- title: Image To PDF
+  description: An app to turn images into pdf.
+  icon: fa-solid fa-file-pdf
+  tags: [document]
+  url: https://samar1h.github.io/aiasp/projects/image-to-pdf/
