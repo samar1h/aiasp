@@ -15,7 +15,7 @@
 
 - title: Barcode Generator
   description: A simple and easy to use program to generate barcodes.
-  icon: https://raw.githubusercontent.com/samar1h/aiasp/refs/heads/main/projects/barcode-generator/favicon.ico
+  icon: fa-regular fa-barcode
   url: https://samar1h.github.io/aiasp/projects/barcode-generator/
   
 - title: QR Code Generator
