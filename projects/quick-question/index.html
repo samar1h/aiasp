@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" type="image/x-icon" href="https://raw.githubusercontent.com/samar1h/aiasp/refs/heads/main/projects/quick-question/favicon.ico">
+    <title>Quick Question</title>
+    <style>
+        :root {
+            --primary: #6246ea;
+            --secondary: #d1d1e9;
+            --dark: #2b2c34;
+            --darker: #16161a;
+            --light: #fffffe;
+            --success: #2cb67d;
+            --error: #ef4565;
+            --neutral: #94a1b2;
+            --border-radius: 8px;
+            --spacing-sm: 8px;
+            --spacing-md: 16px;
+            --spacing-lg: 24px;
+            --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--darker);
+            color: var(--light);
+            line-height: 1.6;
+            padding: var(--spacing-md);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: var(--spacing-lg);
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: var(--spacing-sm);
+            color: var(--primary);
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            margin: 0 auto;
+            background-color: var(--dark);
+            border-radius: var(--border-radius);
+            padding: var(--spacing-lg);
+            box-shadow: var(--shadow);
+            flex: 1;
+        }
+
+        .form-group {
+            margin-bottom: var(--spacing-md);
+        }
+
+        label {
+            display: block;
+            margin-bottom: var(--spacing-sm);
+            color: var(--secondary);
+        }
+
+        input[type="text"],
+        input[type="url"],
+        input[type="number"],
+        textarea {
+            width: 100%;
+            padding: var(--spacing-sm);
+            background-color: var(--darker);
+            border: 1px solid var(--neutral);
+            border-radius: var(--border-radius);
+            color: var(--light);
+            font-family: var(--font-family);
+            transition: var(--transition);
+        }
+
+        input[type="text"]:focus,
+        input[type="url"]:focus,
+        input[type="number"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(98, 70, 234, 0.3);
+        }
+
+        .option-container {
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .option-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .option-row input[type="text"] {
+            flex-grow: 1;
+            margin-right: var(--spacing-sm);
+        }
+
+        .option-row input[type="checkbox"] {
+            margin-right: var(--spacing-sm);
+            width: 16px;
+            height: 16px;
+            accent-color: var(--primary);
+        }
+
+        .btn {
+            background-color: var(--primary);
+            color: var(--light);
+            border: none;
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-weight: bold;
+            transition: var(--transition);
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .btn:disabled {
+            background-color: var(--neutral);
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .btn-danger {
+            background-color: var(--error);
+        }
+
+        .btn-secondary {
+            background-color: var(--neutral);
+        }
+
+        .btn-add {
+            background-color: var(--neutral);
+            margin-top: var(--spacing-sm);
+        }
+
+        .result-container {
+            margin-top: var(--spacing-lg);
+        }
+
+        .share-link {
+            padding: var(--spacing-sm);
+            background-color: var(--darker);
+            border-radius: var(--border-radius);
+            word-wrap: break-word;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .copy-btn {
+            margin-top: var(--spacing-sm);
+        }
+
+        #answer-form {
+            margin-top: var(--spacing-md);
+        }
+
+        .option-btn {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: var(--spacing-md);
+            margin-bottom: var(--spacing-sm);
+            background-color: var(--darker);
+            border: 1px solid var(--neutral);
+            border-radius: var(--border-radius);
+            color: var(--light);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .option-btn:hover {
+            background-color: rgba(98, 70, 234, 0.1);
+        }
+
+        .option-btn.selected {
+            border-color: var(--primary);
+            background-color: rgba(98, 70, 234, 0.2);
+        }
+
+        .option-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .feedback {
+            margin-top: var(--spacing-md);
+            padding: var(--spacing-md);
+            border-radius: var(--border-radius);
+            text-align: center;
+        }
+
+        .feedback.correct {
+            background-color: rgba(44, 182, 125, 0.2);
+            border: 1px solid var(--success);
+        }
+
+        .feedback.incorrect {
+            background-color: rgba(239, 69, 101, 0.2);
+            border: 1px solid var(--error);
+        }
+
+        .redirect-info {
+            margin-top: var(--spacing-md);
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--secondary);
+        }
+
+        .redirect-controls {
+            display: flex;
+            justify-content: center;
+            margin-top: var(--spacing-sm);
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--light);
+            animation: spin 1s ease-in-out infinite;
+            margin-right: var(--spacing-sm);
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        footer {
+            text-align: center;
+            margin-top: var(--spacing-lg);
+            color: var(--neutral);
+            font-size: 0.8rem;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .actions {
+            margin-top: var(--spacing-lg);
+            display: flex;
+            justify-content: center;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: var(--spacing-md);
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Quick Question</h1>
+        <p>Create and share a question instantly</p>
+    </header>
+
+    <div class="container">
+        <!-- Create Question Form -->
+        <div id="create-section">
+            <form id="create-form">
+                <div class="form-group">
+                    <label for="question">Your Question</label>
+                    <textarea id="question" rows="3" required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Options (check the correct answer(s))</label>
+                    <div id="options-container" class="option-container">
+                        <div class="option-row">
+                            <input type="checkbox" name="correct">
+                            <input type="text" name="option" placeholder="Option 1" required>
+                            <button type="button" class="btn btn-danger option-remove" disabled>×</button>
+                        </div>
+                        <div class="option-row">
+                            <input type="checkbox" name="correct">
+                            <input type="text" name="option" placeholder="Option 2" required>
+                            <button type="button" class="btn btn-danger option-remove" disabled>×</button>
+                        </div>
+                    </div>
+                    <button type="button" id="add-option" class="btn btn-add">+ Add Option</button>
+                </div>
+
+                <div class="form-group">
+                    <label for="redirect-url">Redirect URL (optional)</label>
+                    <input type="url" id="redirect-url" placeholder="https://example.com">
+                </div>
+
+                <div class="form-group">
+                    <label for="redirect-time">Redirect Time (seconds, minimum 5)</label>
+                    <input type="number" id="redirect-time" min="5" max="60" value="5">
+                </div>
+
+                <div class="form-group">
+                    <label for="correct-message">Custom Correct Answer Message (optional)</label>
+                    <input type="text" id="correct-message" placeholder="Correct! Well done!">
+                </div>
+
+                <div class="form-group">
+                    <label for="incorrect-message">Custom Incorrect Answer Message (optional)</label>
+                    <input type="text" id="incorrect-message" placeholder="Sorry, that's incorrect.">
+                </div>
+
+                <button type="submit" class="btn">Generate Question Link</button>
+            </form>
+
+            <div id="result-container" class="result-container hidden">
+                <h3>Your Question Link:</h3>
+                <div id="share-link" class="share-link"></div>
+                <button id="copy-link" class="btn copy-btn">Copy Link</button>
+            </div>
+        </div>
+
+        <!-- Answer Question Section -->
+        <div id="answer-section" class="hidden">
+            <div id="question-container">
+                <h2 id="question-text"></h2>
+                <form id="answer-form">
+                    <div id="answer-options"></div>
+                    <button type="submit" class="btn" id="submit-answer">Submit Answer</button>
+                </form>
+                <div id="feedback" class="feedback hidden"></div>
+                <div id="redirect-info" class="redirect-info hidden">
+                    <p>Redirecting in <span id="countdown">5</span> seconds...</p>
+                    <div class="redirect-controls">
+                        <button id="stop-redirect" class="btn btn-secondary">Stop Redirect</button>
+                    </div>
+                </div>
+                <div id="create-own-container" class="actions hidden">
+                    <button id="create-own" class="btn">Create Your Own Question</button>
+                </div>
+            </div>
+            <div id="loading">
+                <p><span class="spinner"></span> Loading question...</p>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>Quick Question &copy; 2025 | Made with ❤️ and a little bit of caffeine.</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const createSection = document.getElementById('create-section');
+            const answerSection = document.getElementById('answer-section');
+            const createOwnBtn = document.getElementById('create-own');
+            const createOwnContainer = document.getElementById('create-own-container');
+
+            // Check if we're in answer mode
+            function checkMode() {
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.has('q')) {
+                    // We're in answer mode
+                    createSection.classList.add('hidden');
+                    answerSection.classList.remove('hidden');
+                    loadQuestion();
+                } else {
+                    // We're in create mode
+                    createSection.classList.remove('hidden');
+                    answerSection.classList.add('hidden');
+                }
+            }
+
+            // Load question from URL
+            function loadQuestion() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const encodedQuestion = urlParams.get('q');
+                const loadingEl = document.getElementById('loading');
+                const questionContainer = document.getElementById('question-container');
+                
+                try {
+                    // Decode the question data
+                    const questionData = JSON.parse(atob(encodedQuestion));
+                    
+                    // Display the question
+                    document.getElementById('question-text').textContent = questionData.q;
+                    
+                    // Create options
+                    const optionsContainer = document.getElementById('answer-options');
+                    optionsContainer.innerHTML = '';
+                    
+                    questionData.o.forEach((option, index) => {
+                        const optionBtn = document.createElement('button');
+                        optionBtn.type = 'button';
+                        optionBtn.className = 'option-btn';
+                        optionBtn.textContent = option;
+                        optionBtn.dataset.index = index;
+                        
+                        optionBtn.addEventListener('click', function() {
+                            // Toggle selection for multi-select
+                            const selectedButtons = document.querySelectorAll('.option-btn.selected');
+                            selectedButtons.forEach(btn => btn.classList.remove('selected'));
+                            this.classList.add('selected');
+                        });
+                        
+                        optionsContainer.appendChild(optionBtn);
+                    });
+                    
+                    // Set up answer form
+                    const answerForm = document.getElementById('answer-form');
+                    const feedbackEl = document.getElementById('feedback');
+                    const submitBtn = document.getElementById('submit-answer');
+                    
+                    answerForm.onsubmit = function(e) {
+                        e.preventDefault();
+                        
+                        // Get selected options
+                        const selectedOptions = [];
+                        document.querySelectorAll('.option-btn.selected').forEach(btn => {
+                            selectedOptions.push(parseInt(btn.dataset.index));
+                        });
+                        
+                        if (selectedOptions.length === 0) {
+                            alert('Please select at least one answer.');
+                            return;
+                        }
+                        
+                        // Check if answer is correct
+                        const correctAnswers = questionData.c;
+                        const isCorrect = selectedOptions.length === correctAnswers.length && 
+                                         selectedOptions.every(option => correctAnswers.includes(option));
+                        
+                        // Disable all option buttons
+                        document.querySelectorAll('.option-btn').forEach(btn => {
+                            btn.disabled = true;
+                            
+                            // Highlight correct answers
+                            if (correctAnswers.includes(parseInt(btn.dataset.index))) {
+                                btn.style.borderColor = 'var(--success)';
+                            }
+                        });
+                        
+                        // Hide submit button completely
+                        submitBtn.classList.add('hidden');
+                        
+                        // Show feedback
+                        feedbackEl.classList.remove('hidden', 'correct', 'incorrect');
+                        
+                        if (isCorrect) {
+                            feedbackEl.classList.add('correct');
+                            feedbackEl.textContent = questionData.cm || 'Correct! Well done!';
+                        } else {
+                            feedbackEl.classList.add('incorrect');
+                            feedbackEl.textContent = questionData.im || 'Sorry, that\'s incorrect.';
+                        }
+                        
+                        // Show create own button
+                        createOwnContainer.classList.remove('hidden');
+                        
+                        // Handle redirect if URL is provided
+                        if (questionData.r) {
+                            const redirectUrl = questionData.r;
+                            const redirectTime = questionData.t || 5;
+                            
+                            const redirectInfoEl = document.getElementById('redirect-info');
+                            const countdownEl = document.getElementById('countdown');
+                            const stopRedirectBtn = document.getElementById('stop-redirect');
+                            
+                            redirectInfoEl.classList.remove('hidden');
+                            countdownEl.textContent = redirectTime;
+                            
+                            let timeLeft = redirectTime;
+                            const countdownInterval = setInterval(() => {
+                                timeLeft--;
+                                countdownEl.textContent = timeLeft;
+                                
+                                if (timeLeft <= 0) {
+                                    clearInterval(countdownInterval);
+                                    window.location.href = redirectUrl;
+                                }
+                            }, 1000);
+                            
+                            stopRedirectBtn.onclick = function() {
+                                clearInterval(countdownInterval);
+                                redirectInfoEl.classList.add('hidden');
+                            };
+                        }
+                    };
+                    
+                    // Show question container
+                    loadingEl.classList.add('hidden');
+                    questionContainer.classList.remove('hidden');
+                    
+                } catch (error) {
+                    console.error('Error parsing question:', error);
+                    loadingEl.innerHTML = '<p>Invalid or corrupted question link.</p><div class="actions"><button id="go-create" class="btn">Create a Question</button></div>';
+                    
+                    document.getElementById('go-create').addEventListener('click', function() {
+                        window.location.href = window.location.pathname;
+                    });
+                }
+            }
+
+            // Create own question button
+            createOwnBtn.addEventListener('click', function() {
+                window.location.href = window.location.pathname;
+            });
+
+            // Add option button
+            const addOptionBtn = document.getElementById('add-option');
+            const optionsContainer = document.getElementById('options-container');
+
+            addOptionBtn.addEventListener('click', function() {
+                const optionCount = optionsContainer.children.length + 1;
+                const newOption = document.createElement('div');
+                newOption.className = 'option-row';
+                newOption.innerHTML = `
+                    <input type="checkbox" name="correct">
+                    <input type="text" name="option" placeholder="Option ${optionCount}" required>
+                    <button type="button" class="btn btn-danger option-remove">×</button>
+                `;
+                optionsContainer.appendChild(newOption);
+                
+                // Enable remove buttons if we have more than 2 options
+                if (optionsContainer.children.length > 2) {
+                    document.querySelectorAll('.option-remove').forEach(btn => {
+                        btn.disabled = false;
+                    });
+                }
+            });
+
+            // Remove option functionality
+            optionsContainer.addEventListener('click', function(e) {
+                if (e.target.classList.contains('option-remove')) {
+                    e.target.parentElement.remove();
+                    
+                    // Update option placeholders
+                    const options = optionsContainer.querySelectorAll('.option-row');
+                    options.forEach((option, index) => {
+                        option.querySelector('input[name="option"]').placeholder = `Option ${index + 1}`;
+                    });
+                    
+                    // Disable remove buttons if we have 2 or fewer options
+                    if (options.length <= 2) {
+                        options.forEach(option => {
+                            option.querySelector('.option-remove').disabled = true;
+                        });
+                    }
+                }
+            });
+
+            // Create form submission
+            const createForm = document.getElementById('create-form');
+            const resultContainer = document.getElementById('result-container');
+            const shareLink = document.getElementById('share-link');
+            const copyBtn = document.getElementById('copy-link');
+
+            createForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Get form values
+                const question = document.getElementById('question').value;
+                const options = [];
+                const correctIndices = [];
+                
+                document.querySelectorAll('.option-row').forEach((row, index) => {
+                    const optionText = row.querySelector('input[name="option"]').value;
+                    const isCorrect = row.querySelector('input[name="correct"]').checked;
+                    
+                    options.push(optionText);
+                    if (isCorrect) {
+                        correctIndices.push(index);
+                    }
+                });
+                
+                if (correctIndices.length === 0) {
+                    alert('Please select at least one correct answer.');
+                    return;
+                }
+
+                const redirectUrl = document.getElementById('redirect-url').value;
+                let redirectTime = parseInt(document.getElementById('redirect-time').value) || 5;
+                
+                // Ensure minimum redirect time of 5 seconds
+                if (redirectTime < 5) {
+                    redirectTime = 5;
+                    document.getElementById('redirect-time').value = 5;
+                }
+                
+                const correctMessage = document.getElementById('correct-message').value;
+                const incorrectMessage = document.getElementById('incorrect-message').value;
+                
+                // Build the question object
+                const questionObj = {
+                    q: question,
+                    o: options,
+                    c: correctIndices,
+                    r: redirectUrl,
+                    t: redirectTime
+                };
+                
+                // Add custom messages if provided
+                if (correctMessage) {
+                    questionObj.cm = correctMessage;
+                }
+                
+                if (incorrectMessage) {
+                    questionObj.im = incorrectMessage;
+                }
+                
+                // Convert to JSON and encode
+                const encodedData = btoa(JSON.stringify(questionObj));
+                
+                // Create share link
+                const shareUrl = `${window.location.origin}${window.location.pathname}?q=${encodedData}`;
+                
+                // Show result
+                shareLink.textContent = shareUrl;
+                resultContainer.classList.remove('hidden');
+            });
+
+            // Copy link functionality
+            copyBtn.addEventListener('click', function() {
+                const linkText = shareLink.textContent;
+                navigator.clipboard.writeText(linkText).then(() => {
+                    this.textContent = 'Copied!';
+                    setTimeout(() => {
+                        this.textContent = 'Copy Link';
+                    }, 2000);
+                });
+            });
+
+            // Run mode check on page load
+            checkMode();
+        });
+    </script>
+</body>
+</html>

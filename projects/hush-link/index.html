@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <link rel="shortcut icon" type="image/x-icon" href="https://raw.githubusercontent.com/samar1h/aiasp/refs/heads/main/projects/hush-link/favicon.ico">
+  <title>HushLink - Secure Message Sharing</title>
+  <style>
+    :root {
+      --bg-color: #121212;
+      --card-bg: #1e1e1e;
+      --primary: #8c66ff;
+      --text: #e0e0e0;
+      --text-secondary: #a0a0a0;
+      --border: #333333;
+      --error: #ff6b6b;
+      --success: #4caf50;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    }
+    
+    body {
+      background-color: var(--bg-color);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 16px;
+    }
+    
+    .container {
+      max-width: 600px;
+      width: 100%;
+      margin: 0 auto;
+      flex: 1;
+    }
+    
+    .card {
+      background-color: var(--card-bg);
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+      margin-bottom: 24px;
+    }
+    
+    h1 {
+      color: var(--primary);
+      margin-bottom: 8px;
+      font-size: 24px;
+    }
+    
+    h2 {
+      font-size: 18px;
+      margin-bottom: 16px;
+      color: var(--text);
+      font-weight: 500;
+    }
+    
+    textarea, input[type="text"], input[type="password"] {
+      width: 100%;
+      background-color: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      padding: 12px;
+      margin-bottom: 16px;
+      font-size: 16px;
+      transition: border-color 0.2s;
+    }
+    
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+    
+    textarea:focus, input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    
+    button {
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 12px 24px;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+      width: 100%;
+      margin-bottom: 16px;
+    }
+    
+    button:hover {
+      opacity: 0.9;
+    }
+    
+    button:active {
+      transform: scale(0.98);
+    }
+    
+    .secondary-button {
+      background-color: transparent;
+      border: 1px solid var(--primary);
+      color: var(--primary);
+    }
+    
+    .password-container {
+      position: relative;
+    }
+    
+    .toggle-password {
+      position: absolute;
+      right: 12px;
+      top: 12px;
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 14px;
+      cursor: pointer;
+      padding: 0;
+      margin: 0;
+      width: auto;
+    }
+    
+    .result {
+      background-color: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px;
+      word-break: break-all;
+      margin-bottom: 16px;
+      position: relative;
+    }
+    
+    .copy-button {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background-color: rgba(0, 0, 0, 0.3);
+      color: var(--text);
+      border-radius: 4px;
+      font-size: 12px;
+      padding: 4px 8px;
+      cursor: pointer;
+      width: auto;
+      margin: 0;
+    }
+    
+    .copy-button:hover {
+      background-color: rgba(0, 0, 0, 0.5);
+    }
+    
+    .alert {
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+    }
+    
+    .alert-error {
+      background-color: rgba(255, 107, 107, 0.1);
+      border: 1px solid var(--error);
+      color: var(--error);
+    }
+    
+    .alert-success {
+      background-color: rgba(76, 175, 80, 0.1);
+      border: 1px solid var(--success);
+      color: var(--success);
+    }
+    
+    footer {
+      text-align: center;
+      margin-top: 32px;
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+    
+    footer a {
+      color: var(--primary);
+      text-decoration: none;
+    }
+    
+    .accordion {
+      margin-bottom: 16px;
+    }
+    
+    .accordion-header {
+      background-color: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px;
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .accordion-content {
+      display: none;
+      padding: 16px;
+      background-color: rgba(0, 0, 0, 0.2);
+      border-radius: 0 0 6px 6px;
+      margin-top: -6px;
+      color: var(--text-secondary);
+    }
+    
+    .accordion-content.active {
+      display: block;
+    }
+    
+    .accordion-content p {
+      margin-bottom: 12px;
+    }
+    
+    .accordion-content ul {
+      padding-left: 24px;
+      margin-bottom: 12px;
+    }
+    
+    .fade-in {
+      animation: fadeIn 0.3s;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="encryption-mode" class="card fade-in">
+      <h1>HushLink</h1>
+      <h2>Create & share encrypted messages</h2>
+      
+      <textarea id="message" placeholder="Enter your secret message here..."></textarea>
+      
+      <div class="password-container">
+        <input type="password" id="password" placeholder="Create a password">
+        <button type="button" class="toggle-password" id="toggle-encrypt-password">Show</button>
+      </div>
+      
+      <button id="encrypt-button">Encrypt & Generate Link</button>
+      
+      <div id="result-container" style="display: none;">
+        <div class="result" id="result">
+          <button class="copy-button" id="copy-button">Copy</button>
+          <span id="result-text"></span>
+        </div>
+      </div>
+      
+      <div class="accordion">
+        <div class="accordion-header">
+          <span>How it works</span>
+          <span>+</span>
+        </div>
+        <div class="accordion-content">
+          <p>HushLink uses AES-256 encryption to secure your messages. The process works as follows:</p>
+          <ul>
+            <li>Enter your message and create a password</li>
+            <li>Your message is encrypted using your password</li>
+            <li>A shareable link is generated that contains the encrypted message</li>
+            <li>Share this link with anyone you want to read your message</li>
+            <li>The recipient will need the password to decrypt and read the message</li>
+          </ul>
+          <p>Your message is never stored on any server - it exists only in the encrypted URL.</p>
+        </div>
+      </div>
+    </div>
+    
+    <div id="decryption-mode" class="card fade-in" style="display: none;">
+      <h1>HushLink</h1>
+      <h2>Decrypt the secret message</h2>
+      
+      <div class="password-container">
+        <input type="password" id="decrypt-password" placeholder="Enter the password">
+        <button type="button" class="toggle-password" id="toggle-decrypt-password">Show</button>
+      </div>
+      
+      <button id="decrypt-button">Decrypt Message</button>
+      
+      <div id="decrypted-message-container" style="display: none;">
+        <div class="alert alert-success">Message successfully decrypted!</div>
+        <div class="result" id="decrypted-message">
+          <button class="copy-button" id="copy-decrypted-button">Copy</button>
+          <span id="decrypted-text"></span>
+        </div>
+      </div>
+      
+      <div id="error-message" class="alert alert-error" style="display: none;">
+        Incorrect password or invalid encrypted message.
+      </div>
+      
+      <button class="secondary-button" id="create-new-button">Create New Secret Message</button>
+    </div>
+  </div>
+  
+  <footer>
+    Copyright 2025 | GitHub: <a href="https://github.com/samar1h/hush_link" target="_blank">github.com/samar1h/hush_link</a>
+  </footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+  <script>
+    // DOM Elements
+    const encryptionMode = document.getElementById('encryption-mode');
+    const decryptionMode = document.getElementById('decryption-mode');
+    const messageInput = document.getElementById('message');
+    const passwordInput = document.getElementById('password');
+    const decryptPasswordInput = document.getElementById('decrypt-password');
+    const encryptButton = document.getElementById('encrypt-button');
+    const decryptButton = document.getElementById('decrypt-button');
+    const resultContainer = document.getElementById('result-container');
+    const resultText = document.getElementById('result-text');
+    const decryptedMessageContainer = document.getElementById('decrypted-message-container');
+    const decryptedText = document.getElementById('decrypted-text');
+    const errorMessage = document.getElementById('error-message');
+    const createNewButton = document.getElementById('create-new-button');
+    const copyButton = document.getElementById('copy-button');
+    const copyDecryptedButton = document.getElementById('copy-decrypted-button');
+    const toggleEncryptPassword = document.getElementById('toggle-encrypt-password');
+    const toggleDecryptPassword = document.getElementById('toggle-decrypt-password');
+    
+    // Check if URL has an encrypted message
+    function checkForEncryptedMessage() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const encryptedMsg = urlParams.get('msg');
+      
+      if (encryptedMsg) {
+        encryptionMode.style.display = 'none';
+        decryptionMode.style.display = 'block';
+        return true;
+      }
+      return false;
+    }
+    
+    // Encrypt message and generate URL
+    function encryptMessage() {
+      const message = messageInput.value.trim();
+      const password = passwordInput.value.trim();
+      
+      if (!message || !password) {
+        alert('Please enter both a message and a password');
+        return;
+      }
+      
+      try {
+        // Encrypt the message with AES
+        const encrypted = CryptoJS.AES.encrypt(message, password).toString();
+        
+        // Convert to base64url format (URL-safe)
+        const base64url = encrypted
+          .replace(/\+/g, '-')
+          .replace(/\//g, '_')
+          .replace(/=+$/, '');
+        
+        // Generate the full URL
+        const url = `${window.location.origin}${window.location.pathname}?msg=${encodeURIComponent(base64url)}`;
+        
+        // Display the result
+        resultText.textContent = url;
+        resultContainer.style.display = 'block';
+        
+        // Scroll to the result
+        setTimeout(() => {
+          resultContainer.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+      } catch (error) {
+        alert('Error encrypting message: ' + error.message);
+      }
+    }
+    
+    // Decrypt message from URL
+    function decryptMessage() {
+      const password = decryptPasswordInput.value.trim();
+      const urlParams = new URLSearchParams(window.location.search);
+      let encryptedMsg = urlParams.get('msg');
+      
+      if (!password || !encryptedMsg) {
+        errorMessage.style.display = 'block';
+        decryptedMessageContainer.style.display = 'none';
+        return;
+      }
+      
+      try {
+        // Convert from base64url format to base64
+        encryptedMsg = encryptedMsg
+          .replace(/-/g, '+')
+          .replace(/_/g, '/');
+        
+        // Add padding if needed
+        while (encryptedMsg.length % 4) {
+          encryptedMsg += '=';
+        }
+        
+        // Decrypt the message
+        const decrypted = CryptoJS.AES.decrypt(encryptedMsg, password).toString(CryptoJS.enc.Utf8);
+        
+        if (!decrypted) {
+          throw new Error('Decryption failed');
+        }
+        
+        // Display the decrypted message
+        decryptedText.textContent = decrypted;
+        decryptedMessageContainer.style.display = 'block';
+        errorMessage.style.display = 'none';
+      } catch (error) {
+        errorMessage.style.display = 'block';
+        decryptedMessageContainer.style.display = 'none';
+      }
+    }
+    
+    // Copy text to clipboard
+    function copyToClipboard(text, button) {
+      navigator.clipboard.writeText(text).then(() => {
+        const originalText = button.textContent;
+        button.textContent = 'Copied!';
+        setTimeout(() => {
+          button.textContent = originalText;
+        }, 2000);
+      }).catch(err => {
+        console.error('Failed to copy: ', err);
+      });
+    }
+    
+    // Toggle password visibility
+    function togglePasswordVisibility(inputElement, toggleButton) {
+      if (inputElement.type === 'password') {
+        inputElement.type = 'text';
+        toggleButton.textContent = 'Hide';
+      } else {
+        inputElement.type = 'password';
+        toggleButton.textContent = 'Show';
+      }
+    }
+    
+    // Event Listeners
+    document.addEventListener('DOMContentLoaded', () => {
+      // Check if URL has encrypted message
+      checkForEncryptedMessage();
+      
+      // Encrypt button
+      encryptButton.addEventListener('click', encryptMessage);
+      
+      // Decrypt button
+      decryptButton.addEventListener('click', decryptMessage);
+      
+      // Create new button
+      createNewButton.addEventListener('click', () => {
+        window.location.href = window.location.pathname;
+      });
+      
+      // Copy buttons
+      copyButton.addEventListener('click', () => {
+        copyToClipboard(resultText.textContent, copyButton);
+      });
+      
+      copyDecryptedButton.addEventListener('click', () => {
+        copyToClipboard(decryptedText.textContent, copyDecryptedButton);
+      });
+      
+      // Toggle password visibility
+      toggleEncryptPassword.addEventListener('click', () => {
+        togglePasswordVisibility(passwordInput, toggleEncryptPassword);
+      });
+      
+      toggleDecryptPassword.addEventListener('click', () => {
+        togglePasswordVisibility(decryptPasswordInput, toggleDecryptPassword);
+      });
+      
+      // Accordion functionality
+      const accordionHeaders = document.querySelectorAll('.accordion-header');
+      accordionHeaders.forEach(header => {
+        header.addEventListener('click', () => {
+          const content = header.nextElementSibling;
+          content.classList.toggle('active');
+          header.querySelector('span:last-child').textContent = 
+            content.classList.contains('active') ? '-' : '+';
+        });
+      });
+    });
+  </script>
+</body>
+</html>
