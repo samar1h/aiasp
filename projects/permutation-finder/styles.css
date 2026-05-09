@@ -1,0 +1,222 @@
+body {
+  background-color: #1e1e1e;
+  color: #cfcfcf;
+  font-family: Arial, sans-serif;
+  margin: 20px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+h1 {
+  font-size: 28px;
+  margin-bottom: 20px;
+  color: #ffcc00;
+  text-align: center;
+}
+
+/* Input Section */
+.input-section {
+  margin-bottom: 20px;
+  background-color: #333;
+  padding: 15px;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 600px;
+  text-align: center;
+  box-sizing: border-box; /* Ensures padding doesn't break layout */
+  display: flex;
+  flex-direction: column; /* Stack inputs and buttons vertically */
+  align-items: center; /* Horizontally center elements */
+}
+
+/* Output Section */
+.output-section {
+  display: none; /* Initially hidden */
+  margin-top: 20px;
+  width: 100%;
+  max-width: 800px;
+  text-align: center;
+  background-color: #333;
+  padding: 15px;
+  border-radius: 8px;
+  box-sizing: border-box;
+}
+
+/* Styling for input and button elements */
+input, button {
+  margin: 10px;
+  padding: 10px;
+  font-size: 16px;
+  width: 100%;
+  box-sizing: border-box; /* Ensures padding is part of the element width */
+  border-radius: 5px;
+}
+
+button {
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+/* Table styling */
+table {
+  width: 100%;
+  max-width: 800px;
+  margin: 20px auto;
+  border-collapse: collapse;
+  text-align: center;
+  font-size: large;
+}
+
+table th, table td {
+  border: 1px solid #555;
+  padding: 8px;
+  text-align: center;
+}
+
+table th {
+  background-color: #333;
+}
+
+table tr:nth-child(even) {
+  background-color: #2a2a2a;
+}
+
+table tr:nth-child(odd) {
+  background-color: #1a1a1a;
+}
+
+/* Toggle button styling */
+.toggle-btn {
+  padding: 10px 20px;
+  font-size: 16px;
+  border-radius: 5px;
+  cursor: pointer;
+  background-color: #ff6f61; /* Default red color */
+  color: white;
+  border: none;
+  transition: background-color 0.3s ease;
+}
+
+.toggle-btn.enabled {
+  background-color: #4caf50; /* Green color when enabled */
+}
+
+.toggle-btn:hover {
+  opacity: 0.8;
+}
+
+/* Floating button styles */
+.floating-btn {
+  position: fixed;
+  bottom: 20px;
+  padding: 15px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  font-size: 24px;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#downloadBtn {
+  right: 0px;
+}
+
+#copyBtn {
+  right: 50px; /* Positioned to the left of the download button */
+}
+
+.floating-btn:hover {
+  background-color: #0056b3;
+}
+
+#clearBtn {
+  background-color: #ff4d4d;
+}
+
+#clearBtn:hover {
+  background-color: #e60000;
+}
+
+/* Media Queries for responsiveness */
+@media (max-width: 600px) {
+  input, button {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .input-section {
+    align-items: center; /* Center the items horizontally */
+  }
+}
+
+@media (min-width: 768px) {
+  body {
+    padding: 40px;
+  }
+
+  .input-section, .output-section {
+    max-width: 80%; /* Stretch to 80% of available width */
+  }
+
+  h1 {
+    font-size: 36px; /* Larger font size for desktop */
+  }
+
+  input, button {
+    max-width: 400px; /* Wider inputs and buttons */
+  }
+
+  table {
+    font-size: larger; /* Make table font larger for better readability */
+  }
+}
+
+@media (min-width: 1024px) {
+  body {
+    padding: 60px;
+  }
+
+  .input-section, .output-section {
+    max-width: 70%; /* Further stretch content for large screens */
+  }
+
+  h1 {
+    font-size: 40px; /* Even larger font size for large desktop screens */
+  }
+
+  input, button {
+    max-width: 500px; /* Even wider inputs and buttons */
+  }
+
+  table {
+    font-size: large; /* Ensure readability on large screens */
+  }
+}
+
+#toggleRemoveWordsBtn {
+    margin-top: 10px;
+  }
+
+
+a {
+    color: #0060B6;
+    text-decoration: none;
+}
+
+a:hover {
+    color:#00A0C6; 
+    text-decoration:none; 
+    cursor:pointer;  
+}

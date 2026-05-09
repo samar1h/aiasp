@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Permutation Finder</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="apple-touch-icon" sizes="180x180" href="light/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="light/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="light/favicon-16x16.png">
+  <link rel="manifest" href="light/site.webmanifest">
+
+  <link rel="stylesheet" href="styles.css">
+  <link rel="apple-touch-icon" sizes="180x180" href="dark/apple-touch-icon.png" media="(prefers-color-scheme: dark)">
+  <link rel="icon" type="image/png" sizes="32x32" href="dark/favicon-32x32.png" media="(prefers-color-scheme: dark)">
+  <link rel="icon" type="image/png" sizes="16x16" href="dark/favicon-16x16.png" media="(prefers-color-scheme: dark)">
+  <link rel="manifest" href="dark/site.webmanifest" media="(prefers-color-scheme: dark)">
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+</head>
+<body>
+
+  <h1>Permutation Finder: Generate All Possible Permutations of a Word</h1>
+  
+  <!-- Input Section -->
+  <div class="input-section">
+    <input type="text" id="inputText" placeholder="Enter a Word..."  autofocus />
+    <p id="lengthInfo" style="color: #c6c6c6; font-size: 12px; margin-top: 0px;">Current Length: 0</p>
+    <input type="number" id="permutationLength" placeholder="Length (optional)" min="1" />
+    <button id="toggleDuplicatesBtn" class="toggle-btn">Ignore Duplicate Characters: Off</button>
+    <button id="toggleDuplicateWordsBtn" class="toggle-btn">Ignore Duplicate Words: Off</button>
+    <button id="generateBtn">Generate Permutations</button>
+    <button id="clearBtn">Clear</button>
+  </div>
+  
+  <!-- Output Section -->
+  <div class="output-section" id="outputSection"></div>
+
+  <!-- Floating buttons -->
+  <button id="copyBtn" class="floating-btn" title="Copy Permutations" disabled>&#x2398;</button>
+  <button id="downloadBtn" class="floating-btn" title="Download as Image" disabled>&#128229;</button>
+
+  <script defer src="script.js"></script>
+  <script src="html2canvas.min.js"></script>
+
+</body>
+</html>
