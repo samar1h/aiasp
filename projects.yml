@@ -8,10 +8,17 @@
   icon: fa-regular fa-file
   url: https://samar1h.github.io/aiasp/projects/bpharm-syllabus/
 
-  
 - title: Counter
   description: Perfect for keeping count of anything—workouts, habits, inventory, and more!
   icon: https://raw.githubusercontent.com/samar1h/aiasp/refs/heads/main/projects/counter/favicon.ico
   url: https://samar1h.github.io/aiasp/projects/counter/
 
-  
+- title: Barcode Generator
+  description: A simple and easy to use program to generate barcodes.
+  icon: https://raw.githubusercontent.com/samar1h/aiasp/refs/heads/main/projects/barcode-generator/favicon.ico
+  url: https://samar1h.github.io/aiasp/projects/barcode-generator/
+
+- title: Hush Iamge
+  description: A steganography tool for embedding hidden text within images.
+  icon: https://raw.githubusercontent.com/samar1h/aiasp/refs/heads/main/projects/hush-image/favicon.ico
+  url: https://samar1h.github.io/aiasp/projects/hush-image/
