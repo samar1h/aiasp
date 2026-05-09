@@ -1,5 +1,4 @@
-# Icons: fa-solid class names (FA6 free), an https:// image URL, or omit for default.
-# Tags: optional list for filtering. Example — tags: [utility, security]
+
 
 - title: Bulk URL Opener
   description: Extracts URLs from any text and opens them simultaneously in bulk
