@@ -107,3 +107,15 @@
   icon: fa-solid fa-image
   tags: [document]
   url: https://samar1h.github.io/aiasp/projects/imgconv/
+
+- title: PDF Reorder
+  description: An app that allows you to rearrange pages within a single PDF or across multiple PDF files.
+  icon: fa-regular fa-file-pdf
+  tags: [document]
+  url: https://samar1h.github.io/aiasp/projects/pdf-reorder/
+
+- title: PDF To Image
+  description: An app to turn PDF pages into images.
+  icon: fa-solid fa-file-pdf
+  tags: [document]
+  url: https://samar1h.github.io/aiasp/projects/pdf-to-image/
