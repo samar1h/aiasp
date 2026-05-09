@@ -24,7 +24,7 @@ A messy repo where I throw **random AI-generated code** I make for:
 
 | Expectation | Reality |
 |-------------|---------|
-| Production-ready code | 😂 absolutely not |
+| Production-ready code | absolutely not |
 | Best practices | maybe by accident |
 | Security review | lol no |
 | Will it run? | sometimes |
