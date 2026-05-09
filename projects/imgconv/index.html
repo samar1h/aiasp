@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>imgconv</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne+Mono&family=Syne:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#080808;--surface:#111;--border:#1f1f1f;--border2:#2a2a2a;
+  --accent:#b8ff57;--accent-dim:#8fcc38;
+  --text:#efefef;--muted:#555;--muted2:#333;
+  --r:14px;--r2:10px;--r3:50px;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Syne',sans-serif}
+body{display:flex;flex-direction:column;min-height:100vh;padding:0 0 2rem}
+
+header{padding:1.4rem 1.25rem 0.6rem;display:flex;align-items:baseline;gap:0.5rem}
+.logo{font-family:'Syne Mono',monospace;font-size:1.4rem;letter-spacing:-0.03em;color:var(--accent)}
+.logo-sub{font-size:0.72rem;color:var(--muted);letter-spacing:0.04em}
+
+main{flex:1;padding:0 1rem;display:flex;flex-direction:column;gap:1rem}
+
+.drop-zone{
+  border:1.5px dashed var(--border2);border-radius:var(--r);
+  padding:2rem 1rem;text-align:center;cursor:pointer;
+  transition:border-color .2s,background .2s;
+  background:var(--surface);position:relative;
+  display:flex;flex-direction:column;align-items:center;gap:0.6rem;
+}
+.drop-zone.has-file{border-style:solid;border-color:var(--accent);background:rgba(184,255,87,0.04)}
+.drop-zone.drag-over{border-color:var(--accent);background:rgba(184,255,87,0.08)}
+.drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.dz-icon{font-size:2rem;line-height:1}
+.dz-label{font-size:0.85rem;color:var(--muted);font-family:'Syne Mono',monospace}
+.dz-label strong{color:var(--text);display:block;font-size:0.95rem;margin-bottom:0.2rem}
+.dz-hint{font-size:0.72rem;color:var(--muted2);font-family:'Syne Mono',monospace}
+
+.preview-wrap{display:none;background:var(--surface);border-radius:var(--r);overflow:hidden;border:1px solid var(--border)}
+.preview-img{width:100%;max-height:220px;object-fit:contain;display:block;background:#0d0d0d}
+.file-meta{display:flex;justify-content:space-between;padding:0.6rem 0.9rem;font-size:0.72rem;font-family:'Syne Mono',monospace;color:var(--muted)}
+
+.section-label{font-size:0.7rem;font-family:'Syne Mono',monospace;letter-spacing:0.1em;color:var(--muted);text-transform:uppercase;padding:0 0.1rem}
+
+.format-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem}
+.fmt-btn{
+  background:var(--surface);border:1px solid var(--border2);border-radius:var(--r2);
+  color:var(--muted);font-family:'Syne Mono',monospace;font-size:0.85rem;
+  padding:0.65rem 0;cursor:pointer;transition:all .15s;text-align:center;
+}
+.fmt-btn:active{transform:scale(0.96)}
+.fmt-btn.active{background:var(--accent);border-color:var(--accent);color:#111;font-weight:700}
+
+.quality-row{display:flex;flex-direction:column;gap:0.5rem}
+.q-top{display:flex;justify-content:space-between;align-items:center}
+.q-val{font-family:'Syne Mono',monospace;font-size:0.85rem;color:var(--accent);font-weight:700}
+input[type=range]{
+  width:100%;-webkit-appearance:none;appearance:none;
+  height:3px;background:var(--border2);border-radius:2px;outline:none;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:20px;height:20px;border-radius:50%;
+  background:var(--accent);cursor:pointer;border:none;
+  box-shadow:0 0 0 3px rgba(184,255,87,0.18);
+}
+input[type=range]::-moz-range-thumb{
+  width:20px;height:20px;border-radius:50%;background:var(--accent);
+  cursor:pointer;border:none;
+}
+
+.convert-btn{
+  width:100%;padding:1rem;border:none;border-radius:var(--r);
+  background:var(--accent);color:#111;font-family:'Syne',sans-serif;
+  font-size:1rem;font-weight:700;cursor:pointer;letter-spacing:0.02em;
+  transition:opacity .15s,transform .1s;
+}
+.convert-btn:disabled{opacity:0.25;cursor:not-allowed}
+.convert-btn:not(:disabled):active{transform:scale(0.98)}
+
+.result-card{display:none;background:var(--surface);border-radius:var(--r);overflow:hidden;border:1px solid var(--border)}
+.result-img{width:100%;max-height:220px;object-fit:contain;display:block;background:#0d0d0d}
+.result-meta{padding:0.75rem 0.9rem;display:flex;flex-direction:column;gap:0.7rem}
+.size-row{display:flex;align-items:center;gap:0.6rem;font-size:0.75rem;font-family:'Syne Mono',monospace}
+.size-from{color:var(--muted);}
+.size-arrow{color:var(--muted2)}
+.size-to{color:var(--accent);font-weight:700}
+.size-diff{margin-left:auto;font-size:0.68rem;padding:0.2rem 0.5rem;border-radius:var(--r3);border:1px solid var(--border2);color:var(--muted)}
+.size-diff.smaller{border-color:rgba(184,255,87,0.3);color:var(--accent)}
+.size-diff.larger{border-color:rgba(255,80,80,0.3);color:#ff7070}
+.dl-btn{
+  display:block;width:100%;padding:0.8rem;border:1.5px solid var(--accent);
+  border-radius:var(--r2);background:transparent;color:var(--accent);
+  font-family:'Syne',sans-serif;font-size:0.9rem;font-weight:700;
+  cursor:pointer;text-align:center;letter-spacing:0.02em;transition:background .15s;
+}
+.dl-btn:active{background:rgba(184,255,87,0.1)}
+
+.error-msg{
+  display:none;background:#180d0d;border:1px solid #3a1a1a;
+  border-radius:var(--r2);padding:0.75rem 1rem;
+  font-size:0.8rem;font-family:'Syne Mono',monospace;color:#ff7070;
+}
+
+.divider{height:1px;background:var(--border);margin:0.25rem 0}
+</style>
+</head>
+<body>
+
+<header>
+  <span class="logo">imgconv</span>
+  <span class="logo-sub">format converter</span>
+</header>
+
+<main>
+
+  <div class="drop-zone" id="dropZone">
+    <input type="file" id="fileInput" accept="image/*">
+    <div class="dz-icon">⬆</div>
+    <div class="dz-label"><strong>Tap to select image</strong>or drop it here</div>
+    <div class="dz-hint">JPG · PNG · WebP · GIF · BMP · SVG · AVIF · ICO</div>
+  </div>
+
+  <div class="preview-wrap" id="previewWrap">
+    <img class="preview-img" id="previewImg" alt="Preview">
+    <div class="file-meta">
+      <span id="metaName">—</span>
+      <span id="metaSize">—</span>
+    </div>
+  </div>
+
+  <div class="error-msg" id="errorMsg"></div>
+
+  <div class="section-label">output format</div>
+  <div class="format-grid">
+    <button class="fmt-btn active" data-fmt="image/jpeg" data-ext="jpg">JPG</button>
+    <button class="fmt-btn" data-fmt="image/png" data-ext="png">PNG</button>
+    <button class="fmt-btn" data-fmt="image/webp" data-ext="webp">WebP</button>
+  </div>
+
+  <div class="quality-row" id="qualityRow">
+    <div class="q-top">
+      <span class="section-label">quality</span>
+      <span class="q-val" id="qVal">85%</span>
+    </div>
+    <input type="range" id="qualitySlider" min="1" max="100" value="85" step="1">
+  </div>
+
+  <button class="convert-btn" id="convertBtn" disabled>Convert</button>
+
+  <div class="result-card" id="resultCard">
+    <img class="result-img" id="resultImg" alt="Result">
+    <div class="result-meta">
+      <div class="size-row">
+        <span class="size-from" id="sizeFrom">—</span>
+        <span class="size-arrow">→</span>
+        <span class="size-to" id="sizeTo">—</span>
+        <span class="size-diff" id="sizeDiff">—</span>
+      </div>
+      <button class="dl-btn" id="dlBtn">Download</button>
+    </div>
+  </div>
+
+</main>
+
+<script>
+(()=>{
+  const dropZone=document.getElementById('dropZone');
+  const fileInput=document.getElementById('fileInput');
+  const previewWrap=document.getElementById('previewWrap');
+  const previewImg=document.getElementById('previewImg');
+  const metaName=document.getElementById('metaName');
+  const metaSize=document.getElementById('metaSize');
+  const errorMsg=document.getElementById('errorMsg');
+  const fmtBtns=document.querySelectorAll('.fmt-btn');
+  const qualityRow=document.getElementById('qualityRow');
+  const qualitySlider=document.getElementById('qualitySlider');
+  const qVal=document.getElementById('qVal');
+  const convertBtn=document.getElementById('convertBtn');
+  const resultCard=document.getElementById('resultCard');
+  const resultImg=document.getElementById('resultImg');
+  const sizeFrom=document.getElementById('sizeFrom');
+  const sizeTo=document.getElementById('sizeTo');
+  const sizeDiff=document.getElementById('sizeDiff');
+  const dlBtn=document.getElementById('dlBtn');
+
+  let currentFile=null;
+  let selectedFmt='image/jpeg';
+  let selectedExt='jpg';
+  let outputBlob=null;
+
+  const fmtNoQuality=['image/png'];
+
+  function fmt(bytes){
+    if(bytes<1024)return bytes+'B';
+    if(bytes<1048576)return (bytes/1024).toFixed(1)+'KB';
+    return (bytes/1048576).toFixed(2)+'MB';
+  }
+
+  function showError(msg){
+    errorMsg.style.display='block';
+    errorMsg.textContent=msg;
+  }
+  function clearError(){errorMsg.style.display='none'}
+
+  function updateQualityVisibility(){
+    qualityRow.style.display=fmtNoQuality.includes(selectedFmt)?'none':'flex';
+  }
+
+  fmtBtns.forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      fmtBtns.forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      selectedFmt=btn.dataset.fmt;
+      selectedExt=btn.dataset.ext;
+      updateQualityVisibility();
+      resultCard.style.display='none';
+      outputBlob=null;
+    });
+  });
+
+  qualitySlider.addEventListener('input',()=>{
+    qVal.textContent=qualitySlider.value+'%';
+    resultCard.style.display='none';
+    outputBlob=null;
+  });
+
+  function loadFile(file){
+    if(!file)return;
+    if(!file.type.startsWith('image/') && !file.name.match(/\.(ico|svg|bmp|tiff?|avif)$/i)){
+      showError('Please select a valid image file.');
+      return;
+    }
+    clearError();
+    currentFile=file;
+    const url=URL.createObjectURL(file);
+    previewImg.src=url;
+    metaName.textContent=file.name.length>28?'…'+file.name.slice(-22):file.name;
+    metaSize.textContent=fmt(file.size);
+    previewWrap.style.display='block';
+    dropZone.classList.add('has-file');
+    resultCard.style.display='none';
+    convertBtn.disabled=false;
+    outputBlob=null;
+  }
+
+  fileInput.addEventListener('change',e=>{loadFile(e.target.files[0]);fileInput.value=''});
+
+  dropZone.addEventListener('dragover',e=>{e.preventDefault();dropZone.classList.add('drag-over')});
+  dropZone.addEventListener('dragleave',()=>dropZone.classList.remove('drag-over'));
+  dropZone.addEventListener('drop',e=>{
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    const file=e.dataTransfer.files[0];
+    if(file)loadFile(file);
+  });
+
+  convertBtn.addEventListener('click',()=>{
+    if(!currentFile)return;
+    convertBtn.textContent='Converting…';
+    convertBtn.disabled=true;
+
+    const img=new Image();
+    const objectUrl=URL.createObjectURL(currentFile);
+
+    img.onload=()=>{
+      const canvas=document.createElement('canvas');
+      canvas.width=img.naturalWidth;
+      canvas.height=img.naturalHeight;
+      const ctx=canvas.getContext('2d');
+
+      if(selectedFmt==='image/jpeg'){
+        ctx.fillStyle='#ffffff';
+        ctx.fillRect(0,0,canvas.width,canvas.height);
+      }
+      ctx.drawImage(img,0,0);
+      URL.revokeObjectURL(objectUrl);
+
+      const quality=fmtNoQuality.includes(selectedFmt)?1:qualitySlider.value/100;
+      canvas.toBlob(blob=>{
+        if(!blob){showError('Conversion failed. Try a different format.');convertBtn.textContent='Convert';convertBtn.disabled=false;return}
+        outputBlob=blob;
+
+        const outUrl=URL.createObjectURL(blob);
+        resultImg.src=outUrl;
+
+        const origBytes=currentFile.size;
+        const outBytes=blob.size;
+        const diff=((outBytes-origBytes)/origBytes*100).toFixed(1);
+        sizeFrom.textContent=fmt(origBytes);
+        sizeTo.textContent=fmt(outBytes);
+        sizeDiff.textContent=(diff>0?'+':'')+diff+'%';
+        sizeDiff.className='size-diff '+(outBytes<origBytes?'smaller':'larger');
+
+        resultCard.style.display='block';
+        convertBtn.textContent='Convert';
+        convertBtn.disabled=false;
+
+        dlBtn.onclick=()=>{
+          const a=document.createElement('a');
+          const base=currentFile.name.replace(/\.[^.]+$/,'');
+          a.href=outUrl;
+          a.download=base+'_conv.'+selectedExt;
+          a.click();
+        };
+      },selectedFmt,quality);
+    };
+
+    img.onerror=()=>{
+      URL.revokeObjectURL(objectUrl);
+      showError('Could not load image. File may be corrupted or unsupported.');
+      convertBtn.textContent='Convert';
+      convertBtn.disabled=false;
+    };
+
+    img.src=objectUrl;
+  });
+
+  updateQualityVisibility();
+})();
+</script>
+</body>
+</html>
