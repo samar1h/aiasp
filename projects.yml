@@ -25,7 +25,7 @@
 
 - title: Investment Calculator
   description: A simple and easy-to-use Interest Calculator that helps you calculate interest for different investments. 🚀
-  icon: fa-regular fa-money
+  icon: fa-regular fa-inr
   url: https://samar1h.github.io/aiasp/projects/investment-calculator/
 
 - title: QR Code Generator
