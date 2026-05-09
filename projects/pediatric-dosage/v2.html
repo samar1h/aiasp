@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="https://raw.githubusercontent.com/samar1h/aiasp/refs/heads/main/projects/pediatric-dosage/favicon.ico">
+    <title>Pediatric Dosage Calculator</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-color: #1e1e1e;
+            --text-color: #e0e0e0;
+            --primary-color: #bb86fc;
+            --secondary-color: #03dac6;
+            --warning-color: #ff7043;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 20px;
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        h1, h2, h3 {
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+
+        .card {
+            background-color: var(--card-color);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--box-shadow);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #333;
+            border-radius: var(--border-radius);
+            background-color: #2d2d2d;
+            color: var(--text-color);
+            font-size: 16px;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: #000;
+            border: none;
+            padding: 12px 20px;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            width: 100%;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #a370d7;
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #2a2a2a;
+            border-radius: var(--border-radius);
+            border-left: 4px solid var(--secondary-color);
+        }
+
+        .result h3 {
+            margin-top: 0;
+        }
+
+        .warning {
+            background-color: #332222;
+            border-left: 4px solid var(--warning-color);
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: var(--border-radius);
+        }
+
+        .warning h3 {
+            color: var(--warning-color);
+        }
+
+        .tab {
+            overflow: hidden;
+            margin-bottom: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .tab button {
+            flex: 1;
+            min-width: 120px;
+            background-color: #333;
+            color: var(--text-color);
+            padding: 10px;
+        }
+
+        .tab button.active {
+            background-color: var(--primary-color);
+            color: #000;
+        }
+
+        .tabcontent {
+            display: none;
+            animation: fadeEffect 0.5s;
+        }
+
+        @keyframes fadeEffect {
+            from {opacity: 0;}
+            to {opacity: 1;}
+        }
+
+        .faq-item {
+            margin-bottom: 15px;
+        }
+
+        .faq-question {
+            background-color: #333;
+            color: var(--text-color);
+            padding: 12px;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .faq-question:hover {
+            background-color: #3d3d3d;
+        }
+
+        .faq-answer {
+            padding: 15px;
+            background-color: #252525;
+            border-radius: 0 0 var(--border-radius) var(--border-radius);
+            display: none;
+        }
+
+        .faq-answer.show {
+            display: block;
+        }
+
+        .disclaimer-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .disclaimer-content {
+            background-color: var(--card-color);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            max-width: 90%;
+            max-height: 90%;
+            overflow-y: auto;
+            box-shadow: var(--box-shadow);
+        }
+
+        .disclaimer-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .disclaimer-buttons button {
+            flex: 1;
+        }
+
+        .disclaimer-buttons .accept {
+            background-color: var(--secondary-color);
+            color: #000;
+        }
+
+        .disclaimer-buttons .reject {
+            background-color: #ff4444;
+            color: #fff;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 400px) {
+            .tab button {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="disclaimer-modal" id="disclaimerModal">
+        <div class="disclaimer-content">
+            <h2>Important Disclaimer</h2>
+            <div class="warning">
+                <p>This is a hobby project for educational purposes only. The calculations provided by this tool are approximations and should not be used as a substitute for professional medical advice.</p>
+                <p>Always consult a licensed medical practitioner before administering any medication to a child.</p>
+                <p>The creators of this tool are not responsible for any errors or misuse of the information provided.</p>
+            </div>
+            <p>By using this calculator, you acknowledge that:</p>
+            <ul>
+                <li>This is not a medical device</li>
+                <li>Results should be verified by a healthcare professional</li>
+                <li>Dosage calculations are estimates only</li>
+                <li>You assume all responsibility for any use of this tool</li>
+            </ul>
+            <div class="disclaimer-buttons">
+                <button class="accept" id="acceptDisclaimer">I Understand & Accept</button>
+                <button class="reject" id="rejectDisclaimer">I Do Not Accept</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container" id="mainContent">
+        <h1>Pediatric Dosage Calculator</h1>
+        
+        <div class="warning">
+            <h3>Warning</h3>
+            <p>This is a hobby project. Always consult a licensed medical practitioner before administering any medication.</p>
+        </div>
+
+        <div class="card">
+            <div class="tab">
+                <button class="tablinks active" onclick="openTab(event, 'weightTab')">By Weight</button>
+                <button class="tablinks" onclick="openTab(event, 'ageTab')">By Age</button>
+                <button class="tablinks" onclick="openTab(event, 'bsaTab')">By BSA</button>
+            </div>
+
+            <div id="weightTab" class="tabcontent" style="display: block;">
+                <h3>Weight-Based Calculation</h3>
+                <div class="form-group">
+                    <label for="adultDoseWeight">Adult Dose (mg)</label>
+                    <input type="number" id="adultDoseWeight" placeholder="Enter adult dose in mg">
+                </div>
+                <div class="form-group">
+                    <label for="childWeight">Child's Weight (kg)</label>
+                    <input type="number" id="childWeight" placeholder="Enter weight in kg">
+                </div>
+                <div class="form-group">
+                    <label for="maxDoseWeight">Maximum Recommended Dose (mg/kg, optional)</label>
+                    <input type="number" id="maxDoseWeight" placeholder="Enter max dose per kg">
+                </div>
+                <button onclick="calculateByWeight()">Calculate</button>
+                <div id="weightResult" class="result hidden">
+                    <h3>Result</h3>
+                    <p id="weightResultText"></p>
+                </div>
+            </div>
+
+            <div id="ageTab" class="tabcontent">
+                <h3>Age-Based Calculation</h3>
+                <div class="form-group">
+                    <label for="adultDoseAge">Adult Dose (mg)</label>
+                    <input type="number" id="adultDoseAge" placeholder="Enter adult dose in mg">
+                </div>
+                <div class="form-group">
+                    <label for="childAge">Child's Age</label>
+                    <select id="ageUnit">
+                        <option value="months">Months</option>
+                        <option value="years">Years</option>
+                    </select>
+                    <input type="number" id="childAge" placeholder="Enter child's age">
+                </div>
+                <button onclick="calculateByAge()">Calculate</button>
+                <div id="ageResult" class="result hidden">
+                    <h3>Result</h3>
+                    <p id="ageResultText"></p>
+                </div>
+            </div>
+
+            <div id="bsaTab" class="tabcontent">
+                <h3>Body Surface Area (BSA) Calculation</h3>
+                <div class="form-group">
+                    <label for="adultDoseBSA">Adult Dose (mg)</label>
+                    <input type="number" id="adultDoseBSA" placeholder="Enter adult dose in mg">
+                </div>
+                <div class="form-group">
+                    <label for="childHeight">Child's Height (cm)</label>
+                    <input type="number" id="childHeight" placeholder="Enter height in cm">
+                </div>
+                <div class="form-group">
+                    <label for="childWeightBSA">Child's Weight (kg)</label>
+                    <input type="number" id="childWeightBSA" placeholder="Enter weight in kg">
+                </div>
+                <button onclick="calculateByBSA()">Calculate</button>
+                <div id="bsaResult" class="result hidden">
+                    <h3>Result</h3>
+                    <p id="bsaResultText"></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>FAQ</h2>
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    <span>What formulas are used in this calculator?</span>
+                    <span>+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>This calculator uses several pediatric dosage formulas:</p>
+                    <ul>
+                        <li><strong>Weight-based:</strong> Child Dose = (Child's Weight in kg × Adult Dose) / 70</li>
+                        <li><strong>Young's Rule (age-based):</strong> Child Dose = (Child's Age in years × Adult Dose) / (Child's Age + 12)</li>
+                        <li><strong>Fried's Rule (for infants):</strong> Child Dose = (Child's Age in months × Adult Dose) / 150</li>
+                        <li><strong>Body Surface Area (BSA):</strong> Child Dose = (Child's BSA in m² × Adult Dose) / 1.73</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    <span>How is BSA calculated?</span>
+                    <span>+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>Body Surface Area (BSA) is calculated using the Mosteller formula:</p>
+                    <p>BSA (m²) = √( [Height(cm) × Weight(kg)] / 3600 )</p>
+                    <p>This is one of the most widely used formulas for BSA calculation in medical practice.</p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    <span>Which method is most accurate?</span>
+                    <span>+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>In general:</p>
+                    <ul>
+                        <li><strong>BSA method</strong> is often considered the most accurate for many medications, especially chemotherapy drugs.</li>
+                        <li><strong>Weight-based</strong> calculations are commonly used and practical for most medications.</li>
+                        <li><strong>Age-based</strong> methods are less precise but can be useful when weight is unknown.</li>
+                    </ul>
+                    <p>However, the appropriate method depends on the specific medication and clinical context. Always follow prescribing guidelines for each drug.</p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    <span>Why is there a maximum dose field?</span>
+                    <span>+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>Some medications have maximum recommended doses per kilogram of body weight to prevent toxicity. The calculator will warn you if the calculated dose exceeds this maximum.</p>
+                    <p>This field is optional but recommended when such maximums are known for the medication being calculated.</p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    <span>What are the limitations of this calculator?</span>
+                    <span>+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>Important limitations include:</p>
+                    <ul>
+                        <li>Does not account for individual patient factors like organ function</li>
+                        <li>Does not consider drug interactions</li>
+                        <li>May not be appropriate for all medications (especially narrow therapeutic index drugs)</li>
+                        <li>Does not replace clinical judgment</li>
+                        <li>Should not be used for neonates or premature infants without specialist advice</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Disclaimer modal handling
+        document.addEventListener('DOMContentLoaded', function() {
+            const disclaimerModal = document.getElementById('disclaimerModal');
+            const acceptBtn = document.getElementById('acceptDisclaimer');
+            const rejectBtn = document.getElementById('rejectDisclaimer');
+            const mainContent = document.getElementById('mainContent');
+
+            // Show modal on load
+            disclaimerModal.style.display = 'flex';
+            mainContent.classList.add('hidden');
+
+            acceptBtn.addEventListener('click', function() {
+                disclaimerModal.style.display = 'none';
+                mainContent.classList.remove('hidden');
+            });
+
+            rejectBtn.addEventListener('click', function() {
+                window.close();
+            });
+        });
+
+        // Tab functionality
+        function openTab(evt, tabName) {
+            const tabcontent = document.getElementsByClassName('tabcontent');
+            for (let i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = 'none';
+            }
+
+            const tablinks = document.getElementsByClassName('tablinks');
+            for (let i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(' active', '');
+            }
+
+            document.getElementById(tabName).style.display = 'block';
+            evt.currentTarget.className += ' active';
+        }
+
+        // FAQ toggle
+        function toggleFAQ(element) {
+            const answer = element.nextElementSibling;
+            const icon = element.querySelector('span:last-child');
+            
+            if (answer.classList.contains('show')) {
+                answer.classList.remove('show');
+                icon.textContent = '+';
+            } else {
+                answer.classList.add('show');
+                icon.textContent = '-';
+            }
+        }
+
+        // Calculation functions
+        function calculateByWeight() {
+            const adultDose = parseFloat(document.getElementById('adultDoseWeight').value);
+            const childWeight = parseFloat(document.getElementById('childWeight').value);
+            const maxDosePerKg = parseFloat(document.getElementById('maxDoseWeight').value) || null;
+            
+            if (!adultDose || !childWeight) {
+                alert('Please enter both adult dose and child weight');
+                return;
+            }
+            
+            // Clark's Rule: (Weight in kg × Adult Dose) / 70
+            const childDose = (childWeight * adultDose) / 70;
+            
+            let resultText = `Recommended dose: ${childDose.toFixed(2)} mg`;
+            
+            if (maxDosePerKg) {
+                const maxDose = childWeight * maxDosePerKg;
+                resultText += `<br>Maximum recommended dose: ${maxDose.toFixed(2)} mg`;
+                
+                if (childDose > maxDose) {
+                    resultText += `<br><strong style="color: var(--warning-color);">Warning: Calculated dose exceeds maximum recommended dose!</strong>`;
+                }
+            }
+            
+            document.getElementById('weightResultText').innerHTML = resultText;
+            document.getElementById('weightResult').classList.remove('hidden');
+        }
+
+        function calculateByAge() {
+            const adultDose = parseFloat(document.getElementById('adultDoseAge').value);
+            const childAge = parseFloat(document.getElementById('childAge').value);
+            const ageUnit = document.getElementById('ageUnit').value;
+            
+            if (!adultDose || !childAge) {
+                alert('Please enter both adult dose and child age');
+                return;
+            }
+            
+            let childDose;
+            
+            if (ageUnit === 'months') {
+                // Fried's Rule: (Age in months × Adult Dose) / 150
+                childDose = (childAge * adultDose) / 150;
+            } else {
+                // Young's Rule: (Age in years × Adult Dose) / (Age + 12)
+                childDose = (childAge * adultDose) / (childAge + 12);
+            }
+            
+            document.getElementById('ageResultText').textContent = `Recommended dose: ${childDose.toFixed(2)} mg`;
+            document.getElementById('ageResult').classList.remove('hidden');
+        }
+
+        function calculateByBSA() {
+            const adultDose = parseFloat(document.getElementById('adultDoseBSA').value);
+            const childHeight = parseFloat(document.getElementById('childHeight').value);
+            const childWeight = parseFloat(document.getElementById('childWeightBSA').value);
+            
+            if (!adultDose || !childHeight || !childWeight) {
+                alert('Please enter adult dose, child height, and child weight');
+                return;
+            }
+            
+            // Mosteller formula for BSA: sqrt( [height(cm) × weight(kg)] / 3600 )
+            const bsa = Math.sqrt((childHeight * childWeight) / 3600);
+            
+            // BSA formula: (BSA × Adult Dose) / 1.73
+            const childDose = (bsa * adultDose) / 1.73;
+            
+            let resultText = `Child's BSA: ${bsa.toFixed(4)} m²<br>`;
+            resultText += `Recommended dose: ${childDose.toFixed(2)} mg`;
+            
+            document.getElementById('bsaResultText').innerHTML = resultText;
+            document.getElementById('bsaResult').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>

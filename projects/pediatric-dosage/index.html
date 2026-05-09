@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="https://raw.githubusercontent.com/samar1h/aiasp/refs/heads/main/projects/pediatric-dosage/favicon.ico">
+    <title>Pediatric Dose Calculator</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-color: #1e1e1e;
+            --text-color: #e0e0e0;
+            --accent-color: #7c4dff;
+            --error-color: #cf6679;
+            --success-color: #03dac6;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        h1, h2, h3 {
+            margin-bottom: 15px;
+            color: var(--accent-color);
+            text-align: center;
+        }
+        
+        .card {
+            background-color: var(--card-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #333;
+            border-radius: 4px;
+            background-color: #2d2d2d;
+            color: var(--text-color);
+            font-size: 16px;
+        }
+        
+        button {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #9670ff;
+        }
+        
+        .result {
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 4px;
+            background-color: #2d2d2d;
+        }
+        
+        .error {
+            color: var(--error-color);
+        }
+        
+        .success {
+            color: var(--success-color);
+        }
+        
+        .tab {
+            overflow: hidden;
+        }
+        
+        .tab button {
+            background-color: inherit;
+            float: left;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 10px 15px;
+            transition: 0.3s;
+            font-size: 16px;
+            color: var(--text-color);
+            margin-right: 5px;
+        }
+        
+        .tab button:hover {
+            background-color: #3d3d3d;
+        }
+        
+        .tab button.active {
+            background-color: var(--accent-color);
+        }
+        
+        .tabcontent {
+            display: none;
+            padding: 15px;
+            border-top: none;
+        }
+        
+        .visible {
+            display: block;
+        }
+        
+        details {
+            margin-bottom: 10px;
+        }
+        
+        summary {
+            cursor: pointer;
+            padding: 10px;
+            background-color: #2d2d2d;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+        
+        details p {
+            padding: 10px;
+            background-color: #252525;
+            border-radius: 0 0 4px 4px;
+        }
+        
+        .formula {
+            background-color: #252525;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        
+        .radio-group {
+            display: flex;
+            margin-bottom: 10px;
+        }
+        
+        .radio-option {
+            margin-right: 20px;
+        }
+        
+        .radio-option input {
+            width: auto;
+            margin-right: 5px;
+        }
+        
+        .info-text {
+            font-size: 14px;
+            color: #aaa;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="disclaimer-modal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.9); z-index: 999; display: flex; justify-content: center; align-items: center;">
+        <div class="card" style="max-width: 500px; text-align: center;">
+            <h2>Important Disclaimer</h2>
+            <p>This calculator is a hobby project for educational purposes only. <strong>Always consult a qualified medical practitioner before administering any medication to a child.</strong></p>
+            <p>The formulas used are based on published methods but may not be suitable for all situations.</p>
+            <button id="agree-btn" style="margin-top: 20px;">I Understand and Agree</button>
+        </div>
+    </div>
+
+    <h1>Pediatric Dose Calculator</h1>
+    
+    <div class="tab card">
+        <button class="tablinks active" onclick="openTab(event, 'calculator')">Calculator</button>
+        <button class="tablinks" onclick="openTab(event, 'formulas')">Formulas</button>
+        <button class="tablinks" onclick="openTab(event, 'faq')">FAQ</button>
+    </div>
+    
+    <div id="calculator" class="tabcontent visible card">
+        
+        
+        <!--<div class="form-group"></div>-->
+        <div class="form-group">
+            <label for="method">Calculation Method:</label>
+            <select id="method">
+                <!-- Modern Standard Methods -->
+                <option value="weight">Weight-Based (mg/kg)</option>
+                <option value="bsa">BSA-Based (m²)</option>
+                
+                <!-- Age-Based Calculations -->
+                <option value="young">Young's Rule (Age 1-12)</option>
+                <option value="fried">Fried's Rule (Infants)</option>
+                <option value="dilling">Dilling's Rule (Age 12+)</option>
+                
+                <!-- Alternative Formulas -->
+                <option value="cowling">Cowling's Rule</option>
+                <option value="augsberger">Augsberger's Rule</option>
+                <option value="clark">Clark's Rule (Weight)</option>
+            </select>
+        </div>
+
+        <div class="form-group" id="ad">
+            <label for="adultDose">Adult Dose (mg):</label>
+            <input type="number" id="adultDose" placeholder="Enter adult dose in mg" min="0" step="0.1">
+        </div>
+        
+        <div id="age-input" class="form-group">
+            <label for="age">Child's Age (years):</label>
+            <input type="number" id="age" placeholder="Enter child's age in years" min="0" max="12" step="0.1">
+        </div>
+        
+        <div id="age-months-input" class="form-group" style="display:none;">
+            <label for="ageMonths">Child's Age (months):</label>
+            <input type="number" id="ageMonths" placeholder="Enter child's age in months" min="0" max="12" step="1">
+        </div>
+        
+        <div id="bsa-options" class="form-group" style="display:none;">
+            <label>BSA Calculation Method:</label>
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" name="bsaMethod" value="calculate" checked> Calculate from height and weight
+                </label>
+                <label class="radio-option">
+                    <input type="radio" name="bsaMethod" value="direct"> Enter directly
+                </label>
+            </div>
+        </div>
+
+        <div id="weight-input" class="form-group" style="display:none;">
+            <label for="weight">Child's Weight (kg):</label>
+            <input type="number" id="weight" placeholder="Enter child's weight in kg" min="0" step="0.1">
+        </div>
+        
+        <div id="height-input" class="form-group" style="display:none;">
+            <label for="height">Child's Height (cm):</label>
+            <input type="number" id="height" placeholder="Enter child's height in cm" min="0" step="0.1">
+        </div>
+        
+        <div id="bsa-direct-input" class="form-group" style="display:none;">
+            <label for="bsaDirect">Body Surface Area (m²):</label>
+            <input type="number" id="bsaDirect" placeholder="Enter BSA in m²" min="0" step="0.01">
+        </div>
+        
+        <div id="adult-weight-input" class="form-group" style="display:none;">
+            <label for="adultWeight">Standard Adult Weight (kg):</label>
+            <input type="number" id="adultWeight" placeholder="Enter standard adult weight in kg" value="70" min="0" step="0.1">
+        </div>
+        
+        <div id="mg-per-kg-input" class="form-group" style="display:none;">
+            <label for="mgPerKg">Dose (mg/kg):</label>
+            <input type="number" id="mgPerKg" placeholder="Enter dose in mg/kg" min="0" step="0.01">
+        </div>
+        
+        <button onclick="calculateDose()">Calculate Dose</button>
+        
+        <div id="result" class="result" style="display:none;"></div>
+    </div>
+    
+    <div id="formulas" class="tabcontent card">
+        
+        <div class="form-group">
+            <h3>Young's Rule (Age based)</h3>
+            <p>Used for children 2-12 years:</p>
+            <div class="formula">Child's dose = Adult dose × [Child's age in years / (Child's age + 12)]</div>
+        </div>
+        
+        <div class="form-group">
+            <h3>Clark's Rule (Weight based)</h3>
+            <div class="formula">Child's dose = Adult dose × (Child's weight in kg / 70)</div>
+        </div>
+        
+        <div class="form-group">
+            <h3>Fried's Rule (For infants)</h3>
+            <p>Used for children under 1 year:</p>
+            <div class="formula">Child's dose = Adult dose × (Child's age in months / 150)</div>
+        </div>
+        
+        <div class="form-group">
+            <h3>Cowling's Rule (Age based)</h3>
+            <div class="formula">Child's dose = Adult dose × (Child's age + 1) / 24</div>
+        </div>
+        
+        <div class="form-group">
+            <h3>BSA Method (Most accurate)</h3>
+            <div class="formula">Child's dose = Adult dose × (Child's BSA in m² / 1.73)</div>
+            <div class="formula">BSA (m²) = √[(Height in cm × Weight in kg) / 3600]</div>
+        </div>
+        
+        <div class="form-group">
+            <h3>Weight Based (mg/kg)</h3>
+            <div class="formula">Child's dose = Child's weight in kg × Dose in mg/kg</div>
+        </div>
+        
+        <div class="form-group">
+            <h3>Dilling's Rule (Age based)</h3>
+            <p>Used for children 1-2 years:</p>
+            <div class="formula">Child's dose = Adult dose × (Child's age in years / 20)</div>
+        </div>
+        
+        <div class="form-group">
+            <h3>Augsberger's Rule (Age based)</h3>
+            <div class="formula">Child's dose = Adult dose × (4 × Child's age in years / (Age + 20))</div>
+        </div>
+    </div>
+    
+    <div id="faq" class="tabcontent card">
+        <h2>Frequently Asked Questions</h2>
+        
+        <details>
+            <summary>Which method should I use to calculate a child's dose?</summary>
+            <p>Different methods are appropriate for different scenarios:
+            <br>- <strong>Young's Rule</strong>: Best for children aged 2-12 years
+            <br>- <strong>Clark's Rule</strong>: More accurate when weight is available
+            <br>- <strong>Fried's Rule</strong>: Specifically designed for infants under 1 year
+            <br>- <strong>Cowling's Rule</strong>: Alternative age-based method
+            <br>- <strong>BSA Method</strong>: Most accurate method, requires height and weight
+            <br>- <strong>Weight Based</strong>: Used when medication has established mg/kg dosing
+            <br>- <strong>Dilling's Rule</strong>: Designed for toddlers 1-2 years old
+            <br>- <strong>Augsberger's Rule</strong>: Alternative age-based method for all pediatric ages</p>
+        </details>
+        
+        <details>
+            <summary>Why do the different methods give different results?</summary>
+            <p>Each method uses different physiological parameters to estimate appropriate dosing. The BSA method is generally considered the most accurate as it accounts for metabolic rate, which correlates better with body surface area than with age or weight alone.</p>
+        </details>
+        
+        <details>
+            <summary>Are these calculations always accurate?</summary>
+            <p>No. These formulas provide estimates only. Many factors affect how a child responds to medication including organ maturity, genetics, and specific medical conditions. Always consult a healthcare provider.</p>
+        </details>
+        
+        <details>
+            <summary>What's the difference between mg/kg dosing and the other methods?</summary>
+            <p>Weight-based (mg/kg) dosing is often used for medications that have established pediatric doses based on weight. The other methods calculate a fraction of the adult dose based on the child's age, weight, or body surface area.</p>
+        </details>
+        
+        <details>
+            <summary>Can I use this calculator for all medications?</summary>
+            <p>No. Some medications have specific pediatric formulations and dosing guidelines that don't follow these standard formulas. Some medications are not appropriate for children at all.</p>
+        </details>
+        
+        <details>
+            <summary>What is BSA and why is it important?</summary>
+            <p>Body Surface Area (BSA) is the measured or calculated surface area of the human body. It's often used in medicine to calculate doses because it correlates better with many physiological parameters than body weight.</p>
+        </details>
+        
+        <details>
+            <summary>How do I choose between age-based and weight-based formulas?</summary>
+            <p>Weight-based formulas are generally more accurate than age-based formulas because weight correlates better with metabolism than age. If a child's weight is available, it's preferable to use a weight-based method. The BSA method (using both height and weight) is considered the most accurate of all.</p>
+        </details>
+    </div>
+
+    <script>
+        // Show disclaimer on page load
+        document.getElementById('agree-btn').addEventListener('click', function() {
+            document.getElementById('disclaimer-modal').style.display = 'none';
+        });
+        
+        // Tab functionality
+        function openTab(evt, tabName) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tabcontent");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].classList.remove("visible");
+            }
+            tablinks = document.getElementsByClassName("tablinks");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            document.getElementById(tabName).classList.add("visible");
+            evt.currentTarget.className += " active";
+        }
+        
+        // Toggle BSA input method
+        document.querySelectorAll('input[name="bsaMethod"]').forEach(function(radio) {
+            radio.addEventListener('change', function() {
+                if (this.value === 'direct') {
+                    document.getElementById('height-input').style.display = 'none';
+                    document.getElementById('weight-input').style.display = 'none';
+                    document.getElementById('bsa-direct-input').style.display = 'block';
+                } else {
+                    document.getElementById('height-input').style.display = 'block';
+                    document.getElementById('weight-input').style.display = 'block';
+                    document.getElementById('bsa-direct-input').style.display = 'none';
+                }
+            });
+        });
+        
+        // Show/hide input fields based on selected method
+        document.getElementById('method').addEventListener('change', function() {
+            const method = this.value;
+            
+            // Hide all inputs first
+            document.getElementById('ad').style.display = 'block';
+            document.getElementById('age-input').style.display = 'none';
+            document.getElementById('age-months-input').style.display = 'none';
+            document.getElementById('weight-input').style.display = 'none';
+            document.getElementById('height-input').style.display = 'none';
+            document.getElementById('adult-weight-input').style.display = 'none';
+            document.getElementById('mg-per-kg-input').style.display = 'none';
+            document.getElementById('bsa-options').style.display = 'none';
+            document.getElementById('bsa-direct-input').style.display = 'none';
+            
+            // Show relevant inputs based on method
+            switch(method) {
+                case 'young':
+                case 'cowling':
+                case 'dilling':
+                case 'augsberger':
+                    document.getElementById('age-input').style.display = 'block';
+                    break;
+                case 'fried':
+                    document.getElementById('age-months-input').style.display = 'block';
+                    break;
+                case 'clark':
+                    document.getElementById('weight-input').style.display = 'block';
+                    document.getElementById('adult-weight-input').style.display = 'block';
+                    break;
+                case 'bsa':
+                    document.getElementById('bsa-options').style.display = 'block';
+                    // Check which BSA method is selected and show relevant inputs
+                    if (document.querySelector('input[name="bsaMethod"]:checked').value === 'direct') {
+                        document.getElementById('bsa-direct-input').style.display = 'block';
+                    } else {
+                        document.getElementById('weight-input').style.display = 'block';
+                        document.getElementById('height-input').style.display = 'block';
+                    }
+                    break;
+                case 'weight':
+                    document.getElementById('weight-input').style.display = 'block';
+                    document.getElementById('mg-per-kg-input').style.display = 'block';
+                    document.getElementById('ad').style.display = 'none';
+                    break;
+            }
+            
+            // Clear previous result
+            document.getElementById('result').style.display = 'none';
+        });
+        
+        // Calculate dose based on selected method
+        function calculateDose() {
+            const adultDose = parseFloat(document.getElementById('adultDose').value);
+            const method = document.getElementById('method').value;
+            const resultDiv = document.getElementById('result');
+            
+            let childDose = 0;
+            let isValid = true;
+            let errorMsg = '';
+            let additionalInfo = '';
+            
+            // Validate inputs and calculate based on method
+            switch(method) {
+                case 'young':
+                    const age = parseFloat(document.getElementById('age').value);
+                    if (isNaN(age) || age < 0 || age > 12) {
+                        isValid = false;
+                        errorMsg = 'Please enter a valid age between 0-12 years.';
+                    } else if (isNaN(adultDose) || adultDose <= 0) {
+                        isValid = false;
+                        errorMsg = 'Please enter a valid adult dose.';
+                    } else {
+                        childDose = adultDose * (age / (age + 12));
+                    }
+                    break;
+                    
+                case 'clark':
+                    const weight = parseFloat(document.getElementById('weight').value);
+                    const adultWeight = parseFloat(document.getElementById('adultWeight').value);
+                    if (isNaN(weight) || weight <= 0) {
+                        isValid = false;
+                        errorMsg = 'Please enter a valid weight.';
+                    } else if (isNaN(adultWeight) || adultWeight <= 0) {
+                        isValid = false;
+                        errorMsg = 'Please enter a valid adult weight.';
+                    } else if (isNaN(adultDose) || adultDose <= 0) {
+                        isValid = false;
+                        errorMsg = 'Please enter a valid adult dose.';
+                    } else {
+                        childDose = adultDose * (weight / adultWeight);
+                    }
+                    break;
+                    
+                case 'fried':
+                    const ageMonths = parseFloat(document.getElementById('ageMonths').value);
+                    if (isNaN(ageMonths) || ageMonths < 0 || ageMonths > 12) {
+                        isValid = false;
+                        errorMsg = 'Fried\'s rule is applicable only for infants 0-12 months old.';
+                    } else if (isNaN(adultDose) || adultDose <= 0) {
+                        isValid = false;
+                        errorMsg = 'Please enter a valid adult dose.';
+                    } else {
+                        childDose = adultDose * (ageMonths / 150);
+                    }
+                    break;
+                    
+                case 'cowling':
+                    const ageCowling = parseFloat(document.getElementById('age').value);
+                    if (isNaN(ageCowling) || ageCowling < 0) {
+                        isValid = false;
+                        errorMsg = 'Please enter a valid age.';
+                    } else if (isNaN(adultDose) || adultDose <= 0) {
+                        isValid = false;
+                        errorMsg = 'Please enter a valid adult dose.';
+                    } else {
+                        childDose = adultDose * ((ageCowling + 1) / 24);
+                    }
+                    break;
+                    
+                case 'dilling':
+                    const ageDilling = parseFloat(document.getElementById('age').value);
+                    if (isNaN(ageDilling) || ageDilling < 1 || ageDilling > 2) {
+                        isValid = false;
+                        errorMsg = 'Dilling\'s rule is applicable only for children 1-2 years old.';
+                    } else if (isNaN(adultDose) || adultDose <= 0) {
+                        isValid = false;
+                        errorMsg = 'Please enter a valid adult dose.';
+                    } else {
+                        childDose = adultDose * (ageDilling / 20);
+                    }
+                    break;
+                    
+                case 'augsberger':
+                    const ageAugsberger = parseFloat(document.getElementById('age').value);
+                    if (isNaN(ageAugsberger) || ageAugsberger < 0) {
+                        isValid = false;
+                        errorMsg = 'Please enter a valid age.';
+                    } else if (isNaN(adultDose) || adultDose <= 0) {
+                        isValid = false;
+                        errorMsg = 'Please enter a valid adult dose.';
+                    } else {
+                        childDose = adultDose * (4 * ageAugsberger / (ageAugsberger + 20));
+                    }
+                    break;
+                    
+                case 'bsa':
+                    const bsaMethod = document.querySelector('input[name="bsaMethod"]:checked').value;
+                    let bsa;
+                    
+                    if (bsaMethod === 'direct') {
+                        bsa = parseFloat(document.getElementById('bsaDirect').value);
+                        if (isNaN(bsa) || bsa <= 0) {
+                            isValid = false;
+                            errorMsg = 'Please enter a valid BSA value.';
+                        }
+                    } else {
+                        const bsaWeight = parseFloat(document.getElementById('weight').value);
+                        const height = parseFloat(document.getElementById('height').value);
+                        if (isNaN(bsaWeight) || bsaWeight <= 0) {
+                            isValid = false;
+                            errorMsg = 'Please enter a valid weight.';
+                        } else if (isNaN(height) || height <= 0) {
+                            isValid = false;
+                            errorMsg = 'Please enter a valid height.';
+                        } else {
+                            bsa = Math.sqrt((height * bsaWeight) / 3600);
+                            additionalInfo = `Calculated BSA: ${bsa.toFixed(2)} m²`;
+                        }
+                    }
+                    
+                    if (isNaN(adultDose) || adultDose <= 0) {
+                        isValid = false;
+                        errorMsg = 'Please enter a valid adult dose.';
+                    } else if (isValid) {
+                        childDose = adultDose * (bsa / 1.73);
+                    }
+                    break;
+                    
+                case 'weight':
+                    const wtBased = parseFloat(document.getElementById('weight').value);
+                    const mgPerKg = parseFloat(document.getElementById('mgPerKg').value);
+                    if (isNaN(wtBased) || wtBased <= 0) {
+                        isValid = false;
+                        errorMsg = 'Please enter a valid weight.';
+                    } else if (isNaN(mgPerKg) || mgPerKg <= 0) {
+                        isValid = false;
+                        errorMsg = 'Please enter a valid mg/kg dose.';
+                    } else {
+                        childDose = wtBased * mgPerKg;
+                    }
+                    break;
+            }
+            
+            // Display result or error
+            resultDiv.style.display = 'block';
+            if (isValid) {
+                resultDiv.innerHTML = `Calculated Child Dose: <span class="success">${childDose.toFixed(2)} mg</span>${additionalInfo ? '<br><span class="info-text">' + additionalInfo + '</span>' : ''}`;
+                resultDiv.className = 'result';
+            } else {
+                resultDiv.innerHTML = `<span class="error">${errorMsg}</span>`;
+                resultDiv.className = 'result error';
+            }
+        }
+        
+        // Initialize with Young's Rule selected
+        document.getElementById('age-input').style.display = 'block';
+        document.getElementById('method').dispatchEvent(new Event('change'));
+    </script>
+</body>
+</html>
