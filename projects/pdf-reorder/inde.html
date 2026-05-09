@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>PDF Reorder</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    :root {
+      --bg: #080808;
+      --surface: #111111;
+      --surface2: #191919;
+      --border: #222222;
+      --accent: #d4ff5e;
+      --text: #efefef;
+      --muted: #505050;
+      --danger: #ff4f4f;
+      --font: 'IBM Plex Mono', monospace;
+      --r: 10px;
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overscroll-behavior: none;
+    }
+
+    /* ─── Header ─── */
+    header {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      background: rgba(8,8,8,0.92);
+      backdrop-filter: blur(10px);
+      z-index: 20;
+    }
+    .logo { font-size: 12px; font-weight: 500; letter-spacing: .12em; color: var(--accent); }
+    .page-count { font-size: 11px; color: var(--muted); letter-spacing: .04em; }
+
+    /* ─── Upload Zone ─── */
+    .upload-zone {
+      margin: 14px 14px 0;
+      border: 1.5px dashed var(--border);
+      border-radius: var(--r);
+      padding: 22px 16px;
+      text-align: center;
+      cursor: pointer;
+      position: relative;
+      transition: border-color .2s, background .2s;
+    }
+    .upload-zone.drag { border-color: var(--accent); background: rgba(212,255,94,.04); }
+    .upload-zone input[type=file] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+    .upload-icon { font-size: 22px; margin-bottom: 6px; opacity: .7; }
+    .upload-label { font-size: 13px; font-weight: 500; color: var(--text); }
+    .upload-sub { font-size: 10px; color: var(--muted); margin-top: 3px; letter-spacing: .04em; }
+
+    /* ─── Progress ─── */
+    .progress-wrap { margin: 10px 14px 0; height: 2px; background: var(--border); border-radius: 2px; overflow: hidden; display: none; }
+    .progress-fill { height: 100%; background: var(--accent); width: 0; transition: width .25s; }
+
+    /* ─── Status message during load ─── */
+    .load-status { text-align: center; font-size: 11px; color: var(--muted); padding: 8px 16px 0; display: none; letter-spacing: .04em; }
+
+    /* ─── Empty State ─── */
+    #emptyState {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 10px; color: var(--muted); padding: 40px 16px;
+    }
+    .empty-icon { font-size: 36px; opacity: .18; }
+    .empty-text { font-size: 12px; letter-spacing: .04em; }
+
+    /* ─── Grid ─── */
+    #pagesGrid {
+      display: none;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      padding: 14px;
+      padding-bottom: 96px;
+    }
+
+    /* ─── Page Card ─── */
+    .page-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      overflow: hidden;
+      position: relative;
+      cursor: grab;
+      user-select: none;
+      touch-action: none;
+      transition: border-color .15s;
+    }
+    .page-card.sortable-ghost { opacity: .25; }
+    .page-card.sortable-chosen { border-color: var(--accent); box-shadow: 0 6px 28px rgba(0,0,0,.7); z-index: 10; }
+
+    .thumb-wrap {
+      width: 100%;
+      background: #161616;
+      aspect-ratio: 3/4;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden;
+    }
+    .thumb-wrap img {
+      width: 100%; height: 100%; object-fit: contain; display: block;
+    }
+    .thumb-loading {
+      font-size: 10px; color: var(--muted); letter-spacing: .06em;
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:.4} 50%{opacity:1} }
+
+    .page-meta {
+      padding: 7px 8px 8px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .page-num { font-size: 10px; color: var(--accent); letter-spacing: .06em; }
+    .page-src {
+      font-size: 10px; color: var(--muted);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      max-width: 65%;
+    }
+
+    .del-btn {
+      position: absolute; top: 6px; right: 6px;
+      width: 22px; height: 22px;
+      background: rgba(8,8,8,.8);
+      border: 1px solid #2e2e2e;
+      border-radius: 50%;
+      color: var(--danger);
+      font-size: 10px; line-height: 1;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      backdrop-filter: blur(6px);
+      z-index: 2;
+    }
+    .del-btn:active { background: #1a0000; }
+
+    /* ─── Bottom Bar ─── */
+    .bottom-bar {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      padding: 10px 14px;
+      padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+      background: rgba(8,8,8,.95);
+      border-top: 1px solid var(--border);
+      backdrop-filter: blur(14px);
+      display: flex; gap: 10px; z-index: 20;
+    }
+    .clear-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      color: var(--muted);
+      padding: 0 16px;
+      font-family: var(--font);
+      font-size: 12px;
+      cursor: pointer;
+      white-space: nowrap;
+      height: 46px;
+      transition: border-color .15s, color .15s;
+    }
+    .clear-btn:active { border-color: var(--danger); color: var(--danger); }
+    .export-btn {
+      flex: 1; height: 46px;
+      background: var(--accent);
+      color: #0a0a0a;
+      border: none;
+      border-radius: var(--r);
+      font-family: var(--font);
+      font-size: 13px; font-weight: 500;
+      letter-spacing: .06em;
+      cursor: pointer;
+      transition: opacity .2s;
+    }
+    .export-btn:disabled { opacity: .28; cursor: not-allowed; }
+    .export-btn:active:not(:disabled) { filter: brightness(.9); }
+
+    /* ─── Toast ─── */
+    .toast {
+      position: fixed; top: 16px; left: 50%;
+      transform: translateX(-50%) translateY(-70px);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 9px 16px;
+      font-size: 12px; color: var(--text);
+      transition: transform .3s cubic-bezier(.34,1.56,.64,1);
+      z-index: 100; white-space: nowrap;
+      letter-spacing: .04em;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+    .toast.ok { border-color: var(--accent); color: var(--accent); }
+    .toast.err { border-color: var(--danger); color: var(--danger); }
+  </style>
+</head>
+<body>
+
+<header>
+  <span class="logo">PDF·REORDER</span>
+  <span class="page-count" id="pageCount">0 pages</span>
+</header>
+
+<div class="upload-zone" id="uploadZone">
+  <input type="file" id="fileInput" accept=".pdf" multiple>
+  <div class="upload-icon">⊕</div>
+  <div class="upload-label">Add PDFs</div>
+  <div class="upload-sub">tap or drop · multiple files ok</div>
+</div>
+
+<div class="progress-wrap" id="progressWrap">
+  <div class="progress-fill" id="progressFill"></div>
+</div>
+<div class="load-status" id="loadStatus">loading…</div>
+
+<div id="emptyState">
+  <div class="empty-icon">▣</div>
+  <div class="empty-text">upload a pdf to get started</div>
+</div>
+
+<div id="pagesGrid"></div>
+
+<div class="bottom-bar">
+  <button class="clear-btn" id="clearBtn">Clear</button>
+  <button class="export-btn" id="exportBtn" disabled>Export PDF</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+  // ─── State ───────────────────────────────────────────────
+  const pdfSources = new Map(); // sourceId → ArrayBuffer
+  let pages = [];               // [{id, sourceId, pageIndex, thumbUrl, filename}]
+  let sortable = null;
+  let uid = 0;
+
+  // ─── DOM refs ────────────────────────────────────────────
+  const $ = id => document.getElementById(id);
+  const fileInput   = $('fileInput');
+  const uploadZone  = $('uploadZone');
+  const pagesGrid   = $('pagesGrid');
+  const emptyState  = $('emptyState');
+  const exportBtn   = $('exportBtn');
+  const clearBtn    = $('clearBtn');
+  const pageCountEl = $('pageCount');
+  const progressWrap= $('progressWrap');
+  const progressFill= $('progressFill');
+  const loadStatus  = $('loadStatus');
+  const toastEl     = $('toast');
+
+  // ─── Toast ───────────────────────────────────────────────
+  let toastTimer;
+  function toast(msg, type = '') {
+    toastEl.textContent = msg;
+    toastEl.className = `toast show ${type}`;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.className = 'toast', 2600);
+  }
+
+  // ─── File input / drag-drop ──────────────────────────────
+  fileInput.addEventListener('change', e => {
+    handleFiles([...e.target.files]);
+    fileInput.value = '';
+  });
+  uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag'); });
+  uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag'));
+  uploadZone.addEventListener('drop', e => {
+    e.preventDefault();
+    uploadZone.classList.remove('drag');
+    handleFiles([...e.dataTransfer.files].filter(f => f.type === 'application/pdf'));
+  });
+
+  // ─── Load PDFs ───────────────────────────────────────────
+  async function handleFiles(files) {
+    const pdfs = files.filter(f => f.type === 'application/pdf');
+    if (!pdfs.length) { toast('No PDF files found', 'err'); return; }
+
+    setLoading(true);
+
+    let done = 0, totalPages = 0;
+    // First pass: count bytes → progress is per-pdf
+    const tasks = pdfs.map(f => ({ file: f }));
+
+    for (const task of tasks) {
+      await loadPdf(task.file, (cur, total) => {
+        progressFill.style.width = `${((done / tasks.length) + (cur / total / tasks.length)) * 100}%`;
+        loadStatus.textContent = `loading ${task.file.name.slice(0, 22)} · page ${cur}/${total}`;
+      });
+      done++;
+      progressFill.style.width = `${(done / tasks.length) * 100}%`;
+    }
+
+    setLoading(false);
+    renderGrid();
+    toast(`Added pages from ${pdfs.length} file${pdfs.length > 1 ? 's' : ''}`, 'ok');
+  }
+
+  function setLoading(on) {
+    progressWrap.style.display = on ? 'block' : 'none';
+    loadStatus.style.display = on ? 'block' : 'none';
+    if (!on) { progressFill.style.width = '0'; loadStatus.textContent = ''; }
+  }
+
+  async function loadPdf(file, onProgress) {
+    const bytes = await file.arrayBuffer();
+    const srcId = `src_${uid++}`;
+    pdfSources.set(srcId, bytes);
+
+    const pdfDoc = await pdfjsLib.getDocument({ data: bytes.slice(0) }).promise;
+    const n = pdfDoc.numPages;
+    const name = file.name.replace(/\.pdf$/i, '').slice(0, 14);
+
+    for (let i = 1; i <= n; i++) {
+      onProgress(i, n);
+      const thumbUrl = await renderThumb(pdfDoc, i);
+      pages.push({ id: `p${uid++}`, sourceId: srcId, pageIndex: i - 1, thumbUrl, filename: name });
+    }
+  }
+
+  async function renderThumb(pdfDoc, pageNum) {
+    const page = await pdfDoc.getPage(pageNum);
+    const vp = page.getViewport({ scale: 0.6 });
+    const canvas = document.createElement('canvas');
+    canvas.width = vp.width;
+    canvas.height = vp.height;
+    await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+    return canvas.toDataURL('image/jpeg', 0.75);
+  }
+
+  // ─── Render Grid ─────────────────────────────────────────
+  function renderGrid() {
+    const count = pages.length;
+    pageCountEl.textContent = `${count} page${count !== 1 ? 's' : ''}`;
+    exportBtn.disabled = count === 0;
+
+    if (count === 0) {
+      pagesGrid.style.display = 'none';
+      emptyState.style.display = 'flex';
+      return;
+    }
+
+    emptyState.style.display = 'none';
+    pagesGrid.style.display = 'grid';
+    pagesGrid.innerHTML = '';
+
+    pages.forEach((p, i) => {
+      const card = document.createElement('div');
+      card.className = 'page-card';
+      card.dataset.id = p.id;
+      card.innerHTML = `
+        <button class="del-btn" data-id="${p.id}" aria-label="Remove">✕</button>
+        <div class="thumb-wrap">
+          <img src="${p.thumbUrl}" loading="lazy" draggable="false">
+        </div>
+        <div class="page-meta">
+          <span class="page-num">${String(i + 1).padStart(2, '0')}</span>
+          <span class="page-src">${p.filename}</span>
+        </div>`;
+      pagesGrid.appendChild(card);
+    });
+
+    // Delete
+    pagesGrid.querySelectorAll('.del-btn').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        const id = btn.dataset.id;
+        pages = pages.filter(p => p.id !== id);
+        renderGrid();
+      });
+    });
+
+    // Sortable (touch-friendly)
+    if (sortable) sortable.destroy();
+    sortable = Sortable.create(pagesGrid, {
+      animation: 150,
+      delay: 120,
+      delayOnTouchOnly: true,
+      ghostClass: 'sortable-ghost',
+      chosenClass: 'sortable-chosen',
+      onEnd() {
+        const order = [...pagesGrid.querySelectorAll('.page-card')].map(c => c.dataset.id);
+        pages = order.map(id => pages.find(p => p.id === id));
+        // Re-number without full re-render
+        pagesGrid.querySelectorAll('.page-num').forEach((el, i) => {
+          el.textContent = String(i + 1).padStart(2, '0');
+        });
+        pageCountEl.textContent = `${pages.length} pages`;
+      }
+    });
+  }
+
+  // ─── Clear ───────────────────────────────────────────────
+  clearBtn.addEventListener('click', () => {
+    pages = [];
+    pdfSources.clear();
+    renderGrid();
+  });
+
+  // ─── Export ──────────────────────────────────────────────
+  exportBtn.addEventListener('click', async () => {
+    if (!pages.length) return;
+    exportBtn.disabled = true;
+    exportBtn.textContent = 'Building…';
+
+    try {
+      const { PDFDocument } = PDFLib;
+      const out = await PDFDocument.create();
+      const cache = new Map(); // sourceId → PDFDocument
+
+      for (const p of pages) {
+        if (!cache.has(p.sourceId)) {
+          cache.set(p.sourceId, await PDFDocument.load(pdfSources.get(p.sourceId)));
+        }
+        const [copied] = await out.copyPages(cache.get(p.sourceId), [p.pageIndex]);
+        out.addPage(copied);
+      }
+
+      const blob = new Blob([await out.save()], { type: 'application/pdf' });
+      const a = Object.assign(document.createElement('a'), {
+        href: URL.createObjectURL(blob),
+        download: `reordered_${Date.now()}.pdf`
+      });
+      a.click();
+      URL.revokeObjectURL(a.href);
+      toast('PDF exported!', 'ok');
+    } catch (err) {
+      toast('Export failed', 'err');
+      console.error(err);
+    }
+
+    exportBtn.disabled = false;
+    exportBtn.textContent = 'Export PDF';
+  });
+
+  renderGrid(); // init
+</script>
+</body>
+</html>
