@@ -1,41 +1,42 @@
+
 - title: Bulk URL Opener
   description: Extracts URLs from any text and opens them simultaneously in bulk
-  icon: fa-regular fa-link
+  icon: fa-solid fa-link
   url: https://samar1h.github.io/aiasp/projects/bulk-url-opener/
 
 - title: BPharm Syllabus
-  description: Outdated Syllabus of BPharmacy 
-  icon: fa-regular fa-file
+  description: Outdated Syllabus of BPharmacy
+  icon: fa-solid fa-file-lines
   url: https://samar1h.github.io/aiasp/projects/bpharm-syllabus/
 
 - title: Counter
   description: Perfect for keeping count of anything—workouts, habits, inventory, and more!
-  icon: fa-regular fa-plus-square
+  icon: fa-solid fa-square-plus
   url: https://samar1h.github.io/aiasp/projects/counter/
 
 - title: Barcode Generator
   description: A simple and easy to use program to generate barcodes.
-  icon: fa-regular fa-barcode
+  icon: fa-solid fa-barcode
   url: https://samar1h.github.io/aiasp/projects/barcode-generator/
-  
+
 - title: QR Code Generator
-  description: A simple QR Code Generator that lets you create customizable QR codes for URLs, text, WiFi, payments, and more. 🚀
+  description: A simple QR Code Generator that lets you create customizable QR codes for URLs, text, WiFi, payments, and more.
   icon: https://raw.githubusercontent.com/samar1h/aiasp/refs/heads/main/projects/qrcode-generator/favicon.ico
   url: https://samar1h.github.io/aiasp/projects/qrcode-generator/
-  
-- title: Hush Iamge
+
+- title: Hush Image
   description: A steganography tool for embedding hidden text within images.
   icon: https://raw.githubusercontent.com/samar1h/aiasp/refs/heads/main/projects/hush-image/favicon.ico
   url: https://samar1h.github.io/aiasp/projects/hush-image/
 
 - title: Hush Link
-  description: A lightweight web app that allows you to create and share end-to-end encrypted messages securely. Built with HTML, CSS, and JavaScript, it leverages AES-256 encryption to ensure privacy.
+  description: Create and share end-to-end encrypted messages with AES-256 encryption. Built with plain HTML, CSS, and JS.
   icon: https://raw.githubusercontent.com/samar1h/aiasp/refs/heads/main/projects/hush-link/favicon.ico
   url: https://samar1h.github.io/aiasp/projects/hush-link/
 
 - title: Investment Calculator
-  description: A simple and easy-to-use Interest Calculator that helps you calculate interest for different investments. 🚀
-  icon: fa-regular fa-inr
+  description: A simple interest calculator that helps you compare different investment scenarios.
+  icon: fa-solid fa-indian-rupee-sign
   url: https://samar1h.github.io/aiasp/projects/investment-calculator/
 
 - title: Age Calculator
@@ -44,12 +45,12 @@
   url: https://samar1h.github.io/aiasp/projects/age-calculator
 
 - title: Quick Question
-  description: Quick Question is a lightweight web app that lets you create a single multiple-choice question, generate a shareable link, and let others answer it.
+  description: Create a single multiple-choice question, generate a shareable link, and let others answer it instantly.
   icon: https://raw.githubusercontent.com/samar1h/aiasp/refs/heads/main/projects/quick-question/favicon.ico
   url: https://samar1h.github.io/aiasp/projects/quick-question/
 
 - title: Equation Plotter
-  description: A web-based tool designed to generate all possible permutations of a given word or phrase.
+  description: A web-based tool for graphing and visualizing mathematical equations.
   icon: https://raw.githubusercontent.com/samar1h/aiasp/refs/heads/main/projects/equation-plotter/build/favicon.ico
   url: https://samar1h.github.io/aiasp/projects/equation-plotter/build/
 
@@ -59,17 +60,16 @@
   url: https://samar1h.github.io/aiasp/projects/permutation-finder/
 
 - title: Pediatric Dosage
-  description: A hobby project to calculate dosage for a child based on various pharmaceutical formulas.
+  description: Calculate medication dosage for a child based on various pharmaceutical formulas.
   icon: https://raw.githubusercontent.com/samar1h/aiasp/refs/heads/main/projects/pediatric-dosage/favicon.ico
   url: https://samar1h.github.io/aiasp/projects/pediatric-dosage/
 
 - title: Pediatric Dosage V2
-  description: A hobby project to calculate dosage for a child based on various pharmaceutical formulas.
+  description: Updated version of the pediatric dosage calculator with improved formulas and UI.
   icon: https://raw.githubusercontent.com/samar1h/aiasp/refs/heads/main/projects/pediatric-dosage/favicon.ico
   url: https://samar1h.github.io/aiasp/projects/pediatric-dosage/v2.html
-  
+
 - title: Onepage
   description: A minimalistic note-taking app.
-  icon: fa-regular fa-pencil
+  icon: fa-solid fa-pencil
   url: https://samar1h.github.io/aiasp/projects/onepage/
-
