@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="shortcut icon" type="image/x-icon" href="https://samar1h.github.io/counter/favicon.ico">
+    <title>Counter App</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="script.js" defer></script>
+</head>
+<body>
+    <div class="header">
+        <h1 class="app-title">Counter App</h1>
+        
+        <div class="dashboard">
+            <div class="stat-card tooltip" data-tooltip="Sum of all counter values">
+                <div class="stat-label">Total</div>
+                <div class="stat-value" id="totalValue">0</div>
+            </div>
+            <div class="stat-card tooltip" data-tooltip="Number of counters">
+                <div class="stat-label">Counters</div>
+                <div class="stat-value" id="counterCount">0</div>
+            </div>
+            <div class="stat-card tooltip" data-tooltip="Average counter value">
+                <div class="stat-label">Average</div>
+                <div class="stat-value" id="averageValue">0</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="searchContainer">
+        <input type="text" id="searchInput" placeholder="Search counters..." inputmode="search">
+    </div>
+
+    <div id="app-container">
+        <div id="counterContainer"></div>
+    </div>
+
+    <div class="action-bar">
+        <button id="resetButton" class="tooltip" data-tooltip="Reset all counters">Reset</button>
+        <button id="addCounter" class="tooltip" data-tooltip="Add new counter">Add</button>
+    </div>
+</body>
+</html>

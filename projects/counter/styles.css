@@ -1,0 +1,298 @@
+:root {
+  --primary: #4361ee;
+  --danger: #e74c3c;
+  --warning: #f39c12;
+  --success: #2ecc71;
+  --background: #121212;
+  --surface: #1e1e1e;
+  --surface-light: #2a2a2a;
+  --text: #f8fafc;
+  --text-muted: #94a3b8;
+  --border-radius: 8px;
+  --transition: transform 0.15s ease;
+  --shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  --header-height: 140px;
+  --search-height: 60px;
+  --action-bar-height: 68px;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--text);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  margin: 0;
+  padding: 0;
+  line-height: 1.4;
+  overscroll-behavior: contain;
+}
+
+#app-container {
+  padding: calc(var(--header-height) + var(--search-height) + 16px) 8px calc(var(--action-bar-height) + 16px) 8px;
+  width: 100%;
+  box-sizing: border-box;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: var(--surface);
+  padding: 12px 8px;
+  box-shadow: var(--shadow);
+  z-index: 10;
+  height: var(--header-height);
+  box-sizing: border-box;
+}
+
+.app-title {
+  margin: 0 0 12px;
+  font-weight: 700;
+  font-size: 22px;
+  text-align: center;
+}
+
+.dashboard {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 0 auto 16px;
+  max-width: 1200px;
+}
+
+.stat-card {
+  background: var(--surface-light);
+  border-radius: var(--border-radius);
+  padding: 12px 8px;
+  text-align: center;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.stat-value {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+#searchContainer {
+  position: fixed;
+  top: var(--header-height);
+  left: 0;
+  right: 0;
+  background: var(--surface);
+  padding: 10px 8px;
+  z-index: 9;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  height: var(--search-height);
+  box-sizing: border-box;
+}
+
+#searchInput {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  display: block;
+  padding: 12px 16px;
+  border-radius: var(--border-radius);
+  background: var(--surface-light);
+  color: var(--text);
+  border: 1px solid #444;
+  font-size: 16px;
+  box-sizing: border-box;
+}
+
+#counterContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.counter {
+  background: var(--surface);
+  border-radius: var(--border-radius);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--surface-light);
+}
+
+.counter-name {
+  background: var(--surface-light);
+  color: var(--text);
+  font-size: 16px;
+  text-align: center;
+  padding: 10px;
+  border-radius: var(--border-radius);
+  border: 1px solid #444;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.counter-name:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.counter-controls {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.counter-value {
+  width: 64px;
+  text-align: center;
+  font-size: 20px;
+  font-weight: 700;
+  background: var(--surface-light);
+  color: var(--text);
+  border: 1px solid #444;
+  border-radius: var(--border-radius);
+  padding: 10px;
+}
+
+button {
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 10px;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+.counter-btn {
+  background: var(--primary);
+  color: white;
+  font-weight: 700;
+  font-size: 20px;
+}
+
+.counter-btn.decrement {
+  background: var(--surface-light);
+}
+
+.reset-btn {
+  background: var(--warning);
+  color: white;
+}
+
+.delete-btn {
+  background: var(--danger);
+  color: white;
+}
+
+.action-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--surface);
+  padding: 12px 8px;
+  display: flex;
+  justify-content: space-between;
+  box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.2);
+  z-index: 10;
+  height: var(--action-bar-height);
+  box-sizing: border-box;
+}
+
+#resetButton {
+  background: var(--danger);
+  color: white;
+  font-weight: 700;
+}
+
+#addCounter {
+  background: var(--success);
+  color: white;
+  font-weight: 700;
+}
+
+.no-results {
+  text-align: center;
+  padding: 20px;
+  color: var(--text-muted);
+  background: var(--surface);
+  border-radius: var(--border-radius);
+  margin: 16px 0;
+}
+
+.tooltip {
+  position: relative;
+}
+
+.tooltip::before {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  margin-bottom: 8px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s, visibility 0.2s;
+  pointer-events: none;
+  z-index: 20;
+}
+
+.tooltip:hover::before {
+  opacity: 1;
+  visibility: visible;
+}
+
+@media (min-width: 768px) {
+  #app-container {
+    padding: calc(var(--header-height) + var(--search-height) + 16px) 16px calc(var(--action-bar-height) + 16px) 16px;
+  }
+  
+  .header, .action-bar, #searchContainer {
+    padding: 12px 16px;
+  }
+  
+  #counterContainer {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+  }
+  
+  .dashboard {
+    gap: 16px;
+  }
+}
+
+@media (max-width: 767px) {
+  .tooltip::before {
+    display: none;
+  }
+}
