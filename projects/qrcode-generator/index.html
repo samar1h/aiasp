@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="https://raw.githubusercontent.com/samar1h/aiasp/refs/heads/main/projects/qrcode-generator/favicon.ico">
+    <title>QR Code Generator</title>
+    <style>
+        :root {
+            --bg-primary: #121212;
+            --bg-secondary: #1e1e1e;
+            --accent: #bb86fc;
+            --text: #e1e1e1;
+            --error: #cf6679;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+        
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text);
+            padding: 1rem;
+            min-height: 100vh;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+            color: var(--accent);
+        }
+        
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        
+        .input-group {
+            margin-bottom: 1rem;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        
+        select, input, textarea {
+            width: 100%;
+            padding: 0.7rem;
+            border-radius: 8px;
+            border: none;
+            background-color: var(--bg-secondary);
+            color: var(--text);
+            font-size: 1rem;
+        }
+        
+        select {
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23e1e1e1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 1em;
+        }
+        
+        button {
+            background-color: var(--accent);
+            color: #000;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            width: 100%;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        button:active {
+            transform: scale(0.98);
+        }
+        
+        #qrOutput {
+            background-color: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 1.5rem;
+            display: none;
+        }
+        
+        #qrCode {
+            margin-bottom: 1.5rem;
+            background-color: white;
+            padding: 1rem;
+            border-radius: 8px;
+        }
+        
+        .actions {
+            display: flex;
+            gap: 1rem;
+            width: 100%;
+        }
+        
+        .actions button {
+            margin-bottom: 0;
+        }
+        
+        .error {
+            color: var(--error);
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+        }
+        
+        .accordion {
+            background-color: var(--bg-secondary);
+            color: var(--text);
+            cursor: pointer;
+            padding: 1rem;
+            width: 100%;
+            text-align: left;
+            border: none;
+            outline: none;
+            transition: 0.4s;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .accordion:after {
+            content: '\002B';
+            font-weight: bold;
+            float: right;
+            margin-left: 5px;
+        }
+        
+        .active:after {
+            content: "\2212";
+        }
+        
+        .panel {
+            padding: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.2s ease-out;
+            margin-bottom: 1rem;
+        }
+        
+        .color-pick {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .color-pick input[type="color"] {
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 50%;
+            overflow: hidden;
+            cursor: pointer;
+        }
+        
+        #loadingIndicator {
+            display: none;
+            text-align: center;
+            margin: 1rem 0;
+        }
+        
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border-top: 4px solid var(--accent);
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>QR Code Generator</h1>
+        
+        <div class="input-group">
+            <label for="qrType">QR Code Type</label>
+            <select id="qrType">
+                <option value="text">Text</option>
+                <option value="url">URL</option>
+                <option value="wifi">WiFi</option>
+                <option value="email">Email</option>
+                <option value="sms">SMS</option>
+                <option value="phone">Phone</option>
+                <option value="location">Location</option>
+                <option value="upi">UPI</option>
+                <option value="event">Event</option>
+                <option value="custom">Custom</option>
+            </select>
+        </div>
+        
+        <div id="dynamicFields"></div>
+        
+        <button class="accordion">Show Advanced Options</button>
+        <div class="panel">
+            <div class="input-group">
+                <label for="errorCorrectionLevel">Error Correction</label>
+                <select id="errorCorrectionLevel">
+                    <option value="L">Low (7%)</option>
+                    <option value="M" selected>Medium (15%)</option>
+                    <option value="Q">Quartile (25%)</option>
+                    <option value="H">High (30%)</option>
+                </select>
+            </div>
+            
+            <div class="input-group">
+                <label for="qrSize">QR Code Size</label>
+                <input type="range" id="qrSize" min="128" max="512" step="32" value="256">
+                <div id="sizeValue" style="text-align: center;">256 x 256 px</div>
+            </div>
+            
+            <div class="color-pick">
+                <div>
+                    <label for="foregroundColor">Foreground</label>
+                    <input type="color" id="foregroundColor" value="#000000">
+                </div>
+                <div>
+                    <label for="backgroundColor">Background</label>
+                    <input type="color" id="backgroundColor" value="#ffffff">
+                </div>
+            </div>
+            
+            <div class="input-group">
+                <label for="margin">Margin</label>
+                <input type="range" id="margin" min="0" max="5" value="1">
+                <div id="marginValue" style="text-align: center;">1 block</div>
+            </div>
+        </div>
+        
+        <button id="generateBtn">Generate QR Code</button>
+        
+        <div id="loadingIndicator">
+            <div class="spinner"></div>
+            <p>Generating QR Code...</p>
+        </div>
+        
+        <div id="errorMessage" class="error"></div>
+        
+        <div id="qrOutput">
+            <div id="qrCode"></div>
+            <div class="actions">
+                <button id="downloadBtn">Download</button>
+                <button id="shareBtn">Share</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script>
+        const typeFields={text:[{label:"Text",id:"text",type:"textarea",placeholder:"Enter your text here"}],url:[{label:"URL",id:"url",type:"url",placeholder:"https://example.com"}],email:[{label:"Email Address",id:"email",type:"email",placeholder:"example@email.com"},{label:"Subject (Optional)",id:"subject",type:"text",placeholder:"Email Subject"},{label:"Body (Optional)",id:"body",type:"textarea",placeholder:"Email Body"}],phone:[{label:"Phone Number",id:"phone",type:"tel",placeholder:"+1234567890"}],sms:[{label:"Phone Number",id:"smsPhone",type:"tel",placeholder:"+1234567890"},{label:"Message (Optional)",id:"smsBody",type:"textarea",placeholder:"SMS message"}],location:[{label:"Latitude",id:"latitude",type:"number",placeholder:"41.40338"},{label:"Longitude",id:"longitude",type:"number",placeholder:"2.17403"}],upi:[{label:"UPI ID",id:"upiId",type:"text",placeholder:"name@upi"},{label:"Payee Name",id:"upiName",type:"text",placeholder:"John Doe"},{label:"Amount (Optional)",id:"upiAmount",type:"number",placeholder:"100.00"},{label:"Description (Optional)",id:"upiDesc",type:"text",placeholder:"Payment for services"}],event:[{label:"Event Title",id:"eventTitle",type:"text",placeholder:"Meeting"},{label:"Location",id:"eventLocation",type:"text",placeholder:"Office"},{label:"Start Date & Time",id:"eventStart",type:"datetime-local"},{label:"End Date & Time",id:"eventEnd",type:"datetime-local"},{label:"Description (Optional)",id:"eventDesc",type:"textarea",placeholder:"Event details"}],wifi:[{label:"Network Name (SSID)",id:"wifiSsid",type:"text",placeholder:"WiFi Network"},{label:"Password",id:"wifiPassword",type:"text",placeholder:"WiFi Password"},{label:"Encryption Type",id:"wifiType",type:"select",options:[{value:"WPA",label:"WPA/WPA2"},{value:"WEP",label:"WEP"},{value:"nopass",label:"No Password"}]}],custom:[{label:"Content",id:"customContent",type:"textarea",placeholder:"Enter custom QR code content"}]};const qrTypeSelect=document.getElementById("qrType");const dynamicFields=document.getElementById("dynamicFields");const generateBtn=document.getElementById("generateBtn");const qrOutput=document.getElementById("qrOutput");const qrCodeDiv=document.getElementById("qrCode");const downloadBtn=document.getElementById("downloadBtn");const shareBtn=document.getElementById("shareBtn");const errorMessage=document.getElementById("errorMessage");const loadingIndicator=document.getElementById("loadingIndicator");const errorCorrectionLevel=document.getElementById("errorCorrectionLevel");const qrSize=document.getElementById("qrSize");const foregroundColor=document.getElementById("foregroundColor");const backgroundColor=document.getElementById("backgroundColor");const margin=document.getElementById("margin");const sizeValue=document.getElementById("sizeValue");const marginValue=document.getElementById("marginValue");let qrCodeInstance=null;function updateDynamicFields(){const selectedType=qrTypeSelect.value;dynamicFields.innerHTML="";const fields=typeFields[selectedType]||[];fields.forEach(field=>{const fieldContainer=document.createElement("div");fieldContainer.className="input-group";const label=document.createElement("label");label.setAttribute("for",field.id);label.textContent=field.label;fieldContainer.appendChild(label);let input;if(field.type==="textarea"){input=document.createElement("textarea");input.rows=3}else if(field.type==="select"){input=document.createElement("select");field.options.forEach(option=>{const optEl=document.createElement("option");optEl.value=option.value;optEl.textContent=option.label;input.appendChild(optEl)})}else{input=document.createElement("input");input.type=field.type}input.id=field.id;if(field.placeholder)input.placeholder=field.placeholder;fieldContainer.appendChild(input);dynamicFields.appendChild(fieldContainer)})}qrTypeSelect.addEventListener("change",updateDynamicFields);qrSize.addEventListener("input",()=>{sizeValue.textContent=`${qrSize.value} x ${qrSize.value} px`});margin.addEventListener("input",()=>{marginValue.textContent=`${margin.value} block${margin.value!==1?"s":""}`});generateBtn.addEventListener("click",generateQRCode);function generateQRCode(){errorMessage.textContent="";qrOutput.style.display="none";loadingIndicator.style.display="block";setTimeout(()=>{try{const qrData=getQRContent();if(!qrData){loadingIndicator.style.display="none";return}const maxLength=2953;if(qrData.length>maxLength){errorMessage.textContent=`Error: Content exceeds maximum length (${qrData.length}/${maxLength} characters)`;loadingIndicator.style.display="none";return}qrCodeDiv.innerHTML="";const options={text:qrData,width:parseInt(qrSize.value),height:parseInt(qrSize.value),colorDark:foregroundColor.value,colorLight:backgroundColor.value,correctLevel:QRCode[`CorrectLevel`][errorCorrectionLevel.value],margin:parseInt(margin.value)};qrCodeInstance=new QRCode(qrCodeDiv,options);qrOutput.style.display="flex";loadingIndicator.style.display="none"}catch(e){errorMessage.textContent=`Error: ${e.message}`;loadingIndicator.style.display="none"}},50)}function getQRContent(){const type=qrTypeSelect.value;switch(type){case"text":return document.getElementById("text").value||"";case"url":{const url=document.getElementById("url").value||"";if(!url)return showError("Please enter a valid URL");return url}case"email":{const email=document.getElementById("email").value||"";const subject=document.getElementById("subject").value||"";const body=document.getElementById("body").value||"";if(!email)return showError("Please enter an email address");let content=`mailto:${email}`;if(subject||body){content+="?";if(subject)content+=`subject=${encodeURIComponent(subject)}`;if(body){if(subject)content+="&";content+=`body=${encodeURIComponent(body)}`}}return content}case"phone":{const phone=document.getElementById("phone").value||"";if(!phone)return showError("Please enter a phone number");return`tel:${phone}`}case"sms":{const phone=document.getElementById("smsPhone").value||"";const body=document.getElementById("smsBody").value||"";if(!phone)return showError("Please enter a phone number");let content=`smsto:${phone}`;if(body)content+=`:${body}`;return content}case"location":{const lat=document.getElementById("latitude").value||"";const lng=document.getElementById("longitude").value||"";if(!lat||!lng)return showError("Please enter both latitude and longitude");return`geo:${lat},${lng}`}case"upi":{const upiId=document.getElementById("upiId").value||"";const name=document.getElementById("upiName").value||"";const amount=document.getElementById("upiAmount").value||"";const desc=document.getElementById("upiDesc").value||"";if(!upiId||!name)return showError("Please enter UPI ID and name");let content=`upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(name)}`;if(amount)content+=`&am=${amount}`;if(desc)content+=`&tn=${encodeURIComponent(desc)}`;return content}case"event":{const title=document.getElementById("eventTitle").value||"";const location=document.getElementById("eventLocation").value||"";const start=document.getElementById("eventStart").value||"";const end=document.getElementById("eventEnd").value||"";const desc=document.getElementById("eventDesc").value||"";if(!title||!start)return showError("Please enter at least the event title and start time");const formatDateTime=dt=>{const date=new Date(dt);return date.toISOString().replace(/-/g,"").replace(/:/g,"").substr(0,15)+"Z"};let content="BEGIN:VEVENT\n";content+=`SUMMARY:${title}\n`;if(location)content+=`LOCATION:${location}\n`;if(start)content+=`DTSTART:${formatDateTime(start)}\n`;if(end)content+=`DTEND:${formatDateTime(end)}\n`;if(desc)content+=`DESCRIPTION:${desc}\n`;content+="END:VEVENT";return content}case"wifi":{const ssid=document.getElementById("wifiSsid").value||"";const password=document.getElementById("wifiPassword").value||"";const type=document.getElementById("wifiType").value||"WPA";if(!ssid)return showError("Please enter the WiFi network name");let content=`WIFI:S:${ssid};`;if(type!=="nopass"&&password)content+=`P:${password};`;content+=`T:${type};;`;return content}case"custom":return document.getElementById("customContent").value||"";default:return""}}function showError(message){errorMessage.textContent=message;return null}downloadBtn.addEventListener("click",()=>{if(!qrCodeDiv.querySelector("canvas"))return;const canvas=qrCodeDiv.querySelector("canvas");const image=canvas.toDataURL("image/png");const link=document.createElement("a");link.href=image;link.download=`qrcode-${Date.now()}.png`;document.body.appendChild(link);link.click();document.body.removeChild(link)});shareBtn.addEventListener("click",async()=>{if(!qrCodeDiv.querySelector("canvas"))return;if(navigator.share){try{const canvas=qrCodeDiv.querySelector("canvas");const blob=await new Promise(resolve=>canvas.toBlob(resolve));const file=new File([blob],"qrcode.png",{type:"image/png"});await navigator.share({files:[file],title:"QR Code"})}catch(e){console.error("Error sharing:",e)}}else{errorMessage.textContent="Sharing not supported on this device/browser"}});const acc=document.querySelector(".accordion");acc.addEventListener("click",function(){this.classList.toggle("active");const panel=this.nextElementSibling;if(panel.style.maxHeight){panel.style.maxHeight=null}else{panel.style.maxHeight=panel.scrollHeight+"px"}});updateDynamicFields();qrSize.addEventListener("input",function(){document.getElementById("sizeValue").textContent=this.value+" x "+this.value+" px"});margin.addEventListener("input",function(){document.getElementById("marginValue").textContent=this.value+" block"+(this.value!=1?"s":"")});
+    </script>
+</body>
+</html>

@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="https://raw.githubusercontent.com/samar1h/aiasp/refs/heads/main/projects/qrcode-generator/favicon.ico">
+    <title>QR Code Generator API</title>
+    <style>
+        :root {
+            --bg-primary: #121212;
+            --bg-secondary: #1e1e1e;
+            --accent: #bb86fc;
+            --text: #e1e1e1;
+            --text-secondary: #a0a0a0;
+            --error: #cf6679;
+            --success: #03dac6;
+            --code-bg: #2d2d2d;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+        
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text);
+            padding: 2rem;
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+        
+        header {
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 2rem;
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+        }
+        
+        h2 {
+            font-size: 1.5rem;
+            color: var(--accent);
+            margin: 2rem 0 1rem;
+        }
+        
+        h3 {
+            font-size: 1.2rem;
+            margin: 1.5rem 0 0.75rem;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        #qrCode {
+            display: flex;
+            justify-content: center;
+            margin: 2rem 0;
+        }
+        
+        #qrCode img, #qrCode canvas {
+            background-color: white;
+            padding: 1rem;
+            border-radius: 8px;
+        }
+        
+        #errorMessage {
+            color: var(--error);
+            text-align: center;
+            margin: 1rem 0;
+        }
+        
+        .section {
+            background-color: var(--bg-secondary);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .parameter {
+            border-left: 3px solid var(--accent);
+            padding-left: 1rem;
+            margin: 1rem 0;
+        }
+        
+        code {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: var(--code-bg);
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        
+        pre {
+            background-color: var(--code-bg);
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 1rem 0;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        
+        a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+        
+        a:hover {
+            text-decoration: underline;
+        }
+        
+        .example {
+            margin: 1rem 0;
+            padding: 1rem;
+            background-color: rgba(187, 134, 252, 0.1);
+            border-radius: 8px;
+        }
+        
+        .example a {
+            display: inline-block;
+            margin-top: 0.5rem;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+        
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--bg-primary);
+        }
+        
+        th {
+            color: var(--accent);
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-left: 0.5rem;
+            background-color: var(--accent);
+            color: #000;
+        }
+        
+        .badge.optional {
+            background-color: var(--text-secondary);
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 3rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="main">
+        <header>
+            <h1>QR Code Generator API</h1>
+            <p id="subtitle">Generating QR codes based on URL parameters</p>
+        </header>
+        
+        <div id="errorMessage"></div>
+        <div id="qrCode"></div>
+        
+        <div id="docs">
+            <!-- Documentation will be populated here -->
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script>
+        // Helper Functions
+        function getParameterByName(name, url = window.location.href) {
+            name = name.replace(/[\[\]]/g, '\\$&');
+            const regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)');
+            const results = regex.exec(url);
+            if (!results) return null;
+            if (!results[2]) return '';
+            return decodeURIComponent(results[2].replace(/\+/g, ' '));
+        }
+        
+        function showError(message) {
+            const errorElement = document.getElementById('errorMessage');
+            errorElement.textContent = message;
+            return null;
+        }
+        
+        // QR Code Generator Functions
+        function generateQRCode() {
+            const qrType = getParameterByName('type');
+            if (!qrType) {
+                showDocumentation();
+                return;
+            }
+            
+            try {
+                const qrData = getQRContent(qrType);
+                if (!qrData) return;
+                
+                const maxLength = 2953;
+                if (qrData.length > maxLength) {
+                    return showError(`Error: Content exceeds maximum length (${qrData.length}/${maxLength} characters)`);
+                }
+                
+                const options = {
+                    text: qrData,
+                    width: parseInt(getParameterByName('size') || 256),
+                    height: parseInt(getParameterByName('size') || 256),
+                    colorDark: getParameterByName('foreground') || "#000000",
+                    colorLight: getParameterByName('background') || "#ffffff",
+                    correctLevel: QRCode[`CorrectLevel`][getParameterByName('errorCorrection') || 'M'],
+                    margin: parseInt(getParameterByName('margin') || 1)
+                };
+                
+                document.getElementById('qrCode').innerHTML = "";
+                const qrCodeInstance = new QRCode(document.getElementById('qrCode'), options);
+                document.getElementById('docs').style.display = 'none';
+                document.getElementById('subtitle').textContent = 'QR Code generated based on your parameters';
+            } catch (e) {
+                showError(`Error: ${e.message}`);
+            }
+        }
+        
+        function getQRContent(type) {
+            switch (type) {
+                case "text":
+                    return getParameterByName('text') || "";
+                
+                case "url":
+                    const url = getParameterByName('url') || "";
+                    if (!url) return showError("Error: Missing 'url' parameter");
+                    return url;
+                
+                case "email":
+                    const email = getParameterByName('email') || "";
+                    const subject = getParameterByName('subject') || "";
+                    const body = getParameterByName('body') || "";
+                    
+                    if (!email) return showError("Error: Missing 'email' parameter");
+                    
+                    let content = `mailto:${email}`;
+                    if (subject || body) {
+                        content += "?";
+                        if (subject) content += `subject=${encodeURIComponent(subject)}`;
+                        if (body) {
+                            if (subject) content += "&";
+                            content += `body=${encodeURIComponent(body)}`;
+                        }
+                    }
+                    return content;
+                
+                case "phone":
+                    const phone = getParameterByName('phone') || "";
+                    if (!phone) return showError("Error: Missing 'phone' parameter");
+                    return `tel:${phone}`;
+                
+                case "sms":
+                    const smsPhone = getParameterByName('phone') || "";
+                    const smsBody = getParameterByName('body') || "";
+                    
+                    if (!smsPhone) return showError("Error: Missing 'phone' parameter");
+                    
+                    let smsContent = `smsto:${smsPhone}`;
+                    if (smsBody) smsContent += `:${smsBody}`;
+                    return smsContent;
+                
+                case "location":
+                    const lat = getParameterByName('lat') || "";
+                    const lng = getParameterByName('lng') || "";
+                    
+                    if (!lat || !lng) return showError("Error: Missing 'lat' or 'lng' parameters");
+                    return `geo:${lat},${lng}`;
+                
+                case "upi":
+                    const upiId = getParameterByName('id') || "";
+                    const name = getParameterByName('name') || "";
+                    const amount = getParameterByName('amount') || "";
+                    const desc = getParameterByName('desc') || "";
+                    
+                    if (!upiId || !name) return showError("Error: Missing 'id' or 'name' parameters");
+                    
+                    let upiContent = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(name)}`;
+                    if (amount) upiContent += `&am=${amount}`;
+                    if (desc) upiContent += `&tn=${encodeURIComponent(desc)}`;
+                    return upiContent;
+                
+                case "event":
+                    const title = getParameterByName('title') || "";
+                    const location = getParameterByName('location') || "";
+                    const start = getParameterByName('start') || "";
+                    const end = getParameterByName('end') || "";
+                    const eventDesc = getParameterByName('desc') || "";
+                    
+                    if (!title || !start) return showError("Error: Missing 'title' or 'start' parameters");
+                    
+                    const formatDateTime = (dt) => {
+                        const date = new Date(dt);
+                        return date.toISOString().replace(/-/g, "").replace(/:/g, "").substr(0, 15) + "Z";
+                    };
+                    
+                    let eventContent = "BEGIN:VEVENT\n";
+                    eventContent += `SUMMARY:${title}\n`;
+                    if (location) eventContent += `LOCATION:${location}\n`;
+                    if (start) eventContent += `DTSTART:${formatDateTime(start)}\n`;
+                    if (end) eventContent += `DTEND:${formatDateTime(end)}\n`;
+                    if (eventDesc) eventContent += `DESCRIPTION:${eventDesc}\n`;
+                    eventContent += "END:VEVENT";
+                    return eventContent;
+                
+                case "wifi":
+                    const ssid = getParameterByName('ssid') || "";
+                    const password = getParameterByName('password') || "";
+                    const wifiType = getParameterByName('encryption') || "WPA";
+                    
+                    if (!ssid) return showError("Error: Missing 'ssid' parameter");
+                    
+                    let wifiContent = `WIFI:S:${ssid};`;
+                    if (wifiType !== "nopass" && password) wifiContent += `P:${password};`;
+                    wifiContent += `T:${wifiType};;`;
+                    return wifiContent;
+                
+                case "custom":
+                    const custom = getParameterByName('content') || "";
+                    if (!custom) return showError("Error: Missing 'content' parameter");
+                    return custom;
+                
+                default:
+                    return showError(`Error: Unknown QR code type '${type}'`);
+            }
+        }
+        
+        // Documentation Generator
+        function showDocumentation() {
+            const docsElement = document.getElementById('docs');
+            
+            docsElement.innerHTML = `
+                <section class="section">
+                    <h2>API Documentation</h2>
+                    <p>This QR Code Generator API allows you to generate QR codes by providing parameters in the URL. The generated QR codes can be embedded in websites, shared as links, or used in applications.</p>
+                    
+                    <h3>Base URL</h3>
+                    <pre>https://samar1h.github.io/aiasp/qrcode-generator/quick</pre>
+                </section>
+                
+                <section class="section">
+                    <h2>Common Parameters</h2>
+                    <p>These parameters can be used with any QR code type:</p>
+                    
+                    <table>
+                        <tr>
+                            <th>Parameter</th>
+                            <th>Description</th>
+                            <th>Default</th>
+                        </tr>
+                        <tr>
+                            <td><code>type</code> <span class="badge">Required</span></td>
+                            <td>QR code type (text, url, email, phone, sms, location, upi, event, wifi, custom)</td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><code>size</code> <span class="badge optional">Optional</span></td>
+                            <td>Size of the QR code in pixels</td>
+                            <td>256</td>
+                        </tr>
+                        <tr>
+                            <td><code>foreground</code> <span class="badge optional">Optional</span></td>
+                            <td>Foreground color in hex format</td>
+                            <td>#000000</td>
+                        </tr>
+                        <tr>
+                            <td><code>background</code> <span class="badge optional">Optional</span></td>
+                            <td>Background color in hex format</td>
+                            <td>#ffffff</td>
+                        </tr>
+                        <tr>
+                            <td><code>errorCorrection</code> <span class="badge optional">Optional</span></td>
+                            <td>Error correction level (L, M, Q, H)</td>
+                            <td>M</td>
+                        </tr>
+                        <tr>
+                            <td><code>margin</code> <span class="badge optional">Optional</span></td>
+                            <td>Margin around the QR code in blocks</td>
+                            <td>1</td>
+                        </tr>
+                    </table>
+                </section>
+                
+                <section class="section">
+                    <h2>QR Code Types and Specific Parameters</h2>
+                    
+                    <div class="parameter">
+                        <h3>Text QR Code</h3>
+                        <p>Generates a QR code containing plain text.</p>
+                        <table>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Description</th>
+                            </tr>
+                            <tr>
+                                <td><code>text</code> <span class="badge">Required</span></td>
+                                <td>The text content</td>
+                            </tr>
+                        </table>
+                        <div class="example">
+                            <code>?type=text&text=Hello%20World</code>
+                            <br>
+                            <a href="?type=text&text=Hello%20World">Try this example</a>
+                        </div>
+                    </div>
+                    
+                    <div class="parameter">
+                        <h3>URL QR Code</h3>
+                        <p>Generates a QR code containing a URL.</p>
+                        <table>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Description</th>
+                            </tr>
+                            <tr>
+                                <td><code>url</code> <span class="badge">Required</span></td>
+                                <td>The URL to encode</td>
+                            </tr>
+                        </table>
+                        <div class="example">
+                            <code>?type=url&url=https%3A%2F%2Fexample.com</code>
+                            <br>
+                            <a href="?type=url&url=https%3A%2F%2Fexample.com">Try this example</a>
+                        </div>
+                    </div>
+                    
+                    <div class="parameter">
+                        <h3>Email QR Code</h3>
+                        <p>Generates a QR code for sending an email.</p>
+                        <table>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Description</th>
+                            </tr>
+                            <tr>
+                                <td><code>email</code> <span class="badge">Required</span></td>
+                                <td>Email address</td>
+                            </tr>
+                            <tr>
+                                <td><code>subject</code> <span class="badge optional">Optional</span></td>
+                                <td>Email subject</td>
+                            </tr>
+                            <tr>
+                                <td><code>body</code> <span class="badge optional">Optional</span></td>
+                                <td>Email body</td>
+                            </tr>
+                        </table>
+                        <div class="example">
+                            <code>?type=email&email=example%40email.com&subject=Hello&body=This%20is%20a%20test</code>
+                            <br>
+                            <a href="?type=email&email=example%40email.com&subject=Hello&body=This%20is%20a%20test">Try this example</a>
+                        </div>
+                    </div>
+                    
+                    <div class="parameter">
+                        <h3>Phone QR Code</h3>
+                        <p>Generates a QR code for making a phone call.</p>
+                        <table>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Description</th>
+                            </tr>
+                            <tr>
+                                <td><code>phone</code> <span class="badge">Required</span></td>
+                                <td>Phone number</td>
+                            </tr>
+                        </table>
+                        <div class="example">
+                            <code>?type=phone&phone=%2B12345678900</code>
+                            <br>
+                            <a href="?type=phone&phone=%2B12345678900">Try this example</a>
+                        </div>
+                    </div>
+                    
+                    <div class="parameter">
+                        <h3>SMS QR Code</h3>
+                        <p>Generates a QR code for sending an SMS.</p>
+                        <table>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Description</th>
+                            </tr>
+                            <tr>
+                                <td><code>phone</code> <span class="badge">Required</span></td>
+                                <td>Phone number</td>
+                            </tr>
+                            <tr>
+                                <td><code>body</code> <span class="badge optional">Optional</span></td>
+                                <td>SMS message</td>
+                            </tr>
+                        </table>
+                        <div class="example">
+                            <code>?type=sms&phone=%2B12345678900&body=Hello%20there</code>
+                            <br>
+                            <a href="?type=sms&phone=%2B12345678900&body=Hello%20there">Try this example</a>
+                        </div>
+                    </div>
+                    
+                    <div class="parameter">
+                        <h3>Location QR Code</h3>
+                        <p>Generates a QR code for a geographic location.</p>
+                        <table>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Description</th>
+                            </tr>
+                            <tr>
+                                <td><code>lat</code> <span class="badge">Required</span></td>
+                                <td>Latitude</td>
+                            </tr>
+                            <tr>
+                                <td><code>lng</code> <span class="badge">Required</span></td>
+                                <td>Longitude</td>
+                            </tr>
+                        </table>
+                        <div class="example">
+                            <code>?type=location&lat=40.7128&lng=-74.0060</code>
+                            <br>
+                            <a href="?type=location&lat=40.7128&lng=-74.0060">Try this example</a>
+                        </div>
+                    </div>
+                    
+                    <div class="parameter">
+                        <h3>UPI QR Code</h3>
+                        <p>Generates a QR code for UPI payment.</p>
+                        <table>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Description</th>
+                            </tr>
+                            <tr>
+                                <td><code>id</code> <span class="badge">Required</span></td>
+                                <td>UPI ID</td>
+                            </tr>
+                            <tr>
+                                <td><code>name</code> <span class="badge">Required</span></td>
+                                <td>Payee name</td>
+                            </tr>
+                            <tr>
+                                <td><code>amount</code> <span class="badge optional">Optional</span></td>
+                                <td>Payment amount</td>
+                            </tr>
+                            <tr>
+                                <td><code>desc</code> <span class="badge optional">Optional</span></td>
+                                <td>Payment description</td>
+                            </tr>
+                        </table>
+                        <div class="example">
+                            <code>?type=upi&id=example%40upi&name=John%20Doe&amount=100&desc=Payment%20for%20services</code>
+                            <br>
+                            <a href="?type=upi&id=example%40upi&name=John%20Doe&amount=100&desc=Payment%20for%20services">Try this example</a>
+                        </div>
+                    </div>
+                    
+                    <div class="parameter">
+                        <h3>Event QR Code</h3>
+                        <p>Generates a QR code for a calendar event.</p>
+                        <table>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Description</th>
+                            </tr>
+                            <tr>
+                                <td><code>title</code> <span class="badge">Required</span></td>
+                                <td>Event title</td>
+                            </tr>
+                            <tr>
+                                <td><code>start</code> <span class="badge">Required</span></td>
+                                <td>Start date and time (ISO format)</td>
+                            </tr>
+                            <tr>
+                                <td><code>end</code> <span class="badge optional">Optional</span></td>
+                                <td>End date and time (ISO format)</td>
+                            </tr>
+                            <tr>
+                                <td><code>location</code> <span class="badge optional">Optional</span></td>
+                                <td>Event location</td>
+                            </tr>
+                            <tr>
+                                <td><code>desc</code> <span class="badge optional">Optional</span></td>
+                                <td>Event description</td>
+                            </tr>
+                        </table>
+                        <div class="example">
+                            <code>?type=event&title=Meeting&location=Office&start=2025-03-25T15:00:00&end=2025-03-25T16:00:00&desc=Project%20discussion</code>
+                            <br>
+                            <a href="?type=event&title=Meeting&location=Office&start=2025-03-25T15:00:00&end=2025-03-25T16:00:00&desc=Project%20discussion">Try this example</a>
+                        </div>
+                    </div>
+                    
+                    <div class="parameter">
+                        <h3>WiFi QR Code</h3>
+                        <p>Generates a QR code for connecting to a WiFi network.</p>
+                        <table>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Description</th>
+                            </tr>
+                            <tr>
+                                <td><code>ssid</code> <span class="badge">Required</span></td>
+                                <td>WiFi network name</td>
+                            </tr>
+                            <tr>
+                                <td><code>password</code> <span class="badge optional">Optional</span></td>
+                                <td>WiFi password</td>
+                            </tr>
+                            <tr>
+                                <td><code>encryption</code> <span class="badge optional">Optional</span></td>
+                                <td>Encryption type (WPA, WEP, nopass)</td>
+                            </tr>
+                        </table>
+                        <div class="example">
+                            <code>?type=wifi&ssid=MyWiFi&password=password123&encryption=WPA</code>
+                            <br>
+                            <a href="?type=wifi&ssid=MyWiFi&password=password123&encryption=WPA">Try this example</a>
+                        </div>
+                    </div>
+                    
+                    <div class="parameter">
+                        <h3>Custom QR Code</h3>
+                        <p>Generates a QR code with custom content.</p>
+                        <table>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Description</th>
+                            </tr>
+                            <tr>
+                                <td><code>content</code> <span class="badge">Required</span></td>
+                                <td>Custom content for the QR code</td>
+                            </tr>
+                        </table>
+                        <div class="example">
+                            <code>?type=custom&content=CUSTOM%3A%2F%2Fdata%3Fcustom%3Dparameter</code>
+                            <br>
+                            <a href="?type=custom&content=CUSTOM%3A%2F%2Fdata%3Fcustom%3Dparameter">Try this example</a>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="section">
+                    <h2>Limitations</h2>
+                    <ul>
+                        <li>Maximum content length is 2953 characters</li>
+                        <li>Some mobile devices may not support all QR code types</li>
+                        <li>The API uses client-side generation, so the QR code is created in the browser</li>
+                    </ul>
+                </section>
+            `;
+        }
+        
+        // Initialize the application
+        window.onload = function() {
+            generateQRCode();
+        };
+    </script>
+    
+</body>
+</html>

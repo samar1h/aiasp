@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" type="image/x-icon" href="./favicon.ico">
+    <title>Age Calculator</title>
+    <style>
+        :root {
+            --bg-primary: #121212;
+            --bg-secondary: #1e1e1e;
+            --text-primary: #ffffff;
+            --text-secondary: #b3b3b3;
+            --accent: #3a86ff;
+            --error: #e63946;
+            --success: #38b000;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background-color: var(--bg-secondary);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .input-container {
+            display: flex;
+            margin-bottom: 30px;
+            gap: 10px;
+        }
+        
+        .input-field {
+            flex: 1;
+            position: relative;
+        }
+        
+        input {
+            width: 100%;
+            padding: 15px;
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(58, 134, 255, 0.2);
+        }
+        
+        label {
+            position: absolute;
+            top: -10px;
+            left: 10px;
+            background-color: var(--bg-secondary);
+            padding: 0 5px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        
+        button {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            background-color: var(--accent);
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        
+        button:hover {
+            background-color: #2a75f3;
+        }
+        
+        .result {
+            margin-top: 30px;
+            text-align: center;
+        }
+        
+        .age-details {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .age-box {
+            background-color: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+        
+        .age-number {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 5px;
+        }
+        
+        .age-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        
+        .error-message {
+            color: var(--error);
+            text-align: center;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+        
+        .share-section {
+            margin-top: 30px;
+            text-align: center;
+        }
+        
+        .copy-link {
+            background-color: transparent;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            margin-top: 10px;
+        }
+        
+        .copy-link:hover {
+            background-color: rgba(58, 134, 255, 0.1);
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                padding: 20px;
+            }
+            
+            .input-container {
+                flex-direction: column;
+            }
+            
+            .age-details {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Age Calculator</h1>
+        
+        <div class="input-container">
+            <div class="input-field">
+                <label for="dob">Date of Birth</label>
+                <input type="date" id="dob" name="dob">
+            </div>
+        </div>
+        
+        <button id="calculate-btn">Calculate Age</button>
+        
+        <div id="result" class="result" style="display: none;">
+            <h2>Your age is <span id="years-old">0</span> years</h2>
+            
+            <div class="age-details">
+                <div class="age-box">
+                    <div id="years" class="age-number">0</div>
+                    <div class="age-label">Years</div>
+                </div>
+                <div class="age-box">
+                    <div id="months" class="age-number">0</div>
+                    <div class="age-label">Months</div>
+                </div>
+                <div class="age-box">
+                    <div id="days" class="age-number">0</div>
+                    <div class="age-label">Days</div>
+                </div>
+            </div>
+            
+            <div class="share-section">
+                <p>Share your result:</p>
+                <input type="text" id="share-link" readonly>
+                <button id="copy-btn" class="copy-link">Copy Link</button>
+            </div>
+        </div>
+        
+        <div id="error-message" class="error-message" style="display: none;"></div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const dobInput = document.getElementById('dob');
+            const calculateBtn = document.getElementById('calculate-btn');
+            const resultDiv = document.getElementById('result');
+            const errorMessage = document.getElementById('error-message');
+            const yearsSpan = document.getElementById('years');
+            const monthsSpan = document.getElementById('months');
+            const daysSpan = document.getElementById('days');
+            const yearsOldSpan = document.getElementById('years-old');
+            const shareLinkInput = document.getElementById('share-link');
+            const copyBtn = document.getElementById('copy-btn');
+            
+            // Check URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            if (urlParams.has('dob')) {
+                const dobParam = urlParams.get('dob');
+                // Handle different date formats (DD/MM/YYYY or MM/DD/YYYY)
+                let dateObj;
+                
+                // Try DD/MM/YYYY
+                if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(dobParam)) {
+                    const [day, month, year] = dobParam.split('/');
+                    dateObj = new Date(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`);
+                } 
+                // Try MM/DD/YYYY
+                else if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(dobParam)) {
+                    const [month, day, year] = dobParam.split('/');
+                    dateObj = new Date(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`);
+                }
+                // Try YYYY-MM-DD format
+                else if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(dobParam)) {
+                    dateObj = new Date(dobParam);
+                }
+                
+                if (dateObj && !isNaN(dateObj.getTime())) {
+                    const formattedDate = dateObj.toISOString().split('T')[0];
+                    dobInput.value = formattedDate;
+                    calculateAge(formattedDate);
+                } else {
+                    showError("Invalid date format in URL. Please use DD/MM/YYYY format.");
+                }
+            }
+            
+            calculateBtn.addEventListener('click', function() {
+                const dob = dobInput.value;
+                
+                if (!dob) {
+                    showError("Please enter your date of birth");
+                    return;
+                }
+                
+                calculateAge(dob);
+            });
+            
+            copyBtn.addEventListener('click', function() {
+                shareLinkInput.select();
+                document.execCommand('copy');
+                copyBtn.textContent = "Copied!";
+                setTimeout(() => {
+                    copyBtn.textContent = "Copy Link";
+                }, 2000);
+            });
+            
+            function calculateAge(dob) {
+                const birthDate = new Date(dob);
+                
+                if (isNaN(birthDate.getTime())) {
+                    showError("Please enter a valid date");
+                    return;
+                }
+                
+                const today = new Date();
+                
+                if (birthDate > today) {
+                    showError("Date of birth cannot be in the future");
+                    return;
+                }
+                
+                let years = today.getFullYear() - birthDate.getFullYear();
+                let months = today.getMonth() - birthDate.getMonth();
+                let days = today.getDate() - birthDate.getDate();
+                
+                if (days < 0) {
+                    months--;
+                    // Get days in the previous month
+                    const lastMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+                    days += lastMonth.getDate();
+                }
+                
+                if (months < 0) {
+                    years--;
+                    months += 12;
+                }
+                
+                // Display results
+                yearsSpan.textContent = years;
+                monthsSpan.textContent = months;
+                daysSpan.textContent = days;
+                yearsOldSpan.textContent = years;
+                
+                // Create shareable link
+                const dateFormatted = formatDate(birthDate);
+                const shareUrl = `${window.location.origin}${window.location.pathname}?dob=${dateFormatted}`;
+                shareLinkInput.value = shareUrl;
+                
+                // Show results, hide error
+                resultDiv.style.display = 'block';
+                errorMessage.style.display = 'none';
+            }
+            
+            function formatDate(date) {
+                const day = date.getDate().toString().padStart(2, '0');
+                const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                const year = date.getFullYear();
+                return `${day}/${month}/${year}`;
+            }
+            
+            function showError(message) {
+                errorMessage.textContent = message;
+                errorMessage.style.display = 'block';
+                resultDiv.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
