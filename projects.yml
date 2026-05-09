@@ -1,1 +1,4 @@
-
+- title: Bulk URL Opener
+  description: Parses text, extracts urls then can open in bulk
+  icon: fa-regular fa-link
+  url: ./bulk-url-opener/index.html
