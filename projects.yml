@@ -10,8 +10,8 @@
 
   
 - title: Counter
-  description: A simple yet useful application built with HTML, CSS, and JavaScript. Perfect for keeping count of anything—workouts, habits, inventory, and more!
-  icon: /aiasp/counter/favicon.ico
+  description: Perfect for keeping count of anything—workouts, habits, inventory, and more!
+  icon: https://raw.githubusercontent.com/samar1h/aiasp/refs/heads/main/projects/counter/favicon.ico
   url: https://samar1h.github.io/aiasp/projects/counter/
 
   
