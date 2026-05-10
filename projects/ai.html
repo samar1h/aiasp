@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Local Browser LLM Chat</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #1e1e2f;
+      color: #e0e0e0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    #app {
+      width: 100%;
+      max-width: 800px;
+      height: 90vh;
+      display: flex;
+      flex-direction: column;
+      background: #2a2a3e;
+      border-radius: 16px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.5);
+      overflow: hidden;
+    }
+    #header {
+      background: #3b3b52;
+      padding: 14px 20px;
+      font-weight: bold;
+      font-size: 1.1em;
+      text-align: center;
+      border-bottom: 1px solid #444;
+    }
+    #messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .message {
+      max-width: 80%;
+      padding: 10px 16px;
+      border-radius: 18px;
+      line-height: 1.4;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .user {
+      align-self: flex-end;
+      background: #5a67d8;
+      color: white;
+      border-bottom-right-radius: 4px;
+    }
+    .assistant {
+      align-self: flex-start;
+      background: #3b3b52;
+      border-bottom-left-radius: 4px;
+    }
+    .system {
+      align-self: center;
+      background: #444466;
+      color: #ccc;
+      font-style: italic;
+      font-size: 0.9em;
+      padding: 6px 14px;
+    }
+    #input-area {
+      padding: 16px 20px;
+      background: #2a2a3e;
+      border-top: 1px solid #444;
+      display: flex;
+      gap: 10px;
+    }
+    #user-input {
+      flex: 1;
+      padding: 10px 16px;
+      border-radius: 24px;
+      border: 1px solid #555;
+      background: #1e1e2f;
+      color: white;
+      outline: none;
+      font-size: 1em;
+    }
+    #send-btn, #clear-btn {
+      background: #5a67d8;
+      border: none;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 24px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.2s;
+    }
+    #send-btn:disabled {
+      background: #444;
+      cursor: not-allowed;
+    }
+    #clear-btn {
+      background: #444466;
+    }
+    #loading-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(30,30,47,0.9);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+    .spinner {
+      border: 4px solid #5a67d8;
+      border-top: 4px solid transparent;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #status-text { color: #aaa; }
+    .typing-indicator {
+      align-self: flex-start;
+      background: #3b3b52;
+      border-radius: 18px;
+      padding: 10px 16px;
+      display: flex;
+      gap: 4px;
+    }
+    .typing-indicator span {
+      width: 8px;
+      height: 8px;
+      background: #888;
+      border-radius: 50%;
+      animation: blink 1.4s infinite both;
+    }
+    .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes blink { 0%, 100% { opacity: 0.2; } 50% { opacity: 1; } }
+    .note {
+      padding: 8px 20px;
+      font-size: 0.8em;
+      color: #777;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="header">🦙 Local Browser LLM (SmolLM2-360M-Instruct)</div>
+    <div id="messages"></div>
+    <div id="input-area" style="display:none;">
+      <input type="text" id="user-input" placeholder="Type your message..." autofocus>
+      <button id="send-btn">Send</button>
+      <button id="clear-btn">Clear</button>
+    </div>
+    <div class="note">
+      ⚡ For best performance, enable WebGPU in <code>chrome://flags</code> (search for "WebGPU").
+    </div>
+    <div id="loading-overlay">
+      <div class="spinner"></div>
+      <div id="status-text">Loading model (first time ~760 MB)...</div>
+    </div>
+  </div>
+
+  <script type="module">
+    // Import Transformers.js from CDN
+    import { pipeline } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2';
+
+    // ---------- Configuration ----------
+    // You can change this to any instruction-tuned model supported by Transformers.js
+    // e.g., 'Xenova/gemma-2-2b-it' (needs ~2.1 GB download)
+    const MODEL_NAME = 'Xenova/smolLM2-360M-instruct';
+
+    // ---------- DOM Elements ----------
+    const messagesEl = document.getElementById('messages');
+    const userInput = document.getElementById('user-input');
+    const sendBtn = document.getElementById('send-btn');
+    const clearBtn = document.getElementById('clear-btn');
+    const loadingOverlay = document.getElementById('loading-overlay');
+    const statusText = document.getElementById('status-text');
+    const inputArea = document.getElementById('input-area');
+
+    // ---------- Chat State ----------
+    const chatHistory = [
+      { role: 'system', content: 'You are a helpful assistant.' }
+    ];
+
+    let generator = null;
+    let isGenerating = false;
+
+    // ---------- Helper: Scroll to bottom ----------
+    function scrollToBottom() {
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    // ---------- Add message to UI ----------
+    function addMessage(role, content) {
+      const div = document.createElement('div');
+      div.className = `message ${role}`;
+      div.textContent = content;
+      messagesEl.appendChild(div);
+      scrollToBottom();
+    }
+
+    // ---------- Show/hide typing indicator ----------
+    let typingDiv = null;
+    function showTyping() {
+      if (typingDiv) return;
+      typingDiv = document.createElement('div');
+      typingDiv.className = 'typing-indicator';
+      typingDiv.innerHTML = '<span></span><span></span><span></span>';
+      messagesEl.appendChild(typingDiv);
+      scrollToBottom();
+    }
+    function hideTyping() {
+      if (typingDiv) {
+        typingDiv.remove();
+        typingDiv = null;
+      }
+    }
+
+    // ---------- Send message ----------
+    async function sendMessage() {
+      const userText = userInput.value.trim();
+      if (!userText || isGenerating || !generator) return;
+
+      // Add user message
+      addMessage('user', userText);
+      chatHistory.push({ role: 'user', content: userText });
+      userInput.value = '';
+      userInput.disabled = true;
+      sendBtn.disabled = true;
+      isGenerating = true;
+      showTyping();
+
+      let assistantReply = '';
+
+      try {
+        // Generate response using the chat-format pipeline
+        // Note: Transformers.js v2.17.2 returns an array of objects with a `generated_text` key
+        // that contains the assistant's response as a string when using chat input.
+        const result = await generator(chatHistory, {
+          max_new_tokens: 300,
+          temperature: 0.7,
+          top_p: 0.9,
+          repetition_penalty: 1.1,
+          do_sample: true,
+        });
+
+        // Extract response - the shape may vary; we take the first array element's generated_text
+        assistantReply = (Array.isArray(result) && result[0]?.generated_text) 
+                         ? result[0].generated_text 
+                         : 'Sorry, something went wrong.';
+
+        // Add assistant message
+        addMessage('assistant', assistantReply);
+        chatHistory.push({ role: 'assistant', content: assistantReply });
+
+      } catch (error) {
+        console.error(error);
+        addMessage('system', `⚠️ Error: ${error.message}`);
+      } finally {
+        hideTyping();
+        isGenerating = false;
+        userInput.disabled = false;
+        sendBtn.disabled = false;
+        userInput.focus();
+      }
+    }
+
+    // ---------- Clear conversation ----------
+    function clearChat() {
+      chatHistory.length = 1; // keep system message
+      messagesEl.innerHTML = '';
+      addMessage('system', 'Conversation cleared.');
+    }
+
+    // ---------- Initialise model ----------
+    async function initModel() {
+      try {
+        statusText.textContent = 'Downloading / caching model… (~760 MB, one-time)';
+        generator = await pipeline('text-generation', MODEL_NAME, {
+          // You can track progress if needed
+          progress_callback: (data) => {
+            if (data.status === 'progress' && data.progress) {
+              const pct = Math.round(data.progress);
+              statusText.textContent = `Loading model... ${pct}%`;
+            }
+          }
+        });
+
+        // Model ready
+        loadingOverlay.style.display = 'none';
+        inputArea.style.display = 'flex';
+        userInput.disabled = false;
+        sendBtn.disabled = false;
+        userInput.focus();
+        addMessage('system', 'Model loaded. You can start chatting!');
+      } catch (err) {
+        statusText.textContent = `Failed to load model: ${err.message}`;
+        console.error(err);
+      }
+    }
+
+    // ---------- Event listeners ----------
+    sendBtn.addEventListener('click', sendMessage);
+    userInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+    clearBtn.addEventListener('click', clearChat);
+
+    // ---------- Start ----------
+    initModel();
+  </script>
+</body>
+</html>
