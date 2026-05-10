@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#0c0c0e">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>ClipKit</title>
+<style>
+  :root {
+    --bg: #0c0c0e;
+    --surface: #16161a;
+    --surface2: #1e1e24;
+    --border: #2a2a32;
+    --text: #e8e8f0;
+    --muted: #6b6b80;
+    --accent: #00d4aa;
+    --accent-dim: rgba(0,212,170,0.12);
+    --danger: #ff5757;
+    --warn: #f5a623;
+    --info: #4a9eff;
+    --mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+    --sans: 'DM Sans', system-ui, sans-serif;
+    --radius: 12px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overscroll-behavior: none;
+  }
+
+  header {
+    padding: 18px 20px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 10;
+  }
+
+  .logo {
+    font-family: var(--mono);
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: var(--accent);
+  }
+
+  .logo span { color: var(--muted); font-weight: 400; }
+
+  .badge {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 99px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  main { flex: 1; padding: 16px 16px 0; display: flex; flex-direction: column; gap: 12px; }
+
+  /* Status bar */
+  #status-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    font-size: 13px;
+    color: var(--muted);
+    min-height: 44px;
+  }
+
+  #status-bar .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--muted);
+    flex-shrink: 0;
+    transition: background 0.2s;
+  }
+
+  #status-bar.ready .dot { background: var(--accent); }
+  #status-bar.ready { color: var(--text); }
+  #status-bar.error .dot { background: var(--danger); }
+  #status-bar.error { color: var(--danger); }
+
+  /* Type chip */
+  #type-chip {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    display: none;
+    letter-spacing: 0.3px;
+    font-weight: 600;
+  }
+
+  #type-chip.html { background: rgba(74,158,255,0.15); color: var(--info); border: 1px solid rgba(74,158,255,0.3); }
+  #type-chip.json { background: rgba(245,166,35,0.15); color: var(--warn); border: 1px solid rgba(245,166,35,0.3); }
+  #type-chip.url  { background: rgba(0,212,170,0.12); color: var(--accent); border: 1px solid rgba(0,212,170,0.3); }
+  #type-chip.text { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+  #type-chip.csv  { background: rgba(74,158,255,0.1); color: #82cfff; border: 1px solid rgba(74,158,255,0.25); }
+
+  /* Preview area */
+  #preview-wrap {
+    flex: 1;
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 160px;
+  }
+
+  #preview-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  #preview-header span {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--muted);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  #stats { font-size: 11px; font-family: var(--mono); color: var(--muted); }
+
+  #preview {
+    flex: 1;
+    padding: 14px;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 1.7;
+    color: var(--text);
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+    opacity: 0.5;
+    -webkit-overflow-scrolling: touch;
+    max-height: 38vh;
+  }
+
+  #preview.has-content { opacity: 1; }
+
+  /* Action grid */
+  .action-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .btn {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: var(--sans);
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.1s, border-color 0.1s, transform 0.1s;
+    -webkit-user-select: none;
+    user-select: none;
+    min-height: 72px;
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn:active { transform: scale(0.97); background: var(--surface2); }
+  .btn:disabled { opacity: 0.35; pointer-events: none; }
+
+  .btn.primary {
+    background: var(--accent-dim);
+    border-color: rgba(0,212,170,0.35);
+    color: var(--accent);
+  }
+
+  .btn.primary .btn-icon { color: var(--accent); }
+  .btn.primary:active { background: rgba(0,212,170,0.2); }
+
+  .btn.full { grid-column: 1 / -1; flex-direction: row; align-items: center; gap: 14px; min-height: 60px; }
+
+  .btn-icon {
+    font-size: 22px;
+    line-height: 1;
+  }
+
+  .btn-label {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: -0.1px;
+  }
+
+  .btn-sub {
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 400;
+  }
+
+  /* Format selector */
+  #format-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .fmt-btn {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    -webkit-user-select: none;
+    user-select: none;
+    letter-spacing: 0.2px;
+  }
+
+  .fmt-btn.active {
+    background: var(--accent-dim);
+    border-color: rgba(0,212,170,0.4);
+    color: var(--accent);
+  }
+
+  .fmt-btn:active { opacity: 0.7; }
+
+  /* Big paste button */
+  #paste-btn {
+    grid-column: 1 / -1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 80px;
+    border: 1.5px dashed rgba(0,212,170,0.3);
+    background: var(--accent-dim);
+  }
+
+  #paste-btn .btn-icon { font-size: 28px; }
+  #paste-btn .btn-label { font-size: 15px; color: var(--accent); }
+  #paste-btn .btn-sub { text-align: center; }
+
+  /* Toast */
+  #toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 99px;
+    padding: 10px 20px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    white-space: nowrap;
+    transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), opacity 0.25s;
+    opacity: 0;
+    z-index: 100;
+    pointer-events: none;
+  }
+
+  #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+  #toast.success { border-color: rgba(0,212,170,0.4); color: var(--accent); }
+  #toast.error { border-color: rgba(255,87,87,0.4); color: var(--danger); }
+
+  /* Bottom safe area */
+  .bottom-pad { height: calc(env(safe-area-inset-bottom) + 20px); flex-shrink: 0; }
+
+  /* Ripple */
+  @keyframes ripple { to { transform: scale(4); opacity: 0; } }
+  .ripple-effect {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.08);
+    width: 60px; height: 60px;
+    margin-top: -30px; margin-left: -30px;
+    animation: ripple 0.5s linear;
+    pointer-events: none;
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f0f0f4;
+      --surface: #ffffff;
+      --surface2: #f5f5f8;
+      --border: #e0e0e8;
+      --text: #111118;
+      --muted: #8888a0;
+    }
+  }
+
+  /* Section label */
+  .section-label {
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 0 2px;
+  }
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<header>
+  <div class="logo">Clip<span>Kit</span></div>
+  <div class="badge">Utility</div>
+</header>
+
+<main>
+  <!-- Status -->
+  <div id="status-bar">
+    <div class="dot"></div>
+    <span id="status-text">No clipboard data loaded</span>
+    <span id="type-chip"></span>
+  </div>
+
+  <!-- Preview -->
+  <div id="preview-wrap">
+    <div id="preview-header">
+      <span>Preview</span>
+      <span id="stats">—</span>
+    </div>
+    <div id="preview">Paste clipboard content to preview it here…</div>
+  </div>
+
+  <!-- Primary action -->
+  <div class="action-grid">
+    <button class="btn full" id="paste-btn" onclick="readClip(this)">
+      <span class="btn-icon">📋</span>
+      <div>
+        <div class="btn-label">Read Clipboard</div>
+        <div class="btn-sub">Tap to load clipboard content</div>
+      </div>
+    </button>
+  </div>
+
+  <!-- Format row -->
+  <div class="section-label">Save format</div>
+  <div id="format-row">
+    <button class="fmt-btn active" data-ext="txt">TXT</button>
+    <button class="fmt-btn" data-ext="html">HTML</button>
+    <button class="fmt-btn" data-ext="json">JSON</button>
+    <button class="fmt-btn" data-ext="md">MD</button>
+    <button class="fmt-btn" data-ext="csv">CSV</button>
+    <button class="fmt-btn" data-ext="xml">XML</button>
+  </div>
+
+  <!-- Actions -->
+  <div class="section-label">Actions</div>
+  <div class="action-grid">
+    <button class="btn primary" id="save-btn" disabled onclick="saveFile(this)">
+      <span class="btn-icon">💾</span>
+      <div class="btn-label">Save File</div>
+      <div class="btn-sub" id="save-sub">No content</div>
+    </button>
+
+    <button class="btn" id="open-btn" disabled onclick="openHTML(this)">
+      <span class="btn-icon">🌐</span>
+      <div class="btn-label">Open HTML</div>
+      <div class="btn-sub">Render in new tab</div>
+    </button>
+
+    <button class="btn" id="copy-btn" disabled onclick="copyBack(this)">
+      <span class="btn-icon">📄</span>
+      <div class="btn-label">Copy Back</div>
+      <div class="btn-sub">Re-copy to clipboard</div>
+    </button>
+
+    <button class="btn" id="share-btn" disabled onclick="shareContent(this)">
+      <span class="btn-icon">🔗</span>
+      <div class="btn-label">Share</div>
+      <div class="btn-sub">Via system share</div>
+    </button>
+
+    <button class="btn full" id="clear-btn" disabled onclick="clearContent(this)">
+      <span class="btn-icon">🗑️</span>
+      <div>
+        <div class="btn-label">Clear</div>
+        <div class="btn-sub">Reset all loaded content</div>
+      </div>
+    </button>
+  </div>
+</main>
+
+<div class="bottom-pad"></div>
+<div id="toast"></div>
+
+<script>
+  let clipContent = '';
+  let detectedType = 'text';
+  let selectedExt = 'txt';
+
+  // Format buttons
+  document.querySelectorAll('.fmt-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.fmt-btn').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      selectedExt = this.dataset.ext;
+      if (clipContent) updateSaveSub();
+    });
+  });
+
+  function ripple(el, e) {
+    const r = document.createElement('div');
+    r.className = 'ripple-effect';
+    const rect = el.getBoundingClientRect();
+    r.style.left = ((e.clientX || rect.left + rect.width/2) - rect.left) + 'px';
+    r.style.top = ((e.clientY || rect.top + rect.height/2) - rect.top) + 'px';
+    el.appendChild(r);
+    setTimeout(() => r.remove(), 600);
+  }
+
+  document.querySelectorAll('.btn').forEach(btn => {
+    btn.addEventListener('pointerdown', e => ripple(btn, e));
+  });
+
+  function detectType(text) {
+    const t = text.trim();
+    if (/^<(!DOCTYPE|html|head|body|div|span|p|a|script|style|table|ul|li|h[1-6])/i.test(t)) return 'html';
+    if (/^[{[]/.test(t)) { try { JSON.parse(t); return 'json'; } catch {} }
+    if (/^https?:\/\//i.test(t) && !t.includes('\n')) return 'url';
+    if (t.includes(',') && t.split('\n').length > 1 && t.split('\n')[0].split(',').length > 1) return 'csv';
+    return 'text';
+  }
+
+  function setStatus(msg, cls) {
+    const bar = document.getElementById('status-bar');
+    bar.className = cls || '';
+    document.getElementById('status-text').textContent = msg;
+  }
+
+  function showType(type) {
+    const chip = document.getElementById('type-chip');
+    chip.textContent = type.toUpperCase();
+    chip.className = type;
+    chip.style.display = 'inline-block';
+  }
+
+  function updateStats(text) {
+    const chars = text.length;
+    const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+    const lines = text.split('\n').length;
+    document.getElementById('stats').textContent = `${chars.toLocaleString()} chr · ${words.toLocaleString()} w · ${lines} ln`;
+  }
+
+  function updateSaveSub() {
+    const size = new Blob([clipContent]).size;
+    const kb = (size / 1024).toFixed(1);
+    document.getElementById('save-sub').textContent = `${kb} KB · .${selectedExt}`;
+  }
+
+  function autoSelectFormat(type) {
+    const map = { html: 'html', json: 'json', csv: 'csv', url: 'txt', text: 'txt' };
+    const ext = map[type] || 'txt';
+    document.querySelectorAll('.fmt-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.ext === ext);
+    });
+    selectedExt = ext;
+  }
+
+  function enableActions(type) {
+    document.getElementById('save-btn').disabled = false;
+    document.getElementById('copy-btn').disabled = false;
+    document.getElementById('clear-btn').disabled = false;
+    document.getElementById('open-btn').disabled = type !== 'html';
+    document.getElementById('share-btn').disabled = !navigator.share;
+    updateSaveSub();
+  }
+
+  async function readClip(btn) {
+    try {
+      if (!navigator.clipboard) throw new Error('Clipboard API not available. Use HTTPS.');
+      const text = await navigator.clipboard.readText();
+      if (!text) { showToast('Clipboard is empty', 'error'); return; }
+      clipContent = text;
+      detectedType = detectType(text);
+      const preview = document.getElementById('preview');
+      preview.textContent = text.length > 4000 ? text.slice(0, 4000) + '\n\n… (truncated in preview)' : text;
+      preview.classList.add('has-content');
+      updateStats(text);
+      showType(detectedType);
+      autoSelectFormat(detectedType);
+      enableActions(detectedType);
+      setStatus(`Loaded · ${detectedType.toUpperCase()} detected`, 'ready');
+      showToast('Clipboard loaded ✓', 'success');
+    } catch (err) {
+      setStatus(err.message.includes('HTTPS') ? err.message : 'Permission denied — tap again and allow access', 'error');
+      showToast('Could not read clipboard', 'error');
+    }
+  }
+
+  function saveFile(btn) {
+    if (!clipContent) return;
+    const filename = `clip_${timestamp()}.${selectedExt}`;
+    const mime = mimeFor(selectedExt);
+    const blob = new Blob([clipContent], { type: mime });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    showToast(`Saved as ${filename}`, 'success');
+  }
+
+  function openHTML(btn) {
+    if (!clipContent || detectedType !== 'html') return;
+    const w = window.open('', '_blank');
+    if (!w) { showToast('Pop-up blocked — allow pop-ups', 'error'); return; }
+    w.document.open();
+    w.document.write(clipContent);
+    w.document.close();
+    showToast('Opened in new tab', 'success');
+  }
+
+  async function copyBack(btn) {
+    if (!clipContent) return;
+    try {
+      await navigator.clipboard.writeText(clipContent);
+      showToast('Copied to clipboard ✓', 'success');
+    } catch {
+      showToast('Copy failed', 'error');
+    }
+  }
+
+  async function shareContent(btn) {
+    if (!clipContent || !navigator.share) return;
+    try {
+      await navigator.share({ text: clipContent });
+    } catch (e) {
+      if (e.name !== 'AbortError') showToast('Share failed', 'error');
+    }
+  }
+
+  function clearContent(btn) {
+    clipContent = '';
+    detectedType = 'text';
+    document.getElementById('preview').textContent = 'Paste clipboard content to preview it here…';
+    document.getElementById('preview').classList.remove('has-content');
+    document.getElementById('stats').textContent = '—';
+    document.getElementById('type-chip').style.display = 'none';
+    setStatus('No clipboard data loaded');
+    ['save-btn','open-btn','copy-btn','share-btn','clear-btn'].forEach(id => {
+      document.getElementById(id).disabled = true;
+    });
+    document.getElementById('save-sub').textContent = 'No content';
+    showToast('Cleared');
+  }
+
+  function timestamp() {
+    const d = new Date();
+    return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+  }
+
+  function pad(n) { return String(n).padStart(2,'0'); }
+
+  function mimeFor(ext) {
+    const m = { html: 'text/html', json: 'application/json', csv: 'text/csv', md: 'text/markdown', xml: 'application/xml', txt: 'text/plain' };
+    return m[ext] || 'text/plain';
+  }
+
+  let toastTimer;
+  function showToast(msg, type) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'show ' + (type || '');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { t.className = ''; }, 2400);
+  }
+</script>
+</body>
+</html>
