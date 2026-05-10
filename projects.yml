@@ -123,3 +123,9 @@
   icon: fa-solid fa-file-pdf
   tags: [document]
   url: https://samar1h.github.io/aiasp/projects/image-to-pdf/
+
+- title: Clipkit
+  description: A clipboard toolkit to save, preview, and export clipboard content as files.
+  icon: fa-solid fa-clipboard
+  tags: [document]
+  url: https://samar1h.github.io/aiasp/projects/clipkit/
