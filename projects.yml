@@ -129,3 +129,9 @@
   icon: fa-solid fa-clipboard
   tags: [document]
   url: https://samar1h.github.io/aiasp/projects/clipkit/
+
+- title: Regmap
+  description: Global Regulatory Agencies Explorer.
+  icon: fa-solid fa-gavel
+  tags: []
+  url: https://samar1h.github.io/aiasp/projects/regmap/
