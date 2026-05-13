@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0B0B0B">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>OUTSMARTED</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0B0B0B;--s1:#161616;--s2:#1E1E1E;--s3:#252525;
+  --bd:#2A2A2A;--bd2:#3A3A3A;
+  --acc:#FF3C00;--acc2:#FF6830;--acc-dim:rgba(255,60,0,.12);
+  --txt:#EBEBEB;--txt2:#999;--txt3:#555;
+  --win:#3DDB70;--cpu:#FFE500;
+  --r:10px;
+}
+html,body{background:var(--bg);color:var(--txt);font-family:'DM Mono',monospace;min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+
+/* ── HEADER ── */
+.hdr{position:sticky;top:0;z-index:50;background:var(--bg);border-bottom:1px solid var(--bd);padding:14px 16px 12px}
+.hdr-top{display:flex;align-items:baseline;gap:8px;margin-bottom:2px}
+.app-name{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:3px;line-height:1}
+.app-name em{color:var(--acc);font-style:normal}
+.app-tag{font-size:9px;color:var(--txt3);letter-spacing:1.5px;margin-bottom:10px}
+.search{display:flex;align-items:center;gap:8px;background:var(--s1);border:1px solid var(--bd);border-radius:8px;padding:9px 12px}
+.search input{background:none;border:none;outline:none;color:var(--txt);font-family:'DM Mono',monospace;font-size:13px;width:100%}
+.search input::placeholder{color:var(--txt3)}
+.search-ico{flex-shrink:0;opacity:.4}
+
+/* ── GRID ── */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px}
+.card{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);padding:14px 14px 12px;cursor:pointer;transition:border-color .15s,transform .1s;user-select:none}
+.card:active{transform:scale(.96);border-color:var(--acc)}
+.card-ico{font-size:26px;margin-bottom:10px;display:block}
+.card-name{font-family:'Bebas Neue',sans-serif;font-size:19px;letter-spacing:1px;margin-bottom:3px}
+.card-desc{font-size:10px;color:var(--txt2);line-height:1.45;margin-bottom:8px}
+.badge{display:inline-block;font-size:9px;padding:2px 7px;border-radius:3px;background:var(--acc-dim);color:var(--acc);letter-spacing:1px}
+.no-res{grid-column:1/-1;text-align:center;padding:40px;color:var(--txt3);font-size:12px}
+
+/* ── OVERLAY ── */
+.overlay{position:fixed;inset:0;z-index:100;background:var(--bg);display:flex;flex-direction:column;transform:translateY(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);will-change:transform}
+.overlay.open{transform:translateY(0)}
+.ov-hdr{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--bd);flex-shrink:0}
+.back{background:var(--s1);border:1px solid var(--bd);border-radius:8px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt);font-size:18px;flex-shrink:0}
+.back:active{background:var(--s2)}
+.ov-title{font-family:'Bebas Neue',sans-serif;font-size:21px;letter-spacing:2px}
+.ov-sub{font-size:10px;color:var(--txt3);margin-top:1px}
+.ov-body{flex:1;overflow-y:auto;padding:14px 16px 32px;display:flex;flex-direction:column;align-items:center;gap:10px}
+
+/* ── SHARED GAME UI ── */
+.rules{width:100%;background:var(--s1);border:1px solid var(--bd);border-radius:8px;padding:10px 13px;font-size:10px;color:var(--txt2);line-height:1.65}
+.rules b{color:var(--txt);font-weight:500}
+.scores{display:flex;gap:8px;width:100%}
+.sc-box{flex:1;background:var(--s1);border:1px solid var(--bd);border-radius:8px;padding:10px 8px;text-align:center}
+.sc-lbl{font-size:9px;color:var(--txt3);letter-spacing:1px;margin-bottom:3px}
+.sc-val{font-family:'Bebas Neue',sans-serif;font-size:30px;line-height:1}
+.sc-val.acc{color:var(--acc)}
+.sc-val.cpu-c{color:var(--cpu)}
+.status{width:100%;background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:10px 14px;font-size:11px;text-align:center;color:var(--txt2);min-height:40px;display:flex;align-items:center;justify-content:center}
+.status b{color:var(--txt)}
+.res{font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:3px;text-align:center}
+.res.lose{color:var(--acc)}
+.res.win{color:var(--win)}
+.res.draw{color:var(--txt2)}
+
+.btn{background:var(--acc);color:#fff;border:none;border-radius:8px;padding:13px 24px;font-family:'DM Mono',monospace;font-size:13px;cursor:pointer;letter-spacing:.5px;width:100%}
+.btn:active{opacity:.85}
+.btn-ghost{background:var(--s1);color:var(--txt2);border:1px solid var(--bd);border-radius:8px;padding:11px 24px;font-family:'DM Mono',monospace;font-size:12px;cursor:pointer;width:100%}
+.btn-ghost:active{background:var(--s2)}
+
+/* ── NIM ── */
+.nim-stones{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;padding:4px 0;max-width:260px}
+.stone{width:26px;height:26px;border-radius:50%;background:#555;transition:opacity .3s,transform .3s}
+.stone.gone{opacity:0;transform:scale(0)}
+.nim-btns{display:flex;gap:8px;width:100%}
+.nim-btn{flex:1;background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:14px 0;color:var(--txt);font-family:'Bebas Neue',sans-serif;font-size:22px;cursor:pointer;text-align:center;transition:border-color .15s,background .15s}
+.nim-btn:active{background:var(--acc-dim);border-color:var(--acc)}
+.nim-btn:disabled{opacity:.25;pointer-events:none}
+
+/* ── TTT ── */
+.ttt{display:grid;grid-template-columns:repeat(3,84px);grid-template-rows:repeat(3,84px);gap:6px}
+.ttt-cell{background:var(--s2);border:1px solid var(--bd);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:38px;cursor:pointer;transition:background .12s}
+.ttt-cell.X{color:var(--acc)}
+.ttt-cell.O{color:#4FC3F7}
+.ttt-cell.hi{background:rgba(61,219,112,.1);border-color:var(--win)}
+.ttt-cell:active{background:var(--s3)}
+
+/* ── RPS ── */
+.rps-row{display:flex;gap:8px;width:100%}
+.rps-btn{flex:1;background:var(--s2);border:1px solid var(--bd);border-radius:10px;padding:18px 8px;display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;transition:border-color .15s,background .15s}
+.rps-btn span:first-child{font-size:30px}
+.rps-btn span:last-child{font-size:10px;color:var(--txt3);letter-spacing:.5px}
+.rps-btn:active{border-color:var(--acc);background:var(--acc-dim)}
+.rps-arena{display:flex;align-items:center;justify-content:center;gap:16px;font-size:48px;min-height:70px;width:100%}
+.rps-vs{font-size:12px;color:var(--txt3);font-family:'DM Mono',monospace}
+.rps-hist{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;max-width:260px}
+.rps-dot{width:20px;height:20px;border-radius:50%;background:var(--s2);border:1px solid var(--bd);display:flex;align-items:center;justify-content:center;font-size:10px}
+.rps-dot.w{border-color:var(--win)}
+.rps-dot.l{border-color:var(--acc)}
+
+/* ── COUNT 21 ── */
+.c21-num{font-family:'Bebas Neue',sans-serif;font-size:90px;color:var(--acc);line-height:1;text-align:center}
+.c21-btns{display:flex;gap:8px;width:100%}
+.c21-btn{flex:1;background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:16px 0;color:var(--txt);font-family:'Bebas Neue',sans-serif;font-size:26px;cursor:pointer;text-align:center}
+.c21-btn:active{background:var(--acc-dim);border-color:var(--acc)}
+.c21-btn:disabled{opacity:.2;pointer-events:none}
+.c21-log{display:flex;flex-direction:column;gap:4px;width:100%;max-height:120px;overflow-y:auto}
+.c21-entry{font-size:11px;padding:5px 10px;border-radius:5px;background:var(--s2)}
+.c21-entry.you{color:var(--txt)}
+.c21-entry.cpu{color:var(--cpu)}
+
+/* ── CONNECT FOUR ── */
+.c4-wrap{display:flex;flex-direction:column;align-items:center;gap:4px;width:100%}
+.c4-col-row{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;width:100%;max-width:320px}
+.c4-col-btn{background:var(--s2);border:1px solid var(--bd);border-radius:5px;padding:6px 4px;cursor:pointer;text-align:center;font-size:9px;color:var(--txt3)}
+.c4-col-btn:active{background:var(--acc-dim);border-color:var(--acc)}
+.c4-col-btn:disabled{opacity:.2;pointer-events:none}
+.c4-board{background:var(--s2);padding:6px;border-radius:10px;display:grid;grid-template-columns:repeat(7,1fr);grid-template-rows:repeat(6,1fr);gap:3px;width:100%;max-width:320px}
+.c4-cell{aspect-ratio:1;border-radius:50%;background:var(--bg);transition:background .2s}
+.c4-cell.H{background:var(--acc)}
+.c4-cell.C{background:var(--cpu)}
+.c4-cell.hi{box-shadow:0 0 0 2px var(--win)}
+
+/* ── MEMORY ── */
+.mem-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;width:100%;max-width:300px}
+.mem-card{aspect-ratio:1;background:var(--s2);border:1px solid var(--bd);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer;transition:all .2s;user-select:none}
+.mem-card.face-down::after{content:'?';font-size:18px;color:var(--txt3);font-family:'DM Mono',monospace}
+.mem-card.face-up{background:var(--s3);border-color:var(--bd2)}
+.mem-card.matched-H{background:rgba(61,219,112,.12);border-color:var(--win);cursor:default}
+.mem-card.matched-C{background:rgba(255,229,0,.08);border-color:var(--cpu);cursor:default}
+.mem-card:active{transform:scale(.93)}
+.mem-card.matched-H:active,.mem-card.matched-C:active{transform:none}
+.mem-turn{font-size:11px;color:var(--txt2);text-align:center}
+
+/* ── UTILS ── */
+.locked{pointer-events:none;opacity:.5}
+.w100{width:100%}
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:2px}
+
+/* bottom safe area */
+.ov-body{padding-bottom:max(32px,env(safe-area-inset-bottom))}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-top">
+    <div class="app-name">OUT<em>SMART</em>ED</div>
+  </div>
+  <div class="app-tag">GAMES WHERE THE COMPUTER ALWAYS WINS</div>
+  <div class="search">
+    <svg class="search-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input type="text" id="srch" placeholder="search games, strategies…" oninput="filterCards()">
+  </div>
+</div>
+
+<div class="grid" id="grid"></div>
+
+<!-- Game Overlay -->
+<div class="overlay" id="ov">
+  <div class="ov-hdr">
+    <div class="back" onclick="closeGame()">←</div>
+    <div>
+      <div class="ov-title" id="ov-title"></div>
+      <div class="ov-sub" id="ov-sub"></div>
+    </div>
+  </div>
+  <div class="ov-body" id="ov-body"></div>
+</div>
+
+<script>
+'use strict';
+// ═══════════════════════════════════════════════
+//  GAME CATALOG
+// ═══════════════════════════════════════════════
+const CATALOG = [
+  { id:'nim',    icon:'🪨', name:'Stone Pickup',  desc:'Take 1–3 stones per turn. Whoever grabs the last stone loses.', badge:'MATH·FORCED', sub:'mathematical inevitability — you go first' },
+  { id:'ttt',    icon:'✕○', name:'Tic-Tac-Toe',   desc:'Classic 3×3 grid. Computer uses perfect minimax play.', badge:'MINIMAX', sub:'perfect play — best you can do is draw' },
+  { id:'rps',    icon:'✊',  name:'RPS Oracle',    desc:'Rock Paper Scissors. AI reads and exploits your patterns.', badge:'PREDICTION', sub:'pattern recognition — gets sharper each round' },
+  { id:'c21',    icon:'21', name:'Count to 21',   desc:'Add 1–3 to a running total. Whoever says 21 loses.', badge:'MATH·FORCED', sub:'you go first — already in a losing position' },
+  { id:'c4',     icon:'🔴', name:'Connect Four',  desc:'Drop discs, get 4 in a row. Computer searches 5 moves deep.', badge:'ALPHA-BETA', sub:'game-tree search — thousands of positions checked' },
+  { id:'mem',    icon:'🧠', name:'Memory Match',  desc:'Flip cards to find pairs. Computer never forgets a single card.', badge:'PERFECT RECALL', sub:'total memory — every revealed card stored' },
+];
+
+function filterCards() {
+  const q = document.getElementById('srch').value.toLowerCase();
+  const g = document.getElementById('grid');
+  const items = CATALOG.filter(c =>
+    c.name.toLowerCase().includes(q) ||
+    c.desc.toLowerCase().includes(q) ||
+    c.badge.toLowerCase().includes(q)
+  );
+  if (!items.length) { g.innerHTML = '<div class="no-res">no games found</div>'; return; }
+  g.innerHTML = items.map(c => `
+    <div class="card" onclick="openGame('${c.id}')">
+      <span class="card-ico">${c.icon}</span>
+      <div class="card-name">${c.name}</div>
+      <div class="card-desc">${c.desc}</div>
+      <span class="badge">${c.badge}</span>
+    </div>`).join('');
+}
+filterCards();
+
+function openGame(id) {
+  const c = CATALOG.find(x => x.id === id);
+  document.getElementById('ov-title').textContent = c.name;
+  document.getElementById('ov-sub').textContent = c.sub;
+  document.getElementById('ov').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  const body = document.getElementById('ov-body');
+  body.innerHTML = '';
+  const fns = {nim:initNim,ttt:initTTT,rps:initRPS,c21:initC21,c4:initC4,mem:initMem};
+  fns[id](body);
+}
+function closeGame() {
+  document.getElementById('ov').classList.remove('open');
+  document.body.style.overflow = '';
+  document.getElementById('ov-body').innerHTML = '';
+}
+
+// ─────────────────────────────────────────────────────────
+// NIM — Stone Pickup
+// Strategy: leave opponent at positions ≡1 (mod 4): 1,5,9,13,17
+// Since 21 ≡ 1 (mod 4), human (who goes first) is already in a losing position.
+// ─────────────────────────────────────────────────────────
+function initNim(body) {
+  let stones = 21, over = false;
+
+  function html() {
+    body.innerHTML = `
+      <div class="rules">
+        <b>Rules:</b> Take 1, 2, or 3 stones per turn. Whoever takes the <b>last stone loses</b>. You go first.
+        <br><b>Why you lose:</b> 21 is a mathematically losing starting position for the first player.
+      </div>
+      <div class="scores">
+        <div class="sc-box"><div class="sc-lbl">STONES LEFT</div><div class="sc-val acc" id="n-cnt">21</div></div>
+        <div class="sc-box"><div class="sc-lbl">TURN</div><div class="sc-val" id="n-turn" style="font-size:15px;padding-top:7px">YOU</div></div>
+      </div>
+      <div class="nim-stones" id="n-stones"></div>
+      <div id="n-msg" class="status" style="display:none"></div>
+      <div id="n-res"></div>
+      <div class="nim-btns" id="n-btns">
+        <button class="nim-btn" id="nb1" onclick="nimTake(1)">1</button>
+        <button class="nim-btn" id="nb2" onclick="nimTake(2)">2</button>
+        <button class="nim-btn" id="nb3" onclick="nimTake(3)">3</button>
+      </div>
+      <button class="btn-ghost" onclick="initNim(document.getElementById('ov-body'))">↺  restart</button>`;
+    drawStones();
+  }
+
+  function drawStones() {
+    const el = document.getElementById('n-stones');
+    if (!el) return;
+    el.innerHTML = Array.from({length:21},(_,i)=>
+      `<div class="stone${i<stones?'':' gone'}" id="st${i}"></div>`
+    ).join('');
+    document.getElementById('n-cnt').textContent = stones;
+    updateBtns();
+  }
+
+  function updateBtns() {
+    [1,2,3].forEach(n => {
+      const b = document.getElementById('nb'+n);
+      if (b) b.disabled = n > stones;
+    });
+  }
+
+  function setLocked(v) {
+    const btns = document.getElementById('n-btns');
+    if (btns) btns.classList.toggle('locked', v);
+  }
+
+  function showMsg(txt) {
+    const el = document.getElementById('n-msg');
+    if (el) { el.style.display='flex'; el.innerHTML=txt; }
+  }
+
+  function showResult(txt, won) {
+    const el = document.getElementById('n-res');
+    if (el) el.innerHTML = `<div class="res ${won?'win':'lose'}">${txt}</div>`;
+  }
+
+  function removeStones(from, n) {
+    for (let i = from + n - 1; i >= from; i--) {
+      const el = document.getElementById('st'+i);
+      if (el) el.classList.add('gone');
+    }
+  }
+
+  window.nimTake = function(n) {
+    if (over || n > stones) return;
+    removeStones(stones - n, n);
+    stones -= n;
+    document.getElementById('n-cnt').textContent = stones;
+    if (stones === 0) { over=true; setLocked(true); showResult('YOU LOSE', false); showMsg('<b>You took the last stone!</b>'); return; }
+    document.getElementById('n-turn').textContent = 'CPU';
+    setLocked(true);
+    setTimeout(() => {
+      let take = (stones - 1) % 4 || 1;
+      take = Math.min(take, stones, 3);
+      removeStones(stones - take, take);
+      stones -= take;
+      document.getElementById('n-cnt').textContent = stones;
+      document.getElementById('n-turn').textContent = 'YOU';
+      if (stones === 0) { over=true; showResult('CPU LOSES?!', true); showMsg('<b>Computer took the last stone — you won?!</b> (This shouldn\'t happen with perfect play.)'); return; }
+      setLocked(false);
+      updateBtns();
+      if (stones === 1) showMsg('<b>1 stone left.</b> You must take it. You lose.');
+      else showMsg(`CPU took. <b>${stones} stones</b> remain.`);
+    }, 700);
+  };
+
+  html();
+  document.getElementById('n-msg').style.display = 'flex';
+  showMsg('<b>21 stones.</b> Take 1, 2, or 3. Avoid the last one.');
+}
+
+// ─────────────────────────────────────────────────────────
+// TIC-TAC-TOE — Minimax (computer = O, human = X)
+// ─────────────────────────────────────────────────────────
+function initTTT(body) {
+  let board = Array(9).fill(''), over = false;
+  const WIN_LINES = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+
+  function checkWinner(b) {
+    for (const [a,c,d] of WIN_LINES) if (b[a] && b[a]===b[c] && b[a]===b[d]) return b[a];
+    return b.every(x=>x) ? 'D' : null;
+  }
+
+  function minimax(b, depth, isMax) {
+    const w = checkWinner(b);
+    if (w==='O') return 10-depth;
+    if (w==='X') return depth-10;
+    if (w==='D') return 0;
+    if (isMax) {
+      let best=-Infinity;
+      for (let i=0;i<9;i++) if(!b[i]){b[i]='O';best=Math.max(best,minimax(b,depth+1,false));b[i]='';}
+      return best;
+    } else {
+      let best=Infinity;
+      for (let i=0;i<9;i++) if(!b[i]){b[i]='X';best=Math.min(best,minimax(b,depth+1,true));b[i]='';}
+      return best;
+    }
+  }
+
+  function bestMove(b) {
+    let best=-Infinity,mv=0;
+    for (let i=0;i<9;i++) if(!b[i]){b[i]='O';const s=minimax(b,0,false);b[i]='';if(s>best){best=s;mv=i;}}
+    return mv;
+  }
+
+  function render(highlight=[]) {
+    body.innerHTML = `
+      <div class="rules">
+        <b>Rules:</b> Standard Tic-Tac-Toe. You are <b style="color:var(--acc)">X</b>, CPU is <b style="color:#4FC3F7">O</b>. Computer uses minimax — it <b>never loses</b>.
+      </div>
+      <div id="ttt-msg" class="status"></div>
+      <div class="ttt" id="ttt-grid">${board.map((v,i)=>`
+        <div class="ttt-cell ${v||''} ${highlight.includes(i)?'hi':''}" onclick="tttClick(${i})">${v}</div>`
+      ).join('')}</div>
+      <div id="ttt-res"></div>
+      <button class="btn-ghost" onclick="initTTT(document.getElementById('ov-body'))">↺  restart</button>`;
+    const w = checkWinner(board);
+    const msg = document.getElementById('ttt-msg');
+    if (!w && !over) msg.innerHTML = '<b>Your move.</b> Click a square.';
+    else if (w==='D') msg.innerHTML = 'Draw — best you can do against perfect play.';
+    else if (w==='X') msg.innerHTML = '<b>You won!</b> CPU made an error — that\'s a bug!';
+    else msg.innerHTML = '<b>CPU wins.</b> No surprise.';
+  }
+
+  window.tttClick = function(i) {
+    if (over || board[i]) return;
+    board[i] = 'X';
+    let w = checkWinner(board);
+    if (w) { over=true; finish(w); return; }
+    render(); document.getElementById('ttt-msg').innerHTML = 'CPU thinking…';
+    setTimeout(() => {
+      board[bestMove(board)] = 'O';
+      w = checkWinner(board);
+      if (w) { over=true; finish(w); return; }
+      render();
+    }, 300);
+  };
+
+  function finish(w) {
+    const line = WIN_LINES.find(([a,b,c])=>board[a]&&board[a]===board[b]&&board[a]===board[c]) || [];
+    render(line);
+    const res = document.getElementById('ttt-res');
+    if (w==='D') res.innerHTML = '<div class="res draw">DRAW</div>';
+    else if (w==='X') res.innerHTML = '<div class="res win">YOU WIN</div>';
+    else res.innerHTML = '<div class="res lose">CPU WINS</div>';
+  }
+
+  render();
+}
+
+// ─────────────────────────────────────────────────────────
+// RPS ORACLE — Markov chain pattern predictor
+// Predicts your next move from your last 2 moves, then plays counter.
+// ─────────────────────────────────────────────────────────
+function initRPS(body) {
+  let history = [], trans = {}, cpuW=0, youW=0, ties=0;
+  const EMOJI = {R:'✊',P:'🖐',S:'✌️'};
+  const BEATS = {R:'P',P:'S',S:'R'};
+  const LOSES = {R:'S',P:'R',S:'P'};
+  const NAME = {R:'ROCK',P:'PAPER',S:'SCISSORS'};
+
+  function getCPUMove() {
+    if (history.length < 3) return ['R','P','S'][Math.floor(Math.random()*3)];
+    const key = history.slice(-2).join(',');
+    const probs = trans[key] || {};
+    const total = Object.values(probs).reduce((a,b)=>a+b,0);
+    if (!total) return ['R','P','S'][Math.floor(Math.random()*3)];
+    const predicted = Object.keys(probs).reduce((a,b)=>(probs[a]||0)>(probs[b]||0)?a:b, 'R');
+    return BEATS[predicted];
+  }
+
+  function updateModel(m) {
+    if (history.length >= 2) {
+      const key = history.slice(-2).join(',');
+      if (!trans[key]) trans[key]={R:0,P:0,S:0};
+      trans[key][m]++;
+    }
+    history.push(m);
+  }
+
+  function render(lastYou=null, lastCPU=null, outcome=null) {
+    body.innerHTML = `
+      <div class="rules">
+        <b>Rules:</b> Standard RPS. After a few rounds the AI builds a model of your choices and predicts your next move. <b>Patterns betray you.</b>
+      </div>
+      <div class="scores">
+        <div class="sc-box"><div class="sc-lbl">YOU</div><div class="sc-val acc" id="rps-yw">${youW}</div></div>
+        <div class="sc-box"><div class="sc-lbl">TIES</div><div class="sc-val" style="color:var(--txt3)">${ties}</div></div>
+        <div class="sc-box"><div class="sc-lbl">CPU</div><div class="sc-val cpu-c" id="rps-cw">${cpuW}</div></div>
+      </div>
+      <div class="rps-arena">
+        <span id="rps-you">${lastYou?EMOJI[lastYou]:'❓'}</span>
+        <span class="rps-vs">VS</span>
+        <span id="rps-cpu">${lastCPU?EMOJI[lastCPU]:'❓'}</span>
+      </div>
+      <div id="rps-out" class="status">${
+        outcome===null ? '<b>Pick your move.</b>' :
+        outcome==='tie' ? `<b>Tie!</b> Both played ${NAME[lastYou]}.` :
+        outcome==='you' ? `<b>You win this round!</b> ${NAME[lastYou]} beats ${NAME[lastCPU]}.` :
+        `<b>CPU wins!</b> ${NAME[lastCPU]} beats ${NAME[lastYou]}.`
+      }</div>
+      <div class="rps-row">
+        <button class="rps-btn" onclick="rpsPlay('R')"><span>✊</span><span>ROCK</span></button>
+        <button class="rps-btn" onclick="rpsPlay('P')"><span>🖐</span><span>PAPER</span></button>
+        <button class="rps-btn" onclick="rpsPlay('S')"><span>✌️</span><span>SCISSORS</span></button>
+      </div>
+      ${history.length>0?`<div style="font-size:9px;color:var(--txt3);text-align:center;width:100%">AI has seen <b style="color:var(--txt)">${history.length}</b> of your moves${history.length>=3?' — prediction active':'...'}</div>`:''}
+      <button class="btn-ghost" onclick="initRPS(document.getElementById('ov-body'))">↺  restart</button>`;
+  }
+
+  window.rpsPlay = function(you) {
+    const cpu = getCPUMove();
+    updateModel(you);
+    let outcome;
+    if (you===cpu) { ties++; outcome='tie'; }
+    else if (BEATS[you]===cpu) { youW++; outcome='you'; }
+    else { cpuW++; outcome='cpu'; }
+    render(you, cpu, outcome);
+  };
+
+  render();
+}
+
+// ─────────────────────────────────────────────────────────
+// COUNT TO 21 — Mathematical losing game
+// Losing positions for the player who's about to move: multiples of 4 (0,4,8,12,16,20).
+// Human goes first from 0 — already losing!
+// CPU always brings total to next multiple of 4.
+// ─────────────────────────────────────────────────────────
+function initC21(body) {
+  let count = 0, over = false, log = [];
+
+  function render() {
+    body.innerHTML = `
+      <div class="rules">
+        <b>Rules:</b> Take turns adding 1, 2, or 3 to the running total. Whoever says <b>21</b> loses. You go first.
+        <br><b>Why you lose:</b> 0 is a losing position — multiples of 4 all are.
+      </div>
+      <div class="c21-num" id="c21-n">${count}</div>
+      <div id="c21-msg" class="status"></div>
+      <div class="c21-btns" id="c21-btns">
+        <button class="c21-btn" id="c21b1" onclick="c21Add(1)">+1</button>
+        <button class="c21-btn" id="c21b2" onclick="c21Add(2)">+2</button>
+        <button class="c21-btn" id="c21b3" onclick="c21Add(3)">+3</button>
+      </div>
+      <div id="c21-res"></div>
+      <div class="c21-log" id="c21-log">${log.map(e=>`<div class="c21-entry ${e.who}">${e.txt}</div>`).join('')}</div>
+      <button class="btn-ghost" onclick="initC21(document.getElementById('ov-body'))">↺  restart</button>`;
+    updateBtns21();
+    scrollLog();
+    if (log.length===0) {
+      document.getElementById('c21-msg').innerHTML = '<b>You go first.</b> Add 1, 2, or 3 to the total.';
+    }
+  }
+
+  function updateBtns21() {
+    const remaining = 21 - count;
+    [1,2,3].forEach(n=>{
+      const b = document.getElementById('c21b'+n);
+      if (b) b.disabled = n > remaining || over;
+    });
+  }
+
+  function scrollLog() {
+    const el = document.getElementById('c21-log');
+    if (el) el.scrollTop = el.scrollHeight;
+  }
+
+  function setMsg(txt) {
+    const el = document.getElementById('c21-msg');
+    if (el) el.innerHTML = txt;
+  }
+
+  function showResult(won) {
+    const el = document.getElementById('c21-res');
+    if (el) el.innerHTML = `<div class="res ${won?'win':'lose'}">${won?'YOU WIN':'YOU LOSE'}</div>`;
+  }
+
+  function setLocked(v) {
+    const el = document.getElementById('c21-btns');
+    if (el) el.classList.toggle('locked', v);
+  }
+
+  window.c21Add = function(n) {
+    if (over) return;
+    count += n;
+    log.push({who:'you', txt:`YOU → ${count} (+${n})`});
+    const el = document.getElementById('c21-n');
+    if (el) el.textContent = count;
+    updateBtns21();
+    scrollLog();
+    if (count === 21) {
+      over=true; setLocked(true);
+      log.push({who:'cpu',txt:'You said 21. You lose.'});
+      setMsg('<b>You said 21.</b> You lose!');
+      showResult(false);
+      render();
+      return;
+    }
+    setLocked(true);
+    setMsg('CPU thinking…');
+    setTimeout(()=>{
+      // CPU move: bring to next multiple of 4 (4,8,12,16,20)
+      let add = 4 - (count % 4);
+      if (add === 4) add = 1; // already at multiple of 4 (unexpected)
+      add = Math.min(add, 21 - count, 3);
+      count += add;
+      log.push({who:'cpu',txt:`CPU → ${count} (+${add})`});
+      const el2 = document.getElementById('c21-n');
+      if (el2) el2.textContent = count;
+      if (count === 21) {
+        over=true;
+        log.push({who:'you',txt:'CPU said 21? That\'s a bug!'});
+        setMsg('<b>CPU said 21?!</b> You win — that\'s a glitch.');
+        showResult(true);
+        render();
+        return;
+      }
+      setLocked(false);
+      const rem = 21 - count;
+      if (count === 20) setMsg(`Total is <b>20</b>. You must add 1. You lose.`);
+      else setMsg(`Total is <b>${count}</b>. ${rem} to go. Your move.`);
+      updateBtns21();
+      scrollLog();
+      // refresh log display
+      const logEl = document.getElementById('c21-log');
+      if (logEl) logEl.innerHTML = log.map(e=>`<div class="c21-entry ${e.who}">${e.txt}</div>`).join('');
+      scrollLog();
+    }, 600);
+  };
+
+  render();
+}
+
+// ─────────────────────────────────────────────────────────
+// CONNECT FOUR — Alpha-Beta Minimax (depth 5)
+// Human = 'H' (red), CPU = 'C' (yellow)
+// ─────────────────────────────────────────────────────────
+function initC4(body) {
+  const ROWS=6, COLS=7;
+  let board = Array.from({length:ROWS},()=>Array(COLS).fill(''));
+  let over = false, winner = null, winCells = [];
+
+  function validCols(b) { return Array.from({length:COLS},(_,i)=>i).filter(c=>b[0][c]===''); }
+
+  function drop(b,col,p) {
+    b = b.map(r=>[...r]);
+    for (let r=ROWS-1;r>=0;r--) { if(!b[r][col]){b[r][col]=p;break;} }
+    return b;
+  }
+
+  function checkWin(b,p) {
+    // horizontal
+    for (let r=0;r<ROWS;r++) for(let c=0;c<=COLS-4;c++) if([0,1,2,3].every(i=>b[r][c+i]===p)) return [[r,c],[r,c+1],[r,c+2],[r,c+3]];
+    // vertical
+    for (let r=0;r<=ROWS-4;r++) for(let c=0;c<COLS;c++) if([0,1,2,3].every(i=>b[r+i][c]===p)) return [[r,c],[r+1,c],[r+2,c],[r+3,c]];
+    // diag \
+    for (let r=0;r<=ROWS-4;r++) for(let c=0;c<=COLS-4;c++) if([0,1,2,3].every(i=>b[r+i][c+i]===p)) return [[r,c],[r+1,c+1],[r+2,c+2],[r+3,c+3]];
+    // diag /
+    for (let r=3;r<ROWS;r++) for(let c=0;c<=COLS-4;c++) if([0,1,2,3].every(i=>b[r-i][c+i]===p)) return [[r,c],[r-1,c+1],[r-2,c+2],[r-3,c+3]];
+    return null;
+  }
+
+  function scoreWindow(w,p) {
+    const opp=p==='C'?'H':'C';
+    const pc=w.filter(x=>x===p).length, ec=w.filter(x=>x==='').length, oc=w.filter(x=>x===opp).length;
+    if(pc===4) return 100;
+    if(pc===3&&ec===1) return 5;
+    if(pc===2&&ec===2) return 2;
+    if(oc===3&&ec===1) return -4;
+    return 0;
+  }
+
+  function scoreBoard(b) {
+    let s=0;
+    // center
+    for(let r=0;r<ROWS;r++) if(b[r][3]==='C') s+=3;
+    // all windows
+    for(let r=0;r<ROWS;r++) for(let c=0;c<=COLS-4;c++) s+=scoreWindow([b[r][c],b[r][c+1],b[r][c+2],b[r][c+3]],'C');
+    for(let r=0;r<=ROWS-4;r++) for(let c=0;c<COLS;c++) s+=scoreWindow([b[r][c],b[r+1][c],b[r+2][c],b[r+3][c]],'C');
+    for(let r=0;r<=ROWS-4;r++) for(let c=0;c<=COLS-4;c++) s+=scoreWindow([b[r][c],b[r+1][c+1],b[r+2][c+2],b[r+3][c+3]],'C');
+    for(let r=3;r<ROWS;r++) for(let c=0;c<=COLS-4;c++) s+=scoreWindow([b[r][c],b[r-1][c+1],b[r-2][c+2],b[r-3][c+3]],'C');
+    return s;
+  }
+
+  function minimax(b,depth,alpha,beta,isMax) {
+    const wC=checkWin(b,'C'), wH=checkWin(b,'H'), vc=validCols(b);
+    if(wC) return 100000-depth;
+    if(wH) return -100000+depth;
+    if(!vc.length||depth===0) return scoreBoard(b);
+    // move order: center first
+    const cols=[...vc].sort((a,c2)=>Math.abs(a-3)-Math.abs(c2-3));
+    if(isMax){
+      let v=-Infinity;
+      for(const c of cols){const nb=drop(b,c,'C');v=Math.max(v,minimax(nb,depth-1,alpha,beta,false));alpha=Math.max(alpha,v);if(alpha>=beta)break;}
+      return v;
+    } else {
+      let v=Infinity;
+      for(const c of cols){const nb=drop(b,c,'H');v=Math.min(v,minimax(nb,depth-1,alpha,beta,true));beta=Math.min(beta,v);if(alpha>=beta)break;}
+      return v;
+    }
+  }
+
+  function bestCol(b) {
+    const cols=[...validCols(b)].sort((a,c)=>Math.abs(a-3)-Math.abs(c-3));
+    // Check immediate win
+    for(const c of cols){const nb=drop(b,c,'C');if(checkWin(nb,'C'))return c;}
+    // Check block
+    for(const c of cols){const nb=drop(b,c,'H');if(checkWin(nb,'H'))return c;}
+    let best=-Infinity,mv=cols[0];
+    for(const c of cols){const nb=drop(b,c,'C');const s=minimax(nb,4,-Infinity,Infinity,false);if(s>best){best=s;mv=c;}}
+    return mv;
+  }
+
+  function isInWinCells(r,c) { return winCells.some(([wr,wc])=>wr===r&&wc===c); }
+
+  function render(msg='') {
+    body.innerHTML = `
+      <div class="rules">
+        <b>Rules:</b> Drop discs into columns. First to get <b>4 in a row</b> wins (horizontal, vertical, or diagonal). You are <span style="color:var(--acc)">●</span>, CPU is <span style="color:var(--cpu)">●</span>.
+      </div>
+      <div id="c4-msg" class="status">${msg||'<b>Your turn.</b> Tap a column button to drop.'}</div>
+      <div class="c4-wrap">
+        <div class="c4-col-row" id="c4-cols">
+          ${Array.from({length:COLS},(_,c)=>`<button class="c4-col-btn" id="cc${c}" onclick="c4Drop(${c})">▼</button>`).join('')}
+        </div>
+        <div class="c4-board">
+          ${Array.from({length:ROWS},(_,r)=>Array.from({length:COLS},(_,c)=>
+            `<div class="c4-cell ${board[r][c]} ${isInWinCells(r,c)?'hi':''}"></div>`
+          ).join('')).join('')}
+        </div>
+      </div>
+      <div id="c4-res"></div>
+      <button class="btn-ghost" onclick="initC4(document.getElementById('ov-body'))">↺  restart</button>`;
+    if (over) {
+      document.getElementById('c4-cols').classList.add('locked');
+      const res = document.getElementById('c4-res');
+      if (winner==='H') res.innerHTML='<div class="res win">YOU WIN</div>';
+      else if (winner==='C') res.innerHTML='<div class="res lose">CPU WINS</div>';
+      else res.innerHTML='<div class="res draw">DRAW</div>';
+    }
+  }
+
+  window.c4Drop = function(col) {
+    if (over || !validCols(board).includes(col)) return;
+    board = drop(board,col,'H');
+    let w = checkWin(board,'H');
+    if (w) { over=true; winner='H'; winCells=w; render('<b>You won!</b>'); return; }
+    if (!validCols(board).length) { over=true; render('Draw!'); return; }
+    // lock
+    document.getElementById('c4-cols').classList.add('locked');
+    document.getElementById('c4-msg').innerHTML='CPU thinking…';
+    render('CPU thinking…');
+    setTimeout(()=>{
+      const bc=bestCol(board);
+      board=drop(board,bc,'C');
+      w=checkWin(board,'C');
+      if(w){over=true;winner='C';winCells=w;render('<b>CPU wins!</b>');return;}
+      if(!validCols(board).length){over=true;render('Draw!');return;}
+      render('<b>Your turn.</b>');
+    },500);
+  };
+
+  render();
+}
+
+// ─────────────────────────────────────────────────────────
+// MEMORY MATCH — Computer has perfect memory
+// 16 cards (8 pairs). Human turns first, CPU second.
+// CPU stores every card position it sees and always picks known pairs.
+// ─────────────────────────────────────────────────────────
+function initMem(body) {
+  const EMOJIS=['🦊','🐼','🦁','🐙','🦋','🌊','🔥','⚡'];
+  const pairs=[...EMOJIS,...EMOJIS];
+  // shuffle
+  for(let i=pairs.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pairs[i],pairs[j]]=[pairs[j],pairs[i]];}
+
+  let cards=pairs.map((e,i)=>({emoji:e,i,matched:false,matchedBy:null}));
+  let revealed=[], cpuKnown={}, humanScore=0, cpuScore=0;
+  let isHumanTurn=true, busy=false;
+
+  function render() {
+    body.innerHTML=`
+      <div class="rules">
+        <b>Rules:</b> Take turns flipping 2 cards. Match a pair to score it. CPU remembers <b>every card</b> it has ever seen.
+      </div>
+      <div class="scores">
+        <div class="sc-box"><div class="sc-lbl">YOU</div><div class="sc-val acc">${humanScore}</div></div>
+        <div class="sc-box"><div class="sc-lbl">CPU</div><div class="sc-val cpu-c">${cpuScore}</div></div>
+        <div class="sc-box"><div class="sc-lbl">CPU KNOWS</div><div class="sc-val" style="font-size:14px;padding-top:8px">${Object.keys(cpuKnown).length}/16</div></div>
+      </div>
+      <div id="mem-turn" class="mem-turn">${isHumanTurn?'<b>Your turn</b> — flip 2 cards.':'<b>CPU\'s turn…</b>'}</div>
+      <div class="mem-grid" id="mem-grid">
+        ${cards.map((c,i)=>{
+          const isRevealed=revealed.includes(i);
+          const cls=c.matched?`matched-${c.matchedBy}`:isRevealed?'face-up':'face-down';
+          return `<div class="mem-card ${cls}" id="mc${i}" onclick="memFlip(${i})">${c.matched||isRevealed?c.emoji:''}</div>`;
+        }).join('')}
+      </div>
+      <div id="mem-res"></div>
+      <button class="btn-ghost" onclick="initMem(document.getElementById('ov-body'))">↺  restart</button>`;
+  }
+
+  function checkDone() {
+    if (cards.every(c=>c.matched)) {
+      const el=document.getElementById('mem-res');
+      if(el){
+        const won=humanScore>cpuScore;
+        const drew=humanScore===cpuScore;
+        el.innerHTML=`<div class="res ${won?'win':drew?'draw':'lose'}">${won?'YOU WIN':drew?'DRAW':'CPU WINS'}</div>
+          <div class="status">Final: You ${humanScore} — CPU ${cpuScore}. CPU saw ${Object.keys(cpuKnown).length} cards.</div>`;
+      }
+      return true;
+    }
+    return false;
+  }
+
+  window.memFlip = function(i) {
+    if (!isHumanTurn||busy||cards[i].matched||revealed.includes(i)) return;
+    revealed.push(i);
+    // learn card
+    cpuKnown[i]=cards[i].emoji;
+    render();
+    if (revealed.length===2) {
+      busy=true;
+      const [a,b]=revealed;
+      if(cards[a].emoji===cards[b].emoji){
+        // match!
+        setTimeout(()=>{
+          cards[a].matched=true;cards[a].matchedBy='H';
+          cards[b].matched=true;cards[b].matchedBy='H';
+          humanScore++; revealed=[];
+          if(checkDone()){render();return;}
+          isHumanTurn=false; busy=false;
+          render();
+          setTimeout(cpuTurn,500);
+        },700);
+      } else {
+        setTimeout(()=>{
+          revealed=[]; busy=false;
+          isHumanTurn=false;
+          render();
+          setTimeout(cpuTurn,600);
+        },900);
+      }
+    }
+  };
+
+  function cpuTurn() {
+    busy=true;
+    // Find unmatched cards that CPU knows
+    const known=Object.entries(cpuKnown)
+      .filter(([i])=>!cards[+i].matched)
+      .map(([i,e])=>({i:+i,e}));
+
+    // Group by emoji to find known pairs
+    const byEmoji={};
+    for(const {i,e} of known){
+      if(!byEmoji[e]) byEmoji[e]=[];
+      byEmoji[e].push(i);
+    }
+    const knownPair=Object.values(byEmoji).find(arr=>arr.length>=2);
+
+    if(knownPair){
+      // CPU has a known pair! Play it.
+      const [x,y]=knownPair;
+      cpuKnown[x]=cards[x].emoji; cpuKnown[y]=cards[y].emoji;
+      // animate: reveal x, then y
+      revealed=[x];
+      render();
+      setTimeout(()=>{
+        revealed=[x,y];
+        render();
+        setTimeout(()=>{
+          cards[x].matched=true;cards[x].matchedBy='C';
+          cards[y].matched=true;cards[y].matchedBy='C';
+          cpuScore++; revealed=[];
+          if(checkDone()){render();return;}
+          // CPU gets another turn if matched
+          render();
+          setTimeout(cpuTurn,700);
+        },800);
+      },600);
+    } else {
+      // Flip 2 unknowns. Try to flip one whose partner CPU already knows.
+      const unmatched=cards.map((_,i)=>i).filter(i=>!cards[i].matched&&!(i in cpuKnown));
+      const unmatchedArr=[...unmatched];
+      // Shuffle unknown pick for variety
+      for(let i=unmatchedArr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[unmatchedArr[i],unmatchedArr[j]]=[unmatchedArr[j],unmatchedArr[i]];}
+
+      let first=unmatchedArr[0]??-1, second=-1;
+      // See if second unknown matches a known card
+      if(first>=0){
+        const partner=Object.entries(cpuKnown).find(([ki,ke])=>ke===cards[first].emoji&&+ki!==first&&!cards[+ki].matched);
+        if(partner){second=+partner[0];}
+        else{second=unmatchedArr[1]??-1;}
+      }
+
+      if(first<0){
+        // All known or matched — flip any two remaining
+        const rem=cards.map((_,i)=>i).filter(i=>!cards[i].matched);
+        first=rem[0]; second=rem[1];
+      }
+
+      cpuKnown[first]=cards[first].emoji;
+      revealed=[first];
+      render();
+      setTimeout(()=>{
+        if(second<0||second===first){
+          // Only one left, skip
+          revealed=[]; busy=false;
+          isHumanTurn=true;
+          render();
+          return;
+        }
+        cpuKnown[second]=cards[second].emoji;
+        revealed=[first,second];
+        render();
+        setTimeout(()=>{
+          const matched=cards[first].emoji===cards[second].emoji;
+          if(matched){
+            cards[first].matched=true;cards[first].matchedBy='C';
+            cards[second].matched=true;cards[second].matchedBy='C';
+            cpuScore++; revealed=[];
+            if(checkDone()){render();return;}
+            render();
+            setTimeout(cpuTurn,700);
+          } else {
+            revealed=[]; busy=false;
+            isHumanTurn=true;
+            render();
+          }
+        },900);
+      },600);
+    }
+  }
+
+  render();
+}
+</script>
+</body>
+</html>
