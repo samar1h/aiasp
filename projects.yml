@@ -135,3 +135,9 @@
   icon: fa-solid fa-gavel
   tags: []
   url: https://samar1h.github.io/aiasp/projects/regmap/
+  
+- title: Outsmarted
+  description: Games Where The Computer Always Wins.
+  icon: fa-solid fa-robot
+  tags: []
+  url: https://samar1h.github.io/aiasp/projects/outsmarted/
