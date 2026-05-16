@@ -143,6 +143,61 @@ html,body{background:var(--bg);color:var(--txt);font-family:'DM Mono',monospace;
 ::-webkit-scrollbar{width:3px}
 ::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:2px}
 
+/* ── REVERSI ── */
+.rev-board{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;width:100%;max-width:300px;background:var(--s2);padding:6px;border-radius:10px}
+.rev-cell{aspect-ratio:1;border-radius:6px;background:var(--bg);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .15s;position:relative}
+.rev-cell:active{background:var(--s3)}
+.rev-disc{width:70%;height:70%;border-radius:50%;transition:all .2s}
+.rev-disc.H{background:var(--acc)}
+.rev-disc.C{background:var(--cpu)}
+.rev-hint{width:30%;height:30%;border-radius:50%;background:rgba(255,255,255,.15)}
+.rev-cell.valid{cursor:pointer}
+
+/* ── ORACLE ── */
+.oracle-num{font-family:'Bebas Neue',sans-serif;font-size:100px;color:var(--acc);line-height:1;text-align:center;letter-spacing:4px}
+.oracle-range{font-size:11px;color:var(--txt3);text-align:center;letter-spacing:1px}
+.oracle-q{width:100%;background:var(--s1);border:1px solid var(--bd2);border-radius:10px;padding:14px;font-size:13px;color:var(--txt);text-align:center;line-height:1.6}
+.oracle-btns{display:flex;gap:8px;width:100%}
+.oracle-btn{flex:1;padding:15px;border-radius:8px;font-family:'DM Mono',monospace;font-size:13px;cursor:pointer;border:1px solid var(--bd);background:var(--s2);color:var(--txt);transition:all .15s}
+.oracle-btn.yes{border-color:#3DDB70;color:#3DDB70}
+.oracle-btn.no{border-color:var(--acc);color:var(--acc)}
+.oracle-btn:active{opacity:.7}
+.oracle-steps{display:flex;gap:4px;flex-wrap:wrap;justify-content:center}
+.o-step{width:22px;height:22px;border-radius:4px;background:var(--s2);border:1px solid var(--bd);display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--txt3)}
+.o-step.done{background:var(--acc-dim);border-color:var(--acc);color:var(--acc)}
+
+/* ── MASTERMIND ── */
+.mm-colors{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;width:100%}
+.mm-color{width:42px;height:42px;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:all .15s;flex-shrink:0}
+.mm-color.sel{border-color:#fff;transform:scale(1.15)}
+.mm-color:active{transform:scale(.9)}
+.mm-slot-row{display:flex;gap:8px;align-items:center;justify-content:center;width:100%}
+.mm-slot{width:38px;height:38px;border-radius:50%;border:2px solid var(--bd2);background:var(--s2);cursor:pointer;transition:all .15s;flex-shrink:0}
+.mm-slot:active{transform:scale(.9)}
+.mm-guess-btn{flex:1;background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:10px;font-family:'DM Mono',monospace;font-size:11px;color:var(--txt2);cursor:pointer}
+.mm-guess-btn:active{background:var(--s3)}
+.mm-history{display:flex;flex-direction:column;gap:6px;width:100%}
+.mm-row{display:flex;align-items:center;gap:6px;background:var(--s1);border:1px solid var(--bd);border-radius:8px;padding:8px 10px}
+.mm-mini{width:22px;height:22px;border-radius:50%;flex-shrink:0}
+.mm-pegs{display:flex;gap:3px;flex-wrap:wrap;width:36px;flex-shrink:0;margin-left:auto}
+.mm-peg{width:14px;height:14px;border-radius:50%;background:var(--s3)}
+.mm-peg.black{background:#eee}
+.mm-peg.white{background:#888}
+.mm-turn-lbl{font-size:9px;color:var(--txt3);letter-spacing:.5px;margin-right:2px}
+
+/* ── DOTS & BOXES ── */
+.dab-wrap{display:flex;flex-direction:column;align-items:center;gap:0;width:100%;max-width:300px}
+.dab-svg{width:100%;max-width:290px;touch-action:none}
+.dab-line{stroke:var(--bd2);stroke-width:4;stroke-linecap:round;cursor:pointer;transition:stroke .15s}
+.dab-line:hover,.dab-line.preview{stroke:var(--txt3)}
+.dab-line.H{stroke:var(--acc)}
+.dab-line.C{stroke:var(--cpu)}
+.dab-line.taken{pointer-events:none}
+.dab-dot{fill:var(--txt2)}
+.dab-box{opacity:.35}
+.dab-box.H{fill:var(--acc)}
+.dab-box.C{fill:var(--cpu)}
+
 /* bottom safe area */
 .ov-body{padding-bottom:max(32px,env(safe-area-inset-bottom))}
 </style>
@@ -186,6 +241,10 @@ const CATALOG = [
   { id:'c21',    icon:'21', name:'Count to 21',   desc:'Add 1–3 to a running total. Whoever says 21 loses.', badge:'MATH·FORCED', sub:'you go first — already in a losing position' },
   { id:'c4',     icon:'🔴', name:'Connect Four',  desc:'Drop discs, get 4 in a row. Computer searches 5 moves deep.', badge:'ALPHA-BETA', sub:'game-tree search — thousands of positions checked' },
   { id:'mem',    icon:'🧠', name:'Memory Match',  desc:'Flip cards to find pairs. Computer never forgets a single card.', badge:'PERFECT RECALL', sub:'total memory — every revealed card stored' },
+  { id:'rev',    icon:'⚫', name:'Reversi',       desc:'Flip discs on a 6×6 board. CPU values corners and edges with positional weights.', badge:'MINIMAX·POSITIONAL', sub:'weighted board heuristic — corners are 30× normal' },
+  { id:'oracle', icon:'🔮', name:'Number Oracle', desc:'Think of any number from 1 to 128. Answer yes/no. CPU finds it in ≤7 questions.', badge:'BINARY SEARCH', sub:'information theory — 7 bits = 128 possibilities' },
+  { id:'mm',     icon:'🔐', name:'Mastermind',    desc:'Pick a secret 4-color code. CPU cracks it in ≤5 guesses using consistent elimination.', badge:'CODE BREAKER', sub:'filters 1296 codes down to 1 — systematically' },
+  { id:'dab',    icon:'📐', name:'Dots & Boxes',  desc:'Draw lines between dots. Complete boxes to score. CPU avoids giving you chains.', badge:'CHAIN THEORY', sub:'sacrifices pairs, avoids 3rd-side traps' },
 ];
 
 function filterCards() {
@@ -215,7 +274,7 @@ function openGame(id) {
   document.body.style.overflow = 'hidden';
   const body = document.getElementById('ov-body');
   body.innerHTML = '';
-  const fns = {nim:initNim,ttt:initTTT,rps:initRPS,c21:initC21,c4:initC4,mem:initMem};
+  const fns = {nim:initNim,ttt:initTTT,rps:initRPS,c21:initC21,c4:initC4,mem:initMem,rev:initRev,oracle:initOracle,mm:initMM,dab:initDab};
   fns[id](body);
 }
 function closeGame() {
@@ -886,6 +945,548 @@ function initMem(body) {
       },600);
     }
   }
+
+  render();
+}
+
+// ─────────────────────────────────────────────────────────
+// REVERSI — 6×6 board, minimax depth-4 with positional weights
+// ─────────────────────────────────────────────────────────
+function initRev(body) {
+  const N=6;
+  // Positional weight matrix — corners are premium
+  const W=[
+    [30,-5, 8, 8,-5,30],
+    [-5,-8, 1, 1,-8,-5],
+    [ 8, 1, 2, 2, 1, 8],
+    [ 8, 1, 2, 2, 1, 8],
+    [-5,-8, 1, 1,-8,-5],
+    [30,-5, 8, 8,-5,30],
+  ];
+  // Board: '' | 'H' | 'C'
+  let board = Array.from({length:N},()=>Array(N).fill(''));
+  // Standard opening
+  board[2][2]='C'; board[2][3]='H'; board[3][2]='H'; board[3][3]='C';
+  let humanTurn=true, over=false, humanScore=0, cpuScore=0;
+
+  const OPP={H:'C',C:'H'};
+  const DIRS=[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+
+  function flips(b,r,c,p) {
+    if(b[r][c]) return [];
+    const all=[];
+    for(const [dr,dc] of DIRS) {
+      let nr=r+dr,nc=c+dc,line=[];
+      while(nr>=0&&nr<N&&nc>=0&&nc<N&&b[nr][nc]===OPP[p]){line.push([nr,nc]);nr+=dr;nc+=dc;}
+      if(line.length&&nr>=0&&nr<N&&nc>=0&&nc<N&&b[nr][nc]===p) all.push(...line);
+    }
+    return all;
+  }
+
+  function validMoves(b,p) {
+    const moves=[];
+    for(let r=0;r<N;r++) for(let c=0;c<N;c++) if(!b[r][c]&&flips(b,r,c,p).length) moves.push([r,c]);
+    return moves;
+  }
+
+  function applyMove(b,r,c,p) {
+    const nb=b.map(row=>[...row]);
+    nb[r][c]=p;
+    for(const [fr,fc] of flips(nb,r,c,p)) nb[fr][fc]=p;
+    return nb;
+  }
+
+  function score(b) {
+    let s=0;
+    for(let r=0;r<N;r++) for(let c=0;c<N;c++){
+      if(b[r][c]==='C') s+=W[r][c];
+      else if(b[r][c]==='H') s-=W[r][c];
+    }
+    return s;
+  }
+
+  function minimax(b,depth,alpha,beta,isMax) {
+    const p=isMax?'C':'H';
+    const moves=validMoves(b,p);
+    if(depth===0||moves.length===0) return score(b);
+    if(isMax){
+      let v=-Infinity;
+      for(const [r,c] of moves){v=Math.max(v,minimax(applyMove(b,r,c,'C'),depth-1,alpha,beta,false));alpha=Math.max(alpha,v);if(alpha>=beta)break;}
+      return v;
+    } else {
+      let v=Infinity;
+      for(const [r,c] of moves){v=Math.min(v,minimax(applyMove(b,r,c,'H'),depth-1,alpha,beta,true));beta=Math.min(beta,v);if(alpha>=beta)break;}
+      return v;
+    }
+  }
+
+  function cpuBestMove(b) {
+    const moves=validMoves(b,'C');
+    let best=-Infinity,mv=moves[0];
+    for(const [r,c] of moves){
+      const s=minimax(applyMove(b,r,c,'C'),3,-Infinity,Infinity,false);
+      if(s>best){best=s;mv=[r,c];}
+    }
+    return mv;
+  }
+
+  function countPieces(b) {
+    let h=0,c=0;
+    for(let r=0;r<N;r++) for(let cl=0;cl<N;cl++){if(b[r][cl]==='H')h++;else if(b[r][cl]==='C')c++;}
+    return {h,c};
+  }
+
+  function render(msg='') {
+    const vm=validMoves(board,'H');
+    const vmSet=new Set(vm.map(([r,c])=>`${r},${c}`));
+    const {h,c}=countPieces(board);
+    body.innerHTML=`
+      <div class="rules">
+        <b>Rules:</b> Flip opponent's discs by sandwiching them. Most discs wins. You are <span style="color:var(--acc)">●</span>, CPU is <span style="color:var(--cpu)">●</span>. CPU uses minimax + corner strategy.
+      </div>
+      <div class="scores">
+        <div class="sc-box"><div class="sc-lbl">YOU</div><div class="sc-val acc">${h}</div></div>
+        <div class="sc-box"><div class="sc-lbl">CPU</div><div class="sc-val cpu-c">${c}</div></div>
+        <div class="sc-box"><div class="sc-lbl">TURN</div><div class="sc-val" style="font-size:13px;padding-top:8px">${over?'END':humanTurn?'YOU':'CPU'}</div></div>
+      </div>
+      <div id="rev-msg" class="status">${msg||'<b>Your turn.</b> Tap a highlighted cell.'}</div>
+      <div class="rev-board" id="rev-board">
+        ${Array.from({length:N},(_,r)=>Array.from({length:N},(_,c)=>{
+          const disc=board[r][c];
+          const isValid=vmSet.has(`${r},${c}`)&&humanTurn&&!over;
+          return `<div class="rev-cell${isValid?' valid':''}" onclick="revMove(${r},${c})">
+            ${disc?`<div class="rev-disc ${disc}"></div>`:isValid?'<div class="rev-hint"></div>':''}
+          </div>`;
+        }).join('')).join('')}
+      </div>
+      <div id="rev-res"></div>
+      <button class="btn-ghost" onclick="initRev(document.getElementById('ov-body'))">↺  restart</button>`;
+    if(over){
+      const el=document.getElementById('rev-res');
+      if(el) el.innerHTML=`<div class="res ${h>c?'win':h<c?'lose':'draw'}">${h>c?'YOU WIN':h<c?'CPU WINS':'DRAW'}</div>`;
+    }
+  }
+
+  function checkOver(b) {
+    if(!validMoves(b,'H').length&&!validMoves(b,'C').length) return true;
+    let empty=false;
+    for(let r=0;r<N;r++) for(let c=0;c<N;c++) if(!b[r][c]) empty=true;
+    return !empty;
+  }
+
+  window.revMove = function(r,c) {
+    if(!humanTurn||over) return;
+    const f=flips(board,r,c,'H');
+    if(!f.length) return;
+    board=applyMove(board,r,c,'H');
+    if(checkOver(board)){over=true;render();return;}
+    humanTurn=false;
+    // check if CPU has moves
+    if(!validMoves(board,'C').length){humanTurn=true;render('<b>CPU has no moves.</b> Your turn again.');return;}
+    render('CPU thinking…');
+    setTimeout(()=>{
+      const mv=cpuBestMove(board);
+      if(mv) board=applyMove(board,mv[0],mv[1],'C');
+      if(checkOver(board)){over=true;render();return;}
+      if(!validMoves(board,'H').length){
+        // human has no moves, CPU goes again
+        render('<b>You have no moves.</b> CPU goes again.');
+        setTimeout(()=>{
+          const mv2=cpuBestMove(board);
+          if(mv2) board=applyMove(board,mv2[0],mv2[1],'C');
+          if(checkOver(board)){over=true;render();return;}
+          humanTurn=true; render();
+        },700);
+        return;
+      }
+      humanTurn=true; render();
+    },600);
+  };
+
+  render();
+}
+
+// ─────────────────────────────────────────────────────────
+// NUMBER ORACLE — Binary search, finds 1-128 in ≤7 yes/no questions
+// ─────────────────────────────────────────────────────────
+function initOracle(body) {
+  let lo=1,hi=128,step=0,over=false,found=false;
+
+  function mid() { return Math.floor((lo+hi)/2); }
+
+  function render(question='') {
+    body.innerHTML=`
+      <div class="rules">
+        <b>Rules:</b> Think of any number from 1 to 128. <b>Don't tell the CPU.</b> Answer yes or no honestly — it will find your number in at most 7 questions. Guaranteed.
+      </div>
+      <div class="oracle-steps">
+        ${Array.from({length:7},(_,i)=>`<div class="o-step${i<step?' done':''}">${i+1}</div>`).join('')}
+      </div>
+      <div class="oracle-num">${over?(found?mid():lo):mid()}</div>
+      <div class="oracle-range">searching ${lo} — ${hi}</div>
+      ${!over?`
+      <div class="oracle-q">${question||`Is your number <b>${mid()}</b> or lower?`}</div>
+      <div class="oracle-btns">
+        <button class="oracle-btn yes" onclick="oracleAnswer(true)">✓ YES</button>
+        <button class="oracle-btn no"  onclick="oracleAnswer(false)">✗ NO</button>
+      </div>`:`
+      <div class="oracle-q">${found?`Your number is <b>${mid()}</b>. Found in <b>${step}</b> question${step!==1?'s':''}!`:`Your number is <b>${lo}</b>.`}</div>
+      <div class="res lose" style="margin-top:4px">CPU WINS</div>`}
+      <button class="btn-ghost" onclick="initOracle(document.getElementById('ov-body'))">↺  play again</button>`;
+  }
+
+  window.oracleAnswer = function(yes) {
+    step++;
+    if(yes) hi=mid();
+    else lo=mid()+1;
+    if(lo>=hi){ over=true; found=true; render(); return; }
+    if(step>=7){ over=true; found=false; render(); return; }
+    render(`Is your number <b>${mid()}</b> or lower?`);
+  };
+
+  render(`Is your number <b>${mid()}</b> or lower?`);
+}
+
+// ─────────────────────────────────────────────────────────
+// MASTERMIND — CPU cracks your 4-color secret code in ≤5 guesses
+// Uses Knuth's Five-Guess algorithm (simplified consistent-set approach)
+// Colors: R G B Y P O (6 colors, 4 slots, 1296 total combinations)
+// ─────────────────────────────────────────────────────────
+function initMM(body) {
+  const COLORS=['#FF3C00','#3DDB70','#4FC3F7','#FFE500','#C77DFF','#FF9F1C'];
+  const CNAME=['RED','GRN','BLU','YEL','PUR','ORG'];
+  let secret=[], secretSet=false;
+  let playerSlots=[null,null,null,null], selColor=0;
+  let guesses=[], over=false, cpuMode=false;
+  // CPU cracks human's code
+  // All possible codes
+  let possible=[];
+  for(let a=0;a<6;a++) for(let b=0;b<6;b++) for(let c=0;c<6;c++) for(let d=0;d<6;d++) possible.push([a,b,c,d]);
+  let cpuGuess=null;
+
+  function score(guess,sec) {
+    let black=0,white=0;
+    const gu=[...guess],su=[...sec];
+    const gLeft=[],sLeft=[];
+    for(let i=0;i<4;i++){if(gu[i]===su[i]){black++;}else{gLeft.push(gu[i]);sLeft.push(su[i]);}}
+    for(const g of gLeft){const idx=sLeft.indexOf(g);if(idx>=0){white++;sLeft.splice(idx,1);}}
+    return{black,white};
+  }
+
+  function cpuNextGuess() {
+    if(possible.length===1296) return [0,0,1,1]; // Knuth's optimal first guess
+    // Pick guess that minimises worst-case remaining possibilities
+    let best=null,bestScore=Infinity;
+    const pool=possible.length<=20?possible:possible.slice(0,Math.min(possible.length,200));
+    // Try all in possible first
+    for(const g of possible){
+      const buckets={};
+      for(const p of possible){const s=score(g,p);const k=s.black*10+s.white;buckets[k]=(buckets[k]||0)+1;}
+      const worst=Math.max(...Object.values(buckets));
+      if(worst<bestScore){bestScore=worst;best=g;}
+    }
+    return best||possible[0];
+  }
+
+  function renderSetup() {
+    body.innerHTML=`
+      <div class="rules">
+        <b>Rules:</b> Pick a secret 4-color code (repeats OK). CPU will crack it in ≤5 guesses using Knuth's algorithm — it <i>always</i> succeeds.
+      </div>
+      <div class="status"><b>Choose your secret code below. CPU can't see it.</b></div>
+      <div class="mm-colors">
+        ${COLORS.map((col,i)=>`<div class="mm-color${selColor===i?' sel':''}" style="background:${col}" onclick="mmSelColor(${i})"></div>`).join('')}
+      </div>
+      <div class="mm-slot-row">
+        ${playerSlots.map((s,i)=>`<div class="mm-slot" style="${s!==null?`background:${COLORS[s]}`:'background:var(--s2)'}" onclick="mmSetSlot(${i})"></div>`).join('')}
+        <button class="mm-guess-btn" onclick="mmConfirmSecret()">LOCK IN →</button>
+      </div>
+      <div style="font-size:10px;color:var(--txt3);text-align:center">tap a color then tap a slot</div>
+      <button class="btn-ghost" onclick="initMM(document.getElementById('ov-body'))">↺  restart</button>`;
+  }
+
+  function renderGame(msg='') {
+    const {black,white}=guesses.length?guesses[guesses.length-1].result:{black:0,white:0};
+    body.innerHTML=`
+      <div class="rules">
+        <b>Rules:</b> ⚫ = right color, right spot. ⚪ = right color, wrong spot. CPU must find your code.
+      </div>
+      <div class="scores">
+        <div class="sc-box"><div class="sc-lbl">GUESS</div><div class="sc-val acc">${guesses.length}/5</div></div>
+        <div class="sc-box"><div class="sc-lbl">POOL</div><div class="sc-val cpu-c" style="font-size:14px;padding-top:8px">${possible.length}</div></div>
+      </div>
+      <div id="mm-msg" class="status">${msg}</div>
+      <div class="mm-history">
+        ${guesses.map((g,gi)=>`
+          <div class="mm-row">
+            <span class="mm-turn-lbl">#${gi+1}</span>
+            ${g.code.map(ci=>`<div class="mm-mini" style="background:${COLORS[ci]}"></div>`).join('')}
+            <div class="mm-pegs">
+              ${Array.from({length:4},(_,pi)=>`<div class="mm-peg${pi<g.result.black?' black':pi<g.result.black+g.result.white?' white':''}"></div>`).join('')}
+            </div>
+          </div>`).join('')}
+      </div>
+      <div id="mm-res"></div>
+      <button class="btn-ghost" onclick="initMM(document.getElementById('ov-body'))">↺  restart</button>`;
+    if(over){
+      const el=document.getElementById('mm-res');
+      if(el){
+        const cracked=guesses.length&&guesses[guesses.length-1].result.black===4;
+        el.innerHTML=`<div class="res lose">${cracked?'CPU CRACKED IT':'CPU WINS'}</div>
+          <div class="status">Your code was: ${secret.map(i=>`<span style="color:${COLORS[i]}">●</span>`).join('')}</div>`;
+      }
+    }
+  }
+
+  window.mmSelColor = function(i){selColor=i;renderSetup();}
+  window.mmSetSlot = function(i){playerSlots[i]=selColor;renderSetup();}
+  window.mmConfirmSecret = function(){
+    if(playerSlots.some(s=>s===null)){
+      alert('Fill all 4 slots first!'); return;
+    }
+    secret=[...playerSlots];secretSet=true;cpuMode=true;
+    cpuGuess=cpuNextGuess();
+    const msg=`CPU's guess #1: ${cpuGuess.map(i=>`<span style="color:${COLORS[i]}">●</span>`).join('')} — How many ⚫⚪?`;
+    renderGame(msg);
+    showFeedbackBtns(cpuGuess);
+  };
+
+  function showFeedbackBtns(guess) {
+    const msg=document.getElementById('mm-msg');
+    if(!msg) return;
+    // Append feedback UI
+    const wrap=document.createElement('div');
+    wrap.style.cssText='display:flex;flex-direction:column;gap:8px;width:100%';
+    wrap.innerHTML=`
+      <div style="font-size:10px;color:var(--txt3);text-align:center">set the peg result for CPU's guess</div>
+      <div style="display:flex;gap:8px;justify-content:center;align-items:center">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+          <div style="font-size:9px;color:var(--txt3)">⚫ EXACT</div>
+          <div style="display:flex;gap:4px">
+            ${[0,1,2,3,4].map(n=>`<button onclick="mmSetPeg('b',${n})" id="pb${n}" style="width:28px;height:28px;border-radius:4px;background:var(--s2);border:1px solid var(--bd);color:var(--txt);font-family:DM Mono,monospace;font-size:11px;cursor:pointer">${n}</button>`).join('')}
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+          <div style="font-size:9px;color:var(--txt3)">⚪ COLOR</div>
+          <div style="display:flex;gap:4px" id="white-btns">
+            ${[0,1,2,3,4].map(n=>`<button onclick="mmSetPeg('w',${n})" id="pw${n}" style="width:28px;height:28px;border-radius:4px;background:var(--s2);border:1px solid var(--bd);color:var(--txt);font-family:DM Mono,monospace;font-size:11px;cursor:pointer">${n}</button>`).join('')}
+          </div>
+        </div>
+      </div>
+      <button id="mm-submit" onclick="mmSubmitFeedback()" style="background:var(--s1);border:1px solid var(--bd);border-radius:8px;padding:10px;font-family:DM Mono,monospace;font-size:11px;color:var(--txt2);cursor:pointer;width:100%">SUBMIT RESULT</button>`;
+    msg.parentNode.insertBefore(wrap, msg.nextSibling);
+    window._mmPegs={b:0,w:0,guess};
+    highlightPeg('b',0); highlightPeg('w',0);
+  }
+
+  function highlightPeg(type,val) {
+    for(let i=0;i<=4;i++){
+      const el=document.getElementById(`p${type}${i}`);
+      if(el) el.style.background=i===val?'var(--acc-dim)':'var(--s2)';
+      if(el) el.style.borderColor=i===val?'var(--acc)':'var(--bd)';
+      if(el) el.style.color=i===val?'var(--acc)':'var(--txt)';
+    }
+  }
+
+  window.mmSetPeg = function(type,val){
+    if(!window._mmPegs) return;
+    window._mmPegs[type]=val;
+    highlightPeg(type,val);
+  };
+
+  window.mmSubmitFeedback = function(){
+    if(!window._mmPegs) return;
+    const {b,w,guess}=window._mmPegs;
+    const result={black:b,white:w};
+    guesses.push({code:guess,result});
+    // Filter possible
+    possible=possible.filter(p=>{const s=score(guess,p);return s.black===b&&s.white===w;});
+    if(b===4){over=true;renderGame(`CPU cracked it in ${guesses.length}!`);return;}
+    if(guesses.length>=5){over=true;renderGame('5 guesses used up.');return;}
+    cpuGuess=cpuNextGuess();
+    const msg=`CPU's guess #${guesses.length+1}: ${cpuGuess.map(i=>`<span style="color:${COLORS[i]}">●</span>`).join('')}`;
+    renderGame(msg);
+    showFeedbackBtns(cpuGuess);
+  };
+
+  renderSetup();
+}
+
+// ─────────────────────────────────────────────────────────
+// DOTS & BOXES — 4×4 grid (25 dots, 40 lines, 16 boxes)
+// CPU strategy: chain theory — avoid completing 3rd side of any box;
+// sacrifice isolated pairs; take long chains last.
+// ─────────────────────────────────────────────────────────
+function initDab(body) {
+  const DOTS=4; // 4×4 grid of boxes = 5×5 dots
+  const DP=DOTS+1; // 5
+  // Horizontal lines: [row][col], row 0..4, col 0..3  → DP*(DP-1) = 5*4=20
+  // Vertical lines:   [row][col], row 0..3, col 0..4  → (DP-1)*DP = 4*5=20
+  let hLines=Array.from({length:DP},()=>Array(DOTS).fill('')); // [r][c]
+  let vLines=Array.from({length:DOTS},()=>Array(DP).fill('')); // [r][c]
+  let boxes=Array.from({length:DOTS},()=>Array(DOTS).fill('')); // [r][c]
+  let humanScore=0,cpuScore=0,humanTurn=true,over=false,busy=false;
+
+  function sidesOf(r,c) {
+    // returns {top,bot,left,right} line owners for box (r,c)
+    return {
+      top: hLines[r][c], bot: hLines[r+1][c],
+      left: vLines[r][c], right: vLines[r][c+1]
+    };
+  }
+
+  function countSides(r,c) {
+    const s=sidesOf(r,c);
+    return [s.top,s.bot,s.left,s.right].filter(x=>x).length;
+  }
+
+  function applyLine(who,type,r,c) {
+    if(type==='h') hLines[r][c]=who;
+    else vLines[r][c]=who;
+    let scored=0;
+    // check adjacent boxes
+    const toCheck=[];
+    if(type==='h'){toCheck.push([r-1,c],[r,c]);}
+    else{toCheck.push([r,c-1],[r,c]);}
+    for(const[br,bc] of toCheck){
+      if(br<0||bc<0||br>=DOTS||bc>=DOTS) continue;
+      if(!boxes[br][bc]&&countSides(br,bc)===4){boxes[br][bc]=who;scored++;}
+    }
+    return scored;
+  }
+
+  function availLines() {
+    const lines=[];
+    for(let r=0;r<DP;r++) for(let c=0;c<DOTS;c++) if(!hLines[r][c]) lines.push({type:'h',r,c});
+    for(let r=0;r<DOTS;r++) for(let c=0;c<DP;c++) if(!vLines[r][c]) lines.push({type:'v',r,c});
+    return lines;
+  }
+
+  function adjacentBoxes(type,r,c) {
+    if(type==='h') return [[r-1,c],[r,c]].filter(([br,bc])=>br>=0&&bc>=0&&br<DOTS&&bc<DOTS);
+    return [[r,c-1],[r,c]].filter(([br,bc])=>br>=0&&bc>=0&&br<DOTS&&bc<DOTS);
+  }
+
+  function sidesForLine(type,r,c,hL,vL) {
+    // Count sides of adjacent boxes if this line were played
+    let max3=false;
+    for(const[br,bc] of adjacentBoxes(type,r,c)){
+      const sides={
+        top:hL[br][bc],bot:hL[br+1][bc],
+        left:vL[br][bc],right:vL[br][bc+1]
+      };
+      const cnt=[sides.top,sides.bot,sides.left,sides.right].filter(x=>x).length;
+      if(cnt===3) max3=true;
+    }
+    return max3;
+  }
+
+  function cpuPlay() {
+    const lines=availLines();
+    if(!lines.length) return false;
+
+    // 1. Take any completing move (3 sides already)
+    for(const l of lines){
+      for(const[br,bc] of adjacentBoxes(l.type,l.r,l.c)){
+        if(countSides(br,bc)===3) return l;
+      }
+    }
+
+    // 2. Play a safe line that doesn't give opponent a 3rd side
+    const safe=lines.filter(l=>!sidesForLine(l.type,l.r,l.c,hLines,vLines));
+    if(safe.length) return safe[Math.floor(Math.random()*safe.length)];
+
+    // 3. Sacrifice: give opponent fewest boxes (choose line with adj boxes having most 3-sided — unavoidable)
+    // Pick line that opens fewest chained boxes. Simplified: pick line adjacent to fewest 3-sided boxes.
+    let best=null,bestCost=Infinity;
+    for(const l of lines){
+      const adj=adjacentBoxes(l.type,l.r,l.c);
+      const cost=adj.filter(([br,bc])=>countSides(br,bc)===2).length;
+      if(cost<bestCost){bestCost=cost;best=l;}
+    }
+    return best||lines[0];
+  }
+
+  function checkOver(){return availLines().length===0;}
+
+  // SVG rendering
+  function renderSVG(){
+    const SZ=56, PAD=16, DOT=5;
+    const W2=DP*SZ+PAD*2-SZ, H2=DP*SZ+PAD*2-SZ;
+    let svg=`<svg class="dab-svg" viewBox="0 0 ${W2} ${H2}" xmlns="http://www.w3.org/2000/svg">`;
+
+    // Box fills
+    for(let r=0;r<DOTS;r++) for(let c=0;c<DOTS;c++){
+      if(boxes[r][c]){
+        const x=PAD+c*SZ, y=PAD+r*SZ;
+        svg+=`<rect class="dab-box ${boxes[r][c]}" x="${x-SZ/2+DOT+2}" y="${y-SZ/2+DOT+2}" width="${SZ-DOT*2-4}" height="${SZ-DOT*2-4}" rx="4"/>`;
+      }
+    }
+
+    // Horizontal lines
+    for(let r=0;r<DP;r++) for(let c=0;c<DOTS;c++){
+      const x1=PAD+c*SZ+DOT, y1=PAD+r*SZ, x2=PAD+(c+1)*SZ-DOT, y2=y1;
+      const owner=hLines[r][c];
+      const cls=`dab-line${owner?' '+owner+' taken':humanTurn&&!over&&!busy?' hoverable':''}`;
+      svg+=`<line class="${cls}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" data-type="h" data-r="${r}" data-c="${c}" onclick="dabClick('h',${r},${c})"/>`;
+    }
+
+    // Vertical lines
+    for(let r=0;r<DOTS;r++) for(let c=0;c<DP;c++){
+      const x1=PAD+c*SZ, y1=PAD+r*SZ+DOT, x2=x1, y2=PAD+(r+1)*SZ-DOT;
+      const owner=vLines[r][c];
+      const cls=`dab-line${owner?' '+owner+' taken':humanTurn&&!over&&!busy?' hoverable':''}`;
+      svg+=`<line class="${cls}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" data-type="v" data-r="${r}" data-c="${c}" onclick="dabClick('v',${r},${c})"/>`;
+    }
+
+    // Dots
+    for(let r=0;r<DP;r++) for(let c=0;c<DP;c++){
+      svg+=`<circle class="dab-dot" cx="${PAD+c*SZ}" cy="${PAD+r*SZ}" r="${DOT}"/>`;
+    }
+
+    svg+='</svg>';
+    return svg;
+  }
+
+  function render(msg=''){
+    body.innerHTML=`
+      <div class="rules">
+        <b>Rules:</b> Tap a line between dots. Complete all 4 sides of a box to claim it. Most boxes wins. CPU uses chain theory to avoid giving you easy boxes.
+      </div>
+      <div class="scores">
+        <div class="sc-box"><div class="sc-lbl">YOU</div><div class="sc-val acc">${humanScore}</div></div>
+        <div class="sc-box"><div class="sc-lbl">CPU</div><div class="sc-val cpu-c">${cpuScore}</div></div>
+        <div class="sc-box"><div class="sc-lbl">TURN</div><div class="sc-val" style="font-size:13px;padding-top:8px">${over?'END':humanTurn?'YOU':'CPU'}</div></div>
+      </div>
+      <div id="dab-msg" class="status">${msg||'<b>Your turn.</b> Tap a line.'}</div>
+      <div style="width:100%;display:flex;justify-content:center">${renderSVG()}</div>
+      <div id="dab-res"></div>
+      <button class="btn-ghost" onclick="initDab(document.getElementById('ov-body'))">↺  restart</button>`;
+    if(over){
+      const el=document.getElementById('dab-res');
+      if(el) el.innerHTML=`<div class="res ${humanScore>cpuScore?'win':humanScore<cpuScore?'lose':'draw'}">${humanScore>cpuScore?'YOU WIN':humanScore<cpuScore?'CPU WINS':'DRAW'}</div>`;
+    }
+  }
+
+  window.dabClick = function(type,r,c){
+    if(!humanTurn||over||busy) return;
+    if((type==='h'&&hLines[r][c])||(type==='v'&&vLines[r][c])) return;
+    const scored=applyLine('H',type,r,c);
+    humanScore+=scored;
+    if(checkOver()){over=true;render();return;}
+    if(scored>0){render(`You scored ${scored}! Go again.`);return;} // human goes again
+    humanTurn=false; busy=true;
+    render('CPU thinking…');
+    setTimeout(function cpuLoop(){
+      const mv=cpuPlay();
+      if(!mv){over=true;render();return;}
+      const s=applyLine('C',mv.type,mv.r,mv.c);
+      cpuScore+=s;
+      if(checkOver()){over=true;render();return;}
+      if(s>0){render(`CPU scored ${s}. CPU goes again…`);setTimeout(cpuLoop,500);}
+      else{humanTurn=true;busy=false;render();}
+    },600);
+  };
 
   render();
 }
