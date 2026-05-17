@@ -150,12 +150,12 @@
 
 - title: CSS Guide
   description: Learn CSS Basics.
-  icon: fa-brands fa-css
+  icon: fa-solid fa-info
   tags: []
   url: https://samar1h.github.io/aiasp/projects/css-guide/
 
 - title: CSS Guide v2
   description: Learn CSS Basics.
-  icon: fa-brands fa-css
+  icon: fa-solid fa-info
   tags: []
   url: https://samar1h.github.io/aiasp/projects/css-guide/v2
