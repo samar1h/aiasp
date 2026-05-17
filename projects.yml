@@ -162,7 +162,7 @@
 
 - title: TTS
   description: Text to speech.
-  icon: fa-solid fa-speaker
+  icon: fa-solid fa-bullhorn
   tags: []
   url: https://samar1h.github.io/aiasp/projects/tts
   
