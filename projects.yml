@@ -147,3 +147,15 @@
   icon: fa-solid fa-note-sticky
   tags: []
   url: https://samar1h.github.io/aiasp/projects/enc-habits/
+
+- title: CSS Guide
+  description: Learn CSS Basics.
+  icon: fa-solid fa-note-sticky
+  tags: []
+  url: https://samar1h.github.io/aiasp/projects/css-guide/
+
+- title: CSS Guide v2
+  description: Learn CSS Basics.
+  icon: fa-solid fa-note-sticky
+  tags: []
+  url: https://samar1h.github.io/aiasp/projects/css-guide/v2
