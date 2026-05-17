@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CSS Basics — Practical Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Fraunces:ital,wght@0,300;0,700;1,300&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================
+     THEME SYSTEM — using CSS custom properties (variables)
+     ============================================================ */
+  :root {
+    --bg:        #0f0f11;
+    --surface:   #1a1a1f;
+    --border:    #2e2e38;
+    --text:      #e8e6e3;
+    --muted:     #888;
+    --accent:    #f97316;       /* changeable via JS */
+    --accent2:   #7c3aed;
+    --code-bg:   #12121a;
+    --good:      #22c55e;
+    --radius:    10px;
+    --font-mono: 'JetBrains Mono', monospace;
+    --font-body: 'Fraunces', Georgia, serif;
+    --sidebar-w: 220px;
+  }
+
+  /* light theme class toggled by JS */
+  .light {
+    --bg:      #f5f4f0;
+    --surface: #ffffff;
+    --border:  #ddd;
+    --text:    #1a1a1a;
+    --muted:   #666;
+    --code-bg: #eeecea;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 16px;
+    line-height: 1.7;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  /* ============================================================
+     LAYOUT — sidebar + main (the 20/80 split pattern)
+     ============================================================ */
+  .shell {
+    display: flex;               /* children side-by-side */
+    min-height: 100vh;
+  }
+
+  .sidebar {
+    width: var(--sidebar-w);
+    flex-shrink: 0;              /* don't squish me */
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 24px 16px;
+    position: sticky;            /* stays while page scrolls */
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .main {
+    flex: 1;                     /* take remaining space */
+    min-width: 0;                /* prevent overflow */
+    padding: 40px clamp(16px, 4vw, 60px);  /* responsive padding */
+    max-width: 860px;
+  }
+
+  /* ============================================================
+     TOOLBAR ABOVE KEYBOARD (mobile) — the sticky bottom bar
+     ============================================================ */
+  .mobile-toolbar {
+    display: none;               /* hidden on desktop */
+  }
+
+  @media (max-width: 640px) {
+    .shell { flex-direction: column; }
+    .sidebar { display: none; }
+    .main { padding: 20px 16px 120px; }   /* bottom room for toolbar */
+
+    .mobile-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 10px 12px;
+      /* KEY: pushes above the phone keyboard */
+      padding-bottom: calc(10px + env(safe-area-inset-bottom));
+      z-index: 100;
+    }
+  }
+
+  /* ============================================================
+     NAV LINKS
+     ============================================================ */
+  .nav-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--accent);
+    margin-top: 16px;
+    margin-bottom: 4px;
+  }
+
+  .nav-link {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--muted);
+    text-decoration: none;
+    padding: 5px 8px;
+    border-radius: 6px;
+    transition: background 0.15s, color 0.15s;
+  }
+  .nav-link:hover { background: var(--border); color: var(--text); }
+
+  /* ============================================================
+     TYPOGRAPHY + SECTIONS
+     ============================================================ */
+  h1 {
+    font-size: clamp(26px, 5vw, 42px);   /* auto-scales! */
+    font-weight: 700;
+    line-height: 1.15;
+    margin-bottom: 8px;
+  }
+  h1 span { color: var(--accent); }
+
+  h2 {
+    font-size: clamp(18px, 3vw, 26px);
+    font-weight: 700;
+    margin: 52px 0 16px;
+    padding-top: 52px;
+    border-top: 1px solid var(--border);
+  }
+  h2 .num {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--accent);
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  h3 {
+    font-size: 17px;
+    font-weight: 700;
+    margin: 28px 0 10px;
+    font-family: var(--font-mono);
+    color: var(--accent);
+  }
+
+  p { margin-bottom: 14px; color: var(--text); }
+
+  strong { color: var(--accent); font-style: italic; }
+
+  /* ============================================================
+     CODE BLOCKS
+     ============================================================ */
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    overflow-x: auto;
+    margin: 16px 0 24px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  /* syntax color helpers */
+  .p { color: #7dd3fc; }  /* property */
+  .v { color: #86efac; }  /* value */
+  .s { color: #fbbf24; }  /* selector */
+  .c { color: #6b7280; font-style: italic; } /* comment */
+  .k { color: #f97316; }  /* keyword / special */
+
+  code {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--accent);
+  }
+
+  /* ============================================================
+     LIVE DEMO BOXES
+     ============================================================ */
+  .demo {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin: 20px 0;
+  }
+  .demo-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+
+  /* demo: centering */
+  .demo-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 120px;
+    background: var(--code-bg);
+    border-radius: 8px;
+    border: 1px dashed var(--border);
+  }
+  .box {
+    background: var(--accent);
+    color: #fff;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    padding: 10px 20px;
+    border-radius: 6px;
+  }
+
+  /* demo: split layout */
+  .demo-split {
+    display: flex;
+    gap: 12px;
+    height: 80px;
+  }
+  .split-20 {
+    width: 20%;
+    background: var(--accent2);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-mono); font-size: 11px; color: #fff;
+  }
+  .split-80 {
+    flex: 1;                   /* fills remaining space */
+    background: var(--accent);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-mono); font-size: 11px; color: #fff;
+  }
+
+  /* demo: grid split */
+  .demo-grid {
+    display: grid;
+    grid-template-columns: 1fr 3fr;   /* 1:3 ratio = 25% / 75% */
+    gap: 12px;
+    height: 80px;
+  }
+  .grid-a {
+    background: var(--accent2);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-mono); font-size: 11px; color: #fff;
+  }
+  .grid-b {
+    background: var(--accent);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-mono); font-size: 11px; color: #fff;
+  }
+
+  /* demo: responsive text */
+  .demo-clamp {
+    font-size: clamp(14px, 3vw, 28px);
+    font-weight: 700;
+    text-align: center;
+    padding: 20px;
+    background: var(--code-bg);
+    border-radius: 8px;
+    border: 1px dashed var(--border);
+  }
+
+  /* ============================================================
+     CALLOUT / NOTE BOXES
+     ============================================================ */
+  .note {
+    border-left: 3px solid var(--accent);
+    background: var(--code-bg);
+    padding: 14px 16px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 14px;
+  }
+  .note.tip { border-color: var(--good); }
+  .note.warn { border-color: #f59e0b; }
+
+  /* ============================================================
+     THEME / ACCENT CONTROLS
+     ============================================================ */
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 20px 0;
+    align-items: center;
+  }
+
+  .btn {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    padding: 8px 14px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .swatch {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 3px solid transparent;
+    transition: border-color 0.15s, transform 0.15s;
+  }
+  .swatch:hover { transform: scale(1.15); }
+  .swatch.active { border-color: var(--text); }
+
+  /* ============================================================
+     TABLE — quick reference
+     ============================================================ */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+  }
+  th {
+    text-align: left;
+    padding: 10px 12px;
+    background: var(--code-bg);
+    color: var(--accent);
+    border-bottom: 1px solid var(--border);
+  }
+  td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+  td:first-child { color: var(--accent2); }
+
+  /* ============================================================
+     HEADER
+     ============================================================ */
+  .page-header {
+    margin-bottom: 40px;
+  }
+  .tagline {
+    color: var(--muted);
+    font-size: 15px;
+    margin-top: 6px;
+  }
+
+  /* mobile toolbar buttons */
+  .tb-btn {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 4px 8px;
+  }
+  .tb-btn .icon { font-size: 18px; }
+  .tb-btn:hover { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- SIDEBAR — sticky, 220px wide -->
+  <nav class="sidebar">
+    <div style="font-family: var(--font-mono); font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 12px;">
+      CSS Guide
+    </div>
+    <span class="nav-label">Sections</span>
+    <a class="nav-link" href="#centering">01 · Centering</a>
+    <a class="nav-link" href="#splits">02 · Splits & Inline</a>
+    <a class="nav-link" href="#responsive">03 · Auto-Scale</a>
+    <a class="nav-link" href="#toolbar">04 · Mobile Toolbar</a>
+    <a class="nav-link" href="#themes">05 · Themes & Accents</a>
+    <a class="nav-link" href="#units">06 · Units Cheatsheet</a>
+    <a class="nav-link" href="#position">07 · Positioning</a>
+    <a class="nav-link" href="#overflow">08 · Overflow & Scroll</a>
+    <a class="nav-link" href="#tips">09 · Quick Tips</a>
+
+    <div style="margin-top: auto; padding-top: 20px;">
+      <button class="btn" onclick="toggleTheme()" style="width:100%">Toggle Light/Dark</button>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <main class="main">
+
+    <!-- ── HEADER ── -->
+    <div class="page-header">
+      <h1>CSS <span>Practical</span> Basics</h1>
+      <p class="tagline">Everything you actually need — no filler.</p>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         01  CENTERING
+    ══════════════════════════════════════════ -->
+    <section id="centering">
+      <h2><span class="num">01</span>Centering Children</h2>
+
+      <p>The <strong>one trick</strong> you need: put <code>display: flex</code> on the <em>parent</em>, then use <code>align-items</code> and <code>justify-content</code>.</p>
+
+      <h3>Center everything (both axes)</h3>
+      <pre><span class="s">.parent</span> {
+  <span class="p">display</span>: <span class="v">flex</span>;
+  <span class="p">align-items</span>: <span class="v">center</span>;      <span class="c">/* vertical center */</span>
+  <span class="p">justify-content</span>: <span class="v">center</span>;  <span class="c">/* horizontal center */</span>
+  <span class="p">height</span>: <span class="v">200px</span>;            <span class="c">/* parent needs a height */</span>
+}</pre>
+
+      <div class="demo">
+        <div class="demo-label">Live Demo — centered child</div>
+        <div class="demo-center">
+          <div class="box">I am centered 🎯</div>
+        </div>
+      </div>
+
+      <h3>Flex direction: row vs column</h3>
+      <pre><span class="c">/* Default: children go LEFT → RIGHT (row) */</span>
+<span class="s">.row-parent</span> { <span class="p">display</span>: <span class="v">flex</span>; <span class="p">flex-direction</span>: <span class="v">row</span>; }
+
+<span class="c">/* Stack children TOP → BOTTOM */</span>
+<span class="s">.col-parent</span> { <span class="p">display</span>: <span class="v">flex</span>; <span class="p">flex-direction</span>: <span class="v">column</span>; }</pre>
+
+      <table>
+        <tr><th>Property</th><th>Effect</th></tr>
+        <tr><td>justify-content: flex-start</td><td>pack to start (default)</td></tr>
+        <tr><td>justify-content: flex-end</td><td>pack to end</td></tr>
+        <tr><td>justify-content: center</td><td>center along main axis</td></tr>
+        <tr><td>justify-content: space-between</td><td>space between children, no outer gap</td></tr>
+        <tr><td>justify-content: space-around</td><td>equal space around each child</td></tr>
+        <tr><td>align-items: center</td><td>center along cross axis</td></tr>
+        <tr><td>align-items: stretch</td><td>fill cross axis (default)</td></tr>
+        <tr><td>gap: 16px</td><td>space between children</td></tr>
+      </table>
+
+      <div class="note tip">💡 <strong>Mental model:</strong> <code>justify-content</code> works along the direction the items flow. <code>align-items</code> works perpendicular to it. In a row: justify = horizontal, align = vertical.</div>
+    </section>
+
+    <!-- ══════════════════════════════════════════
+         02  SPLITS & INLINE
+    ══════════════════════════════════════════ -->
+    <section id="splits">
+      <h2><span class="num">02</span>Side-by-Side Splits (20% / 80%)</h2>
+
+      <p>Two ways to do it. <strong>Flexbox</strong> is great for fluid splits. <strong>Grid</strong> is better when you want strict column ratios.</p>
+
+      <h3>Method A — Flexbox with width</h3>
+      <pre><span class="s">.container</span> {
+  <span class="p">display</span>: <span class="v">flex</span>;
+  <span class="p">gap</span>: <span class="v">12px</span>;
+}
+<span class="s">.sidebar</span>  { <span class="p">width</span>: <span class="v">20%</span>; <span class="p">flex-shrink</span>: <span class="v">0</span>; }  <span class="c">/* fixed % */</span>
+<span class="s">.content</span>  { <span class="p">flex</span>: <span class="v">1</span>; }               <span class="c">/* take the rest */</span></pre>
+
+      <div class="demo">
+        <div class="demo-label">Live Demo — flex 20/80</div>
+        <div class="demo-split">
+          <div class="split-20">20%</div>
+          <div class="split-80">80% (flex: 1)</div>
+        </div>
+      </div>
+
+      <h3>Method B — CSS Grid (cleaner ratios)</h3>
+      <pre><span class="s">.container</span> {
+  <span class="p">display</span>: <span class="v">grid</span>;
+  <span class="p">grid-template-columns</span>: <span class="v">1fr 4fr</span>;  <span class="c">/* 1:4 = 20% / 80% */</span>
+  <span class="p">gap</span>: <span class="v">12px</span>;
+}
+<span class="c">/* children go into columns automatically */</span></pre>
+
+      <pre><span class="c">/* Other useful ratios: */</span>
+<span class="p">grid-template-columns</span>: <span class="v">1fr 3fr</span>;      <span class="c">/* 25% / 75% */</span>
+<span class="p">grid-template-columns</span>: <span class="v">1fr 1fr</span>;      <span class="c">/* 50% / 50% */</span>
+<span class="p">grid-template-columns</span>: <span class="v">1fr 1fr 1fr</span>;  <span class="c">/* 3 equal columns */</span>
+<span class="p">grid-template-columns</span>: <span class="v">repeat(4, 1fr)</span>; <span class="c">/* 4 equal columns */</span></pre>
+
+      <div class="demo">
+        <div class="demo-label">Live Demo — grid 1fr 3fr</div>
+        <div class="demo-grid">
+          <div class="grid-a">1fr</div>
+          <div class="grid-b">3fr</div>
+        </div>
+      </div>
+
+      <div class="note">📌 <code>flex: 1</code> means "take all remaining space". If two children both have <code>flex: 1</code>, they split space equally. <code>flex: 2</code> takes twice as much as <code>flex: 1</code>.</div>
+
+      <h3>Wrapping children (cards, tags)</h3>
+      <pre><span class="s">.card-grid</span> {
+  <span class="p">display</span>: <span class="v">flex</span>;
+  <span class="p">flex-wrap</span>: <span class="v">wrap</span>;   <span class="c">/* overflow to next line */</span>
+  <span class="p">gap</span>: <span class="v">12px</span>;
+}
+<span class="s">.card</span> {
+  <span class="p">flex</span>: <span class="v">1 1 200px</span>;   <span class="c">/* grow, shrink, min-width 200px */</span>
+}</pre>
+    </section>
+
+    <!-- ══════════════════════════════════════════
+         03  RESPONSIVE / AUTO-SCALE
+    ══════════════════════════════════════════ -->
+    <section id="responsive">
+      <h2><span class="num">03</span>Auto-Scale — No Hardcoded Sizes</h2>
+
+      <p>Stop writing <code>font-size: 32px</code> and <code>padding: 60px</code>. Here are the tools that adapt automatically.</p>
+
+      <h3>clamp() — the most useful function</h3>
+      <p>Syntax: <code>clamp(minimum, ideal, maximum)</code></p>
+      <pre><span class="s">h1</span> {
+  <span class="p">font-size</span>: <span class="v">clamp(20px, 5vw, 48px)</span>;
+  <span class="c">/* min 20px, grows with viewport, max 48px */</span>
+}
+<span class="s">.container</span> {
+  <span class="p">padding</span>: <span class="v">clamp(16px, 4vw, 60px)</span>;
+  <span class="p">max-width</span>: <span class="v">900px</span>;
+  <span class="p">margin</span>: <span class="v">0 auto</span>;   <span class="c">/* center horizontally */</span>
+}</pre>
+
+      <div class="demo">
+        <div class="demo-label">Live Demo — resize your window to see this text scale</div>
+        <div class="demo-clamp">This text uses clamp(14px, 3vw, 28px)</div>
+      </div>
+
+      <h3>Relative units</h3>
+      <table>
+        <tr><th>Unit</th><th>Relative to</th><th>Use for</th></tr>
+        <tr><td>%</td><td>parent element</td><td>widths, heights of children</td></tr>
+        <tr><td>vw</td><td>viewport width</td><td>full-width sections, fluid type</td></tr>
+        <tr><td>vh</td><td>viewport height</td><td>full-screen sections</td></tr>
+        <tr><td>rem</td><td>root font-size (usually 16px)</td><td>spacing, font sizes</td></tr>
+        <tr><td>em</td><td>current element's font-size</td><td>relative spacing near text</td></tr>
+        <tr><td>dvh</td><td>dynamic viewport (mobile-aware)</td><td>full-screen on mobile</td></tr>
+      </table>
+
+      <h3>Media queries — change layout at breakpoints</h3>
+      <pre><span class="c">/* Default styles: mobile first */</span>
+<span class="s">.container</span> { <span class="p">flex-direction</span>: <span class="v">column</span>; }
+
+<span class="c">/* On wider screens: switch to row */</span>
+<span class="k">@media</span> (min-width: <span class="v">768px</span>) {
+  <span class="s">.container</span> { <span class="p">flex-direction</span>: <span class="v">row</span>; }
+}
+
+<span class="c">/* Common breakpoints: */</span>
+<span class="c">/* 480px  — large phones  */</span>
+<span class="c">/* 768px  — tablets       */</span>
+<span class="c">/* 1024px — small laptops */</span>
+<span class="c">/* 1280px — desktops      */</span></pre>
+
+      <h3>Auto-fit grid (cards that reflow)</h3>
+      <pre><span class="s">.cards</span> {
+  <span class="p">display</span>: <span class="v">grid</span>;
+  <span class="p">grid-template-columns</span>: <span class="v">repeat(auto-fit, minmax(200px, 1fr))</span>;
+  <span class="c">/* as many columns as fit, each at least 200px wide */</span>
+  <span class="p">gap</span>: <span class="v">16px</span>;
+}</pre>
+      <div class="note tip">💡 This single line replaces most media query grid code. Cards automatically reflow from 1 to 2 to 3+ columns as the screen grows.</div>
+    </section>
+
+    <!-- ══════════════════════════════════════════
+         04  MOBILE TOOLBAR
+    ══════════════════════════════════════════ -->
+    <section id="toolbar">
+      <h2><span class="num">04</span>Mobile Toolbar — Above Keyboard, Not Floating</h2>
+
+      <p>On mobile, you want a bar that stays at the bottom of the screen but moves up when the keyboard appears. This is <strong>not</strong> <code>position: fixed</code> alone — you need <code>env(safe-area-inset-bottom)</code> too.</p>
+
+      <h3>The full pattern</h3>
+      <pre><span class="c">/* In your HTML */</span>
+<span class="s">&lt;meta name="viewport" content="width=device-width,
+      initial-scale=1, interactive-widget=resizes-content"&gt;</span>
+
+<span class="c">/* In your CSS */</span>
+<span class="s">.toolbar</span> {
+  <span class="p">position</span>: <span class="v">fixed</span>;
+  <span class="p">bottom</span>: <span class="v">0</span>;
+  <span class="p">left</span>: <span class="v">0</span>;
+  <span class="p">right</span>: <span class="v">0</span>;
+  <span class="p">background</span>: <span class="v">var(--surface)</span>;
+  <span class="p">border-top</span>: <span class="v">1px solid var(--border)</span>;
+  <span class="p">padding</span>: <span class="v">10px 16px</span>;
+  <span class="c">/* ↓ adds space for iPhone home indicator */</span>
+  <span class="p">padding-bottom</span>: <span class="v">calc(10px + env(safe-area-inset-bottom))</span>;
+  <span class="p">z-index</span>: <span class="v">100</span>;
+}
+
+<span class="c">/* Your page body needs bottom padding so toolbar doesn't cover content */</span>
+<span class="s">body</span> { <span class="p">padding-bottom</span>: <span class="v">80px</span>; }</pre>
+
+      <div class="note warn">⚠️ <strong>The viewport meta trick:</strong> Adding <code>interactive-widget=resizes-content</code> tells the browser to shrink the viewport when the keyboard opens — so your <code>fixed</code> toolbar naturally moves up with the keyboard. Without it, the toolbar stays behind the keyboard.</div>
+
+      <h3>For an input + send button inside the toolbar</h3>
+      <pre><span class="s">.toolbar</span> {
+  <span class="p">display</span>: <span class="v">flex</span>;
+  <span class="p">gap</span>: <span class="v">8px</span>;
+  <span class="p">align-items</span>: <span class="v">center</span>;
+}
+<span class="s">.toolbar input</span> {
+  <span class="p">flex</span>: <span class="v">1</span>;          <span class="c">/* takes all space except button */</span>
+  <span class="p">padding</span>: <span class="v">10px</span>;
+  <span class="p">border-radius</span>: <span class="v">8px</span>;
+  <span class="p">border</span>: <span class="v">1px solid var(--border)</span>;
+  <span class="p">background</span>: <span class="v">var(--bg)</span>;
+  <span class="p">color</span>: <span class="v">var(--text)</span>;
+  <span class="p">font-size</span>: <span class="v">16px</span>;  <span class="c">/* prevents iOS zoom-on-focus */</span>
+}
+<span class="s">.toolbar button</span> {
+  <span class="p">flex-shrink</span>: <span class="v">0</span>;
+  <span class="p">padding</span>: <span class="v">10px 16px</span>;
+}</pre>
+    </section>
+
+    <!-- ══════════════════════════════════════════
+         05  THEMES & ACCENTS
+    ══════════════════════════════════════════ -->
+    <section id="themes">
+      <h2><span class="num">05</span>Themes & Accents — CSS Variables + JS</h2>
+
+      <p>CSS custom properties (variables) are the foundation of any theming system. They live on <code>:root</code> (the whole page) and can be changed instantly with one line of JS.</p>
+
+      <h3>Define variables in CSS</h3>
+      <pre><span class="k">:root</span> {
+  <span class="p">--bg</span>:      <span class="v">#0f0f11</span>;
+  <span class="p">--surface</span>: <span class="v">#1a1a1f</span>;
+  <span class="p">--text</span>:    <span class="v">#e8e6e3</span>;
+  <span class="p">--accent</span>:  <span class="v">#f97316</span>;   <span class="c">/* change this to retheme everything */</span>
+}
+
+<span class="c">/* Use them everywhere */</span>
+<span class="s">body</span>        { <span class="p">background</span>: <span class="v">var(--bg)</span>; <span class="p">color</span>: <span class="v">var(--text)</span>; }
+<span class="s">button</span>      { <span class="p">background</span>: <span class="v">var(--accent)</span>; }
+<span class="s">.card</span>       { <span class="p">background</span>: <span class="v">var(--surface)</span>; }</pre>
+
+      <h3>Toggle dark/light with a class</h3>
+      <pre><span class="c">/* CSS — define overrides */</span>
+<span class="s">.light</span> {
+  <span class="p">--bg</span>:      <span class="v">#f5f4f0</span>;
+  <span class="p">--surface</span>: <span class="v">#ffffff</span>;
+  <span class="p">--text</span>:    <span class="v">#1a1a1a</span>;
+}
+
+<span class="c">/* JS — toggle the class on body */</span>
+<span class="k">function</span> <span class="v">toggleTheme</span>() {
+  document.body.<span class="p">classList</span>.<span class="v">toggle</span>(<span class="k">'light'</span>);
+}</pre>
+
+      <h3>Change accent color via JS</h3>
+      <pre><span class="c">/* Change --accent to anything at runtime */</span>
+<span class="k">function</span> <span class="v">setAccent</span>(color) {
+  document.documentElement.style
+    .<span class="p">setProperty</span>(<span class="k">'--accent'</span>, color);
+}
+
+<span class="c">/* Examples */</span>
+<span class="v">setAccent</span>(<span class="k">'#f97316'</span>);   <span class="c">/* orange */</span>
+<span class="v">setAccent</span>(<span class="k">'#7c3aed'</span>);   <span class="c">/* purple */</span>
+<span class="v">setAccent</span>(<span class="k">'#22c55e'</span>);   <span class="c">/* green  */</span></pre>
+
+      <div class="note tip">💡 <code>document.documentElement</code> is the <code>&lt;html&gt;</code> element — same as <code>:root</code> in CSS. Setting a property there overrides everything below it.</div>
+
+      <h3>Try it live</h3>
+      <div class="controls">
+        <button class="btn" onclick="toggleTheme()">☀️ Toggle Light/Dark</button>
+        <div class="swatch active" style="background:#f97316" onclick="setAccent('#f97316', this)" title="Orange"></div>
+        <div class="swatch" style="background:#7c3aed" onclick="setAccent('#7c3aed', this)" title="Purple"></div>
+        <div class="swatch" style="background:#22c55e" onclick="setAccent('#22c55e', this)" title="Green"></div>
+        <div class="swatch" style="background:#e11d48" onclick="setAccent('#e11d48', this)" title="Red"></div>
+        <div class="swatch" style="background:#0ea5e9" onclick="setAccent('#0ea5e9', this)" title="Sky"></div>
+        <div class="swatch" style="background:#d97706" onclick="setAccent('#d97706', this)" title="Amber"></div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════
+         06  UNITS CHEATSHEET
+    ══════════════════════════════════════════ -->
+    <section id="units">
+      <h2><span class="num">06</span>Units Cheatsheet</h2>
+
+      <pre><span class="c">/* LENGTHS */</span>
+<span class="p">width</span>: <span class="v">100%</span>          <span class="c">→ full parent width</span>
+<span class="p">width</span>: <span class="v">50vw</span>         <span class="c">→ half screen width</span>
+<span class="p">height</span>: <span class="v">100dvh</span>      <span class="c">→ full screen height (mobile-safe)</span>
+<span class="p">padding</span>: <span class="v">1rem</span>       <span class="c">→ 16px (assuming 16px root)</span>
+<span class="p">gap</span>: <span class="v">0.5em</span>          <span class="c">→ half the element's font-size</span>
+
+<span class="c">/* SIZING SHORTCUTS */</span>
+<span class="p">width</span>: <span class="v">min-content</span>  <span class="c">→ shrink to fit content</span>
+<span class="p">width</span>: <span class="v">max-content</span>  <span class="c">→ expand to fit content, no wrap</span>
+<span class="p">width</span>: <span class="v">fit-content</span>  <span class="c">→ max-content but respect parent</span>
+
+<span class="c">/* CENTERING A BLOCK */</span>
+<span class="p">max-width</span>: <span class="v">800px</span>;
+<span class="p">margin</span>: <span class="v">0 auto</span>      <span class="c">→ centers horizontally</span></pre>
+    </section>
+
+    <!-- ══════════════════════════════════════════
+         07  POSITIONING
+    ══════════════════════════════════════════ -->
+    <section id="position">
+      <h2><span class="num">07</span>Positioning</h2>
+
+      <table>
+        <tr><th>Value</th><th>Behaviour</th></tr>
+        <tr><td>static</td><td>Default. Normal document flow, top/left ignored.</td></tr>
+        <tr><td>relative</td><td>Normal flow, but you can nudge it with top/left/etc. Also creates a positioning context for children.</td></tr>
+        <tr><td>absolute</td><td>Removed from flow. Positioned relative to nearest non-static ancestor.</td></tr>
+        <tr><td>fixed</td><td>Removed from flow. Positioned relative to the viewport. Stays on screen while scrolling.</td></tr>
+        <tr><td>sticky</td><td>Normal flow until it hits the scroll position you set, then sticks. Great for headers/sidebars.</td></tr>
+      </table>
+
+      <pre><span class="c">/* Typical overlay pattern */</span>
+<span class="s">.card</span>    { <span class="p">position</span>: <span class="v">relative</span>; }
+<span class="s">.badge</span>   {
+  <span class="p">position</span>: <span class="v">absolute</span>;
+  <span class="p">top</span>: <span class="v">-8px</span>;
+  <span class="p">right</span>: <span class="v">-8px</span>;
+}
+
+<span class="c">/* Sticky nav */</span>
+<span class="s">nav</span> {
+  <span class="p">position</span>: <span class="v">sticky</span>;
+  <span class="p">top</span>: <span class="v">0</span>;
+  <span class="p">z-index</span>: <span class="v">50</span>;
+}</pre>
+    </section>
+
+    <!-- ══════════════════════════════════════════
+         08  OVERFLOW & SCROLL
+    ══════════════════════════════════════════ -->
+    <section id="overflow">
+      <h2><span class="num">08</span>Overflow & Scroll</h2>
+
+      <pre><span class="c">/* Hide overflow content */</span>
+<span class="p">overflow</span>: <span class="v">hidden</span>;
+
+<span class="c">/* Always show scrollbar */</span>
+<span class="p">overflow</span>: <span class="v">scroll</span>;
+
+<span class="c">/* Scrollbar only when needed (most common) */</span>
+<span class="p">overflow</span>: <span class="v">auto</span>;
+
+<span class="c">/* Control axes independently */</span>
+<span class="p">overflow-x</span>: <span class="v">auto</span>;   <span class="c">/* horizontal scroll */</span>
+<span class="p">overflow-y</span>: <span class="v">hidden</span>; <span class="c">/* clip vertical */</span>
+
+<span class="c">/* Scrollable panel — common pattern */</span>
+<span class="s">.panel</span> {
+  <span class="p">height</span>: <span class="v">300px</span>;     <span class="c">/* must have defined height */</span>
+  <span class="p">overflow-y</span>: <span class="v">auto</span>;
+}
+
+<span class="c">/* Truncate text with ellipsis */</span>
+<span class="s">.truncate</span> {
+  <span class="p">white-space</span>: <span class="v">nowrap</span>;
+  <span class="p">overflow</span>: <span class="v">hidden</span>;
+  <span class="p">text-overflow</span>: <span class="v">ellipsis</span>;
+  <span class="p">max-width</span>: <span class="v">200px</span>;
+}</pre>
+    </section>
+
+    <!-- ══════════════════════════════════════════
+         09  QUICK TIPS
+    ══════════════════════════════════════════ -->
+    <section id="tips">
+      <h2><span class="num">09</span>Quick Tips</h2>
+
+      <pre><span class="c">/* Smooth transitions when anything changes */</span>
+<span class="s">*</span> { <span class="p">transition</span>: <span class="v">background 0.2s, color 0.2s</span>; }
+
+<span class="c">/* Prevent images from overflowing */</span>
+<span class="s">img</span> { <span class="p">max-width</span>: <span class="v">100%</span>; <span class="p">height</span>: <span class="v">auto</span>; }
+
+<span class="c">/* Remove default button/input styles */</span>
+<span class="s">button</span> { <span class="p">all</span>: <span class="v">unset</span>; <span class="p">cursor</span>: <span class="v">pointer</span>; }
+
+<span class="c">/* Smooth scroll for anchor links */</span>
+<span class="s">html</span>  { <span class="p">scroll-behavior</span>: <span class="v">smooth</span>; }
+
+<span class="c">/* box-sizing: border-box on everything — do this always */</span>
+<span class="s">*, *::before, *::after</span> { <span class="p">box-sizing</span>: <span class="v">border-box</span>; }
+
+<span class="c">/* Visually hidden but accessible (screen readers) */</span>
+<span class="s">.sr-only</span> {
+  <span class="p">position</span>: <span class="v">absolute</span>;
+  <span class="p">width</span>: <span class="v">1px</span>; <span class="p">height</span>: <span class="v">1px</span>;
+  <span class="p">clip</span>: <span class="v">rect(0,0,0,0)</span>;
+  <span class="p">overflow</span>: <span class="v">hidden</span>;
+}
+
+<span class="c">/* Vertical centering of multi-line text */</span>
+<span class="s">.center-text</span> {
+  <span class="p">display</span>: <span class="v">flex</span>;
+  <span class="p">align-items</span>: <span class="v">center</span>;
+  <span class="p">min-height</span>: <span class="v">3lh</span>;   <span class="c">/* 3 line heights */</span>
+}
+
+<span class="c">/* Prevent text selection on buttons/labels */</span>
+<span class="s">.no-select</span> { <span class="p">user-select</span>: <span class="v">none</span>; }
+
+<span class="c">/* Aspect ratio — square / 16:9 / etc */</span>
+<span class="s">.video</span> { <span class="p">aspect-ratio</span>: <span class="v">16 / 9</span>; <span class="p">width</span>: <span class="v">100%</span>; }</pre>
+
+      <div class="note tip" style="margin-top: 32px;">
+        🎓 <strong>Learning order:</strong> Flexbox → CSS Variables → clamp() → Grid → position sticky/fixed. That combo covers ~90% of real app layouts.
+      </div>
+
+      <div style="height: 60px;"></div>
+    </section>
+
+  </main>
+</div>
+
+<!-- MOBILE TOOLBAR — visible only on small screens -->
+<div class="mobile-toolbar">
+  <button class="tb-btn" onclick="toggleTheme()">
+    <span class="icon">☀️</span>
+    <span>Theme</span>
+  </button>
+  <button class="tb-btn" onclick="document.getElementById('centering').scrollIntoView({behavior:'smooth'})">
+    <span class="icon">📐</span>
+    <span>Center</span>
+  </button>
+  <button class="tb-btn" onclick="document.getElementById('splits').scrollIntoView({behavior:'smooth'})">
+    <span class="icon">↔️</span>
+    <span>Splits</span>
+  </button>
+  <button class="tb-btn" onclick="document.getElementById('themes').scrollIntoView({behavior:'smooth'})">
+    <span class="icon">🎨</span>
+    <span>Themes</span>
+  </button>
+  <button class="tb-btn" onclick="document.getElementById('tips').scrollIntoView({behavior:'smooth'})">
+    <span class="icon">⚡</span>
+    <span>Tips</span>
+  </button>
+</div>
+
+<script>
+  // ── Theme toggle ──────────────────────────────
+  function toggleTheme() {
+    document.body.classList.toggle('light');
+  }
+
+  // ── Accent color ──────────────────────────────
+  function setAccent(color, el) {
+    document.documentElement.style.setProperty('--accent', color);
+    // update active swatch
+    document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+    if (el) el.classList.add('active');
+  }
+
+  // ── Highlight current section in sidebar ──────
+  const sections = document.querySelectorAll('section[id]');
+  const links    = document.querySelectorAll('.nav-link');
+
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        links.forEach(l => l.style.color = '');
+        const active = document.querySelector(`.nav-link[href="#${e.target.id}"]`);
+        if (active) active.style.color = 'var(--accent)';
+      }
+    });
+  }, { rootMargin: '-30% 0px -60% 0px' });
+
+  sections.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>
