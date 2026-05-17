@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Habits</title>
+  <style>
+    /* ─── Design Tokens ─────────────────────────────────────── */
+    :root {
+      --bg:         #09090d;
+      --s1:         #0f0f15;
+      --s2:         #16161f;
+      --s3:         #1e1e2a;
+      --border:     #1e1e2a;
+      --border-2:   #282836;
+      --t1:         #dddde8;
+      --t2:         #6b6b82;
+      --t3:         #32323e;
+      --accent:     #c9a96e;
+      --accent-dim: rgba(201,169,110,.10);
+      --accent-glow:rgba(201,169,110,.22);
+      --err:        #d46060;
+      --r:          13px;
+      --r-lg:       20px;
+      --fab:        54px;
+    }
+
+    /* ─── Reset ─────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { -webkit-text-size-adjust: 100%; }
+
+    body {
+      font-family: -apple-system, 'Helvetica Neue', 'Segoe UI', Arial, sans-serif;
+      background: var(--bg);
+      color: var(--t1);
+      min-height: 100dvh;
+      overscroll-behavior: none;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button { font-family: inherit; cursor: pointer; border: none; background: none; }
+
+    /* ─── Shared Utilities ───────────────────────────────────── */
+    .screen { display: none; }
+    .screen.active { display: flex; }
+
+    .fade-in { animation: fadeIn .35s ease both; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    .shake { animation: shake .38s cubic-bezier(.36,.07,.19,.97) both; }
+    @keyframes shake {
+      10%, 90% { transform: translateX(-2px); }
+      20%, 80% { transform: translateX(3px); }
+      30%, 50%, 70% { transform: translateX(-4px); }
+      40%, 60% { transform: translateX(4px); }
+    }
+
+    /* ─── Lock Screen ────────────────────────────────────────── */
+    #lock {
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100dvh;
+      padding: 40px 28px;
+      gap: 0;
+    }
+
+    .lock-mark {
+      width: 64px;
+      height: 64px;
+      border-radius: 18px;
+      background: var(--s2);
+      border: 1px solid var(--border-2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 28px;
+    }
+
+    .lock-mark svg { opacity: .85; }
+
+    .lock-title {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: var(--t2);
+      margin-bottom: 6px;
+      text-align: center;
+    }
+
+    .lock-sub {
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: -.4px;
+      color: var(--t1);
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .lock-form {
+      width: 100%;
+      max-width: 320px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .pw-wrap {
+      position: relative;
+      width: 100%;
+    }
+
+    .pw-input {
+      width: 100%;
+      background: var(--s1);
+      border: 1px solid var(--border-2);
+      border-radius: var(--r);
+      padding: 15px 48px 15px 18px;
+      color: var(--t1);
+      font-size: 15px;
+      letter-spacing: 3px;
+      outline: none;
+      transition: border-color .18s;
+      -webkit-appearance: none;
+    }
+
+    .pw-input::placeholder { letter-spacing: .5px; color: var(--t3); }
+    .pw-input:focus { border-color: var(--accent); }
+
+    .pw-toggle {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--t2);
+      padding: 4px;
+      line-height: 0;
+    }
+
+    .pw-toggle:hover { color: var(--t1); }
+
+    .unlock-btn {
+      background: var(--accent);
+      color: #0b0900;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: .8px;
+      text-transform: uppercase;
+      border-radius: var(--r);
+      padding: 15px;
+      transition: opacity .18s, transform .1s;
+      -webkit-appearance: none;
+    }
+
+    .unlock-btn:active { transform: scale(.97); opacity: .85; }
+    .unlock-btn:disabled { opacity: .35; cursor: not-allowed; transform: none; }
+
+    .lock-err {
+      font-size: 12.5px;
+      color: var(--err);
+      text-align: center;
+      min-height: 16px;
+      letter-spacing: .2px;
+    }
+
+    .lock-hint {
+      font-size: 11.5px;
+      color: var(--t3);
+      text-align: center;
+      margin-top: 24px;
+      line-height: 1.6;
+    }
+
+    /* ─── Main Screen ────────────────────────────────────────── */
+    #main {
+      flex-direction: column;
+      min-height: 100dvh;
+      padding: 64px 28px 100px;
+      max-width: 420px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* Header */
+    .hd-greeting {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 2.2px;
+      text-transform: uppercase;
+      color: var(--t2);
+      margin-bottom: 10px;
+    }
+
+    .hd-time {
+      font-size: 52px;
+      font-weight: 200;
+      letter-spacing: -2px;
+      line-height: 1;
+      color: var(--t1);
+      font-variant-numeric: tabular-nums;
+      margin-bottom: 6px;
+    }
+
+    .hd-time .colon {
+      display: inline-block;
+      animation: blink 1s step-end infinite;
+      margin: 0 1px;
+    }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
+
+    .hd-date {
+      font-size: 13.5px;
+      color: var(--t2);
+      letter-spacing: .1px;
+      margin-bottom: 44px;
+    }
+
+    /* ─── Habit Feed ─────────────────────────────────────────── */
+    #habit-feed { flex: 1; }
+
+    /* Separator dots */
+    .sep {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+      padding: 18px 2px;
+    }
+    .sep-dot {
+      width: 3.5px;
+      height: 3.5px;
+      border-radius: 50%;
+      background: var(--t3);
+    }
+
+    /* Past habit */
+    .h-past {
+      padding: 10px 2px;
+      opacity: .32;
+    }
+    .h-past .h-name {
+      font-size: 15px;
+      font-weight: 500;
+      text-decoration: line-through;
+      text-decoration-color: var(--t2);
+      color: var(--t2);
+      letter-spacing: -.1px;
+    }
+    .h-past .h-time {
+      font-size: 12px;
+      color: var(--t3);
+      margin-top: 2px;
+    }
+
+    /* Current habit */
+    .h-current {
+      background: var(--s1);
+      border: 1px solid var(--accent);
+      border-radius: var(--r-lg);
+      padding: 22px 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    .h-current::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--accent-dim);
+      pointer-events: none;
+    }
+    /* Subtle left bar */
+    .h-current::after {
+      content: '';
+      position: absolute;
+      left: 0; top: 14px; bottom: 14px;
+      width: 3px;
+      background: var(--accent);
+      border-radius: 0 3px 3px 0;
+      pointer-events: none;
+    }
+
+    .now-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: var(--accent);
+      color: #0b0900;
+      font-size: 9.5px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 3px 9px;
+      border-radius: 30px;
+      margin-bottom: 12px;
+    }
+
+    .now-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: #0b0900;
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .3; } }
+
+    .h-current .h-name {
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: -.4px;
+      color: var(--t1);
+      margin-bottom: 5px;
+    }
+
+    .h-current .h-time {
+      font-size: 13px;
+      color: var(--accent);
+      letter-spacing: .2px;
+    }
+
+    .h-remain {
+      font-size: 11.5px;
+      color: var(--t2);
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .h-remain::before {
+      content: '';
+      display: inline-block;
+      width: 28px;
+      height: 1.5px;
+      background: var(--border-2);
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    /* Next habit */
+    .h-next {
+      padding: 10px 2px;
+      opacity: .45;
+    }
+    .h-next .h-name {
+      font-size: 16px;
+      font-weight: 500;
+      letter-spacing: -.1px;
+      color: var(--t1);
+    }
+    .h-next .h-time {
+      font-size: 12.5px;
+      color: var(--t2);
+      margin-top: 3px;
+    }
+
+    /* Status messages */
+    .h-status {
+      padding: 12px 2px;
+      font-size: 14px;
+      color: var(--t2);
+      letter-spacing: -.1px;
+      font-style: italic;
+    }
+
+    .h-all-done {
+      padding: 20px 2px;
+      text-align: center;
+    }
+    .h-all-done .done-icon {
+      font-size: 28px;
+      margin-bottom: 8px;
+    }
+    .h-all-done .done-text {
+      font-size: 15px;
+      color: var(--t2);
+    }
+
+    /* ─── FAB ────────────────────────────────────────────────── */
+    .fab {
+      position: fixed;
+      bottom: 30px;
+      right: 24px;
+      width: var(--fab);
+      height: var(--fab);
+      border-radius: 50%;
+      background: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 6px 24px var(--accent-glow), 0 2px 8px rgba(0,0,0,.4);
+      transition: transform .15s, box-shadow .15s;
+      z-index: 100;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .fab:active { transform: scale(.91); box-shadow: 0 2px 12px var(--accent-glow); }
+
+    .fab svg { color: #0b0900; }
+
+    /* ─── All Habits Panel ───────────────────────────────────── */
+    #panel {
+      flex-direction: column;
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      z-index: 200;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding: 64px 28px 100px;
+      max-width: 420px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    #panel.slide-in { animation: slideIn .28s cubic-bezier(.2,.8,.4,1) both; }
+    @keyframes slideIn { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+    .panel-hd {
+      margin-bottom: 36px;
+    }
+
+    .panel-title {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -.6px;
+      color: var(--t1);
+      margin-bottom: 4px;
+    }
+
+    .panel-sub {
+      font-size: 13px;
+      color: var(--t2);
+    }
+
+    .panel-section {
+      margin-bottom: 8px;
+    }
+
+    .panel-section-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--t3);
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .panel-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .panel-row:last-child { border-bottom: none; }
+
+    .panel-row-time {
+      font-size: 11.5px;
+      color: var(--t2);
+      min-width: 90px;
+      padding-top: 2px;
+      font-variant-numeric: tabular-nums;
+      flex-shrink: 0;
+    }
+
+    .panel-row-body { flex: 1; }
+
+    .panel-row-name {
+      font-size: 15.5px;
+      font-weight: 500;
+      letter-spacing: -.1px;
+      color: var(--t1);
+      line-height: 1.3;
+    }
+
+    .panel-row-days {
+      font-size: 11px;
+      color: var(--t3);
+      margin-top: 3px;
+      letter-spacing: .3px;
+    }
+
+    .panel-row.is-now .panel-row-name { color: var(--accent); }
+    .panel-row.is-now .panel-row-time { color: var(--accent); }
+
+    .panel-row.is-past {
+      opacity: .28;
+    }
+    .panel-row.is-past .panel-row-name {
+      text-decoration: line-through;
+      text-decoration-color: var(--t3);
+    }
+
+    /* ─── Loading overlay ────────────────────────────────────── */
+    #loader {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 14px;
+      z-index: 999;
+    }
+    #loader.hidden { display: none; }
+
+    .spinner {
+      width: 28px;
+      height: 28px;
+      border: 1.5px solid var(--border-2);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .75s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loader-text {
+      font-size: 12px;
+      color: var(--t2);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ LOCK SCREEN ══════════════════════════════════════════ -->
+<div id="lock" class="screen active">
+  <div class="lock-mark">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+         stroke="#c9a96e" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="11" width="18" height="11" rx="2"/>
+      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+    </svg>
+  </div>
+
+  <p class="lock-title">Daily Habits</p>
+  <p class="lock-sub">Enter your key to unlock</p>
+
+  <div class="lock-form">
+    <div class="pw-wrap">
+      <input
+        type="password"
+        id="pw"
+        class="pw-input"
+        placeholder="Decryption key"
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="off"
+        spellcheck="false"
+      >
+      <button class="pw-toggle" id="pw-toggle" aria-label="Show password" tabindex="-1">
+        <svg id="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+      </button>
+    </div>
+
+    <button class="unlock-btn" id="unlock-btn">Unlock</button>
+    <p class="lock-err" id="lock-err"></p>
+  </div>
+
+  <p class="lock-hint" id="lock-hint">
+    Place <code style="color:var(--t2);font-size:11px">habits.enc</code> in the same folder as this file.
+  </p>
+</div>
+
+<!-- Insecure-context banner (hidden by default, shown by JS if needed) -->
+<div id="ctx-banner" style="
+  display:none;
+  position:fixed;inset:0;
+  background:var(--bg);
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:36px 28px;
+  text-align:center;
+  gap:0;
+  z-index:9999;
+">
+  <svg width="40" height="40" viewBox="0 0 24 24" fill="none"
+       stroke="#d46060" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+       style="margin-bottom:22px">
+    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+    <line x1="12" y1="9" x2="12" y2="13"/>
+    <line x1="12" y1="17" x2="12.01" y2="17"/>
+  </svg>
+  <p style="font-size:18px;font-weight:700;letter-spacing:-.3px;color:var(--t1);margin-bottom:10px">
+    Requires a secure context
+  </p>
+  <p style="font-size:13.5px;color:var(--t2);line-height:1.7;max-width:300px;margin-bottom:28px">
+    Web Crypto only works over <strong style="color:var(--t1)">HTTPS</strong> or
+    <strong style="color:var(--t1)">localhost</strong>.<br>
+    Opening via <code style="color:var(--t2)">file://</code> won't work.
+  </p>
+  <div style="
+    background:var(--s2);border:1px solid var(--border-2);
+    border-radius:var(--r);padding:18px 20px;
+    text-align:left;max-width:320px;width:100%;
+  ">
+    <p style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+              color:var(--t3);margin-bottom:12px">
+      Test locally with any of these:
+    </p>
+    <p style="font-size:12px;color:var(--t2);line-height:2;font-family:ui-monospace,'Courier New',monospace">
+      python -m http.server 8080<br>
+      npx serve .<br>
+      npx live-server
+    </p>
+    <p style="font-size:11.5px;color:var(--t3);margin-top:10px">
+      Then open <code style="color:var(--t2)">http://localhost:8080</code>
+    </p>
+  </div>
+  <p style="font-size:11.5px;color:var(--t3);margin-top:20px">
+    On GitHub Pages (https) this works with no changes.
+  </p>
+</div>
+
+<!-- ═══ MAIN SCREEN ══════════════════════════════════════════ -->
+<div id="main" class="screen">
+  <p class="hd-greeting" id="greeting">Good Morning</p>
+  <p class="hd-time" id="clock">
+    <span id="h">00</span><span class="colon">:</span><span id="m">00</span>
+  </p>
+  <p class="hd-date" id="dateline">–</p>
+
+  <div id="habit-feed"></div>
+
+  <button class="fab" id="fab" aria-label="All habits">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="9" y1="6" x2="20" y2="6"/>
+      <line x1="9" y1="12" x2="20" y2="12"/>
+      <line x1="9" y1="18" x2="20" y2="18"/>
+      <circle cx="4" cy="6"  r="1.2" fill="currentColor" stroke="none"/>
+      <circle cx="4" cy="12" r="1.2" fill="currentColor" stroke="none"/>
+      <circle cx="4" cy="18" r="1.2" fill="currentColor" stroke="none"/>
+    </svg>
+  </button>
+</div>
+
+<!-- ═══ ALL HABITS PANEL ═════════════════════════════════════ -->
+<div id="panel" class="screen">
+  <div class="panel-hd">
+    <p class="panel-title">All Habits</p>
+    <p class="panel-sub" id="panel-sub">–</p>
+  </div>
+
+  <div id="panel-list"></div>
+
+  <button class="fab" id="fab-back" aria-label="Go back">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="19" y1="12" x2="5" y2="12"/>
+      <polyline points="12 19 5 12 12 5"/>
+    </svg>
+  </button>
+</div>
+
+<!-- ═══ LOADER ════════════════════════════════════════════════ -->
+<div id="loader" class="hidden">
+  <div class="spinner"></div>
+  <p class="loader-text">Decrypting</p>
+</div>
+
+
+<script>
+/* ────────────────────────────────────────────────────────────
+   SECURE CONTEXT GUARD
+   crypto.subtle only works on https:// or localhost.
+   Show a clear banner instead of a cryptic JS error.
+   ──────────────────────────────────────────────────────────── */
+(function() {
+  const safe = window.isSecureContext && typeof crypto !== 'undefined' && crypto.subtle;
+  if (!safe) {
+    document.getElementById('ctx-banner').style.display = 'flex';
+    document.getElementById('lock').style.display       = 'none';
+  }
+})();
+
+/* ────────────────────────────────────────────────────────────
+   CRYPTO  –  PBKDF2-SHA256 (600k iter) + AES-256-GCM
+   ──────────────────────────────────────────────────────────── */
+const ITER = 600_000;
+
+function b64ToBytes(b64) {
+  return Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+}
+
+async function deriveKey(password, salt, iter = ITER) {
+  const raw = await crypto.subtle.importKey(
+    'raw', new TextEncoder().encode(password),
+    'PBKDF2', false, ['deriveKey']
+  );
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt, iterations: iter, hash: 'SHA-256' },
+    raw,
+    { name: 'AES-GCM', length: 256 },
+    false, ['decrypt']
+  );
+}
+
+async function decryptEnc(encObj, password) {
+  const salt = b64ToBytes(encObj.salt);
+  const iv   = b64ToBytes(encObj.iv);
+  const ct   = b64ToBytes(encObj.ct);
+  const iter = encObj.iter || ITER;
+
+  const key = await deriveKey(password, salt, iter);
+  const buf = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct);
+  return new TextDecoder().decode(buf);
+}
+
+
+/* ────────────────────────────────────────────────────────────
+   MINIMAL YAML PARSER  (handles the habits schema only)
+   ──────────────────────────────────────────────────────────── */
+function parseYAML(text) {
+  const items = [];
+  let cur = null;
+
+  for (const raw of text.split('\n')) {
+    const line = raw.trimStart();
+    if (!line || line.startsWith('#')) continue;
+
+    if (line.startsWith('- ')) {
+      if (cur) items.push(cur);
+      cur = {};
+      const rest = line.slice(2).trim();
+      if (rest) putKV(rest, cur);
+    } else if (cur) {
+      putKV(line, cur);
+    }
+  }
+  if (cur) items.push(cur);
+  return items;
+}
+
+function putKV(str, obj) {
+  const idx = str.indexOf(':');
+  if (idx === -1) return;
+  const k = str.slice(0, idx).trim();
+  let   v = str.slice(idx + 1).trim();
+  if ((v[0] === '"' && v.at(-1) === '"') ||
+      (v[0] === "'" && v.at(-1) === "'")) v = v.slice(1, -1);
+  if (k) obj[k] = v;
+}
+
+
+/* ────────────────────────────────────────────────────────────
+   DAY MATCHING
+   days field can be: everyday, weekdays, weekends,
+   comma-separated: mon,wed,fri,sat  or  1st,15th  (day of month)
+   ──────────────────────────────────────────────────────────── */
+const DAYNAME  = ['sun','mon','tue','wed','thu','fri','sat'];
+const DAYLONG  = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+
+function matchesDay(daysStr, date) {
+  if (!daysStr || daysStr.trim() === '' || /^every\s*day$/i.test(daysStr)) return true;
+
+  const dow = date.getDay();
+  const dom = date.getDate();
+  const parts = daysStr.toLowerCase().split(',').map(s => s.trim()).filter(Boolean);
+
+  for (const p of parts) {
+    if (p === 'everyday')  return true;
+    if ((p === 'weekdays' || p === 'weekday') && dow >= 1 && dow <= 5) return true;
+    if ((p === 'weekends' || p === 'weekend') && (dow === 0 || dow === 6)) return true;
+    if (DAYNAME[dow] === p || DAYLONG[dow] === p) return true;
+
+    // ordinal day-of-month: 1st 2nd 3rd 15th etc.
+    const nth = p.match(/^(\d+)(?:st|nd|rd|th)$/);
+    if (nth && +nth[1] === dom) return true;
+
+    // "last" day of month
+    if (p === 'last') {
+      const next = new Date(date); next.setDate(dom + 1);
+      if (next.getMonth() !== date.getMonth()) return true;
+    }
+  }
+  return false;
+}
+
+
+/* ────────────────────────────────────────────────────────────
+   TIME UTILITIES
+   ──────────────────────────────────────────────────────────── */
+function toMinutes(t) {
+  const [h, m] = t.trim().split(':').map(Number);
+  return h * 60 + (m || 0);
+}
+
+function parseRange(timeStr) {
+  if (!timeStr) return null;
+  const dash = timeStr.lastIndexOf('-');
+  if (dash === -1) return null;
+  return {
+    start: toMinutes(timeStr.slice(0, dash)),
+    end:   toMinutes(timeStr.slice(dash + 1))
+  };
+}
+
+function fmt12(t) {
+  const [hRaw, mRaw] = t.trim().split(':');
+  const h = parseInt(hRaw, 10);
+  const m = parseInt(mRaw || '0', 10);
+  const ap = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 || 12;
+  return `${h12}:${String(m).padStart(2,'0')} ${ap}`;
+}
+
+function fmtRange(timeStr) {
+  if (!timeStr) return '—';
+  const dash = timeStr.lastIndexOf('-');
+  if (dash === -1) return timeStr;
+  return `${fmt12(timeStr.slice(0, dash))} – ${fmt12(timeStr.slice(dash + 1))}`;
+}
+
+function nowMin() {
+  const n = new Date();
+  return n.getHours() * 60 + n.getMinutes();
+}
+
+function minsLeft(n) {
+  if (n <= 0) return '';
+  const h = Math.floor(n / 60), m = n % 60;
+  if (h && m) return `${h}h ${m}m left`;
+  if (h)      return `${h}h left`;
+  return `${m}m left`;
+}
+
+function esc(s) {
+  return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+
+/* ────────────────────────────────────────────────────────────
+   STATE
+   ──────────────────────────────────────────────────────────── */
+let habits = [];
+let _clockTimer = null;
+
+
+/* ────────────────────────────────────────────────────────────
+   CLOCK + GREETING
+   ──────────────────────────────────────────────────────────── */
+function startClock() {
+  tick();
+  _clockTimer = setInterval(tick, 1000);
+}
+
+function tick() {
+  const now = new Date();
+  const hh  = now.getHours();
+  const mm  = String(now.getMinutes()).padStart(2, '0');
+
+  document.getElementById('h').textContent = hh;
+  document.getElementById('m').textContent = mm;
+
+  const days   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const months = ['January','February','March','April','May','June',
+                  'July','August','September','October','November','December'];
+
+  document.getElementById('dateline').textContent =
+    `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}`;
+
+  let gr = 'Good Morning';
+  if (hh >= 12 && hh < 17) gr = 'Good Afternoon';
+  else if (hh >= 17 && hh < 21) gr = 'Good Evening';
+  else if (hh >= 21 || hh < 5) gr = 'Good Night';
+  document.getElementById('greeting').textContent = gr;
+
+  if (habits.length) renderFeed();
+}
+
+
+/* ────────────────────────────────────────────────────────────
+   RENDER HABIT FEED
+   ──────────────────────────────────────────────────────────── */
+function renderFeed() {
+  const now   = new Date();
+  const nowM  = nowMin();
+  const feed  = document.getElementById('habit-feed');
+
+  // Filter today's habits and sort by start time
+  const today = habits
+    .filter(h => matchesDay(h.days, now))
+    .map(h => ({ ...h, _r: parseRange(h.time) }))
+    .filter(h => h._r)
+    .sort((a, b) => a._r.start - b._r.start);
+
+  if (!today.length) {
+    feed.innerHTML = `<p class="h-status" style="padding-top:24px">No habits scheduled for today.</p>`;
+    return;
+  }
+
+  const past    = today.filter(h => h._r.end   <= nowM);
+  const current = today.find(h  => h._r.start  <= nowM && nowM < h._r.end) || null;
+  const upcoming = today.filter(h => h._r.start > nowM);
+
+  let html = '';
+
+  // ── Past (last 2)
+  const showPast = past.slice(-2);
+  showPast.forEach(h => {
+    html += `<div class="h-past">
+      <p class="h-name">${esc(h.title)}</p>
+      <p class="h-time">${fmtRange(h.time)}</p>
+    </div>`;
+  });
+
+  // separator above current
+  if (showPast.length) {
+    html += dots();
+  }
+
+  // ── Current
+  if (current) {
+    const left = current._r.end - nowM;
+    html += `<div class="h-current fade-in">
+      <span class="now-tag"><span class="now-dot"></span> Now</span>
+      <p class="h-name">${esc(current.title)}</p>
+      <p class="h-time">${fmtRange(current.time)}</p>
+      ${left > 0 ? `<p class="h-remain">${minsLeft(left)}</p>` : ''}
+    </div>`;
+  } else {
+    // No active habit
+    if (upcoming.length) {
+      const next = upcoming[0];
+      const wait = next._r.start - nowM;
+      html += `<p class="h-status">Free – ${minsLeft(wait)} until ${esc(next.title)}</p>`;
+    } else if (past.length) {
+      html += `<div class="h-all-done">
+        <div class="done-icon">✦</div>
+        <p class="done-text">All done for today</p>
+      </div>`;
+    } else {
+      html += `<p class="h-status">Nothing scheduled yet today.</p>`;
+    }
+  }
+
+  // ── Next (up to 2)
+  const showNext = upcoming.slice(current ? 0 : 1, current ? 2 : 3);
+  if (showNext.length) {
+    html += dots();
+    showNext.forEach(h => {
+      html += `<div class="h-next">
+        <p class="h-name">${esc(h.title)}</p>
+        <p class="h-time">${fmtRange(h.time)}</p>
+      </div>`;
+    });
+  }
+
+  if (upcoming.length > (current ? 2 : 3)) html += dots();
+
+  feed.innerHTML = html;
+}
+
+function dots() {
+  return `<div class="sep">
+    <span class="sep-dot"></span>
+    <span class="sep-dot"></span>
+    <span class="sep-dot"></span>
+  </div>`;
+}
+
+
+/* ────────────────────────────────────────────────────────────
+   ALL HABITS PANEL
+   ──────────────────────────────────────────────────────────── */
+function showPanel() {
+  const now  = new Date();
+  const nowM = nowMin();
+
+  const sorted = [...habits]
+    .map(h => ({ ...h, _r: parseRange(h.time) }))
+    .sort((a, b) => {
+      if (!a._r && !b._r) return 0;
+      if (!a._r) return 1;
+      if (!b._r) return -1;
+      return a._r.start - b._r.start;
+    });
+
+  document.getElementById('panel-sub').textContent =
+    `${habits.length} habit${habits.length !== 1 ? 's' : ''} · complete schedule`;
+
+  const list = document.getElementById('panel-list');
+  list.innerHTML = sorted.map(h => {
+    const r = h._r;
+    const isNow  = r && r.start <= nowM && nowM < r.end && matchesDay(h.days, now);
+    const isPast = r && r.end <= nowM && matchesDay(h.days, now);
+    const cls = isNow ? 'panel-row is-now' : isPast ? 'panel-row is-past' : 'panel-row';
+
+    const daysLabel = (!h.days || /^every\s*day$/i.test(h.days)) ? 'Every day' : h.days;
+
+    return `<div class="${cls}">
+      <span class="panel-row-time">${fmtRange(h.time)}</span>
+      <div class="panel-row-body">
+        <p class="panel-row-name">${esc(h.title)}</p>
+        <p class="panel-row-days">${esc(daysLabel)}</p>
+      </div>
+    </div>`;
+  }).join('');
+
+  show('panel');
+  document.getElementById('panel').classList.add('slide-in');
+  setTimeout(() => document.getElementById('panel').classList.remove('slide-in'), 400);
+}
+
+function hidePanel() {
+  show('main');
+}
+
+
+/* ────────────────────────────────────────────────────────────
+   SCREEN HELPER
+   ──────────────────────────────────────────────────────────── */
+function show(id) {
+  ['lock', 'main', 'panel'].forEach(s => {
+    const el = document.getElementById(s);
+    el.classList.toggle('active', s === id);
+  });
+}
+
+
+/* ────────────────────────────────────────────────────────────
+   UNLOCK FLOW
+   ──────────────────────────────────────────────────────────── */
+const pwInput   = document.getElementById('pw');
+const unlockBtn = document.getElementById('unlock-btn');
+const errEl     = document.getElementById('lock-err');
+const loader    = document.getElementById('loader');
+
+pwInput.addEventListener('keydown', e => { if (e.key === 'Enter') unlock(); });
+unlockBtn.addEventListener('click', unlock);
+
+// Toggle show/hide password
+document.getElementById('pw-toggle').addEventListener('click', () => {
+  const isText = pwInput.type === 'text';
+  pwInput.type = isText ? 'password' : 'text';
+  document.getElementById('eye-icon').innerHTML = isText
+    ? `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`
+    : `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+       <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+       <line x1="1" y1="1" x2="23" y2="23"/>`;
+});
+
+async function unlock() {
+  const pw = pwInput.value.trim();
+  if (!pw) { shakeErr('Enter your key'); return; }
+
+  unlockBtn.disabled = true;
+  errEl.textContent  = '';
+  loader.classList.remove('hidden');
+
+  try {
+    const resp = await fetch('habits.enc');
+    if (!resp.ok) throw new Error(`Could not load habits.enc (${resp.status})`);
+    const enc = await resp.json();
+
+    const yaml = await decryptEnc(enc, pw);
+    habits = parseYAML(yaml);
+
+    if (!habits.length) throw new Error('No habits found in file');
+
+    loader.classList.add('hidden');
+    show('main');
+    startClock();
+
+  } catch (e) {
+    loader.classList.add('hidden');
+    unlockBtn.disabled = false;
+
+    if (e.name === 'OperationError') {
+      shakeErr('Wrong key — try again');
+    } else {
+      shakeErr(e.message || 'Decryption failed');
+    }
+  }
+}
+
+function shakeErr(msg) {
+  errEl.textContent = msg;
+  const form = document.querySelector('.lock-form');
+  form.classList.remove('shake');
+  void form.offsetWidth; // reflow
+  form.classList.add('shake');
+}
+
+// FAB bindings
+document.getElementById('fab').addEventListener('click', showPanel);
+document.getElementById('fab-back').addEventListener('click', hidePanel);
+</script>
+</body>
+</html>
