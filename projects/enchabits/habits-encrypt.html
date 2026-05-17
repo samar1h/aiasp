@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>habits encrypt</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Syne:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0e0f11;
+    --surface: #16181c;
+    --surface2: #1e2026;
+    --border: rgba(255,255,255,0.07);
+    --border-hover: rgba(255,255,255,0.14);
+    --text: #e8e9ec;
+    --muted: #7a7d87;
+    --accent: #4ade80;
+    --accent-dim: rgba(74, 222, 128, 0.12);
+    --accent-dim2: rgba(74, 222, 128, 0.06);
+    --danger: #f87171;
+    --danger-dim: rgba(248, 113, 113, 0.1);
+    --warn: #fbbf24;
+    --warn-dim: rgba(251, 191, 36, 0.1);
+    --font-ui: 'Syne', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-ui);
+    min-height: 100vh;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .shell {
+    max-width: 520px;
+    margin: 0 auto;
+    padding: 2rem 1.25rem 4rem;
+  }
+
+  /* Header */
+  .header {
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+  }
+  .header-icon {
+    width: 36px;
+    height: 36px;
+    background: var(--accent-dim);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .header-icon svg { width: 18px; height: 18px; stroke: var(--accent); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .header h1 { font-size: 18px; font-weight: 600; letter-spacing: -0.02em; line-height: 1; }
+  .header p { font-size: 12px; color: var(--muted); margin-top: 3px; font-family: var(--font-mono); }
+
+  /* Section label */
+  .label {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  /* Cards / sections */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+
+  /* Tab row */
+  .tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+  }
+  .tab {
+    flex: 1;
+    padding: 10px 0;
+    font-size: 13px;
+    font-family: var(--font-ui);
+    font-weight: 500;
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    transition: color 0.15s, background 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .tab svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .tab.active { color: var(--text); background: var(--surface2); }
+  .tab:hover:not(.active) { color: var(--text); }
+
+  /* Drop zone */
+  .drop-zone {
+    padding: 2rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: background 0.15s;
+    min-height: 140px;
+    justify-content: center;
+    position: relative;
+  }
+  .drop-zone:hover, .drop-zone.dragover { background: var(--accent-dim2); }
+  .drop-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .drop-icon { width: 36px; height: 36px; stroke: var(--muted); fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .drop-zone.has-file .drop-icon { stroke: var(--accent); }
+  .drop-label { font-size: 13px; color: var(--muted); text-align: center; }
+  .drop-zone.has-file .drop-label { color: var(--accent); }
+  .drop-hint { font-size: 11px; color: var(--muted); font-family: var(--font-mono); }
+
+  /* Editor */
+  .editor-wrap { padding: 0; }
+  .editor-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .editor-toolbar span { font-size: 11px; color: var(--muted); font-family: var(--font-mono); }
+  .editor-toolbar button { font-size: 11px; font-family: var(--font-ui); color: var(--muted); background: none; border: none; cursor: pointer; padding: 2px 6px; border-radius: 4px; transition: color 0.15s, background 0.15s; }
+  .editor-toolbar button:hover { color: var(--text); background: var(--surface2); }
+
+  textarea {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    line-height: 1.6;
+    resize: none;
+    outline: none;
+    padding: 14px;
+    min-height: 200px;
+    display: block;
+  }
+  textarea::placeholder { color: var(--muted); }
+
+  /* Password fields */
+  .field-group { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .field label { font-size: 11px; color: var(--muted); font-family: var(--font-mono); letter-spacing: 0.04em; }
+  .input-wrap { position: relative; }
+  .input-wrap input[type=password],
+  .input-wrap input[type=text] {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    padding: 9px 40px 9px 12px;
+    outline: none;
+    transition: border-color 0.15s;
+    -webkit-appearance: none;
+  }
+  .input-wrap input:focus { border-color: var(--border-hover); }
+  .input-wrap input.error { border-color: var(--danger); }
+  .toggle-pw {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--muted);
+    padding: 4px;
+    display: flex;
+    align-items: center;
+  }
+  .toggle-pw svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .toggle-pw:hover { color: var(--text); }
+
+  /* Strength bar */
+  .strength-bar { height: 2px; border-radius: 2px; margin-top: 6px; background: var(--surface2); overflow: hidden; }
+  .strength-fill { height: 100%; border-radius: 2px; transition: width 0.3s, background 0.3s; width: 0%; }
+
+  /* Advanced toggle */
+  .advanced-row {
+    padding: 0 14px 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+  }
+  .advanced-row span { font-size: 11px; color: var(--muted); user-select: none; }
+  .chevron { width: 12px; height: 12px; stroke: var(--muted); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.2s; margin-left: auto; }
+  .chevron.open { transform: rotate(180deg); }
+
+  .advanced-panel { display: none; padding: 0 14px 14px; }
+  .advanced-panel.open { display: block; }
+
+  .iter-row { display: flex; align-items: center; gap: 10px; }
+  input[type=range] {
+    flex: 1;
+    -webkit-appearance: none;
+    height: 3px;
+    background: var(--surface2);
+    border-radius: 3px;
+    outline: none;
+    border: 1px solid var(--border);
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+  }
+  .iter-val { font-size: 12px; font-family: var(--font-mono); color: var(--text); min-width: 60px; text-align: right; }
+
+  /* Encrypt button */
+  .btn-encrypt {
+    width: 100%;
+    padding: 14px;
+    background: var(--accent);
+    color: #0a0f0c;
+    font-family: var(--font-ui);
+    font-size: 14px;
+    font-weight: 600;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 4px;
+    letter-spacing: 0.01em;
+  }
+  .btn-encrypt:hover { opacity: 0.88; }
+  .btn-encrypt:active { transform: scale(0.99); }
+  .btn-encrypt:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+  .btn-encrypt svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* Spinner */
+  .spinner {
+    width: 16px; height: 16px;
+    border: 2px solid rgba(0,0,0,0.15);
+    border-top-color: #0a0f0c;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Toast / status */
+  .status {
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    font-size: 13px;
+    display: none;
+    align-items: flex-start;
+    gap: 10px;
+    margin-top: 4px;
+  }
+  .status.visible { display: flex; }
+  .status.success { background: var(--accent-dim); border: 1px solid rgba(74,222,128,0.2); color: var(--accent); }
+  .status.error { background: var(--danger-dim); border: 1px solid rgba(248,113,113,0.2); color: var(--danger); }
+  .status.warn { background: var(--warn-dim); border: 1px solid rgba(251,191,36,0.2); color: var(--warn); }
+  .status svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; margin-top: 1px; }
+  .status p { line-height: 1.5; }
+  .status-title { font-weight: 600; margin-bottom: 2px; }
+  .status-sub { font-size: 12px; font-family: var(--font-mono); opacity: 0.8; }
+
+  /* Download button */
+  .btn-dl {
+    display: none;
+    width: 100%;
+    padding: 13px;
+    background: var(--surface);
+    color: var(--accent);
+    font-family: var(--font-ui);
+    font-size: 14px;
+    font-weight: 500;
+    border: 1px solid rgba(74,222,128,0.3);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: background 0.15s;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 8px;
+    text-decoration: none;
+    letter-spacing: 0.01em;
+  }
+  .btn-dl.visible { display: flex; }
+  .btn-dl:hover { background: var(--accent-dim); }
+  .btn-dl svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* Char counter */
+  .char-count { font-size: 11px; font-family: var(--font-mono); color: var(--muted); }
+
+  /* Divider */
+  .divider { height: 1px; background: var(--border); margin: 2px 0; }
+
+  /* Footer */
+  .footer { margin-top: 3rem; text-align: center; }
+  .footer p { font-size: 11px; color: var(--muted); font-family: var(--font-mono); line-height: 1.8; }
+
+  @media (max-width: 380px) {
+    .shell { padding: 1.5rem 1rem 3rem; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-icon">
+      <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    </div>
+    <div>
+      <h1>habits encrypt</h1>
+      <p>AES-256-GCM · PBKDF2-SHA256</p>
+    </div>
+  </div>
+
+  <!-- Step 1: File / Editor -->
+  <div class="label">01 — yaml content</div>
+  <div class="card" id="step1card">
+    <div class="tabs">
+      <button class="tab active" id="tabUpload" onclick="switchTab('upload')">
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Upload
+      </button>
+      <button class="tab" id="tabEdit" onclick="switchTab('edit')">
+        <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Edit
+      </button>
+    </div>
+
+    <!-- Upload panel -->
+    <div id="panelUpload">
+      <div class="drop-zone" id="dropZone">
+        <input type="file" accept=".yml,.yaml,.txt" id="fileInput" onchange="handleFile(this.files[0])">
+        <svg class="drop-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 12 15 15"/></svg>
+        <span class="drop-label" id="dropLabel">Tap to choose a .yml file</span>
+        <span class="drop-hint" id="dropHint">or drag & drop here</span>
+      </div>
+    </div>
+
+    <!-- Edit panel -->
+    <div id="panelEdit" style="display:none;">
+      <div class="editor-toolbar">
+        <span id="charCount" class="char-count">0 chars</span>
+        <button onclick="clearEditor()">clear</button>
+      </div>
+      <textarea id="yamlEditor" placeholder="# paste or type your YAML here&#10;&#10;habits:&#10;  - name: Morning run&#10;    frequency: daily" spellcheck="false" oninput="onEditorInput()"></textarea>
+    </div>
+  </div>
+
+  <!-- Step 2: Password -->
+  <div class="label" style="margin-top:1.5rem;">02 — encryption key</div>
+  <div class="card">
+    <div class="field-group">
+      <div class="field">
+        <label>passphrase</label>
+        <div class="input-wrap">
+          <input type="password" id="pw1" placeholder="enter a strong passphrase" oninput="onPwInput()" autocomplete="new-password">
+          <button class="toggle-pw" onclick="togglePw('pw1', this)" tabindex="-1" aria-label="Toggle password visibility">
+            <svg id="eye1" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+        <div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div>
+      </div>
+      <div class="field">
+        <label>confirm passphrase</label>
+        <div class="input-wrap">
+          <input type="password" id="pw2" placeholder="confirm passphrase" oninput="onPwInput()" autocomplete="new-password">
+          <button class="toggle-pw" onclick="togglePw('pw2', this)" tabindex="-1" aria-label="Toggle password visibility">
+            <svg id="eye2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Advanced -->
+    <div class="advanced-row" onclick="toggleAdvanced()">
+      <span>advanced settings</span>
+      <svg class="chevron" id="chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="advanced-panel" id="advPanel">
+      <div class="field">
+        <label>PBKDF2 iterations — higher = slower brute-force</label>
+        <div class="iter-row" style="margin-top:6px;">
+          <input type="range" id="iterSlider" min="100000" max="1200000" step="100000" value="600000" oninput="updateIter()">
+          <span class="iter-val" id="iterVal">600,000</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Encrypt button -->
+  <button class="btn-encrypt" id="encryptBtn" onclick="runEncrypt()" disabled>
+    <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    Encrypt & Download
+  </button>
+
+  <!-- Status -->
+  <div class="status" id="statusBox">
+    <svg id="statusIcon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <div>
+      <div class="status-title" id="statusTitle"></div>
+      <div class="status-sub" id="statusSub"></div>
+    </div>
+  </div>
+
+  <!-- Download button (shown after encrypt) -->
+  <a class="btn-dl" id="dlBtn" download="habits.enc">
+    <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    Download habits.enc
+  </a>
+
+  <div class="footer">
+    <p>encryption runs locally in your browser<br>no data leaves your device</p>
+  </div>
+
+</div>
+
+<script>
+let currentContent = '';
+let currentTab = 'upload';
+let isAdvancedOpen = false;
+let encryptedResult = null;
+
+/* ── Tab switching ─────────────────────────────────────────── */
+function switchTab(tab) {
+  currentTab = tab;
+  document.getElementById('tabUpload').classList.toggle('active', tab === 'upload');
+  document.getElementById('tabEdit').classList.toggle('active', tab === 'edit');
+  document.getElementById('panelUpload').style.display = tab === 'upload' ? 'block' : 'none';
+  document.getElementById('panelEdit').style.display = tab === 'edit' ? 'block' : 'none';
+
+  if (tab === 'edit' && currentContent) {
+    document.getElementById('yamlEditor').value = currentContent;
+    updateCharCount();
+  }
+  validateForm();
+}
+
+/* ── File handling ─────────────────────────────────────────── */
+function handleFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    currentContent = e.target.result;
+    const dz = document.getElementById('dropZone');
+    dz.classList.add('has-file');
+    document.getElementById('dropLabel').textContent = file.name;
+    document.getElementById('dropHint').textContent = `${(file.size / 1024).toFixed(1)} KB · ${currentContent.split('\n').length} lines`;
+    validateForm();
+  };
+  reader.readAsText(file);
+}
+
+/* Drag & drop */
+const dz = document.getElementById('dropZone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+dz.addEventListener('drop', e => {
+  e.preventDefault();
+  dz.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) handleFile(file);
+});
+
+/* ── Editor ────────────────────────────────────────────────── */
+function onEditorInput() {
+  currentContent = document.getElementById('yamlEditor').value;
+  updateCharCount();
+  validateForm();
+}
+
+function updateCharCount() {
+  const v = document.getElementById('yamlEditor').value;
+  document.getElementById('charCount').textContent = `${v.length.toLocaleString()} chars · ${v.split('\n').length} lines`;
+}
+
+function clearEditor() {
+  document.getElementById('yamlEditor').value = '';
+  currentContent = '';
+  updateCharCount();
+  validateForm();
+}
+
+/* ── Password ──────────────────────────────────────────────── */
+function onPwInput() {
+  const pw = document.getElementById('pw1').value;
+  const fill = document.getElementById('strengthFill');
+  const strength = scorePassword(pw);
+  fill.style.width = strength.pct + '%';
+  fill.style.background = strength.color;
+  validateForm();
+}
+
+function scorePassword(pw) {
+  if (!pw) return { pct: 0, color: '#333' };
+  let score = 0;
+  if (pw.length >= 8) score++;
+  if (pw.length >= 14) score++;
+  if (/[A-Z]/.test(pw)) score++;
+  if (/[0-9]/.test(pw)) score++;
+  if (/[^A-Za-z0-9]/.test(pw)) score++;
+  const colors = ['#ef4444','#f97316','#fbbf24','#84cc16','#4ade80'];
+  return { pct: Math.min(100, (score / 5) * 100), color: colors[Math.max(0, score - 1)] };
+}
+
+function togglePw(id, btn) {
+  const input = document.getElementById(id);
+  const isText = input.type === 'text';
+  input.type = isText ? 'password' : 'text';
+  btn.querySelector('svg').innerHTML = isText
+    ? '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>'
+    : '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>';
+}
+
+/* ── Advanced ──────────────────────────────────────────────── */
+function toggleAdvanced() {
+  isAdvancedOpen = !isAdvancedOpen;
+  document.getElementById('advPanel').classList.toggle('open', isAdvancedOpen);
+  document.getElementById('chevron').classList.toggle('open', isAdvancedOpen);
+}
+
+function updateIter() {
+  const v = parseInt(document.getElementById('iterSlider').value);
+  document.getElementById('iterVal').textContent = v.toLocaleString();
+}
+
+/* ── Validation ────────────────────────────────────────────── */
+function getContent() {
+  if (currentTab === 'edit') return document.getElementById('yamlEditor').value.trim();
+  return currentContent.trim();
+}
+
+function validateForm() {
+  const content = getContent();
+  const pw1 = document.getElementById('pw1').value;
+  const pw2 = document.getElementById('pw2').value;
+  const ok = content.length > 0 && pw1.length >= 1 && pw1 === pw2;
+  document.getElementById('encryptBtn').disabled = !ok;
+}
+
+/* ── Crypto ────────────────────────────────────────────────── */
+async function deriveKey(password, salt, iterations) {
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']
+  );
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt, iterations, hash: 'SHA-256' },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
+}
+
+function toBase64(buf) {
+  return btoa(String.fromCharCode(...new Uint8Array(buf)));
+}
+
+async function encryptContent(plaintext, password, iterations) {
+  const salt = crypto.getRandomValues(new Uint8Array(32));
+  const iv   = crypto.getRandomValues(new Uint8Array(12));
+  const key  = await deriveKey(password, salt, iterations);
+  const enc  = new TextEncoder();
+  const ct   = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(plaintext));
+  return { v: 1, iter: iterations, salt: toBase64(salt), iv: toBase64(iv), ct: toBase64(ct) };
+}
+
+async function verifyRoundTrip(encObj, password) {
+  const salt = Uint8Array.from(atob(encObj.salt), c => c.charCodeAt(0));
+  const iv   = Uint8Array.from(atob(encObj.iv),   c => c.charCodeAt(0));
+  const ct   = Uint8Array.from(atob(encObj.ct),   c => c.charCodeAt(0));
+  const key  = await deriveKey(password, salt, encObj.iter);
+  const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct);
+  return new TextDecoder().decode(plain);
+}
+
+/* ── Main encrypt flow ─────────────────────────────────────── */
+async function runEncrypt() {
+  const content  = getContent();
+  const password = document.getElementById('pw1').value;
+  const pw2      = document.getElementById('pw2').value;
+  const iterations = parseInt(document.getElementById('iterSlider').value);
+
+  // Hide previous results
+  hideStatus();
+  document.getElementById('dlBtn').classList.remove('visible');
+
+  // Validation
+  if (!content) return showStatus('error', 'No content', 'Upload or paste your YAML first.');
+  if (password !== pw2) return showStatus('error', 'Passphrases don\'t match', 'Please re-enter both fields.');
+  if (password.length < 1) return showStatus('error', 'Empty passphrase', 'Enter a passphrase to continue.');
+
+  if (password.length < 8) {
+    const go = confirm('Your passphrase is very short. This is less secure.\nContinue anyway?');
+    if (!go) return;
+  }
+
+  // Encrypt
+  const btn = document.getElementById('encryptBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div> Encrypting…';
+
+  const t0 = performance.now();
+  try {
+    const enc = await encryptContent(content, password, iterations);
+    const elapsed = ((performance.now() - t0) / 1000).toFixed(1);
+
+    // Verify round-trip
+    const recovered = await verifyRoundTrip(enc, password);
+    if (recovered !== content) throw new Error('Round-trip verification failed.');
+
+    // Prepare download
+    const json = JSON.stringify(enc, null, 0);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url  = URL.createObjectURL(blob);
+    const dlBtn = document.getElementById('dlBtn');
+    dlBtn.href = url;
+    dlBtn.download = 'habits.enc';
+    dlBtn.classList.add('visible');
+
+    const kb = (blob.size / 1024).toFixed(1);
+    showStatus('success', 'Encrypted successfully', `${kb} KB · ${iterations.toLocaleString()} iterations · ${elapsed}s · round-trip verified`);
+
+    encryptedResult = enc;
+  } catch (err) {
+    showStatus('error', 'Encryption failed', err.message || 'Unknown error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Encrypt & Download';
+  }
+}
+
+/* ── Status helpers ────────────────────────────────────────── */
+const ICONS = {
+  success: '<polyline points="20 6 9 17 4 12"/>',
+  error:   '<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>',
+  warn:    '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>'
+};
+
+function showStatus(type, title, sub) {
+  const box = document.getElementById('statusBox');
+  box.className = `status ${type} visible`;
+  document.getElementById('statusIcon').innerHTML = ICONS[type] || ICONS.warn;
+  document.getElementById('statusTitle').textContent = title;
+  document.getElementById('statusSub').textContent = sub || '';
+}
+
+function hideStatus() {
+  document.getElementById('statusBox').className = 'status';
+}
+</script>
+</body>
+</html>

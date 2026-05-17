@@ -1,0 +1,77 @@
+# habits.yml  –  Your daily habit schedule
+# ─────────────────────────────────────────────────────────────────────────────
+# Encrypt this file with:   python encrypt.py habits.yml
+# Then delete this file.    Never upload the plain-text version.
+#
+# FIELDS
+#   title : display name of the habit          (required)
+#   time  : start-end in 24h format            (required)  e.g.  06:30-07:15
+#   days  : when to show it                    (optional, default: everyday)
+#
+# DAYS EXAMPLES
+#   everyday              →  every day (default if omitted)
+#   weekdays              →  Monday – Friday
+#   weekends              →  Saturday & Sunday
+#   mon,wed,fri           →  specific weekdays (sun mon tue wed thu fri sat)
+#   sat,sun               →  weekends by name
+#   1st                   →  first day of each month
+#   1st,15th              →  1st and 15th of each month
+#   last                  →  last day of each month
+#   mon,1st               →  mix weekday + date rules
+# ─────────────────────────────────────────────────────────────────────────────
+
+- title: "Wake & Breathe"
+  time: "05:50-06:00"
+  days: everyday
+
+- title: "Cold Shower"
+  time: "06:00-06:15"
+  days: everyday
+
+- title: "Morning Run"
+  time: "06:15-07:00"
+  days: mon,wed,fri,sat
+
+- title: "Strength Training"
+  time: "06:15-07:15"
+  days: tue,thu
+
+- title: "Journaling"
+  time: "07:15-07:45"
+  days: everyday
+
+- title: "Deep Work — Block 1"
+  time: "09:00-11:30"
+  days: weekdays
+
+- title: "Weekly Review"
+  time: "09:00-10:30"
+  days: sun
+
+- title: "Lunch Walk"
+  time: "12:00-12:30"
+  days: weekdays
+
+- title: "Deep Work — Block 2"
+  time: "13:00-15:30"
+  days: weekdays
+
+- title: "Monthly Planning"
+  time: "10:00-11:00"
+  days: 1st
+
+- title: "Reading"
+  time: "19:00-20:00"
+  days: everyday
+
+- title: "Evening Stretch"
+  time: "20:30-21:00"
+  days: everyday
+
+- title: "Wind Down"
+  time: "21:00-21:30"
+  days: everyday
+
+- title: "Lights Out"
+  time: "22:00-22:15"
+  days: everyday
