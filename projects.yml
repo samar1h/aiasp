@@ -159,3 +159,10 @@
   icon: fa-solid fa-info
   tags: []
   url: https://samar1h.github.io/aiasp/projects/css-guide/v2
+
+- title: TTS
+  description: Text to speech.
+  icon: fa-solid fa-speaker
+  tags: []
+  url: https://samar1h.github.io/aiasp/projects/tts
+  
