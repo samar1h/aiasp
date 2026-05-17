@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
+<title>CSS Basics — Interactive Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<style>
+/* ─── THEME ─────────────────────────────────────────── */
+:root {
+  --bg:       #0d0d10;
+  --surface:  #16161c;
+  --raised:   #1e1e28;
+  --border:   #2a2a38;
+  --text:     #e2e0dc;
+  --muted:    #6b6b80;
+  --accent:   #f97316;
+  --good:     #22c55e;
+  --warn:     #eab308;
+  --info:     #38bdf8;
+  --code-bg:  #0a0a10;
+  --r:        10px;
+  --mono:     'JetBrains Mono', monospace;
+  --serif:    'DM Serif Display', Georgia, serif;
+}
+.light {
+  --bg:      #f0ede8;
+  --surface: #faf9f7;
+  --raised:  #ffffff;
+  --border:  #ddd9d0;
+  --text:    #1a1a20;
+  --muted:   #888;
+  --code-bg: #e8e5e0;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--mono);background:var(--bg);color:var(--text);font-size:14px;line-height:1.7;transition:background .3s,color .3s}
+
+/* ─── LAYOUT ─────────────────────────────────────────── */
+.shell{display:flex;min-height:100vh}
+.sidebar{width:200px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);padding:20px 12px;position:sticky;top:0;height:100vh;overflow-y:auto;display:flex;flex-direction:column;gap:2px}
+.main{flex:1;min-width:0;padding:40px clamp(16px,4vw,56px) 80px}
+.sidebar-title{font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:3px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.nav-group{font-size:9px;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin:12px 0 4px 4px}
+.nav-link{display:block;font-size:11px;color:var(--muted);text-decoration:none;padding:5px 8px;border-radius:6px;transition:all .15s;border-left:2px solid transparent}
+.nav-link:hover,.nav-link.active{background:var(--raised);color:var(--text);border-left-color:var(--accent)}
+.sidebar-footer{margin-top:auto;padding-top:16px;display:flex;flex-direction:column;gap:8px}
+
+/* ─── TYPOGRAPHY ─────────────────────────────────────── */
+h1{font-family:var(--serif);font-size:clamp(28px,5vw,46px);line-height:1.1;margin-bottom:6px}
+h1 em{color:var(--accent);font-style:italic}
+.subtitle{color:var(--muted);font-size:13px;margin-bottom:40px}
+h2{font-family:var(--serif);font-size:clamp(20px,3vw,28px);margin:60px 0 20px;padding-top:60px;border-top:1px solid var(--border);display:flex;align-items:center;gap:12px}
+h2 .tag{font-family:var(--mono);font-size:10px;color:var(--accent);background:color-mix(in srgb,var(--accent) 15%,transparent);padding:3px 8px;border-radius:4px;letter-spacing:2px;font-weight:700}
+h3{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin:28px 0 12px}
+p{margin-bottom:12px;color:var(--text);font-size:13px;line-height:1.75}
+strong{color:var(--accent)}
+code{font-family:var(--mono);font-size:11.5px;background:var(--code-bg);border:1px solid var(--border);padding:1px 5px;border-radius:4px;color:var(--info)}
+
+/* ─── CODE BLOCKS ────────────────────────────────────── */
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;overflow-x:auto;font-family:var(--mono);font-size:12px;line-height:1.8;margin:12px 0 20px}
+.cp{color:#7dd3fc}.cv{color:#86efac}.cs{color:#fbbf24}.cc{color:#555;font-style:italic}.ck{color:var(--accent)}.cf{color:#c084fc}.cn{color:#fb7185}
+.live-code{background:var(--code-bg);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;font-family:var(--mono);font-size:11.5px;line-height:1.8;white-space:pre;overflow-x:auto;color:var(--text);min-height:60px;transition:all .2s}
+
+/* ─── NOTES ──────────────────────────────────────────── */
+.note{border-left:3px solid var(--accent);background:color-mix(in srgb,var(--accent) 8%,var(--code-bg));padding:12px 16px;border-radius:0 8px 8px 0;margin:14px 0;font-size:12.5px}
+.note.tip{border-color:var(--good);background:color-mix(in srgb,var(--good) 8%,var(--code-bg))}
+.note.info{border-color:var(--info);background:color-mix(in srgb,var(--info) 8%,var(--code-bg))}
+
+/* ─── PLAYGROUND ─────────────────────────────────────── */
+.playground{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:20px 0 30px}
+.pg-header{background:var(--raised);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pg-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-right:auto}
+.pg-body{padding:20px}
+.pg-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;display:block}
+
+/* ─── BUTTONS ────────────────────────────────────────── */
+.btn{font-family:var(--mono);font-size:11px;padding:6px 12px;border-radius:6px;border:1px solid var(--border);background:var(--raised);color:var(--muted);cursor:pointer;transition:all .15s;user-select:none}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.on{background:color-mix(in srgb,var(--accent) 20%,transparent);border-color:var(--accent);color:var(--accent);font-weight:700}
+.btn-group{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:10px}
+
+/* ─── SLIDERS ────────────────────────────────────────── */
+.slider-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.slider-row label{font-size:10px;color:var(--muted);width:80px;flex-shrink:0}
+.slider-row input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
+.slider-val{font-size:11px;color:var(--accent);width:70px;text-align:right;flex-shrink:0}
+
+/* ─── DEMO ITEMS ─────────────────────────────────────── */
+.demo-item{background:var(--accent);color:#fff;font-size:11px;font-weight:700;padding:8px 14px;border-radius:6px;display:flex;align-items:center;justify-content:center;min-width:40px;white-space:nowrap;transition:all .3s;flex-shrink:0}
+.demo-item:nth-child(2){background:color-mix(in srgb,var(--accent) 60%,#7c3aed)}
+.demo-item:nth-child(3){background:#7c3aed}
+.demo-item:nth-child(4){background:color-mix(in srgb,#7c3aed 70%,#22c55e)}
+.demo-item:nth-child(5){background:#22c55e}
+.demo-item:nth-child(6){background:#0ea5e9}
+.demo-item:nth-child(7){background:#e11d48}
+
+/* ─── GRID ITEMS ─────────────────────────────────────── */
+.grid-item{background:var(--accent);border-radius:6px;padding:12px 8px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;min-height:48px;transition:all .3s}
+.grid-item:nth-child(even){background:#7c3aed}
+
+/* ─── SWATCH ─────────────────────────────────────────── */
+.swatch{width:26px;height:26px;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:all .15s;flex-shrink:0}
+.swatch.active,.swatch:hover{border-color:var(--text);transform:scale(1.15)}
+
+/* ─── TABLE ──────────────────────────────────────────── */
+table{width:100%;border-collapse:collapse;margin:12px 0;font-size:12px}
+th{text-align:left;padding:9px 12px;background:var(--code-bg);color:var(--accent);border-bottom:1px solid var(--border)}
+td{padding:8px 12px;border-bottom:1px solid var(--border);vertical-align:top;line-height:1.5}
+tr:last-child td{border-bottom:none}
+td:first-child{color:var(--info);font-family:var(--mono)}
+
+/* ─── BOX MODEL ──────────────────────────────────────── */
+.bm-wrap{display:flex;align-items:center;justify-content:center;padding:0 10px 10px}
+.bm-margin{display:flex;align-items:center;justify-content:center;position:relative;transition:padding .2s}
+.bm-margin::after{content:'margin';position:absolute;top:4px;left:8px;font-size:9px;color:#f59e0b}
+.bm-border{display:flex;align-items:center;justify-content:center;position:relative;transition:padding .2s;background:color-mix(in srgb,#ef4444 25%,transparent);border-radius:6px}
+.bm-border::after{content:'border';position:absolute;top:4px;left:8px;font-size:9px;color:#ef4444}
+.bm-padding{display:flex;align-items:center;justify-content:center;position:relative;transition:padding .2s;background:color-mix(in srgb,#22c55e 25%,transparent);border-radius:4px}
+.bm-padding::after{content:'padding';position:absolute;top:4px;left:8px;font-size:9px;color:#22c55e}
+.bm-content{background:var(--accent);color:#fff;padding:12px 20px;border-radius:4px;font-size:12px;font-weight:700;text-align:center}
+
+/* ─── TRANSITION BOX ─────────────────────────────────── */
+.trans-box{width:80px;height:80px;background:var(--accent);border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;font-weight:700;text-align:center;user-select:none}
+
+/* ─── UNIT INPUT ─────────────────────────────────────── */
+.unit-input{font-family:var(--mono);background:var(--code-bg);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:6px;font-size:13px;outline:none}
+.unit-input:focus{border-color:var(--accent)}
+
+/* ─── MOBILE TOOLBAR ─────────────────────────────────── */
+.mobile-toolbar{display:none}
+@media(max-width:640px){
+  .shell{flex-direction:column}
+  .sidebar{display:none}
+  .main{padding:20px 14px 120px}
+  .mobile-toolbar{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);padding:8px 8px calc(8px + env(safe-area-inset-bottom));z-index:100;gap:4px;justify-content:space-around}
+  .tb-btn{font-family:var(--mono);font-size:9px;color:var(--muted);background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 6px}
+  .tb-btn .icon{font-size:16px}
+  .tb-btn:hover{color:var(--accent)}
+}
+input[type=color]{width:32px;height:32px;border-radius:50%;border:2px solid var(--border);cursor:pointer;padding:2px;background:none}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- ═══ SIDEBAR ═══ -->
+<nav class="sidebar">
+  <div class="sidebar-title">CSS Guide</div>
+  <a class="nav-link" href="#flexbox">01 · Flexbox</a>
+  <a class="nav-link" href="#grid">02 · Grid</a>
+  <a class="nav-link" href="#responsive">03 · Auto-Scale</a>
+  <a class="nav-link" href="#boxmodel">04 · Box Model</a>
+  <a class="nav-link" href="#position">05 · Positioning</a>
+  <a class="nav-link" href="#overflow">06 · Overflow</a>
+  <a class="nav-link" href="#transitions">07 · Transitions</a>
+  <a class="nav-link" href="#toolbar">08 · Mobile Toolbar</a>
+  <a class="nav-link" href="#themes">09 · Themes</a>
+  <a class="nav-link" href="#units">10 · Units</a>
+  <div class="sidebar-footer">
+    <button class="btn" onclick="toggleTheme()" style="width:100%">☀ Light / Dark</button>
+    <div style="display:flex;gap:6px;justify-content:center;padding-top:4px">
+      <div class="swatch active" style="background:#f97316" onclick="setAccent('#f97316',this)"></div>
+      <div class="swatch" style="background:#7c3aed" onclick="setAccent('#7c3aed',this)"></div>
+      <div class="swatch" style="background:#22c55e" onclick="setAccent('#22c55e',this)"></div>
+      <div class="swatch" style="background:#e11d48" onclick="setAccent('#e11d48',this)"></div>
+      <div class="swatch" style="background:#0ea5e9" onclick="setAccent('#0ea5e9',this)"></div>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══ MAIN ═══ -->
+<main class="main">
+
+<h1>CSS <em>Interactive</em> Basics</h1>
+<p class="subtitle">Click buttons. Drag sliders. See CSS change live — no setup needed.</p>
+
+<!-- ════ 01 FLEXBOX ════ -->
+<section id="flexbox">
+<h2><span class="tag">01</span>Flexbox — Centering & Layout</h2>
+
+<p>Put <code>display:flex</code> on the <strong>parent</strong>. Children line up automatically. The buttons below change real CSS on the preview in real-time.</p>
+
+<div class="playground">
+  <div class="pg-header">
+    <span class="pg-title">🎮 Flexbox Playground</span>
+    <button class="btn" onclick="addFlexItem()">+ Add item</button>
+    <button class="btn" onclick="removeFlexItem()">− Remove</button>
+  </div>
+  <div class="pg-body">
+    <div id="flex-preview" style="display:flex;gap:8px;min-height:130px;padding:16px;background:var(--code-bg);border:1px solid var(--border);border-radius:8px;margin-bottom:16px;flex-wrap:nowrap;align-items:stretch;justify-content:flex-start;flex-direction:row;transition:all .3s">
+      <div class="demo-item">A</div>
+      <div class="demo-item">B</div>
+      <div class="demo-item">C</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div>
+        <span class="pg-label">flex-direction — which way do items flow?</span>
+        <div class="btn-group">
+          <button class="btn on" onclick="setFlex('flexDirection','row',this)">→ row</button>
+          <button class="btn" onclick="setFlex('flexDirection','column',this)">↓ column</button>
+          <button class="btn" onclick="setFlex('flexDirection','row-reverse',this)">← row-rev</button>
+          <button class="btn" onclick="setFlex('flexDirection','column-reverse',this)">↑ col-rev</button>
+        </div>
+      </div>
+      <div>
+        <span class="pg-label">flex-wrap — overflow to next line?</span>
+        <div class="btn-group">
+          <button class="btn on" onclick="setFlex('flexWrap','nowrap',this)">nowrap</button>
+          <button class="btn" onclick="setFlex('flexWrap','wrap',this)">wrap</button>
+          <button class="btn" onclick="setFlex('flexWrap','wrap-reverse',this)">wrap-rev</button>
+        </div>
+      </div>
+      <div>
+        <span class="pg-label">justify-content — spacing along main axis</span>
+        <div class="btn-group">
+          <button class="btn on" onclick="setFlex('justifyContent','flex-start',this)">start</button>
+          <button class="btn" onclick="setFlex('justifyContent','center',this)">center</button>
+          <button class="btn" onclick="setFlex('justifyContent','flex-end',this)">end</button>
+          <button class="btn" onclick="setFlex('justifyContent','space-between',this)">between</button>
+          <button class="btn" onclick="setFlex('justifyContent','space-around',this)">around</button>
+          <button class="btn" onclick="setFlex('justifyContent','space-evenly',this)">evenly</button>
+        </div>
+      </div>
+      <div>
+        <span class="pg-label">align-items — positioning on cross axis</span>
+        <div class="btn-group">
+          <button class="btn on" onclick="setFlex('alignItems','stretch',this)">stretch</button>
+          <button class="btn" onclick="setFlex('alignItems','flex-start',this)">start</button>
+          <button class="btn" onclick="setFlex('alignItems','center',this)">center</button>
+          <button class="btn" onclick="setFlex('alignItems','flex-end',this)">end</button>
+          <button class="btn" onclick="setFlex('alignItems','baseline',this)">baseline</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="slider-row" style="margin-top:12px">
+      <label>gap</label>
+      <input type="range" min="0" max="40" value="8" oninput="setFlexGap(this.value)">
+      <span class="slider-val" id="gap-val">8px</span>
+    </div>
+
+    <span class="pg-label" style="margin-top:14px">Generated CSS</span>
+    <div class="live-code" id="flex-code"></div>
+  </div>
+</div>
+
+<div class="note info">💡 <strong>Mental model:</strong> In <code>row</code> direction, <code>justify-content</code> = horizontal and <code>align-items</code> = vertical. In <code>column</code> direction they flip.</div>
+
+<h3>flex: 1 — how children claim space</h3>
+<p>Give a child <code>flex:1</code> and it fills all remaining space. Multiple children with <code>flex:1</code> share equally. <code>flex:2</code> claims twice as much as <code>flex:1</code>.</p>
+
+<div class="playground">
+  <div class="pg-header"><span class="pg-title">🎮 flex: N — space claiming</span></div>
+  <div class="pg-body">
+    <div id="f1-preview" style="display:flex;gap:8px;padding:16px;background:var(--code-bg);border:1px solid var(--border);border-radius:8px;margin-bottom:14px;min-height:70px">
+      <div class="demo-item" id="f1a" style="flex:none;flex-direction:column;gap:2px"><span>A</span><span style="font-size:9px;opacity:.7">flex:none</span></div>
+      <div class="demo-item" id="f1b" style="flex:1;flex-direction:column;gap:2px"><span>B</span><span style="font-size:9px;opacity:.7">flex:1</span></div>
+      <div class="demo-item" id="f1c" style="flex:none;flex-direction:column;gap:2px"><span>C</span><span style="font-size:9px;opacity:.7">flex:none</span></div>
+    </div>
+    <div class="btn-group">
+      <button class="btn on" onclick="setF1('none','1','none')">A fixed · B grows · C fixed</button>
+      <button class="btn" onclick="setF1('1','1','1')">Equal thirds</button>
+      <button class="btn" onclick="setF1('1','2','1')">B gets double (flex:2)</button>
+      <button class="btn" onclick="setF1('none','none','none')">All fixed — no flex</button>
+      <button class="btn" onclick="setF1('1','1','none')">A+B share · C fixed</button>
+    </div>
+    <div class="live-code" id="f1-code"></div>
+  </div>
+</div>
+</section>
+
+<!-- ════ 02 GRID ════ -->
+<section id="grid">
+<h2><span class="tag">02</span>CSS Grid — Columns & Splits</h2>
+
+<p>Grid lets you define exact column structures. The <code>fr</code> unit = "fraction of free space". <code>1fr 4fr</code> is exactly 20%/80% without any math.</p>
+
+<div class="playground">
+  <div class="pg-header">
+    <span class="pg-title">🎮 Grid Columns Playground</span>
+    <button class="btn" onclick="addGridItem()">+ Item</button>
+    <button class="btn" onclick="removeGridItem()">− Item</button>
+  </div>
+  <div class="pg-body">
+    <div id="grid-preview" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:16px;background:var(--code-bg);border:1px solid var(--border);border-radius:8px;margin-bottom:16px;transition:all .3s">
+      <div class="grid-item">1</div>
+      <div class="grid-item">2</div>
+      <div class="grid-item">3</div>
+      <div class="grid-item">4</div>
+      <div class="grid-item">5</div>
+      <div class="grid-item">6</div>
+    </div>
+
+    <span class="pg-label">Column presets</span>
+    <div class="btn-group">
+      <button class="btn on"  onclick="setGrid('1fr 1fr')">½ · ½</button>
+      <button class="btn" onclick="setGrid('1fr 4fr')">⅕ · ⅘ (sidebar/main)</button>
+      <button class="btn" onclick="setGrid('1fr 3fr')">¼ · ¾</button>
+      <button class="btn" onclick="setGrid('1fr 1fr 1fr')">3 equal</button>
+      <button class="btn" onclick="setGrid('repeat(4,1fr)')">4 equal</button>
+      <button class="btn" onclick="setGrid('200px 1fr')">200px + fluid</button>
+      <button class="btn" onclick="setGrid('2fr 1fr 1fr')">hero · two side</button>
+      <button class="btn" onclick="setGrid('repeat(auto-fit,minmax(80px,1fr))')">auto-fit ✨</button>
+    </div>
+
+    <div class="slider-row">
+      <label>gap</label>
+      <input type="range" min="0" max="32" value="8" oninput="setGridGap(this.value)">
+      <span class="slider-val" id="ggap-val">8px</span>
+    </div>
+
+    <span class="pg-label">Generated CSS</span>
+    <div class="live-code" id="grid-code"></div>
+  </div>
+</div>
+
+<div class="note info">📌 <strong>auto-fit + minmax</strong> — the most powerful single line in grid. <code>repeat(auto-fit, minmax(200px, 1fr))</code> creates as many columns as fit, each at least 200px. Cards reflow automatically — no media queries needed.</div>
+</section>
+
+<!-- ════ 03 RESPONSIVE ════ -->
+<section id="responsive">
+<h2><span class="tag">03</span>Auto-Scale — No Hardcoded Sizes</h2>
+
+<h3>clamp(min, ideal, max)</h3>
+<p>Grows fluidly with the screen, but never smaller than <em>min</em> or bigger than <em>max</em>. Drag all four sliders below.</p>
+
+<div class="playground">
+  <div class="pg-header"><span class="pg-title">🎮 clamp() Visualizer</span></div>
+  <div class="pg-body">
+    <div class="slider-row"><label style="color:#ef4444">min (px)</label><input type="range" min="10" max="28" value="16" id="cmin" oninput="updateClamp()"><span class="slider-val" id="sv-cmin">16px</span></div>
+    <div class="slider-row"><label style="color:#f59e0b">vw factor</label><input type="range" min="1" max="10" value="3" id="cvw" oninput="updateClamp()"><span class="slider-val" id="sv-cvw">3vw</span></div>
+    <div class="slider-row"><label style="color:#22c55e">max (px)</label><input type="range" min="24" max="80" value="42" id="cmax" oninput="updateClamp()"><span class="slider-val" id="sv-cmax">42px</span></div>
+    <div class="slider-row"><label style="color:var(--info)">sim. viewport</label><input type="range" min="280" max="1400" value="800" id="cvp" oninput="updateClamp()"><span class="slider-val" id="sv-cvp">800px</span></div>
+    <div style="background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:24px;text-align:center;margin-bottom:12px">
+      <div id="clamp-text" style="font-family:var(--serif);font-weight:700;line-height:1.2;transition:font-size .1s">The quick brown fox</div>
+      <div id="clamp-info" style="font-size:10px;color:var(--muted);margin-top:10px"></div>
+      <!-- mini range indicator -->
+      <div style="margin:12px auto 0;max-width:300px;position:relative;height:4px;background:var(--border);border-radius:2px">
+        <div id="clamp-bar-min" style="position:absolute;top:-3px;width:10px;height:10px;border-radius:50%;background:#ef4444;transform:translateX(-50%)"></div>
+        <div id="clamp-bar-max" style="position:absolute;top:-3px;width:10px;height:10px;border-radius:50%;background:#22c55e;transform:translateX(-50%)"></div>
+        <div id="clamp-bar-cur" style="position:absolute;top:-5px;width:14px;height:14px;border-radius:50%;background:var(--accent);transform:translateX(-50%);box-shadow:0 0 8px var(--accent)"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);margin-top:8px;max-width:300px;margin-left:auto;margin-right:auto"><span style="color:#ef4444">min</span><span>range</span><span style="color:#22c55e">max</span></div>
+    </div>
+    <div class="live-code" id="clamp-code"></div>
+  </div>
+</div>
+
+<h3>Simulated screen sizes with media queries</h3>
+<div class="playground">
+  <div class="pg-header"><span class="pg-title">🎮 Responsive Layout Simulator</span></div>
+  <div class="pg-body">
+    <div class="btn-group">
+      <button class="btn" onclick="setSim(320,'📱 320px')">📱 320</button>
+      <button class="btn on" onclick="setSim(480,'📱 480px')">📱 480</button>
+      <button class="btn" onclick="setSim(768,'📟 768px — tablet')">📟 768</button>
+      <button class="btn" onclick="setSim(1024,'💻 1024px — laptop')">💻 1024</button>
+    </div>
+    <div id="sim-frame" style="border:2px solid var(--border);border-radius:12px;overflow:hidden;background:var(--bg);margin:0 auto;transition:max-width .4s;max-width:480px">
+      <div style="background:var(--accent);padding:10px 14px;font-size:11px;font-weight:700;color:#fff">MyApp</div>
+      <div id="sim-body" style="display:flex;flex-direction:column;gap:8px;padding:12px">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:10px;font-size:11px;color:var(--muted)">📁 Sidebar nav</div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:10px;font-size:11px;color:var(--muted);min-height:60px">Main content area</div>
+      </div>
+      <div id="sim-label" style="font-size:9px;color:var(--muted);text-align:center;padding:6px 12px">📱 480px — stacked (mobile)</div>
+    </div>
+    <div class="live-code" id="sim-code" style="margin-top:14px"></div>
+  </div>
+</div>
+</section>
+
+<!-- ════ 04 BOX MODEL ════ -->
+<section id="boxmodel">
+<h2><span class="tag">04</span>Box Model — Margin, Border, Padding</h2>
+
+<p>Every element is four nested boxes. Drag the sliders to see how each layer grows. This is why <code>box-sizing: border-box</code> matters — it keeps the element's total size predictable.</p>
+
+<div class="playground">
+  <div class="pg-header"><span class="pg-title">🎮 Box Model Visualizer</span></div>
+  <div class="pg-body">
+    <div class="bm-wrap" style="padding:20px">
+      <div id="bm-margin" class="bm-margin" style="padding:30px;background:color-mix(in srgb,#f59e0b 20%,transparent);border-radius:8px;position:relative">
+        <div style="position:absolute;top:6px;left:10px;font-size:9px;color:#f59e0b;font-weight:700">margin</div>
+        <div id="bm-border" class="bm-border" style="padding:20px;background:color-mix(in srgb,#ef4444 25%,transparent);border-radius:6px;position:relative">
+          <div style="position:absolute;top:4px;left:8px;font-size:9px;color:#ef4444;font-weight:700">border</div>
+          <div id="bm-padding" class="bm-padding" style="padding:20px;background:color-mix(in srgb,#22c55e 25%,transparent);border-radius:4px;position:relative">
+            <div style="position:absolute;top:4px;left:8px;font-size:9px;color:#22c55e;font-weight:700">padding</div>
+            <div class="bm-content">content</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="slider-row"><label style="color:#f59e0b">margin</label><input type="range" min="0" max="50" value="30" oninput="setBM('margin',this.value)"><span class="slider-val" id="sv-bm-margin">30px</span></div>
+    <div class="slider-row"><label style="color:#ef4444">border</label><input type="range" min="0" max="24" value="20" oninput="setBM('border',this.value)"><span class="slider-val" id="sv-bm-border">20px</span></div>
+    <div class="slider-row"><label style="color:#22c55e">padding</label><input type="range" min="0" max="50" value="20" oninput="setBM('padding',this.value)"><span class="slider-val" id="sv-bm-padding">20px</span></div>
+    <div class="live-code" id="bm-code"></div>
+  </div>
+</div>
+
+<div class="note tip">💡 Always add this at the top of your CSS file. Without it, padding and border add to an element's size and you get unexpected overflows:<br><br><code>*, *::before, *::after { box-sizing: border-box; }</code></div>
+</section>
+
+<!-- ════ 05 POSITIONING ════ -->
+<section id="position">
+<h2><span class="tag">05</span>Positioning</h2>
+
+<p>Five values — click each to see how it affects elements in real-time.</p>
+
+<div class="playground">
+  <div class="pg-header"><span class="pg-title">🎮 Position Explorer</span></div>
+  <div class="pg-body">
+    <div class="btn-group">
+      <button class="btn on" onclick="showPos('static')">static</button>
+      <button class="btn" onclick="showPos('relative')">relative</button>
+      <button class="btn" onclick="showPos('absolute')">absolute</button>
+      <button class="btn" onclick="showPos('fixed')">fixed ⚠</button>
+      <button class="btn" onclick="showPos('sticky')">sticky</button>
+    </div>
+
+    <div id="pos-static">
+      <div style="background:var(--code-bg);border:2px dashed var(--border);border-radius:8px;padding:12px;display:flex;gap:8px;align-items:center">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:10px 16px;font-size:11px;color:var(--muted)">Box A</div>
+        <div style="background:var(--accent);border-radius:6px;padding:10px 16px;font-size:11px;font-weight:700;color:#fff">Box B — static</div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:10px 16px;font-size:11px;color:var(--muted)">Box C</div>
+      </div>
+      <p style="margin-top:10px;font-size:12px;color:var(--muted)">Default flow. top/left/right/bottom do nothing. Element sits exactly where HTML puts it.</p>
+    </div>
+
+    <div id="pos-relative" style="display:none">
+      <div style="background:var(--code-bg);border:2px dashed var(--border);border-radius:8px;padding:12px;display:flex;gap:8px;align-items:flex-start;min-height:90px">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:10px 16px;font-size:11px;color:var(--muted)">Box A</div>
+        <div style="background:var(--accent);border-radius:6px;padding:10px 16px;font-size:11px;font-weight:700;color:#fff;position:relative;top:16px;left:12px">Box B<br><span style="font-size:9px;opacity:.7">top:16px left:12px</span></div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:10px 16px;font-size:11px;color:var(--muted)">Box C</div>
+      </div>
+      <p style="margin-top:10px;font-size:12px;color:var(--muted)">Stays in flow (A and C don't move) but B is visually nudged. Also creates a <em>positioning context</em> — absolute children position themselves relative to B's parent.</p>
+    </div>
+
+    <div id="pos-absolute" style="display:none">
+      <div style="background:var(--code-bg);border:2px dashed var(--border);border-radius:8px;padding:12px;position:relative;height:110px">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:10px 16px;font-size:11px;color:var(--muted);display:inline-block">Box A</div>
+        <div style="background:var(--accent);border-radius:6px;padding:10px 16px;font-size:11px;font-weight:700;color:#fff;position:absolute;top:8px;right:8px;text-align:right">Box B — absolute<br><span style="font-size:9px;opacity:.7">top:8 right:8 (corner)</span></div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:10px 16px;font-size:11px;color:var(--muted);display:inline-block;margin-left:8px">Box C</div>
+      </div>
+      <p style="margin-top:10px;font-size:12px;color:var(--muted)"><strong>Removed from flow.</strong> A and C collapse together as if B doesn't exist. B sticks to the corner of its nearest positioned parent. Use for: badges, tooltips, dropdown menus, overlays.</p>
+    </div>
+
+    <div id="pos-fixed" style="display:none">
+      <div style="background:var(--code-bg);border:2px dashed var(--border);border-radius:8px;padding:12px;height:110px;position:relative;overflow:hidden">
+        <div style="position:absolute;top:0;left:0;right:0;background:var(--accent);padding:8px 14px;font-size:11px;font-weight:700;color:#fff;z-index:1">Fixed Navbar — always at top of screen</div>
+        <div style="margin-top:36px;font-size:11px;color:var(--muted);padding:0 8px">Page content scrolls underneath the navbar…<br>Scroll all you want, navbar stays put.</div>
+      </div>
+      <p style="margin-top:10px;font-size:12px;color:var(--muted)"><strong>Removed from flow.</strong> Positioned relative to the browser window — not any element. Stays on screen while the page scrolls. Use for: navigation bars, chat toolbars, modals, cookie banners. (The real example is this sidebar!)</p>
+    </div>
+
+    <div id="pos-sticky" style="display:none">
+      <div style="background:var(--code-bg);border:2px dashed var(--border);border-radius:8px;height:130px;overflow-y:scroll;position:relative">
+        <div style="padding:8px 12px;font-size:11px;color:var(--muted)">Scroll inside this box ↓</div>
+        <div style="position:sticky;top:0;background:var(--accent);padding:8px 14px;font-size:11px;font-weight:700;color:#fff;z-index:1">Section Header — sticky top:0</div>
+        <div style="padding:12px;font-size:11px;color:var(--muted);line-height:2.2">Row 1 of content<br>Row 2<br>Row 3<br>Row 4<br>Row 5 — header still stuck at top<br>Row 6</div>
+      </div>
+      <p style="margin-top:10px;font-size:12px;color:var(--muted)"><strong>Stays in flow</strong> until it hits the threshold, then sticks. Unsticks when the parent scrolls out of view. Great for table column headers, section titles, sticky sidebars.</p>
+    </div>
+
+    <div class="live-code" id="pos-code" style="margin-top:14px"></div>
+  </div>
+</div>
+</section>
+
+<!-- ════ 06 OVERFLOW ════ -->
+<section id="overflow">
+<h2><span class="tag">06</span>Overflow & Scroll</h2>
+
+<div class="playground">
+  <div class="pg-header"><span class="pg-title">🎮 Overflow Playground</span></div>
+  <div class="pg-body">
+    <div class="btn-group">
+      <button class="btn on" onclick="setOverflow('visible')">visible</button>
+      <button class="btn" onclick="setOverflow('hidden')">hidden</button>
+      <button class="btn" onclick="setOverflow('scroll')">scroll</button>
+      <button class="btn" onclick="setOverflow('auto')">auto</button>
+    </div>
+    <div style="position:relative;background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:4px">
+      <div id="of-box" style="height:110px;overflow:visible;padding:12px;font-size:12px;line-height:1.6;transition:overflow .1s;border-radius:7px">
+        This box has a <strong>fixed height of 110px</strong>. The text inside is much longer than that. You can see how each overflow value handles the extra content differently. <em>visible</em> spills out. <em>hidden</em> clips it. <em>scroll</em> always shows scrollbars. <em>auto</em> only adds them when needed. This is the most common one for chat windows, sidebars, and modals.
+      </div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;margin-top:8px;font-size:11px;color:var(--muted)">↑ This sibling element shows whether overflow:visible bleeds into it</div>
+    <div class="live-code" id="of-code" style="margin-top:12px"></div>
+  </div>
+</div>
+
+<h3>Text truncation with ellipsis</h3>
+<div class="playground">
+  <div class="pg-header"><span class="pg-title">🎮 Drag to truncate</span></div>
+  <div class="pg-body">
+    <div class="slider-row">
+      <label>max-width</label>
+      <input type="range" min="60" max="500" value="200" oninput="setTrunc(this.value)">
+      <span class="slider-val" id="sv-trunc">200px</span>
+    </div>
+    <div style="background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px">
+      <div id="trunc-box" style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:var(--accent);color:#fff;padding:8px 14px;border-radius:6px;font-size:12px;font-weight:700;transition:max-width .05s">
+        This is a very long piece of text that will be truncated with an ellipsis
+      </div>
+    </div>
+    <pre style="margin:12px 0 0"><span class="cs">.truncate</span> {
+  <span class="cp">white-space</span>: <span class="cv">nowrap</span>;      <span class="cc">/* no wrapping */</span>
+  <span class="cp">overflow</span>: <span class="cv">hidden</span>;        <span class="cc">/* clip it */</span>
+  <span class="cp">text-overflow</span>: <span class="cv">ellipsis</span>;  <span class="cc">/* show … */</span>
+  <span class="cp">max-width</span>: <span class="cv">200px</span>;         <span class="cc">/* required! */</span>
+}</pre>
+  </div>
+</div>
+</section>
+
+<!-- ════ 07 TRANSITIONS ════ -->
+<section id="transitions">
+<h2><span class="tag">07</span>Transitions & Transforms</h2>
+
+<p>Make state changes smooth. <code>transition: property duration easing</code> — three ingredients.</p>
+
+<div class="playground">
+  <div class="pg-header"><span class="pg-title">🎮 Hover the box to trigger transition</span></div>
+  <div class="pg-body">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:16px">
+      <div>
+        <span class="pg-label">duration</span>
+        <div class="btn-group" style="flex-direction:column;align-items:flex-start">
+          <button class="btn" onclick="setTrans('dur','0.1s')">0.1s (snappy)</button>
+          <button class="btn on" onclick="setTrans('dur','0.3s')">0.3s (standard)</button>
+          <button class="btn" onclick="setTrans('dur','0.8s')">0.8s (slow)</button>
+          <button class="btn" onclick="setTrans('dur','2s')">2s (dramatic)</button>
+        </div>
+      </div>
+      <div>
+        <span class="pg-label">easing curve</span>
+        <div class="btn-group" style="flex-direction:column;align-items:flex-start">
+          <button class="btn on" onclick="setTrans('ease','ease')">ease</button>
+          <button class="btn" onclick="setTrans('ease','linear')">linear</button>
+          <button class="btn" onclick="setTrans('ease','ease-in')">ease-in</button>
+          <button class="btn" onclick="setTrans('ease','ease-out')">ease-out</button>
+          <button class="btn" onclick="setTrans('ease','ease-in-out')">ease-in-out</button>
+          <button class="btn" onclick="setTrans('ease','cubic-bezier(0.34,1.56,0.64,1)')">bounce ✨</button>
+        </div>
+      </div>
+      <div>
+        <span class="pg-label">hover effect</span>
+        <div class="btn-group" style="flex-direction:column;align-items:flex-start">
+          <button class="btn on" onclick="setTransEffect('scale(1.4) rotate(8deg)','#7c3aed','40px')">scale + rotate</button>
+          <button class="btn" onclick="setTransEffect('translateX(30px)','#22c55e','8px')">slide right</button>
+          <button class="btn" onclick="setTransEffect('scale(0.8)','#e11d48','8px')">shrink</button>
+          <button class="btn" onclick="setTransEffect('translateY(-20px)','#0ea5e9','8px')">lift up</button>
+          <button class="btn" onclick="setTransEffect('rotate(180deg)','#ec4899','50%')">flip</button>
+          <button class="btn" onclick="setTransEffect('skewX(15deg)','#f59e0b','8px')">skew</button>
+        </div>
+      </div>
+    </div>
+
+    <div style="background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:40px;display:flex;align-items:center;justify-content:center;margin-bottom:14px">
+      <style id="trans-style"></style>
+      <div class="trans-box tdemo">hover me ↗</div>
+    </div>
+    <div class="live-code" id="trans-code"></div>
+  </div>
+</div>
+
+<h3>Common transform values — chain them</h3>
+<pre><span class="cp">transform</span>: <span class="cv">scale(1.1)</span>                    <span class="cc">/* grow 10% */</span>
+<span class="cp">transform</span>: <span class="cv">translateX(20px)</span>             <span class="cc">/* slide right 20px */</span>
+<span class="cp">transform</span>: <span class="cv">translateY(-10px)</span>            <span class="cc">/* lift up */</span>
+<span class="cp">transform</span>: <span class="cv">rotate(45deg)</span>                <span class="cc">/* spin clockwise */</span>
+<span class="cp">transform</span>: <span class="cv">skewX(10deg)</span>                 <span class="cc">/* tilt */</span>
+<span class="cp">transform</span>: <span class="cv">scale(1.1) rotate(5deg)</span>      <span class="cc">/* chain = apply both */</span>
+<span class="cp">transform</span>: <span class="cv">translateY(-4px) scale(1.02)</span> <span class="cc">/* the classic hover lift */</span></pre>
+</section>
+
+<!-- ════ 08 MOBILE TOOLBAR ════ -->
+<section id="toolbar">
+<h2><span class="tag">08</span>Mobile Toolbar — Above Keyboard</h2>
+
+<p>The toolbar that stays at the bottom and moves up when the keyboard appears. Two ingredients: <code>position:fixed</code> + the right viewport meta.</p>
+
+<pre><span class="cc">/* ① viewport meta — REQUIRED in &lt;head&gt; */</span>
+<span class="cf">&lt;meta name="viewport"
+  content="width=device-width, initial-scale=1,
+           <span class="ck">interactive-widget=resizes-content</span>"&gt;</span>
+
+<span class="cc">/* ② CSS */</span>
+<span class="cs">.toolbar</span> {
+  <span class="cp">position</span>: <span class="cv">fixed</span>;
+  <span class="cp">bottom</span>: <span class="cv">0</span>;  <span class="cp">left</span>: <span class="cv">0</span>;  <span class="cp">right</span>: <span class="cv">0</span>;
+  <span class="cp">display</span>: <span class="cv">flex</span>;
+  <span class="cp">gap</span>: <span class="cv">8px</span>;
+  <span class="cp">align-items</span>: <span class="cv">center</span>;
+  <span class="cp">padding</span>: <span class="cv">10px 16px</span>;
+  <span class="cc">/* ↓ add space for iPhone home indicator */</span>
+  <span class="cp">padding-bottom</span>: <span class="cv">calc(10px + env(safe-area-inset-bottom))</span>;
+  <span class="cp">background</span>: <span class="cv">var(--surface)</span>;
+  <span class="cp">border-top</span>: <span class="cv">1px solid var(--border)</span>;
+  <span class="cp">z-index</span>: <span class="cv">100</span>;
+}
+
+<span class="cs">.toolbar input</span> {
+  <span class="cp">flex</span>: <span class="cv">1</span>;            <span class="cc">/* fills space beside button */</span>
+  <span class="cp">font-size</span>: <span class="cv">16px</span>;   <span class="cc">/* prevents iOS zoom-on-focus! */</span>
+  <span class="cp">padding</span>: <span class="cv">10px</span>;
+}
+
+<span class="cc">/* ③ so content isn't hidden behind toolbar */</span>
+<span class="cs">body</span> { <span class="cp">padding-bottom</span>: <span class="cv">80px</span>; }</pre>
+
+<div class="note tip">💡 <code>interactive-widget=resizes-content</code> shrinks the viewport when the keyboard opens — so your fixed bar naturally moves up. Without it the bar sits behind the keyboard.</div>
+<div class="note">⚠ <code>font-size: 16px</code> on inputs is critical for iOS — anything smaller triggers an automatic zoom that breaks your layout.</div>
+
+<div class="playground">
+  <div class="pg-header"><span class="pg-title">📱 Mock Toolbar Demo</span></div>
+  <div class="pg-body">
+    <div style="border:2px solid var(--border);border-radius:12px;overflow:hidden;max-width:300px;margin:0 auto;background:var(--bg);font-size:12px">
+      <div style="background:var(--accent);padding:10px 14px;font-weight:700;color:#fff">Chat App</div>
+      <div style="padding:14px;min-height:120px;color:var(--muted);font-size:11px;line-height:2">
+        <div style="background:var(--surface);border-radius:8px;padding:6px 10px;display:inline-block;margin-bottom:6px">Hey! 👋</div><br>
+        <div style="background:var(--surface);border-radius:8px;padding:6px 10px;display:inline-block">How's it going?</div>
+      </div>
+      <div style="background:var(--surface);border-top:1px solid var(--border);padding:10px 12px;display:flex;gap:8px;align-items:center">
+        <div style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:8px 12px;font-size:11px;color:var(--muted)">Message…</div>
+        <div style="background:var(--accent);border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;flex-shrink:0;cursor:pointer">↑</div>
+      </div>
+      <div style="height:10px;background:var(--surface)"></div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ════ 09 THEMES ════ -->
+<section id="themes">
+<h2><span class="tag">09</span>Themes & Accents — CSS Variables + JS</h2>
+
+<p>Define colors once on <code>:root</code>. Use them everywhere with <code>var(--name)</code>. Change your whole app's look with one JS line.</p>
+
+<pre><span class="cc">/* CSS — define on :root (= &lt;html&gt;) */</span>
+<span class="ck">:root</span> {
+  <span class="cp">--bg</span>:      <span class="cv">#0d0d10</span>;
+  <span class="cp">--surface</span>: <span class="cv">#16161c</span>;
+  <span class="cp">--text</span>:    <span class="cv">#e2e0dc</span>;
+  <span class="cp">--accent</span>:  <span class="cv">#f97316</span>;   <span class="cc">/* change this = recolor everything */</span>
+}
+<span class="cc">/* Light theme class */</span>
+<span class="cs">.light</span> { <span class="cp">--bg</span>: <span class="cv">#f0ede8</span>; <span class="cp">--text</span>: <span class="cv">#1a1a20</span>; }
+
+<span class="cc">/* Use them */</span>
+<span class="cs">body</span>   { <span class="cp">background</span>: <span class="cv">var(--bg)</span>; <span class="cp">color</span>: <span class="cv">var(--text)</span>; }
+<span class="cs">button</span> { <span class="cp">background</span>: <span class="cv">var(--accent)</span>; }
+
+<span class="cc">/* JS — toggle dark/light */</span>
+document.body.classList.toggle(<span class="cv">'light'</span>);
+
+<span class="cc">/* JS — change accent color */</span>
+document.documentElement.style
+  .setProperty(<span class="cv">'--accent'</span>, <span class="cv">'#7c3aed'</span>);</pre>
+
+<div class="playground">
+  <div class="pg-header"><span class="pg-title">🎨 Live Theme Builder</span></div>
+  <div class="pg-body">
+    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px">
+      <div>
+        <span class="pg-label">Accent presets</span>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">
+          <div class="swatch active" style="background:#f97316" onclick="setAccent('#f97316',this)"></div>
+          <div class="swatch" style="background:#7c3aed" onclick="setAccent('#7c3aed',this)"></div>
+          <div class="swatch" style="background:#22c55e" onclick="setAccent('#22c55e',this)"></div>
+          <div class="swatch" style="background:#e11d48" onclick="setAccent('#e11d48',this)"></div>
+          <div class="swatch" style="background:#0ea5e9" onclick="setAccent('#0ea5e9',this)"></div>
+          <div class="swatch" style="background:#d97706" onclick="setAccent('#d97706',this)"></div>
+          <div class="swatch" style="background:#ec4899" onclick="setAccent('#ec4899',this)"></div>
+          <input type="color" value="#f97316" oninput="setAccentCustom(this.value)" title="Pick any color">
+        </div>
+      </div>
+      <div>
+        <span class="pg-label">Mode</span>
+        <button class="btn" onclick="toggleTheme()" style="margin-top:6px">☀ Toggle Light / Dark</button>
+      </div>
+    </div>
+    <!-- Mini UI that reacts to the live theme -->
+    <div style="background:var(--raised);border:1px solid var(--border);border-radius:var(--r);overflow:hidden">
+      <div style="background:var(--accent);padding:12px 16px;font-size:12px;font-weight:700;color:#fff;display:flex;justify-content:space-between">
+        <span>My App</span><span style="opacity:.7;font-size:11px">--accent: <span id="accent-display">#f97316</span></span>
+      </div>
+      <div style="padding:14px;display:flex;flex-direction:column;gap:10px;background:var(--bg)">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:12px;color:var(--text)">This card uses <code>var(--surface)</code> and <code>var(--text)</code>. Change accent above — the header and buttons update instantly.</div>
+        <div style="display:flex;gap:8px">
+          <button onclick="void(0)" style="font-family:var(--mono);font-size:11px;background:var(--accent);color:#fff;border:none;border-radius:6px;padding:8px 16px;cursor:pointer;flex:1">Primary btn</button>
+          <button onclick="void(0)" style="font-family:var(--mono);font-size:11px;background:transparent;color:var(--accent);border:1px solid var(--accent);border-radius:6px;padding:8px 16px;cursor:pointer;flex:1">Secondary</button>
+        </div>
+        <div style="height:4px;border-radius:2px;background:var(--border)"><div style="height:4px;border-radius:2px;background:var(--accent);width:65%;transition:background .3s"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ════ 10 UNITS ════ -->
+<section id="units">
+<h2><span class="tag">10</span>Units Converter</h2>
+
+<p>Type any <code>px</code> value to see what it equals in every other unit. Assumes 16px root and your chosen viewport width.</p>
+
+<div class="playground">
+  <div class="pg-header"><span class="pg-title">🔢 Unit Converter</span></div>
+  <div class="pg-body">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+      <span style="font-size:12px;color:var(--muted)">pixels:</span>
+      <input class="unit-input" type="number" id="unit-px" value="32" oninput="convertUnits()" style="width:80px">
+      <span style="font-size:12px;color:var(--muted)">viewport width:</span>
+      <input class="unit-input" type="number" id="unit-vp" value="1280" oninput="convertUnits()" style="width:90px">
+      <span style="font-size:12px;color:var(--muted)">px</span>
+    </div>
+    <div id="unit-results" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px"></div>
+    <div class="note info" style="margin-top:14px">📌 <strong>Rule of thumb:</strong> <code>rem</code> for font sizes + spacing · <code>fr</code> or <code>%</code> for widths · <code>clamp()</code> for responsive type · <code>px</code> only for borders and tiny fixed values.</div>
+  </div>
+</div>
+
+<table>
+  <tr><th>Unit</th><th>Relative to</th><th>Use for</th></tr>
+  <tr><td>px</td><td>screen pixels</td><td>borders, icons, exact tiny values</td></tr>
+  <tr><td>rem</td><td>root font-size (16px)</td><td>font sizes, padding, margins</td></tr>
+  <tr><td>em</td><td>current element font-size</td><td>padding proportional to text size</td></tr>
+  <tr><td>%</td><td>parent element size</td><td>widths, heights relative to parent</td></tr>
+  <tr><td>vw</td><td>viewport width</td><td>full-width sections, fluid type</td></tr>
+  <tr><td>dvh</td><td>dynamic viewport height</td><td>full-screen mobile (better than vh)</td></tr>
+  <tr><td>fr</td><td>free space in grid</td><td>grid columns and rows only</td></tr>
+  <tr><td>clamp()</td><td>min + fluid + max</td><td>responsive sizes without breakpoints</td></tr>
+</table>
+
+<div style="height:60px"></div>
+</section>
+
+</main>
+</div>
+
+<!-- MOBILE TOOLBAR -->
+<div class="mobile-toolbar">
+  <button class="tb-btn" onclick="toggleTheme()"><span class="icon">☀</span>Theme</button>
+  <button class="tb-btn" onclick="nav('flexbox')"><span class="icon">📐</span>Flex</button>
+  <button class="tb-btn" onclick="nav('grid')"><span class="icon">⊞</span>Grid</button>
+  <button class="tb-btn" onclick="nav('responsive')"><span class="icon">↔</span>Scale</button>
+  <button class="tb-btn" onclick="nav('themes')"><span class="icon">🎨</span>Colors</button>
+</div>
+
+<script>
+/* ─── UTILS ──────────────────────────── */
+function nav(id){ document.getElementById(id)?.scrollIntoView({behavior:'smooth'}) }
+function btnGroup(btn){ btn.closest('.btn-group')?.querySelectorAll('.btn').forEach(b=>b.classList.remove('on')); btn.classList.add('on'); }
+
+/* ─── THEME ──────────────────────────── */
+function toggleTheme(){ document.body.classList.toggle('light') }
+function setAccent(c,el){
+  document.documentElement.style.setProperty('--accent',c);
+  document.querySelectorAll('.swatch').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('input[type=color]').forEach(i=>i.value=c);
+  if(el) el.classList.add('active');
+  const d=document.getElementById('accent-display'); if(d) d.textContent=c;
+}
+function setAccentCustom(c){
+  document.documentElement.style.setProperty('--accent',c);
+  const d=document.getElementById('accent-display'); if(d) d.textContent=c;
+  document.querySelectorAll('.swatch').forEach(s=>s.classList.remove('active'));
+}
+
+/* ─── SIDEBAR ACTIVE ─────────────────── */
+const obs=new IntersectionObserver(entries=>entries.forEach(e=>{
+  if(e.isIntersecting){
+    document.querySelectorAll('.nav-link').forEach(l=>l.classList.remove('active'));
+    document.querySelector(`.nav-link[href="#${e.target.id}"]`)?.classList.add('active');
+  }
+}),{rootMargin:'-20% 0px -70% 0px'});
+['flexbox','grid','responsive','boxmodel','position','overflow','transitions','toolbar','themes','units']
+  .forEach(id=>{ const el=document.getElementById(id); if(el) obs.observe(el); });
+
+/* ─── FLEXBOX ────────────────────────── */
+const FS={flexDirection:'row',justifyContent:'flex-start',alignItems:'stretch',flexWrap:'nowrap',gap:8};
+function updateFlexCode(){
+  document.getElementById('flex-code').textContent=`.container {\n  display: flex;\n  flex-direction: ${FS.flexDirection};\n  justify-content: ${FS.justifyContent};\n  align-items: ${FS.alignItems};\n  flex-wrap: ${FS.flexWrap};\n  gap: ${FS.gap}px;\n}`;
+}
+function setFlex(prop,val,btn){
+  FS[prop]=val;
+  document.getElementById('flex-preview').style[prop]=val;
+  btnGroup(btn);
+  updateFlexCode();
+}
+function setFlexGap(v){
+  FS.gap=v; document.getElementById('flex-preview').style.gap=v+'px';
+  document.getElementById('gap-val').textContent=v+'px'; updateFlexCode();
+}
+const LABELS=['A','B','C','D','E','F','G']; let fCount=3;
+function addFlexItem(){
+  if(fCount>=7)return;
+  const p=document.getElementById('flex-preview');
+  const d=document.createElement('div'); d.className='demo-item'; d.textContent=LABELS[fCount++]; p.appendChild(d);
+}
+function removeFlexItem(){
+  const p=document.getElementById('flex-preview'); if(p.children.length>1){p.removeChild(p.lastChild);fCount--;}
+}
+updateFlexCode();
+
+/* ─── FLEX:1 ─────────────────────────── */
+function setF1(a,b,c){
+  const map={f1a:a,f1b:b,f1c:c};
+  Object.entries(map).forEach(([id,v])=>{
+    const el=document.getElementById(id); el.style.flex=v;
+    el.querySelector('span:last-child').textContent='flex:'+v;
+  });
+  const desc=(a==='1'&&b==='1'&&c==='1')?'all equal — each gets ⅓ of space':
+             (b==='2')?'B gets twice the space of A and C':
+             (a==='none'&&b==='none'&&c==='none')?'no flex — all shrink to content width':
+             (c==='none')?'A+B share space · C is fixed':
+             'A is fixed · B fills the rest · C is fixed';
+  document.getElementById('f1-code').textContent=`.a { flex: ${a} }\n.b { flex: ${b} }\n.c { flex: ${c} }\n/* ${desc} */`;
+  event.target.closest('.btn-group')?.querySelectorAll('.btn').forEach(b=>b.classList.remove('on'));
+  event.target.classList.add('on');
+}
+setF1('none','1','none');
+
+/* ─── GRID ───────────────────────────── */
+let gcols='1fr 1fr',ggap=8;
+function setGrid(cols){
+  gcols=cols;
+  document.getElementById('grid-preview').style.gridTemplateColumns=cols;
+  updateGridCode();
+  event.target.closest('.btn-group')?.querySelectorAll('.btn').forEach(b=>b.classList.remove('on'));
+  event.target.classList.add('on');
+}
+function setGridGap(v){
+  ggap=v; document.getElementById('grid-preview').style.gap=v+'px';
+  document.getElementById('ggap-val').textContent=v+'px'; updateGridCode();
+}
+function updateGridCode(){
+  document.getElementById('grid-code').textContent=`.container {\n  display: grid;\n  grid-template-columns: ${gcols};\n  gap: ${ggap}px;\n}`;
+}
+function addGridItem(){
+  const p=document.getElementById('grid-preview');
+  const n=p.children.length+1; const d=document.createElement('div');
+  d.className='grid-item'; d.textContent=n; p.appendChild(d);
+}
+function removeGridItem(){
+  const p=document.getElementById('grid-preview'); if(p.children.length>1) p.removeChild(p.lastChild);
+}
+updateGridCode();
+
+/* ─── CLAMP ──────────────────────────── */
+function updateClamp(){
+  const mn=+document.getElementById('cmin').value;
+  const vwF=+document.getElementById('cvw').value;
+  const mx=+document.getElementById('cmax').value;
+  const vp=+document.getElementById('cvp').value;
+  document.getElementById('sv-cmin').textContent=mn+'px';
+  document.getElementById('sv-cvw').textContent=vwF+'vw';
+  document.getElementById('sv-cmax').textContent=mx+'px';
+  document.getElementById('sv-cvp').textContent=vp+'px';
+  const pref=vp*vwF/100;
+  const actual=Math.min(mx,Math.max(mn,pref));
+  document.getElementById('clamp-text').style.fontSize=actual+'px';
+  const phase=pref<mn?`🔴 AT MIN (${mn}px) — viewport too small`:pref>mx?`🟢 AT MAX (${mx}px) — viewport capped`:`🟡 FLUID — ${vwF}vw = ${Math.round(pref)}px`;
+  document.getElementById('clamp-info').textContent=`Actual size: ${Math.round(actual)}px · ${phase}`;
+  document.getElementById('clamp-code').textContent=`font-size: clamp(${mn}px, ${vwF}vw, ${mx}px);\n/* at ${vp}px viewport width → ${Math.round(actual)}px */`;
+  // indicator bar
+  const range=mx-mn; const minPct=0; const maxPct=100;
+  const curPct=Math.min(100,Math.max(0,(actual-mn)/range*100));
+  document.getElementById('clamp-bar-min').style.left=minPct+'%';
+  document.getElementById('clamp-bar-max').style.left=maxPct+'%';
+  document.getElementById('clamp-bar-cur').style.left=curPct+'%';
+}
+updateClamp();
+
+/* ─── SIM ────────────────────────────── */
+function setSim(w,label){
+  document.getElementById('sim-frame').style.maxWidth=w+'px';
+  document.getElementById('sim-label').textContent=label;
+  const body=document.getElementById('sim-body');
+  body.style.flexDirection=w>=768?'row':'column';
+  document.getElementById('sim-code').textContent=
+    w>=768?
+    `.layout { flex-direction: column; } /* mobile default */\n@media (min-width: 768px) {\n  .layout { flex-direction: row; }  /* ✓ THIS IS ACTIVE */\n}`:
+    `.layout { flex-direction: column; } /* ✓ THIS IS ACTIVE — mobile */\n@media (min-width: 768px) {\n  .layout { flex-direction: row; }  /* not triggered yet */\n}`;
+  event.target.closest('.btn-group')?.querySelectorAll('.btn').forEach(b=>b.classList.remove('on'));
+  event.target.classList.add('on');
+}
+setSim(480,'📱 480px — mobile (stacked)');
+
+/* ─── BOX MODEL ──────────────────────── */
+function setBM(prop,v){
+  document.getElementById('sv-bm-'+prop).textContent=v+'px';
+  const m=+document.getElementById('sv-bm-margin').textContent;
+  const b=+document.getElementById('sv-bm-border').textContent;
+  const p=+document.getElementById('sv-bm-padding').textContent;
+  if(prop==='margin') document.getElementById('bm-margin').style.padding=v+'px';
+  if(prop==='border') document.getElementById('bm-border').style.padding=v+'px';
+  if(prop==='padding') document.getElementById('bm-padding').style.padding=v+'px';
+  document.getElementById('bm-code').textContent=`div {\n  margin:  ${document.getElementById('sv-bm-margin').textContent};\n  border:  ${document.getElementById('sv-bm-border').textContent} solid #color;\n  padding: ${document.getElementById('sv-bm-padding').textContent};\n  box-sizing: border-box;  /* always add this */\n}`;
+}
+document.getElementById('bm-code').textContent=`div {\n  margin:  30px;\n  border:  20px solid #color;\n  padding: 20px;\n  box-sizing: border-box;  /* always add this */\n}`;
+
+/* ─── POSITIONING ────────────────────── */
+const POS_CODES={
+  static:'.box { position: static; }\n/* Default. Top/left/right/bottom have no effect.\n   Element flows in normal document order. */',
+  relative:'.box { position: relative; top: 16px; left: 12px; }\n/* Stays in flow — siblings don\'t react to its new position.\n   Nudged visually from its natural spot.\n   Also creates a positioning context for absolute children. */',
+  absolute:'.parent { position: relative; }  /* anchor */\n.box    { position: absolute; top: 8px; right: 8px; }\n/* Removed from flow — siblings ignore it and collapse.\n   Positioned relative to nearest non-static ancestor.\n   Use for: badges, tooltips, dropdowns, overlays. */',
+  fixed:'.navbar {\n  position: fixed;\n  top: 0; left: 0; right: 0;\n  z-index: 100;\n}\n/* Removed from flow. Viewport-relative.\n   Stays on screen while the page scrolls.\n   Use for: navbars, bottom toolbars, modals. */',
+  sticky:'.header {\n  position: sticky;\n  top: 0;\n  z-index: 1;\n}\n/* Stays in flow until it hits top:0 while scrolling,\n   then sticks there. Unsticks when parent scrolls away.\n   Use for: table headers, section titles, sidebars. */'
+};
+function showPos(type){
+  ['static','relative','absolute','fixed','sticky'].forEach(t=>{
+    document.getElementById('pos-'+t).style.display=t===type?'block':'none';
+  });
+  document.getElementById('pos-code').textContent=POS_CODES[type];
+  event.target.closest('.btn-group')?.querySelectorAll('.btn').forEach(b=>b.classList.remove('on'));
+  event.target.classList.add('on');
+}
+document.getElementById('pos-code').textContent=POS_CODES.static;
+
+/* ─── OVERFLOW ───────────────────────── */
+const OF_DESC={
+  visible:'Spills outside — overlaps siblings. This is the default.',
+  hidden:'Clips content. Scrolling is impossible. Great for border-radius on images.',
+  scroll:'Always shows scrollbars, even if content fits.',
+  auto:'Scrollbars appear only when content overflows. Use this for panels.'
+};
+function setOverflow(v){
+  document.getElementById('of-box').style.overflow=v;
+  document.getElementById('of-code').textContent=`.box {\n  height: 110px;\n  overflow: ${v};\n  /* ${OF_DESC[v]} */\n}`;
+  event.target.closest('.btn-group')?.querySelectorAll('.btn').forEach(b=>b.classList.remove('on'));
+  event.target.classList.add('on');
+}
+document.getElementById('of-code').textContent=`.box {\n  height: 110px;\n  overflow: visible;\n  /* ${OF_DESC.visible} */\n}`;
+
+function setTrunc(v){
+  document.getElementById('trunc-box').style.maxWidth=v+'px';
+  document.getElementById('sv-trunc').textContent=v+'px';
+}
+
+/* ─── TRANSITIONS ────────────────────── */
+const TS={dur:'0.3s',ease:'ease',transform:'scale(1.4) rotate(8deg)',bg:'#7c3aed',br:'40px'};
+function rebuildTrans(){
+  const css=`.tdemo { transition: all ${TS.dur} ${TS.ease}; }\n.tdemo:hover { transform: ${TS.transform}; background: ${TS.bg}; border-radius: ${TS.br}; }`;
+  document.getElementById('trans-style').textContent=css;
+  document.getElementById('trans-code').textContent=`.box {\n  transition: all ${TS.dur} ${TS.ease};\n}\n.box:hover {\n  transform: ${TS.transform};\n  background: ${TS.bg};\n  border-radius: ${TS.br};\n}`;
+}
+function setTrans(key,val){
+  TS[key]=val; rebuildTrans();
+  event.target.closest('.btn-group')?.querySelectorAll('.btn').forEach(b=>b.classList.remove('on'));
+  event.target.classList.add('on');
+}
+function setTransEffect(tf,bg,br){
+  TS.transform=tf; TS.bg=bg; TS.br=br; rebuildTrans();
+  event.target.closest('.btn-group')?.querySelectorAll('.btn').forEach(b=>b.classList.remove('on'));
+  event.target.classList.add('on');
+}
+rebuildTrans();
+
+/* ─── UNITS ──────────────────────────── */
+function convertUnits(){
+  const px=+document.getElementById('unit-px').value||0;
+  const vp=+document.getElementById('unit-vp').value||1280;
+  const root=16;
+  const units=[
+    {name:'rem', val:(px/root).toFixed(3), note:`÷ 16 (root font-size)`},
+    {name:'em',  val:(px/root).toFixed(3), note:'same as rem at root level'},
+    {name:'%',   val:(px/vp*100).toFixed(2)+'%',note:`of ${vp}px viewport`},
+    {name:'vw',  val:(px/vp*100).toFixed(3), note:`of viewport width`},
+    {name:'vh',  val:(px/vp*100).toFixed(3), note:'assuming square viewport'},
+    {name:'clamp', val:`clamp(${Math.round(px*.5)}px, ${(px/vp*100).toFixed(1)}vw, ${px}px)`, note:'suggested responsive range'},
+  ];
+  document.getElementById('unit-results').innerHTML=`
+    <div style="background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px">
+      <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">input</div>
+      <div style="font-size:20px;color:var(--accent);font-weight:700;margin:4px 0">${px}px</div>
+      <div style="font-size:9px;color:var(--muted)">your value</div>
+    </div>
+    ${units.map(u=>`
+    <div style="background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px">
+      <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">${u.name}</div>
+      <div style="font-size:13px;color:var(--info);font-weight:700;margin:4px 0;word-break:break-all">${u.val}</div>
+      <div style="font-size:9px;color:var(--muted)">${u.note}</div>
+    </div>`).join('')}`;
+}
+convertUnits();
+</script>
+</body>
+</html>
