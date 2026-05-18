@@ -1,0 +1,1241 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0d1117" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>CipherForge</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- jQuery CDN -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <!-- Google Fonts: JetBrains Mono + Syne -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet" />
+
+  <script>
+    tailwind.config = {
+      darkMode: ['selector', '[data-theme="dark"]'],
+      theme: {
+        extend: {
+          fontFamily: {
+            display: ['Syne', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            forge: {
+              bg:      '#0d1117',
+              surface: '#161b22',
+              card:    '#1c2230',
+              border:  '#2a3441',
+              accent:  '#00d4aa',
+              accentd: '#00a884',
+              muted:   '#7a8a9a',
+              text:    '#e0eaf5',
+              danger:  '#ff4757',
+              warn:    '#ffa502',
+            },
+            lforge: {
+              bg:      '#f0f4f8',
+              surface: '#ffffff',
+              card:    '#e8eef5',
+              border:  '#c8d5e0',
+              accent:  '#0096a0',
+              accentd: '#007a83',
+              muted:   '#5a6a7a',
+              text:    '#1a2535',
+              danger:  '#dc2626',
+              warn:    '#d97706',
+            },
+          },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    /* ─── CSS Variables ─── */
+    [data-theme="dark"] {
+      --bg:      #0d1117;
+      --surface: #161b22;
+      --card:    #1c2230;
+      --border:  #2a3441;
+      --accent:  #00d4aa;
+      --accentd: #00a884;
+      --muted:   #7a8a9a;
+      --text:    #e0eaf5;
+      --danger:  #ff4757;
+      --warn:    #ffa502;
+      --shadow:  0 4px 24px rgba(0,212,170,.08);
+    }
+    [data-theme="light"] {
+      --bg:      #f0f4f8;
+      --surface: #ffffff;
+      --card:    #e8eef5;
+      --border:  #c8d5e0;
+      --accent:  #0096a0;
+      --accentd: #007a83;
+      --muted:   #5a6a7a;
+      --text:    #1a2535;
+      --danger:  #dc2626;
+      --warn:    #d97706;
+      --shadow:  0 4px 24px rgba(0,150,160,.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Syne', sans-serif;
+      min-height: 100vh;
+      overscroll-behavior: none;
+      transition: background .3s, color .3s;
+    }
+
+    /* ─── Scrollbar ─── */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    /* ─── Surface & Card ─── */
+    .surface { background: var(--surface); }
+    .card     { background: var(--card); border: 1px solid var(--border); border-radius: 16px; }
+
+    /* ─── Accent ─── */
+    .accent-text  { color: var(--accent); }
+    .accent-bg    { background: var(--accent); }
+    .accent-border{ border-color: var(--accent); }
+
+    /* ─── Inputs ─── */
+    textarea, select, input[type="number"], input[type="text"] {
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: .65rem .85rem;
+      font-family: inherit;
+      font-size: .9rem;
+      width: 100%;
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+      resize: vertical;
+    }
+    textarea:focus, select:focus, input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(0,212,170,.15);
+    }
+    select { cursor: pointer; appearance: none; padding-right: 2rem; }
+    select option { background: var(--surface); }
+
+    /* Monospace for output and code */
+    .mono { font-family: 'JetBrains Mono', monospace; }
+
+    /* ─── Buttons ─── */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      gap: .4rem; padding: .55rem 1.1rem; border-radius: 10px;
+      font-family: 'Syne', sans-serif; font-weight: 600; font-size: .85rem;
+      cursor: pointer; border: none; transition: all .18s; user-select: none;
+      white-space: nowrap;
+    }
+    .btn-primary  { background: var(--accent); color: #0d1117; }
+    .btn-primary:hover  { background: var(--accentd); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,212,170,.3); }
+    .btn-secondary{ background: transparent; color: var(--text); border: 1px solid var(--border); }
+    .btn-secondary:hover{ border-color: var(--accent); color: var(--accent); }
+    .btn-danger   { background: transparent; color: var(--danger); border: 1px solid transparent; }
+    .btn-danger:hover{ background: rgba(255,71,87,.1); border-color: var(--danger); }
+    .btn-ghost    { background: transparent; color: var(--muted); }
+    .btn-ghost:hover { color: var(--text); }
+    .btn:active   { transform: scale(.96); }
+    .btn:disabled { opacity: .45; cursor: not-allowed; pointer-events: none; }
+    .btn-sm       { padding: .35rem .75rem; font-size: .78rem; border-radius: 8px; }
+    .btn-icon     { padding: .45rem; border-radius: 8px; width: 34px; height: 34px; }
+
+    /* ─── Tabs ─── */
+    .tab-bar {
+      display: grid; grid-template-columns: 1fr 1fr;
+      background: var(--card); border-radius: 14px; padding: 4px;
+    }
+    .tab-btn {
+      padding: .7rem; border-radius: 10px; text-align: center;
+      font-weight: 700; font-size: .9rem; cursor: pointer;
+      transition: all .2s; color: var(--muted); border: none;
+      font-family: 'Syne', sans-serif; background: transparent;
+    }
+    .tab-btn.active {
+      background: var(--accent); color: #0d1117;
+      box-shadow: 0 2px 12px rgba(0,212,170,.35);
+    }
+
+    /* ─── Step Card ─── */
+    .step-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; padding: .75rem;
+      transition: border-color .2s, box-shadow .2s;
+      animation: stepIn .22s ease;
+    }
+    .step-card:hover { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(0,212,170,.08); }
+    @keyframes stepIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ─── Strategy Badge ─── */
+    .strategy-badge {
+      display: inline-block; padding: .2rem .55rem;
+      background: rgba(0,212,170,.13); color: var(--accent);
+      border-radius: 6px; font-size: .72rem; font-weight: 700;
+      font-family: 'JetBrains Mono', monospace; letter-spacing: .03em;
+    }
+
+    /* ─── Output Area ─── */
+    .output-area {
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 12px; padding: 1rem; min-height: 100px;
+      font-family: 'JetBrains Mono', monospace; font-size: .82rem;
+      color: var(--accent); word-break: break-all; white-space: pre-wrap;
+      line-height: 1.6; transition: border-color .2s;
+    }
+    .output-area.has-content { border-color: rgba(0,212,170,.4); }
+
+    /* ─── Toast ─── */
+    #toast {
+      position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px);
+      background: var(--card); border: 1px solid var(--accent); color: var(--text);
+      padding: .6rem 1.2rem; border-radius: 10px; font-size: .85rem; font-weight: 600;
+      z-index: 9999; opacity: 0; pointer-events: none;
+      transition: all .25s; white-space: nowrap;
+      box-shadow: 0 4px 20px rgba(0,212,170,.2);
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ─── Header glow ─── */
+    .header-glow {
+      background: radial-gradient(ellipse 60% 40% at 50% 0%, rgba(0,212,170,.12) 0%, transparent 70%);
+    }
+
+    /* ─── Drag handle ─── */
+    .drag-handle { cursor: grab; color: var(--muted); }
+    .drag-handle:active { cursor: grabbing; }
+    .dragging { opacity: .5; }
+    .drag-over { border-color: var(--accent) !important; box-shadow: 0 0 0 2px rgba(0,212,170,.25) !important; }
+
+    /* ─── Inline error / info ─── */
+    .inline-err {
+      color: var(--danger); font-size: .78rem; margin-top: .35rem;
+      display: flex; align-items: center; gap: .3rem;
+    }
+    .inline-ok  {
+      color: var(--accent); font-size: .78rem; margin-top: .35rem;
+      display: flex; align-items: center; gap: .3rem;
+    }
+
+    /* ─── Toggle switch ─── */
+    .toggle-track {
+      width: 44px; height: 24px; background: var(--border);
+      border-radius: 12px; position: relative; cursor: pointer;
+      transition: background .2s;
+    }
+    .toggle-track.on { background: var(--accent); }
+    .toggle-thumb {
+      position: absolute; top: 3px; left: 3px;
+      width: 18px; height: 18px; border-radius: 9px;
+      background: #fff; transition: left .2s;
+    }
+    .toggle-track.on .toggle-thumb { left: 23px; }
+
+    /* ─── Upload zone ─── */
+    .upload-zone {
+      border: 2px dashed var(--border); border-radius: 12px;
+      padding: 1.5rem; text-align: center; cursor: pointer;
+      transition: all .2s; color: var(--muted);
+    }
+    .upload-zone:hover, .upload-zone.drag-over-file {
+      border-color: var(--accent); color: var(--accent);
+      background: rgba(0,212,170,.04);
+    }
+
+    /* ─── Skeleton pulse ─── */
+    @keyframes pulse { 0%,100%{opacity:.4} 50%{opacity:.8} }
+    .skeleton { animation: pulse 1.5s infinite; background: var(--border); border-radius: 6px; }
+
+    /* ─── Number input ─── */
+    input[type="number"] { -moz-appearance: textfield; }
+    input[type="number"]::-webkit-inner-spin-button { display:none; }
+
+    /* ─── Section label ─── */
+    .section-label {
+      font-size: .7rem; font-weight: 700; letter-spacing: .1em;
+      text-transform: uppercase; color: var(--muted); margin-bottom: .4rem;
+    }
+
+    /* ─── Divider ─── */
+    .divider { height: 1px; background: var(--border); margin: .75rem 0; }
+
+    /* ─── Scrollable step list ─── */
+    #step-list { max-height: 52vh; overflow-y: auto; }
+
+    /* ─── Code editor ─── */
+    .code-editor {
+      font-family: 'JetBrains Mono', monospace !important;
+      font-size: .78rem !important; line-height: 1.6;
+      min-height: 160px; resize: vertical;
+    }
+
+    /* ─── Fade panels ─── */
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; animation: fadeIn .22s ease; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
+
+    /* ─── Logo ─── */
+    .logo-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, var(--accent), #0070f3);
+      border-radius: 10px; display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; font-weight: 800; color: #0d1117; font-family: 'Syne',sans-serif;
+    }
+
+    /* select arrow overlay */
+    .select-wrap { position: relative; }
+    .select-wrap::after {
+      content: '▾'; position: absolute; right: .75rem; top: 50%;
+      transform: translateY(-50%); pointer-events: none;
+      color: var(--muted); font-size: .8rem;
+    }
+  </style>
+</head>
+
+<body>
+<!-- ═══════════════════════════════════════════════════════════
+     HEADER
+═══════════════════════════════════════════════════════════ -->
+<div class="header-glow">
+  <div class="flex items-center justify-between px-4 pt-5 pb-3 max-w-lg mx-auto">
+    <div class="flex items-center gap-2.5">
+      <div class="logo-icon">CF</div>
+      <div>
+        <div class="font-display font-800 text-lg leading-none accent-text">CipherForge</div>
+        <div class="text-xs" style="color:var(--muted)">Client-side encryption</div>
+      </div>
+    </div>
+    <!-- Theme toggle -->
+    <div class="flex items-center gap-2">
+      <span class="text-xs" style="color:var(--muted)" id="theme-label">🌙</span>
+      <div class="toggle-track" id="theme-toggle">
+        <div class="toggle-thumb"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     MAIN CONTENT
+═══════════════════════════════════════════════════════════ -->
+<div class="max-w-lg mx-auto px-4 pb-24">
+
+  <!-- Tab Bar -->
+  <div class="tab-bar mb-4">
+    <button class="tab-btn active" data-tab="encrypt">🔒 Encrypt</button>
+    <button class="tab-btn" data-tab="decrypt">🔓 Decrypt</button>
+  </div>
+
+  <!-- ─────────────────────────────────────────────────────────
+       ENCRYPT TAB
+  ───────────────────────────────────────────────────────── -->
+  <div class="tab-panel active" id="panel-encrypt">
+
+    <!-- Input -->
+    <div class="mb-3">
+      <div class="section-label">Plaintext Message</div>
+      <textarea id="enc-input" rows="4" placeholder="Type or paste your message here…"></textarea>
+    </div>
+
+    <!-- Recipe Builder -->
+    <div class="card p-3 mb-3">
+      <div class="flex items-center justify-between mb-2.5">
+        <div class="font-display font-700 text-sm accent-text">⚗️ Recipe Builder</div>
+        <button class="btn btn-sm btn-danger" id="btn-clear-recipe">Clear All</button>
+      </div>
+
+      <!-- Add Step Row -->
+      <div class="flex gap-2 mb-3">
+        <div class="select-wrap flex-1">
+          <select id="strategy-select">
+            <option value="">— Choose a strategy —</option>
+            <option value="caesar">1. Caesar Shift (A–Z)</option>
+            <option value="rot13">2. ROT13</option>
+            <option value="base64">3. Base64 Encode</option>
+            <option value="reverse">4. Reverse String</option>
+            <option value="unicode">5. Unicode Offset</option>
+            <option value="submap">6. Char Substitution Map</option>
+            <option value="interleave">7. Interleave Decoys</option>
+            <option value="binary">8. Binary Encoding</option>
+            <option value="hex">9. Hex Encoding</option>
+            <option value="custom">10. Custom JS Function</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" id="btn-add-step">+ Add</button>
+      </div>
+
+      <!-- Step List -->
+      <div id="step-list" class="space-y-2">
+        <div class="text-center py-6" style="color:var(--muted)" id="step-empty-msg">
+          <div class="text-2xl mb-1">🧩</div>
+          <div class="text-sm">Add steps to build your recipe</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Encrypt Button -->
+    <button class="btn btn-primary w-full mb-3 py-3 text-base" id="btn-encrypt">
+      🔒 Encrypt Message
+    </button>
+
+    <!-- Output -->
+    <div class="mb-3" id="enc-output-wrap" style="display:none">
+      <div class="flex items-center justify-between mb-1">
+        <div class="section-label">Encrypted Output</div>
+        <button class="btn btn-sm btn-secondary" id="btn-copy-enc">📋 Copy</button>
+      </div>
+      <div class="output-area" id="enc-output"></div>
+      <div id="enc-error" class="inline-err" style="display:none"></div>
+    </div>
+
+    <!-- Export Recipe -->
+    <div id="enc-recipe-actions" style="display:none">
+      <div class="divider"></div>
+      <div class="section-label">Export Recipe</div>
+      <div class="flex gap-2">
+        <button class="btn btn-secondary flex-1" id="btn-download-recipe">💾 Download Recipe.json</button>
+        <button class="btn btn-secondary flex-1" id="btn-copy-recipe">📋 Copy Recipe</button>
+      </div>
+      <div class="text-xs mt-2 px-1" style="color:var(--muted)">
+        ⚠️ Share the recipe and encrypted message <strong>separately</strong> for maximum security.
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────────────────────────
+       DECRYPT TAB
+  ───────────────────────────────────────────────────────── -->
+  <div class="tab-panel" id="panel-decrypt">
+
+    <!-- Encrypted Input -->
+    <div class="mb-3">
+      <div class="section-label">Encrypted Message</div>
+      <textarea id="dec-input" rows="4" class="mono" placeholder="Paste encrypted message here…"></textarea>
+    </div>
+
+    <!-- Recipe Upload -->
+    <div class="mb-3">
+      <div class="section-label">Recipe File</div>
+      <div class="upload-zone" id="upload-zone">
+        <div class="text-2xl mb-1">📂</div>
+        <div class="text-sm font-600">Tap to upload recipe.json</div>
+        <div class="text-xs mt-1" style="color:var(--muted)">or drag & drop</div>
+        <input type="file" id="recipe-file-input" accept=".json,application/json" style="display:none" />
+      </div>
+      <div id="recipe-loaded-info" style="display:none" class="mt-2 card p-2.5">
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="text-xs font-700 accent-text" id="recipe-loaded-name"></div>
+            <div class="text-xs mt-0.5" style="color:var(--muted)" id="recipe-loaded-steps"></div>
+          </div>
+          <button class="btn btn-sm btn-danger" id="btn-remove-recipe">✕</button>
+        </div>
+      </div>
+      <div id="recipe-load-err" class="inline-err" style="display:none"></div>
+    </div>
+
+    <!-- Or Paste Recipe -->
+    <details class="mb-3">
+      <summary class="text-sm cursor-pointer" style="color:var(--muted)">✏️ Or paste recipe JSON manually</summary>
+      <div class="mt-2">
+        <textarea id="dec-recipe-paste" rows="5" class="mono code-editor mt-1" placeholder='{"version":"1.0","steps":[…]}'></textarea>
+        <button class="btn btn-secondary btn-sm mt-2" id="btn-load-pasted-recipe">Load Pasted Recipe</button>
+        <div id="paste-recipe-err" class="inline-err" style="display:none"></div>
+      </div>
+    </details>
+
+    <!-- Decrypt Button -->
+    <button class="btn btn-primary w-full mb-3 py-3 text-base" id="btn-decrypt">
+      🔓 Decrypt Message
+    </button>
+
+    <!-- Decrypted Output -->
+    <div id="dec-output-wrap" style="display:none">
+      <div class="flex items-center justify-between mb-1">
+        <div class="section-label">Decrypted Message</div>
+        <button class="btn btn-sm btn-secondary" id="btn-copy-dec">📋 Copy</button>
+      </div>
+      <div class="output-area" style="color:var(--text)" id="dec-output"></div>
+      <div id="dec-error" class="inline-err" style="display:none"></div>
+    </div>
+  </div>
+
+</div><!-- /max-w-lg -->
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     STEP PARAM TEMPLATES (hidden, cloned per strategy)
+═══════════════════════════════════════════════════════════ -->
+<template id="tpl-param-shift">
+  <div class="flex items-center gap-2 mt-2">
+    <label class="text-xs" style="color:var(--muted);white-space:nowrap">Shift amount</label>
+    <input type="number" class="param-shift" value="3" min="1" max="999" style="width:80px;flex:none" />
+  </div>
+</template>
+
+<template id="tpl-param-unicode">
+  <div class="flex items-center gap-2 mt-2">
+    <label class="text-xs" style="color:var(--muted);white-space:nowrap">Offset</label>
+    <input type="number" class="param-unicode" value="7" min="-9999" max="9999" style="width:90px;flex:none" />
+  </div>
+</template>
+
+<template id="tpl-param-submap">
+  <div class="mt-2">
+    <div class="text-xs mb-1" style="color:var(--muted)">Substitution map (e.g. <span class="mono">a→x,e→q,i→z</span>)</div>
+    <input type="text" class="param-submap" placeholder="a→x,b→y,c→z" />
+    <div class="flex gap-1 mt-1 flex-wrap">
+      <button class="btn btn-ghost btn-sm preset-submap" data-preset="leetspeak">Leetspeak</button>
+      <button class="btn btn-ghost btn-sm preset-submap" data-preset="mirror">Mirror</button>
+      <button class="btn btn-ghost btn-sm preset-submap" data-preset="scatter">Scatter</button>
+    </div>
+  </div>
+</template>
+
+<template id="tpl-param-interleave">
+  <div class="flex items-center gap-2 mt-2">
+    <label class="text-xs" style="color:var(--muted);white-space:nowrap">Insert every N chars</label>
+    <input type="number" class="param-interleave" value="3" min="1" max="50" style="width:70px;flex:none" />
+    <label class="text-xs" style="color:var(--muted);white-space:nowrap">Decoy char</label>
+    <input type="text" class="param-decoy" value="★" maxlength="1" style="width:48px;flex:none" />
+  </div>
+</template>
+
+<template id="tpl-param-custom">
+  <div class="mt-2">
+    <div class="text-xs mb-1" style="color:var(--muted)">Define <span class="mono accent-text">encrypt(str)</span> and <span class="mono accent-text">decrypt(str)</span>:</div>
+    <textarea class="param-custom code-editor" rows="7">function encrypt(str) {
+  // Transform and return the string
+  return str.split('').reverse().join('');
+}
+
+function decrypt(str) {
+  // Reverse the encryption
+  return str.split('').reverse().join('');
+}</textarea>
+    <div class="custom-fn-err inline-err" style="display:none"></div>
+  </div>
+</template>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════════════════════ -->
+<script>
+/* ════════════════════════════════════════════════════════════
+   UTILITIES
+════════════════════════════════════════════════════════════ */
+
+/** Show a brief toast message */
+function toast(msg, duration = 2200) {
+  const $t = $('#toast');
+  $t.text(msg).addClass('show');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => $t.removeClass('show'), duration);
+}
+
+/** Copy text to clipboard */
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast('✅ Copied to clipboard');
+  } catch {
+    // Fallback
+    const el = document.createElement('textarea');
+    el.value = text;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    toast('✅ Copied to clipboard');
+  }
+}
+
+/** Download text as file */
+function downloadFile(filename, content, type = 'application/json') {
+  const blob = new Blob([content], { type });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/** Show inline error on an element */
+function showErr($el, msg) {
+  $el.html(`<span>⚠️</span> ${msg}`).show();
+}
+function hideErr($el) { $el.hide().html(''); }
+
+
+/* ════════════════════════════════════════════════════════════
+   PRESET SUBSTITUTION MAPS
+════════════════════════════════════════════════════════════ */
+const PRESETS = {
+  leetspeak: 'a→4,e→3,i→1,o→0,s→5,t→7,b→8,g→9',
+  mirror:    'a→z,b→y,c→x,d→w,e→v,f→u,g→t,h→s,i→r,j→q,k→p,l→o,m→n,n→m,o→l,p→k,q→j,r→i,s→h,t→g,u→f,v→e,w→d,x→c,y→b,z→a',
+  scatter:   'a→q,b→w,c→e,d→r,e→t,f→y,g→u,h→i,i→o,j→p,k→a,l→s,m→d,n→f,o→g,p→h,q→j,r→k,s→l,t→z,u→x,v→c,w→v,x→b,y→n,z→m',
+};
+
+
+/* ════════════════════════════════════════════════════════════
+   STRATEGY ENGINE
+   Each strategy exposes:
+     name     : display name
+     id       : key
+     encrypt(str, params) → string
+     decrypt(str, params) → string
+   Errors should throw with a descriptive message.
+════════════════════════════════════════════════════════════ */
+const Strategies = {
+
+  /* 1. Caesar Shift ──────────────────────────────────────── */
+  caesar: {
+    name: 'Caesar Shift',
+    encrypt(str, { shift = 3 } = {}) {
+      shift = ((shift % 26) + 26) % 26;
+      return str.replace(/[a-zA-Z]/g, c => {
+        const base = c <= 'Z' ? 65 : 97;
+        return String.fromCharCode((c.charCodeAt(0) - base + shift) % 26 + base);
+      });
+    },
+    decrypt(str, { shift = 3 } = {}) {
+      return Strategies.caesar.encrypt(str, { shift: 26 - ((shift % 26 + 26) % 26) });
+    },
+  },
+
+  /* 2. ROT13 ─────────────────────────────────────────────── */
+  rot13: {
+    name: 'ROT13',
+    encrypt(str) { return Strategies.caesar.encrypt(str, { shift: 13 }); },
+    decrypt(str) { return Strategies.caesar.encrypt(str, { shift: 13 }); },
+  },
+
+  /* 3. Base64 ────────────────────────────────────────────── */
+  base64: {
+    name: 'Base64 Encode',
+    encrypt(str) {
+      try { return btoa(unescape(encodeURIComponent(str))); }
+      catch { throw new Error('Base64 encode failed — check for unusual characters.'); }
+    },
+    decrypt(str) {
+      try { return decodeURIComponent(escape(atob(str.trim()))); }
+      catch { throw new Error('Base64 decode failed — input may not be valid Base64.'); }
+    },
+  },
+
+  /* 4. Reverse ───────────────────────────────────────────── */
+  reverse: {
+    name: 'Reverse String',
+    encrypt(str) { return [...str].reverse().join(''); },
+    decrypt(str) { return [...str].reverse().join(''); },
+  },
+
+  /* 5. Unicode Offset ────────────────────────────────────── */
+  unicode: {
+    name: 'Unicode Offset',
+    encrypt(str, { offset = 7 } = {}) {
+      return [...str].map(c => String.fromCodePoint(c.codePointAt(0) + Number(offset))).join('');
+    },
+    decrypt(str, { offset = 7 } = {}) {
+      return [...str].map(c => {
+        const cp = c.codePointAt(0) - Number(offset);
+        if (cp < 0) throw new Error(`Unicode offset too large — code point went negative.`);
+        return String.fromCodePoint(cp);
+      }).join('');
+    },
+  },
+
+  /* 6. Substitution Map ──────────────────────────────────── */
+  submap: {
+    name: 'Char Substitution',
+    _parseMap(mapStr) {
+      const fwd = {}, rev = {};
+      if (!mapStr || !mapStr.trim()) throw new Error('Substitution map is empty.');
+      mapStr.split(',').forEach(pair => {
+        const [k, v] = pair.trim().split('→');
+        if (!k || !v) throw new Error(`Bad pair "${pair}" — use format a→b`);
+        fwd[k.trim()] = v.trim();
+        rev[v.trim()] = k.trim();
+      });
+      return { fwd, rev };
+    },
+    encrypt(str, { map = '' } = {}) {
+      const { fwd } = Strategies.submap._parseMap(map);
+      return [...str].map(c => fwd[c] ?? c).join('');
+    },
+    decrypt(str, { map = '' } = {}) {
+      const { rev } = Strategies.submap._parseMap(map);
+      return [...str].map(c => rev[c] ?? c).join('');
+    },
+  },
+
+  /* 7. Interleave Decoys ─────────────────────────────────── */
+  interleave: {
+    name: 'Interleave Decoys',
+    encrypt(str, { n = 3, decoy = '★' } = {}) {
+      n = Math.max(1, Number(n));
+      let out = '';
+      for (let i = 0; i < str.length; i++) {
+        out += str[i];
+        if ((i + 1) % n === 0) out += decoy;
+      }
+      return out;
+    },
+    decrypt(str, { n = 3, decoy = '★' } = {}) {
+      n = Math.max(1, Number(n));
+      let out = '', realCount = 0;
+      for (let i = 0; i < str.length; i++) {
+        if (str[i] === decoy && (realCount) % n === 0 && realCount > 0) {
+          // skip decoy
+        } else {
+          out += str[i];
+          realCount++;
+        }
+      }
+      return out;
+    },
+  },
+
+  /* 8. Binary Encoding ───────────────────────────────────── */
+  binary: {
+    name: 'Binary Encoding',
+    encrypt(str) {
+      return [...str].map(c => c.charCodeAt(0).toString(2).padStart(8,'0')).join(' ');
+    },
+    decrypt(str) {
+      return str.trim().split(/\s+/).map(b => {
+        const n = parseInt(b, 2);
+        if (isNaN(n)) throw new Error(`"${b}" is not valid binary.`);
+        return String.fromCharCode(n);
+      }).join('');
+    },
+  },
+
+  /* 9. Hex Encoding ──────────────────────────────────────── */
+  hex: {
+    name: 'Hex Encoding',
+    encrypt(str) {
+      return [...str].map(c => c.charCodeAt(0).toString(16).padStart(2,'0')).join('');
+    },
+    decrypt(str) {
+      str = str.trim();
+      if (str.length % 2 !== 0) throw new Error('Hex string must have even length.');
+      let out = '';
+      for (let i = 0; i < str.length; i += 2) {
+        const n = parseInt(str.slice(i, i+2), 16);
+        if (isNaN(n)) throw new Error(`"${str.slice(i,i+2)}" is not valid hex.`);
+        out += String.fromCharCode(n);
+      }
+      return out;
+    },
+  },
+
+  /* 10. Custom JS ────────────────────────────────────────── */
+  custom: {
+    name: 'Custom JS Function',
+    _compile(code) {
+      try {
+        // Isolate: only expose the two functions
+        const fn = new Function(`${code}\n; return { encrypt, decrypt };`);
+        return fn();
+      } catch(e) {
+        throw new Error(`Syntax error in custom function: ${e.message}`);
+      }
+    },
+    encrypt(str, { code = '' } = {}) {
+      if (!code.trim()) throw new Error('Custom function code is empty.');
+      const { encrypt } = Strategies.custom._compile(code);
+      if (typeof encrypt !== 'function') throw new Error('No encrypt() function found.');
+      try { return String(encrypt(str)); }
+      catch(e) { throw new Error(`encrypt() threw: ${e.message}`); }
+    },
+    decrypt(str, { code = '' } = {}) {
+      if (!code.trim()) throw new Error('Custom function code is empty.');
+      const { decrypt } = Strategies.custom._compile(code);
+      if (typeof decrypt !== 'function') throw new Error('No decrypt() function found.');
+      try { return String(decrypt(str)); }
+      catch(e) { throw new Error(`decrypt() threw: ${e.message}`); }
+    },
+  },
+};
+
+
+/* ════════════════════════════════════════════════════════════
+   RECIPE STATE
+════════════════════════════════════════════════════════════ */
+let recipe = [];       // Array of { id, strategy, params }
+let loadedRecipe = null; // Loaded on decrypt tab
+let stepCounter = 0;
+
+/** Collect current params from a step card DOM element */
+function getStepParams($card, strategy) {
+  const params = {};
+  switch (strategy) {
+    case 'caesar':
+      params.shift = parseInt($card.find('.param-shift').val()) || 3;
+      break;
+    case 'unicode':
+      params.offset = parseInt($card.find('.param-unicode').val()) || 7;
+      break;
+    case 'submap':
+      params.map = $card.find('.param-submap').val() || '';
+      break;
+    case 'interleave':
+      params.n     = parseInt($card.find('.param-interleave').val()) || 3;
+      params.decoy = $card.find('.param-decoy').val() || '★';
+      break;
+    case 'custom':
+      params.code = $card.find('.param-custom').val() || '';
+      break;
+  }
+  return params;
+}
+
+/** Build the recipe array from DOM */
+function buildRecipeFromDOM() {
+  recipe = [];
+  $('#step-list .step-card').each(function() {
+    const $c = $(this);
+    const strategy = $c.data('strategy');
+    const params   = getStepParams($c, strategy);
+    recipe.push({ id: $c.data('step-id'), strategy, params });
+  });
+}
+
+/** Serialize recipe to JSON export format */
+function serializeRecipe() {
+  buildRecipeFromDOM();
+  const steps = recipe.map(s => {
+    const step = { strategy: s.strategy };
+    if (s.strategy === 'caesar')     step.params = { shift: s.params.shift };
+    if (s.strategy === 'unicode')    step.params = { offset: s.params.offset };
+    if (s.strategy === 'submap')     step.params = { map: s.params.map };
+    if (s.strategy === 'interleave') step.params = { n: s.params.n, decoy: s.params.decoy };
+    if (s.strategy === 'custom')     { step.encryptFn = s.params.code; step.decryptFn = s.params.code; }
+    return step;
+  });
+  return JSON.stringify({ version: '1.0', steps }, null, 2);
+}
+
+/** Add a step card to the DOM */
+function addStepCard(strategy, existingParams = null) {
+  stepCounter++;
+  const id = `step-${stepCounter}`;
+  const info = Strategies[strategy];
+
+  const $card = $(`
+    <div class="step-card" data-step-id="${id}" data-strategy="${strategy}" draggable="true">
+      <div class="flex items-center gap-2">
+        <span class="drag-handle text-lg">⠿</span>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2">
+            <span class="step-num text-xs font-700" style="color:var(--muted)"></span>
+            <span class="strategy-badge">${strategy}</span>
+            <span class="text-sm font-600 truncate">${info.name}</span>
+          </div>
+        </div>
+        <div class="flex gap-1">
+          <button class="btn btn-icon btn-ghost btn-move-up" title="Move up">↑</button>
+          <button class="btn btn-icon btn-ghost btn-move-down" title="Move down">↓</button>
+          <button class="btn btn-icon btn-danger btn-remove" title="Remove">✕</button>
+        </div>
+      </div>
+    </div>
+  `);
+
+  // Inject param UI from template
+  const tplMap = {
+    caesar:     '#tpl-param-shift',
+    unicode:    '#tpl-param-unicode',
+    submap:     '#tpl-param-submap',
+    interleave: '#tpl-param-interleave',
+    custom:     '#tpl-param-custom',
+  };
+  if (tplMap[strategy]) {
+    const tplNode = document.querySelector(tplMap[strategy]).content.cloneNode(true);
+    $card.append(tplNode);
+  }
+
+  // Restore existing params if loading recipe
+  if (existingParams) {
+    if (strategy === 'caesar')     $card.find('.param-shift').val(existingParams.shift ?? 3);
+    if (strategy === 'unicode')    $card.find('.param-unicode').val(existingParams.offset ?? 7);
+    if (strategy === 'submap')     $card.find('.param-submap').val(existingParams.map ?? '');
+    if (strategy === 'interleave') {
+      $card.find('.param-interleave').val(existingParams.n ?? 3);
+      $card.find('.param-decoy').val(existingParams.decoy ?? '★');
+    }
+    if (strategy === 'custom') {
+      $card.find('.param-custom').val(existingParams.code ?? '');
+    }
+  }
+
+  // Preset buttons for submap
+  $card.on('click', '.preset-submap', function() {
+    const preset = $(this).data('preset');
+    $card.find('.param-submap').val(PRESETS[preset] || '');
+  });
+
+  // Remove
+  $card.on('click', '.btn-remove', function() {
+    $card.css({ transition: 'opacity .18s,transform .18s', opacity: 0, transform: 'translateX(16px)' });
+    setTimeout(() => { $card.remove(); refreshStepNums(); showEmptyMsg(); }, 180);
+  });
+
+  // Move up/down
+  $card.on('click', '.btn-move-up', function() {
+    const $prev = $card.prev('.step-card');
+    if ($prev.length) { $prev.before($card); refreshStepNums(); }
+  });
+  $card.on('click', '.btn-move-down', function() {
+    const $next = $card.next('.step-card');
+    if ($next.length) { $next.after($card); refreshStepNums(); }
+  });
+
+  // Drag-to-reorder
+  const el = $card[0];
+  el.addEventListener('dragstart', e => {
+    e.dataTransfer.effectAllowed = 'move';
+    window._draggedStep = el;
+    setTimeout(() => $(el).addClass('dragging'), 10);
+  });
+  el.addEventListener('dragend', () => {
+    $(el).removeClass('dragging');
+    $('#step-list .step-card').removeClass('drag-over');
+    window._draggedStep = null;
+    refreshStepNums();
+  });
+  el.addEventListener('dragover', e => {
+    e.preventDefault();
+    if (window._draggedStep && window._draggedStep !== el) {
+      $('#step-list .step-card').removeClass('drag-over');
+      $(el).addClass('drag-over');
+    }
+  });
+  el.addEventListener('drop', e => {
+    e.preventDefault();
+    if (window._draggedStep && window._draggedStep !== el) {
+      const $list = $('#step-list');
+      const cards = [...$list.find('.step-card')];
+      const fromIdx = cards.indexOf(window._draggedStep);
+      const toIdx   = cards.indexOf(el);
+      if (fromIdx < toIdx) $(el).after(window._draggedStep);
+      else                 $(el).before(window._draggedStep);
+      $(el).removeClass('drag-over');
+    }
+  });
+
+  $('#step-list').append($card);
+  refreshStepNums();
+  showEmptyMsg();
+}
+
+/** Refresh the step number labels */
+function refreshStepNums() {
+  $('#step-list .step-card').each(function(i) {
+    $(this).find('.step-num').text(`#${i+1}`);
+  });
+}
+
+/** Show/hide empty state */
+function showEmptyMsg() {
+  const hasSteps = $('#step-list .step-card').length > 0;
+  $('#step-empty-msg').toggle(!hasSteps);
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   ENCRYPTION PIPELINE
+════════════════════════════════════════════════════════════ */
+function runPipeline(text, steps, direction) {
+  let result = text;
+  const orderedSteps = direction === 'decrypt' ? [...steps].reverse() : steps;
+
+  for (const step of orderedSteps) {
+    const eng = Strategies[step.strategy];
+    if (!eng) throw new Error(`Unknown strategy: "${step.strategy}"`);
+
+    // Build params
+    let params = step.params ? { ...step.params } : {};
+    // For custom, merge encryptFn/decryptFn into params.code
+    if (step.strategy === 'custom') {
+      params.code = step.encryptFn || step.decryptFn || params.code || '';
+    }
+
+    try {
+      result = direction === 'decrypt'
+        ? eng.decrypt(result, params)
+        : eng.encrypt(result, params);
+    } catch(e) {
+      throw new Error(`Step [${step.strategy}]: ${e.message}`);
+    }
+  }
+  return result;
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   THEME
+════════════════════════════════════════════════════════════ */
+function applyTheme(dark) {
+  $('html').attr('data-theme', dark ? 'dark' : 'light');
+  $('#theme-label').text(dark ? '🌙' : '☀️');
+  $('#theme-toggle').toggleClass('on', !dark);
+  localStorage.setItem('cf-theme', dark ? 'dark' : 'light');
+}
+
+const savedTheme = localStorage.getItem('cf-theme') || 'dark';
+applyTheme(savedTheme === 'dark');
+
+$('#theme-toggle').on('click', function() {
+  const isDark = $('html').attr('data-theme') === 'dark';
+  applyTheme(!isDark);
+});
+
+
+/* ════════════════════════════════════════════════════════════
+   TAB SWITCHING
+════════════════════════════════════════════════════════════ */
+$('.tab-btn').on('click', function() {
+  const tab = $(this).data('tab');
+  $('.tab-btn').removeClass('active');
+  $(this).addClass('active');
+  $('.tab-panel').removeClass('active');
+  $(`#panel-${tab}`).addClass('active');
+});
+
+
+/* ════════════════════════════════════════════════════════════
+   ENCRYPT TAB EVENTS
+════════════════════════════════════════════════════════════ */
+
+/** Add step */
+$('#btn-add-step').on('click', function() {
+  const strategy = $('#strategy-select').val();
+  if (!strategy) { toast('⚠️ Pick a strategy first'); return; }
+  addStepCard(strategy);
+  $('#strategy-select').val('');
+});
+
+/** Clear recipe */
+$('#btn-clear-recipe').on('click', function() {
+  if ($('#step-list .step-card').length === 0) return;
+  if (!confirm('Clear all steps?')) return;
+  $('#step-list .step-card').remove();
+  showEmptyMsg();
+  $('#enc-output-wrap, #enc-recipe-actions').hide();
+});
+
+/** Encrypt */
+$('#btn-encrypt').on('click', function() {
+  hideErr($('#enc-error'));
+  const text = $('#enc-input').val();
+  if (!text.trim()) { toast('⚠️ Enter a message to encrypt'); return; }
+
+  buildRecipeFromDOM();
+  if (recipe.length === 0) { toast('⚠️ Add at least one step to the recipe'); return; }
+
+  try {
+    const result = runPipeline(text, recipe, 'encrypt');
+    $('#enc-output').text(result).closest('.output-area').addClass('has-content');
+    $('#enc-output-wrap').show();
+    $('#enc-recipe-actions').show();
+    toast('🔒 Message encrypted!');
+  } catch(e) {
+    $('#enc-output-wrap').show();
+    $('#enc-output').text('');
+    showErr($('#enc-error'), e.message);
+  }
+});
+
+/** Copy encrypted output */
+$('#btn-copy-enc').on('click', function() {
+  const text = $('#enc-output').text();
+  if (text) copyText(text);
+});
+
+/** Download recipe */
+$('#btn-download-recipe').on('click', function() {
+  const json = serializeRecipe();
+  if (recipe.length === 0) { toast('⚠️ No steps in recipe'); return; }
+  downloadFile('recipe.json', json);
+  toast('💾 Recipe downloaded');
+});
+
+/** Copy recipe */
+$('#btn-copy-recipe').on('click', function() {
+  const json = serializeRecipe();
+  if (recipe.length === 0) { toast('⚠️ No steps in recipe'); return; }
+  copyText(json);
+});
+
+
+/* ════════════════════════════════════════════════════════════
+   DECRYPT TAB EVENTS
+════════════════════════════════════════════════════════════ */
+
+/** Upload zone click */
+$('#upload-zone').on('click', function() {
+  $('#recipe-file-input').click();
+});
+
+/** Drag over upload zone */
+$('#upload-zone').on('dragover', function(e) {
+  e.preventDefault();
+  $(this).addClass('drag-over-file');
+}).on('dragleave drop', function(e) {
+  e.preventDefault();
+  $(this).removeClass('drag-over-file');
+  if (e.type === 'drop') {
+    const file = e.originalEvent.dataTransfer.files[0];
+    if (file) loadRecipeFile(file);
+  }
+});
+
+/** File input change */
+$('#recipe-file-input').on('change', function() {
+  const file = this.files[0];
+  if (file) loadRecipeFile(file);
+  $(this).val(''); // reset so same file can be reloaded
+});
+
+/** Remove loaded recipe */
+$('#btn-remove-recipe').on('click', function() {
+  loadedRecipe = null;
+  $('#recipe-loaded-info').hide();
+  $('#upload-zone').show();
+  $('#dec-output-wrap').hide();
+});
+
+/** Load pasted recipe */
+$('#btn-load-pasted-recipe').on('click', function() {
+  const raw = $('#dec-recipe-paste').val().trim();
+  hideErr($('#paste-recipe-err'));
+  if (!raw) { showErr($('#paste-recipe-err'), 'Paste a recipe JSON first.'); return; }
+  try {
+    const parsed = JSON.parse(raw);
+    applyLoadedRecipe(parsed, 'pasted recipe');
+    hideErr($('#paste-recipe-err'));
+  } catch(e) {
+    showErr($('#paste-recipe-err'), `Invalid JSON: ${e.message}`);
+  }
+});
+
+/** Load a recipe from File object */
+function loadRecipeFile(file) {
+  hideErr($('#recipe-load-err'));
+  if (!file.name.endsWith('.json') && file.type !== 'application/json') {
+    showErr($('#recipe-load-err'), 'Only .json files are supported.');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const parsed = JSON.parse(e.target.result);
+      applyLoadedRecipe(parsed, file.name);
+    } catch(err) {
+      showErr($('#recipe-load-err'), `Failed to parse JSON: ${err.message}`);
+    }
+  };
+  reader.onerror = () => showErr($('#recipe-load-err'), 'Could not read file.');
+  reader.readAsText(file);
+}
+
+/** Apply a parsed recipe object to decrypt state */
+function applyLoadedRecipe(parsed, label) {
+  if (!parsed.steps || !Array.isArray(parsed.steps)) {
+    showErr($('#recipe-load-err'), 'Recipe must have a "steps" array.');
+    return;
+  }
+  // Validate all strategies exist
+  for (const step of parsed.steps) {
+    if (!Strategies[step.strategy]) {
+      showErr($('#recipe-load-err'), `Unknown strategy: "${step.strategy}"`);
+      return;
+    }
+  }
+  loadedRecipe = parsed;
+  hideErr($('#recipe-load-err'));
+  $('#recipe-loaded-name').text(`📄 ${label}`);
+  $('#recipe-loaded-steps').text(`${parsed.steps.length} step${parsed.steps.length !== 1 ? 's' : ''} • v${parsed.version || '?'}`);
+  $('#recipe-loaded-info').show();
+  $('#upload-zone').hide();
+  toast('✅ Recipe loaded');
+}
+
+/** Decrypt */
+$('#btn-decrypt').on('click', function() {
+  hideErr($('#dec-error'));
+  const text = $('#dec-input').val();
+  if (!text.trim()) { toast('⚠️ Paste the encrypted message'); return; }
+  if (!loadedRecipe) { toast('⚠️ Load a recipe first'); return; }
+
+  try {
+    // For custom strategy, merge encryptFn/decryptFn into params.code
+    const steps = loadedRecipe.steps.map(s => {
+      if (s.strategy === 'custom') {
+        return { ...s, params: { ...s.params, code: s.decryptFn || s.encryptFn || '' } };
+      }
+      return s;
+    });
+    const result = runPipeline(text, steps, 'decrypt');
+    $('#dec-output').text(result);
+    $('#dec-output-wrap').show();
+    toast('🔓 Message decrypted!');
+  } catch(e) {
+    $('#dec-output-wrap').show();
+    $('#dec-output').text('');
+    showErr($('#dec-error'), e.message);
+  }
+});
+
+/** Copy decrypted output */
+$('#btn-copy-dec').on('click', function() {
+  const text = $('#dec-output').text();
+  if (text) copyText(text);
+});
+
+
+/* ════════════════════════════════════════════════════════════
+   KEYBOARD SHORTCUTS
+════════════════════════════════════════════════════════════ */
+$(document).on('keydown', function(e) {
+  // Ctrl/Cmd + Enter → run encrypt or decrypt
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+    e.preventDefault();
+    const activeTab = $('.tab-btn.active').data('tab');
+    if (activeTab === 'encrypt') $('#btn-encrypt').click();
+    else                         $('#btn-decrypt').click();
+  }
+});
+
+
+/* ════════════════════════════════════════════════════════════
+   INIT
+════════════════════════════════════════════════════════════ */
+showEmptyMsg();
+</script>
+</body>
+</html>
