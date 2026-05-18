@@ -1,0 +1,1227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Relationships Viewer · Family Tree</title>
+    <style>
+        :root {
+            --bg: #121214;
+            --surface: #1a1a1e;
+            --surface2: #222228;
+            --card: #1e1e24;
+            --cardBorder: #2d2d35;
+            --text: #e8e8ec;
+            --textSecondary: #a0a0a8;
+            --textMuted: #6f6f78;
+            --accent: #ff8c42;
+            --accentGlow: rgba(255, 140, 66, 0.22);
+            --paternal: #ff6b6b;
+            --paternalBg: rgba(255, 107, 107, 0.1);
+            --paternalBorder: rgba(255, 107, 107, 0.4);
+            --maternal: #6bb5ff;
+            --maternalBg: rgba(107, 181, 255, 0.1);
+            --maternalBorder: rgba(107, 181, 255, 0.4);
+            --self: #ffd93d;
+            --selfBg: rgba(255, 217, 61, 0.18);
+            --selfBorder: rgba(255, 217, 61, 0.55);
+            --spouse: #ff8cc8;
+            --spouseBg: rgba(255, 140, 200, 0.1);
+            --spouseBorder: rgba(255, 140, 200, 0.4);
+            --coupleBg: rgba(255, 255, 255, 0.03);
+            --coupleBorder: rgba(255, 255, 255, 0.08);
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            --shadowSm: 0 2px 8px rgba(0, 0, 0, 0.4);
+            --radius: 14px;
+            --radiusSm: 10px;
+            --radiusXs: 8px;
+            --transition: 0.2s ease;
+            --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            --headerH: 54px;
+            --searchH: 40px;
+            --safeBottom: env(safe-area-inset-bottom, 16px);
+        }
+
+        :root.light {
+            --bg: #f2f3f7;
+            --surface: #ffffff;
+            --surface2: #f8f9fc;
+            --card: #ffffff;
+            --cardBorder: #e2e2e8;
+            --text: #1a1a22;
+            --textSecondary: #555568;
+            --textMuted: #88889c;
+            --accent: #e8773a;
+            --accentGlow: rgba(232, 119, 58, 0.2);
+            --paternal: #d94a4a;
+            --paternalBg: rgba(217, 74, 74, 0.07);
+            --paternalBorder: rgba(217, 74, 74, 0.3);
+            --maternal: #3d7fd9;
+            --maternalBg: rgba(61, 127, 217, 0.07);
+            --maternalBorder: rgba(61, 127, 217, 0.3);
+            --self: #c49a00;
+            --selfBg: rgba(196, 154, 0, 0.12);
+            --selfBorder: rgba(196, 154, 0, 0.45);
+            --spouse: #c46090;
+            --spouseBg: rgba(196, 96, 144, 0.08);
+            --spouseBorder: rgba(196, 96, 144, 0.35);
+            --coupleBg: rgba(0, 0, 0, 0.02);
+            --coupleBorder: rgba(0, 0, 0, 0.06);
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+            --shadowSm: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        html {
+            font-size: 15px;
+            -webkit-tap-highlight-color: transparent;
+            height: 100%;
+            overflow: hidden;
+        }
+        body {
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--text);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+            transition: background var(--transition), color var(--transition);
+        }
+
+        /* HEADER */
+        .header {
+            height: var(--headerH);
+            display: flex;
+            align-items: center;
+            padding: 0 8px;
+            gap: 6px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--cardBorder);
+            flex-shrink: 0;
+            z-index: 100;
+            transition: background var(--transition), border var(--transition);
+        }
+        .header .logo {
+            font-weight: 700;
+            font-size: 1.05rem;
+            letter-spacing: -0.3px;
+            color: var(--accent);
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .header .logo span {
+            color: var(--text);
+            font-weight: 400;
+        }
+        .search-wrap {
+            flex: 1;
+            position: relative;
+            min-width: 0;
+            max-width: 300px;
+        }
+        .search-wrap input {
+            width: 100%;
+            height: var(--searchH);
+            border-radius: 20px;
+            border: 1.5px solid var(--cardBorder);
+            background: var(--surface2);
+            padding: 0 34px 0 12px;
+            font-size: 0.82rem;
+            color: var(--text);
+            outline: none;
+            font-family: var(--font);
+            transition: all var(--transition);
+        }
+        .search-wrap input::placeholder {
+            color: var(--textMuted);
+            font-size: 0.76rem;
+        }
+        .search-wrap input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accentGlow);
+            background: var(--surface);
+        }
+        .search-wrap .search-icon {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.95rem;
+            color: var(--textMuted);
+            pointer-events: none;
+        }
+        .search-clear {
+            position: absolute;
+            right: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--textMuted);
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: none;
+            padding: 3px;
+            border-radius: 50%;
+            line-height: 1;
+        }
+        .search-clear.visible {
+            display: block;
+        }
+        .theme-toggle {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 1.5px solid var(--cardBorder);
+            background: var(--surface2);
+            cursor: pointer;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all var(--transition);
+            color: var(--text);
+        }
+        .theme-toggle:active {
+            transform: scale(0.9);
+            background: var(--accentGlow);
+        }
+
+        /* LEGEND */
+        .legend-bar {
+            display: flex;
+            gap: 5px;
+            padding: 5px 8px;
+            flex-shrink: 0;
+            overflow-x: auto;
+            background: var(--surface);
+            border-bottom: 1px solid var(--cardBorder);
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        .legend-bar::-webkit-scrollbar {
+            display: none;
+        }
+        .legend-dot {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.62rem;
+            font-weight: 500;
+            white-space: nowrap;
+            padding: 3px 7px;
+            border-radius: 14px;
+            background: var(--surface2);
+            color: var(--textSecondary);
+            flex-shrink: 0;
+        }
+        .legend-dot .dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .dot.paternal {
+            background: var(--paternal);
+        }
+        .dot.maternal {
+            background: var(--maternal);
+        }
+        .dot.self-dot {
+            background: var(--self);
+        }
+        .dot.spouse-dot {
+            background: var(--spouse);
+        }
+
+        /* MAIN */
+        .main-area {
+            flex: 1;
+            overflow: auto;
+            -webkit-overflow-scrolling: touch;
+            position: relative;
+            scroll-behavior: smooth;
+            padding: 8px 2px 70px;
+        }
+        .tree-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0;
+            padding: 2px;
+            position: relative;
+            min-width: min-content;
+        }
+        .gen-row {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 6px;
+            padding: 4px 1px;
+            width: 100%;
+            max-width: 100%;
+        }
+        .gen-label {
+            width: 100%;
+            text-align: center;
+            font-size: 0.62rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.7px;
+            color: var(--textMuted);
+            margin: 6px 0 1px;
+            transition: color var(--transition);
+        }
+        .gen-connector {
+            width: 100%;
+            height: 12px;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .gen-connector::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 1.5px;
+            height: 100%;
+            background: var(--cardBorder);
+            border-radius: 1px;
+        }
+        .connector-dot {
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: var(--cardBorder);
+            position: relative;
+            z-index: 1;
+        }
+
+        /* COUPLE GROUP */
+        .couple-group {
+            display: flex;
+            align-items: center;
+            gap: 1px;
+            padding: 5px 6px;
+            border-radius: var(--radiusSm);
+            background: var(--coupleBg);
+            border: 1.5px dashed var(--coupleBorder);
+            position: relative;
+            flex-shrink: 0;
+            transition: all var(--transition);
+        }
+        .couple-connector {
+            width: 10px;
+            height: 10px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.5rem;
+            color: var(--accent);
+            opacity: 0.7;
+            position: relative;
+        }
+        .couple-connector::before {
+            content: '';
+            position: absolute;
+            width: 8px;
+            height: 1px;
+            background: var(--accent);
+            opacity: 0.5;
+            border-radius: 1px;
+        }
+        .couple-connector::after {
+            content: '💍';
+            position: absolute;
+            font-size: 0.45rem;
+            top: -7px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        /* PERSON CARD */
+        .person-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            padding: 7px 8px;
+            border-radius: var(--radiusXs);
+            cursor: pointer;
+            transition: all var(--transition);
+            position: relative;
+            min-width: 56px;
+            max-width: 85px;
+            text-align: center;
+            border: 2px solid transparent;
+            background: var(--card);
+            box-shadow: var(--shadowSm);
+            outline: none;
+            -webkit-tap-highlight-color: transparent;
+            flex-shrink: 0;
+        }
+        .couple-group .person-card {
+            min-width: 50px;
+            max-width: 75px;
+            padding: 6px 7px;
+            box-shadow: none;
+            background: transparent;
+            border: 1.5px solid transparent;
+        }
+        .person-card:active {
+            transform: scale(0.94);
+        }
+        .person-card.highlighted {
+            animation: pulse 0.6s ease-out 2;
+            z-index: 5;
+            box-shadow: 0 0 0 6px var(--accentGlow);
+            border-color: var(--accent) !important;
+        }
+        .person-card.dimmed {
+            opacity: 0.2;
+            pointer-events: none;
+            filter: grayscale(0.7);
+        }
+        .person-card.paternal-card {
+            border-color: var(--paternalBorder);
+            background: var(--paternalBg);
+        }
+        .person-card.maternal-card {
+            border-color: var(--maternalBorder);
+            background: var(--maternalBg);
+        }
+        .person-card.self-card {
+            border-color: var(--selfBorder);
+            background: var(--selfBg);
+            box-shadow: 0 0 14px var(--selfBorder);
+            min-width: 65px;
+            max-width: 95px;
+            padding: 9px 12px;
+            border-width: 2.5px;
+        }
+        .person-card.spouse-card {
+            border-color: var(--spouseBorder);
+            background: var(--spouseBg);
+        }
+        .couple-group .person-card.self-card {
+            min-width: 58px;
+            max-width: 80px;
+            padding: 7px 9px;
+        }
+        .person-card .avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            background: var(--surface2);
+            flex-shrink: 0;
+        }
+        .self-card .avatar {
+            width: 34px;
+            height: 34px;
+            font-size: 1.4rem;
+            background: var(--selfBg);
+        }
+        .person-card .rel-name {
+            font-weight: 600;
+            font-size: 0.7rem;
+            line-height: 1.15;
+            color: var(--text);
+        }
+        .person-card .rel-english {
+            font-size: 0.55rem;
+            color: var(--textMuted);
+            line-height: 1.15;
+        }
+        .side-indicator {
+            font-size: 0.5rem;
+            font-weight: 500;
+            padding: 1px 5px;
+            border-radius: 8px;
+            letter-spacing: 0.2px;
+            margin-top: 1px;
+        }
+        .side-indicator.paternal-tag {
+            background: var(--paternalBg);
+            color: var(--paternal);
+        }
+        .side-indicator.maternal-tag {
+            background: var(--maternalBg);
+            color: var(--maternal);
+        }
+        .side-indicator.self-tag {
+            background: var(--selfBg);
+            color: var(--self);
+        }
+        .side-indicator.spouse-tag {
+            background: var(--spouseBg);
+            color: var(--spouse);
+        }
+
+        @keyframes pulse {
+            0%,
+            100% {
+                box-shadow: 0 0 0 0 var(--accentGlow);
+            }
+            50% {
+                box-shadow: 0 0 0 12px transparent;
+            }
+        }
+
+        /* DETAIL OVERLAY */
+        .detail-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 200;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity var(--transition);
+        }
+        .detail-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .detail-panel {
+            background: var(--surface);
+            border-radius: 18px 18px 0 0;
+            width: 100%;
+            max-width: 480px;
+            padding: 18px 18px calc(18px + var(--safeBottom));
+            box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.6);
+            transform: translateY(100%);
+            transition: transform var(--transition);
+            max-height: 68vh;
+            overflow-y: auto;
+        }
+        .detail-overlay.active .detail-panel {
+            transform: translateY(0);
+        }
+        .detail-handle {
+            width: 32px;
+            height: 4px;
+            border-radius: 2px;
+            background: var(--cardBorder);
+            margin: 0 auto 12px;
+        }
+        .detail-panel h3 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin-bottom: 3px;
+            color: var(--text);
+        }
+        .detail-english {
+            font-size: 0.78rem;
+            color: var(--textSecondary);
+            margin-bottom: 10px;
+        }
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            border-radius: var(--radiusXs);
+            background: var(--surface2);
+            margin-bottom: 5px;
+        }
+        .detail-row .label {
+            font-size: 0.7rem;
+            color: var(--textMuted);
+        }
+        .detail-row .value {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text);
+            text-align: right;
+        }
+        .detail-close {
+            width: 100%;
+            padding: 11px;
+            margin-top: 6px;
+            border-radius: 22px;
+            border: none;
+            background: var(--accent);
+            color: #fff;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            font-family: var(--font);
+            transition: all var(--transition);
+        }
+        .detail-close:active {
+            transform: scale(0.96);
+            opacity: 0.85;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 20px;
+            color: var(--textMuted);
+            font-size: 0.8rem;
+            display: none;
+        }
+        .no-results.visible {
+            display: block;
+        }
+
+        /* FLOATING ME BUTTON */
+        .me-btn {
+            position: fixed;
+            bottom: calc(18px + var(--safeBottom));
+            right: 14px;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 150;
+            transition: all var(--transition);
+        }
+        .me-btn:active {
+            transform: scale(0.88);
+            background: var(--self);
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 380px) {
+            .person-card {
+                min-width: 48px;
+                max-width: 72px;
+                padding: 5px 5px;
+            }
+            .person-card .rel-name {
+                font-size: 0.64rem;
+            }
+            .person-card .rel-english {
+                font-size: 0.5rem;
+            }
+            .couple-group .person-card {
+                min-width: 42px;
+                max-width: 62px;
+                padding: 4px 5px;
+            }
+            .gen-row {
+                gap: 4px;
+                padding: 3px 0;
+            }
+            .couple-group {
+                padding: 3px 4px;
+                gap: 0;
+            }
+            .header {
+                padding: 0 4px;
+                gap: 4px;
+            }
+            .logo {
+                font-size: 0.9rem;
+            }
+            .search-wrap input {
+                font-size: 0.75rem;
+                padding: 0 28px 0 8px;
+            }
+        }
+        @media (min-width: 600px) {
+            .person-card {
+                min-width: 68px;
+                max-width: 100px;
+                padding: 9px 12px;
+            }
+            .person-card .rel-name {
+                font-size: 0.78rem;
+            }
+            .person-card .rel-english {
+                font-size: 0.6rem;
+            }
+            .couple-group .person-card {
+                min-width: 60px;
+                max-width: 88px;
+            }
+            .gen-row {
+                gap: 10px;
+                padding: 6px 4px;
+            }
+            .detail-panel {
+                border-radius: 18px;
+                margin-bottom: 16px;
+                max-height: 58vh;
+            }
+            .detail-overlay {
+                align-items: center;
+            }
+            .couple-group {
+                padding: 6px 8px;
+                gap: 2px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HEADER -->
+    <header class="header">
+        <div class="logo">Relationships<span> Viewer</span></div>
+        <div class="search-wrap">
+            <input type="text" id="searchInput" placeholder="Search… chacha, dotra, mama" autocomplete="off">
+            <button class="search-clear" id="searchClear" aria-label="Clear">✕</button>
+            <span class="search-icon">🔍</span>
+        </div>
+        <button class="theme-toggle" id="themeToggle" aria-label="Switch theme">🌙</button>
+    </header>
+
+    <!-- LEGEND -->
+    <div class="legend-bar">
+        <div class="legend-dot"><span class="dot paternal"></span> Paternal</div>
+        <div class="legend-dot"><span class="dot maternal"></span> Maternal</div>
+        <div class="legend-dot"><span class="dot self-dot"></span> You</div>
+        <div class="legend-dot"><span class="dot spouse-dot"></span> Spouse</div>
+        <div class="legend-dot"><span style="opacity:0.7;">💍</span> Couple</div>
+    </div>
+
+    <!-- MAIN TREE -->
+    <div class="main-area" id="mainArea">
+        <div class="tree-container" id="treeContainer"></div>
+        <div class="no-results" id="noResults">No matching relationships found. Try a different name or side.</div>
+    </div>
+
+    <!-- FLOATING ME BUTTON -->
+    <button class="me-btn" id="meButton" aria-label="Scroll to me">📍</button>
+
+    <!-- DETAIL OVERLAY -->
+    <div class="detail-overlay" id="detailOverlay">
+        <div class="detail-panel" id="detailPanel">
+            <div class="detail-handle"></div>
+            <h3 id="detailTitle"></h3>
+            <p class="detail-english" id="detailEnglish"></p>
+            <div class="detail-row"><span class="label">You call them</span><span class="value" id="detailYouCall"></span></div>
+            <div class="detail-row"><span class="label">They call you</span><span class="value" id="detailTheyCall"></span></div>
+            <div class="detail-row"><span class="label">Side / Branch</span><span class="value" id="detailSide"></span></div>
+            <button class="detail-close" id="detailClose">Got it</button>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // ─────────────────────────────────────
+            // COMPLETE FAMILY TREE DATA
+            // spouseOf links used for couple grouping
+            // ─────────────────────────────────────
+            const familyData = [
+                // GEN -1 : Great-Grandparents
+                { id: 'pardada', relName: 'Pardada', englishName: "Father's Grandfather", reverseRel: 'Parpota / Parpoti',
+                    side: 'paternal', generation: -1, parentId: null, gender: 'male', emoji: '👴' },
+                { id: 'pardadi', relName: 'Pardadi', englishName: "Father's Grandmother", reverseRel: 'Parpota / Parpoti',
+                    side: 'paternal', generation: -1, parentId: null, gender: 'female', emoji: '👵',
+                spouseOf: 'pardada' },
+                { id: 'parnana', relName: 'Parnana', englishName: "Mother's Grandfather",
+                    reverseRel: 'Parnawasa / Parnawasi', side: 'maternal', generation: -1, parentId: null,
+                    gender: 'male', emoji: '👴' },
+                { id: 'parnani', relName: 'Parnani', englishName: "Mother's Grandmother",
+                    reverseRel: 'Parnawasa / Parnawasi', side: 'maternal', generation: -1, parentId: null,
+                    gender: 'female', emoji: '👵', spouseOf: 'parnana' },
+
+                // GEN 0 : Grandparents + siblings
+                { id: 'dada', relName: 'Dada', englishName: "Father's Father", reverseRel: 'Pota / Poti',
+                    side: 'paternal', generation: 0, parentId: 'pardada', gender: 'male', emoji: '👴' },
+                { id: 'dadi', relName: 'Dadi', englishName: "Father's Mother", reverseRel: 'Pota / Poti',
+                    side: 'paternal', generation: 0, parentId: 'pardada', gender: 'female', emoji: '👵',
+                spouseOf: 'dada' },
+                { id: 'nana', relName: 'Nana', englishName: "Mother's Father", reverseRel: 'Nawasa / Nawasi',
+                    side: 'maternal', generation: 0, parentId: 'parnana', gender: 'male', emoji: '👴' },
+                { id: 'nani', relName: 'Nani', englishName: "Mother's Mother", reverseRel: 'Nawasa / Nawasi',
+                    side: 'maternal', generation: 0, parentId: 'parnana', gender: 'female', emoji: '👵',
+                spouseOf: 'nana' },
+                { id: 'dadabhai', relName: 'Dadabhai', englishName: "Paternal Granduncle",
+                    reverseRel: 'Grandnephew / Niece', side: 'paternal', generation: 0, parentId: null, gender: 'male',
+                    emoji: '👴' },
+                { id: 'dadibehen', relName: 'Dadibehen', englishName: "Paternal Grandaunt",
+                    reverseRel: 'Grandnephew / Niece', side: 'paternal', generation: 0, parentId: null, gender: 'female',
+                    emoji: '👵' },
+                { id: 'nanabhai', relName: 'Nanabhai', englishName: "Maternal Granduncle",
+                    reverseRel: 'Grandnephew / Niece', side: 'maternal', generation: 0, parentId: null, gender: 'male',
+                    emoji: '👴' },
+                { id: 'nanibehen', relName: 'Nanibehen', englishName: "Maternal Grandaunt",
+                    reverseRel: 'Grandnephew / Niece', side: 'maternal', generation: 0, parentId: null, gender: 'female',
+                    emoji: '👵' },
+
+                // GEN 1 : Parents, Uncles, Aunts, In-law parents
+                { id: 'papa', relName: 'Papa', englishName: 'Father', reverseRel: 'Beta / Beti', side: 'paternal',
+                    generation: 1, parentId: 'dada', gender: 'male', emoji: '👨' },
+                { id: 'mummy', relName: 'Mummy', englishName: 'Mother', reverseRel: 'Beta / Beti', side: 'maternal',
+                    generation: 1, parentId: 'nana', gender: 'female', emoji: '👩', spouseOf: 'papa' },
+                { id: 'tauji', relName: 'Tauji', englishName: "Father's Elder Brother", reverseRel: 'Bhatija / Bhatiji',
+                    side: 'paternal', generation: 1, parentId: 'dada', gender: 'male', emoji: '👨' },
+                { id: 'taiji', relName: 'Taiji', englishName: "Tauji's Wife", reverseRel: 'Bhatija / Bhatiji',
+                    side: 'paternal', generation: 1, parentId: null, gender: 'female', emoji: '👩', spouseOf: 'tauji' },
+                { id: 'chacha', relName: 'Chacha', englishName: "Father's Younger Brother",
+                    reverseRel: 'Bhatija / Bhatiji', side: 'paternal', generation: 1, parentId: 'dada', gender: 'male',
+                    emoji: '👨' },
+                { id: 'chachi', relName: 'Chachi', englishName: "Chacha's Wife", reverseRel: 'Bhatija / Bhatiji',
+                    side: 'paternal', generation: 1, parentId: null, gender: 'female', emoji: '👩', spouseOf: 'chacha' },
+                { id: 'bua', relName: 'Bua', englishName: "Father's Sister", reverseRel: 'Bhatija / Bhatiji',
+                    side: 'paternal', generation: 1, parentId: 'dada', gender: 'female', emoji: '👩' },
+                { id: 'fufa', relName: 'Fufa', englishName: "Bua's Husband", reverseRel: 'Bhatija / Bhatiji',
+                    side: 'paternal', generation: 1, parentId: null, gender: 'male', emoji: '👨', spouseOf: 'bua' },
+                { id: 'mama', relName: 'Mama', englishName: "Mother's Brother", reverseRel: 'Bhanja / Bhanji',
+                    side: 'maternal', generation: 1, parentId: 'nana', gender: 'male', emoji: '👨' },
+                { id: 'mami', relName: 'Mami', englishName: "Mama's Wife", reverseRel: 'Bhanja / Bhanji',
+                    side: 'maternal', generation: 1, parentId: null, gender: 'female', emoji: '👩', spouseOf: 'mama' },
+                { id: 'mausi', relName: 'Mausi', englishName: "Mother's Sister", reverseRel: 'Bhanja / Bhanji',
+                    side: 'maternal', generation: 1, parentId: 'nana', gender: 'female', emoji: '👩' },
+                { id: 'mausa', relName: 'Mausa', englishName: "Mausi's Husband", reverseRel: 'Bhanja / Bhanji',
+                    side: 'maternal', generation: 1, parentId: null, gender: 'male', emoji: '👨', spouseOf: 'mausi' },
+                { id: 'sasur', relName: 'Sasur', englishName: "Spouse's Father", reverseRel: 'Damad / Bahu',
+                    side: 'spouse', generation: 1, parentId: null, gender: 'male', emoji: '👴' },
+                { id: 'saas', relName: 'Saas', englishName: "Spouse's Mother", reverseRel: 'Damad / Bahu',
+                    side: 'spouse', generation: 1, parentId: null, gender: 'female', emoji: '👵', spouseOf: 'sasur' },
+                { id: 'samdhi', relName: 'Samdhi', englishName: "Child's Spouse's Father", reverseRel: 'Samdhi',
+                    side: 'both', generation: 1, parentId: null, gender: 'male', emoji: '👴' },
+                { id: 'samdhan', relName: 'Samdhan', englishName: "Child's Spouse's Mother", reverseRel: 'Samdhan',
+                    side: 'both', generation: 1, parentId: null, gender: 'female', emoji: '👵', spouseOf: 'samdhi' },
+
+                // GEN 2 : You, Siblings, Cousins, Spouse, In-law siblings
+                { id: 'you', relName: 'YOU', englishName: 'Self (Reference)', reverseRel: '—', side: 'self',
+                    generation: 2, parentId: 'papa', gender: 'self', emoji: '⭐' },
+                { id: 'spouse', relName: 'Wife / Husband', englishName: 'Spouse', reverseRel: 'Husband / Wife',
+                    side: 'spouse', generation: 2, parentId: null, gender: 'spouse', emoji: '💍', spouseOf: 'you' },
+                { id: 'bhai', relName: 'Bhai', englishName: 'Brother', reverseRel: 'Bhai / Behen', side: 'both',
+                    generation: 2, parentId: 'papa', gender: 'male', emoji: '👦' },
+                { id: 'bhabhi', relName: 'Bhabhi', englishName: "Brother's Wife", reverseRel: 'Dewar / Nanad',
+                    side: 'both', generation: 2, parentId: null, gender: 'female', emoji: '👩', spouseOf: 'bhai' },
+                { id: 'behen', relName: 'Behen', englishName: 'Sister', reverseRel: 'Bhai / Behen', side: 'both',
+                    generation: 2, parentId: 'papa', gender: 'female', emoji: '👧' },
+                { id: 'jija', relName: 'Jija', englishName: "Sister's Husband", reverseRel: 'Sala / Sali',
+                    side: 'both', generation: 2, parentId: null, gender: 'male', emoji: '👨', spouseOf: 'behen' },
+                // Paternal cousins
+                { id: 'chachera-bhai', relName: 'Chachera Bhai', englishName: "Chacha's Son",
+                    reverseRel: 'Chachera Bhai / Behen', side: 'paternal', generation: 2, parentId: 'chacha',
+                    gender: 'male', emoji: '👦' },
+                { id: 'chacheri-behen', relName: 'Chacheri Behen', englishName: "Chacha's Daughter",
+                    reverseRel: 'Chachera Bhai / Behen', side: 'paternal', generation: 2, parentId: 'chacha',
+                    gender: 'female', emoji: '👧' },
+                { id: 'tayera-bhai', relName: 'Tayera Bhai', englishName: "Tauji's Son",
+                    reverseRel: 'Tayera Bhai / Behen', side: 'paternal', generation: 2, parentId: 'tauji',
+                    gender: 'male', emoji: '👦' },
+                { id: 'tayeri-behen', relName: 'Tayeri Behen', englishName: "Tauji's Daughter",
+                    reverseRel: 'Tayera Bhai / Behen', side: 'paternal', generation: 2, parentId: 'tauji',
+                    gender: 'female', emoji: '👧' },
+                { id: 'fufaira-bhai', relName: 'Fufaira Bhai', englishName: "Bua's Son",
+                    reverseRel: 'Fufaira Bhai / Behen', side: 'paternal', generation: 2, parentId: 'bua',
+                    gender: 'male', emoji: '👦' },
+                { id: 'fufairi-behen', relName: 'Fufairi Behen', englishName: "Bua's Daughter",
+                    reverseRel: 'Fufaira Bhai / Behen', side: 'paternal', generation: 2, parentId: 'bua',
+                    gender: 'female', emoji: '👧' },
+                // Maternal cousins
+                { id: 'mamera-bhai', relName: 'Mamera Bhai', englishName: "Mama's Son",
+                    reverseRel: 'Mamera Bhai / Behen', side: 'maternal', generation: 2, parentId: 'mama',
+                    gender: 'male', emoji: '👦' },
+                { id: 'mameri-behen', relName: 'Mameri Behen', englishName: "Mama's Daughter",
+                    reverseRel: 'Mamera Bhai / Behen', side: 'maternal', generation: 2, parentId: 'mama',
+                    gender: 'female', emoji: '👧' },
+                { id: 'mausaira-bhai', relName: 'Mausaira Bhai', englishName: "Mausi's Son",
+                    reverseRel: 'Mausaira Bhai / Behen', side: 'maternal', generation: 2, parentId: 'mausi',
+                    gender: 'male', emoji: '👦' },
+                { id: 'mausairi-behen', relName: 'Mausairi Behen', englishName: "Mausi's Daughter",
+                    reverseRel: 'Mausaira Bhai / Behen', side: 'maternal', generation: 2, parentId: 'mausi',
+                    gender: 'female', emoji: '👧' },
+                // In-law siblings
+                { id: 'sala', relName: 'Sala', englishName: "Spouse's Brother", reverseRel: 'Jija / Bahnoi',
+                    side: 'spouse', generation: 2, parentId: null, gender: 'male', emoji: '👦' },
+                { id: 'sarhaj', relName: 'Sarhaj', englishName: "Sala's Wife", reverseRel: 'Sala / Sali',
+                    side: 'spouse', generation: 2, parentId: null, gender: 'female', emoji: '👩', spouseOf: 'sala' },
+                { id: 'sali', relName: 'Sali', englishName: "Spouse's Sister", reverseRel: 'Jija / Bahnoi',
+                    side: 'spouse', generation: 2, parentId: null, gender: 'female', emoji: '👧' },
+                { id: 'jeth', relName: 'Jeth', englishName: "Husband's Elder Brother", reverseRel: 'Devrani',
+                    side: 'spouse', generation: 2, parentId: null, gender: 'male', emoji: '👨' },
+                { id: 'jethani', relName: 'Jethani', englishName: "Jeth's Wife", reverseRel: 'Devrani',
+                    side: 'spouse', generation: 2, parentId: null, gender: 'female', emoji: '👩', spouseOf: 'jeth' },
+                { id: 'dewar', relName: 'Dewar', englishName: "Husband's Younger Brother", reverseRel: 'Bhabhi',
+                    side: 'spouse', generation: 2, parentId: null, gender: 'male', emoji: '👨' },
+                { id: 'nanad', relName: 'Nanad', englishName: "Husband's Sister", reverseRel: 'Bhabhi',
+                    side: 'spouse', generation: 2, parentId: null, gender: 'female', emoji: '👩' },
+                { id: 'nandoi', relName: 'Nandoi', englishName: "Nanad's Husband", reverseRel: 'Sala / Sali',
+                    side: 'spouse', generation: 2, parentId: null, gender: 'male', emoji: '👨', spouseOf: 'nanad' },
+
+                // GEN 3 : Children, Nephews, Nieces, Grandchildren
+                { id: 'beta', relName: 'Beta', englishName: 'Son', reverseRel: 'Papa / Mummy', side: 'both',
+                    generation: 3, parentId: 'you', gender: 'male', emoji: '👶' },
+                { id: 'beti', relName: 'Beti', englishName: 'Daughter', reverseRel: 'Papa / Mummy', side: 'both',
+                    generation: 3, parentId: 'you', gender: 'female', emoji: '👶' },
+                { id: 'bhatija', relName: 'Bhatija', englishName: "Brother's Son", reverseRel: 'Chacha / Tauji / Bua',
+                    side: 'paternal', generation: 3, parentId: 'bhai', gender: 'male', emoji: '👶' },
+                { id: 'bhatiji', relName: 'Bhatiji', englishName: "Brother's Daughter",
+                    reverseRel: 'Chacha / Tauji / Bua', side: 'paternal', generation: 3, parentId: 'bhai',
+                    gender: 'female', emoji: '👶' },
+                { id: 'bhanja', relName: 'Bhanja', englishName: "Sister's Son", reverseRel: 'Mama / Mausi',
+                    side: 'maternal', generation: 3, parentId: 'behen', gender: 'male', emoji: '👶' },
+                { id: 'bhanji', relName: 'Bhanji', englishName: "Sister's Daughter", reverseRel: 'Mama / Mausi',
+                    side: 'maternal', generation: 3, parentId: 'behen', gender: 'female', emoji: '👶' },
+                { id: 'pota', relName: 'Pota', englishName: "Son's Son", reverseRel: 'Dada / Dadi', side: 'paternal',
+                    generation: 3, parentId: 'beta', gender: 'male', emoji: '👶' },
+                { id: 'poti', relName: 'Poti', englishName: "Son's Daughter", reverseRel: 'Dada / Dadi',
+                    side: 'paternal', generation: 3, parentId: 'beta', gender: 'female', emoji: '👶' },
+                { id: 'nawasa', relName: 'Nawasa', englishName: "Daughter's Son", reverseRel: 'Nana / Nani',
+                    side: 'maternal', generation: 3, parentId: 'beti', gender: 'male', emoji: '👶' },
+                { id: 'nawasi', relName: 'Nawasi', englishName: "Daughter's Daughter", reverseRel: 'Nana / Nani',
+                    side: 'maternal', generation: 3, parentId: 'beti', gender: 'female', emoji: '👶' },
+                { id: 'dotra', relName: 'Dotra', englishName: "Daughter's Son (alt. Nawasa)", reverseRel: 'Nana / Nani',
+                    side: 'maternal', generation: 3, parentId: 'beti', gender: 'male', emoji: '👶' },
+                { id: 'damad', relName: 'Damad', englishName: "Daughter's Husband", reverseRel: 'Sasur / Saas',
+                    side: 'both', generation: 3, parentId: null, gender: 'male', emoji: '👨' },
+                { id: 'bahu', relName: 'Bahu', englishName: "Son's Wife", reverseRel: 'Sasur / Saas', side: 'both',
+                    generation: 3, parentId: null, gender: 'female', emoji: '👩' },
+
+                // GEN 4 : Great-Grandchildren
+                { id: 'parpota', relName: 'Parpota', englishName: "Son's Grandson", reverseRel: 'Pardada / Pardadi',
+                    side: 'paternal', generation: 4, parentId: 'pota', gender: 'male', emoji: '👶' },
+                { id: 'parpoti', relName: 'Parpoti', englishName: "Son's Granddaughter",
+                    reverseRel: 'Pardada / Pardadi', side: 'paternal', generation: 4, parentId: 'pota', gender: 'female',
+                    emoji: '👶' },
+                { id: 'parnawasa', relName: 'Parnawasa', englishName: "Daughter's Grandson",
+                    reverseRel: 'Parnana / Parnani', side: 'maternal', generation: 4, parentId: 'nawasa',
+                    gender: 'male', emoji: '👶' },
+                { id: 'parnawasi', relName: 'Parnawasi', englishName: "Daughter's Granddaughter",
+                    reverseRel: 'Parnana / Parnani', side: 'maternal', generation: 4, parentId: 'nawasa',
+                    gender: 'female', emoji: '👶' },
+            ];
+
+            const nodeMap = {};
+            familyData.forEach(n => nodeMap[n.id] = n);
+
+            // DOM refs
+            const treeContainer = document.getElementById('treeContainer');
+            const searchInput = document.getElementById('searchInput');
+            const searchClear = document.getElementById('searchClear');
+            const themeToggle = document.getElementById('themeToggle');
+            const detailOverlay = document.getElementById('detailOverlay');
+            const detailTitle = document.getElementById('detailTitle');
+            const detailEnglish = document.getElementById('detailEnglish');
+            const detailYouCall = document.getElementById('detailYouCall');
+            const detailTheyCall = document.getElementById('detailTheyCall');
+            const detailSide = document.getElementById('detailSide');
+            const detailClose = document.getElementById('detailClose');
+            const noResults = document.getElementById('noResults');
+            const meButton = document.getElementById('meButton');
+            let allPersonCards = [];
+
+            // Theme
+            const savedTheme = localStorage.getItem('relviewer-theme') || 'dark';
+            document.documentElement.classList.toggle('light', savedTheme === 'light');
+            updateThemeIcon();
+            themeToggle.addEventListener('click', () => {
+                const isLight = document.documentElement.classList.toggle('light');
+                localStorage.setItem('relviewer-theme', isLight ? 'light' : 'dark');
+                updateThemeIcon();
+            });
+
+            function updateThemeIcon() {
+                themeToggle.textContent = document.documentElement.classList.contains('light') ? '☀️' : '🌙';
+            }
+
+            // ─────────────────────────────────────
+            // BUILD TREE WITH COUPLE GROUPING
+            // ─────────────────────────────────────
+            function findSpouseId(node) {
+                if (node.spouseOf) return node.spouseOf;
+                // Also check if any other node has spouseOf pointing to this node
+                for (const other of familyData) {
+                    if (other.spouseOf === node.id) return other.id;
+                }
+                return null;
+            }
+
+            function buildTree() {
+                treeContainer.innerHTML = '';
+                allPersonCards = [];
+                const genGroups = {};
+                familyData.forEach(node => {
+                    const gen = node.generation;
+                    if (!genGroups[gen]) genGroups[gen] = [];
+                    genGroups[gen].push(node);
+                });
+                const generations = Object.keys(genGroups).map(Number).sort((a, b) => a - b);
+                const genLabels = {
+                    '-1': 'Great‑Grandparents',
+                    '0': 'Grandparents',
+                    '1': "Parents' Generation",
+                    '2': 'Your Generation',
+                    '3': 'Next Generation',
+                    '4': 'Great‑Grandchildren'
+                };
+
+                generations.forEach((gen, idx) => {
+                    const nodes = genGroups[gen];
+                    const labelDiv = document.createElement('div');
+                    labelDiv.className = 'gen-label';
+                    labelDiv.textContent = genLabels[String(gen)] || `Generation ${gen}`;
+                    treeContainer.appendChild(labelDiv);
+
+                    const row = document.createElement('div');
+                    row.className = 'gen-row';
+                    row.setAttribute('data-generation', gen);
+
+                    // Identify couples
+                    const pairedIds = new Set();
+                    const couples = [];
+                    const singles = [];
+
+                    nodes.forEach(node => {
+                        if (pairedIds.has(node.id)) return;
+                        const spouseId = findSpouseId(node);
+                        if (spouseId && nodeMap[spouseId] && nodeMap[spouseId].generation ===
+                            gen) {
+                            // Found a couple in the same generation
+                            const spouse = nodeMap[spouseId];
+                            couples.push({ node1: node, node2: spouse });
+                            pairedIds.add(node.id);
+                            pairedIds.add(spouseId);
+                        } else {
+                            singles.push(node);
+                            pairedIds.add(node.id);
+                        }
+                    });
+
+                    // Sort: paternal couples, paternal singles, self, spouse, maternal couples, maternal singles
+                    const sideOrder = { 'paternal': 0, 'both': 1, 'self': 2, 'spouse': 3, 'maternal': 4 };
+
+                    function getSideRank(item) {
+                        if (item.node1) return sideOrder[item.node1.side] || 5;
+                        return sideOrder[item.side] || 5;
+                    }
+                    couples.sort((a, b) => getSideRank(a) - getSideRank(b));
+                    singles.sort((a, b) => (sideOrder[a.side] || 5) - (sideOrder[b.side] || 5));
+
+                    // Render couples
+                    couples.forEach(couple => {
+                        const group = document.createElement('div');
+                        group.className = 'couple-group';
+                        const card1 = createPersonCard(couple.node1);
+                        const card2 = createPersonCard(couple.node2);
+                        const connector = document.createElement('div');
+                        connector.className = 'couple-connector';
+                        group.appendChild(card1);
+                        group.appendChild(connector);
+                        group.appendChild(card2);
+                        row.appendChild(group);
+                        allPersonCards.push({ card: card1, node: couple.node1, groupEl: group });
+                        allPersonCards.push({ card: card2, node: couple.node2, groupEl: group });
+                    });
+
+                    // Render singles
+                    singles.forEach(node => {
+                        const card = createPersonCard(node);
+                        row.appendChild(card);
+                        allPersonCards.push({ card, node, groupEl: null });
+                    });
+
+                    treeContainer.appendChild(row);
+
+                    if (idx < generations.length - 1) {
+                        const conn = document.createElement('div');
+                        conn.className = 'gen-connector';
+                        const dot = document.createElement('div');
+                        dot.className = 'connector-dot';
+                        conn.appendChild(dot);
+                        treeContainer.appendChild(conn);
+                    }
+                });
+            }
+
+            function createPersonCard(node) {
+                const card = document.createElement('div');
+                card.className = 'person-card';
+                card.setAttribute('data-id', node.id);
+                card.setAttribute('data-relname', node.relName.toLowerCase());
+                card.setAttribute('data-english', node.englishName.toLowerCase());
+                card.setAttribute('data-side', node.side);
+                card.setAttribute('data-reverse', node.reverseRel.toLowerCase());
+                card.setAttribute('tabindex', '0');
+                card.setAttribute('role', 'button');
+                card.setAttribute('aria-label', `${node.relName} - ${node.englishName}`);
+
+                if (node.side === 'paternal') card.classList.add('paternal-card');
+                if (node.side === 'maternal') card.classList.add('maternal-card');
+                if (node.side === 'self') card.classList.add('self-card');
+                if (node.side === 'spouse') card.classList.add('spouse-card');
+
+                const avatar = document.createElement('div');
+                avatar.className = 'avatar';
+                avatar.textContent = node.emoji || '👤';
+                card.appendChild(avatar);
+
+                const relName = document.createElement('div');
+                relName.className = 'rel-name';
+                relName.textContent = node.relName;
+                card.appendChild(relName);
+
+                const engName = document.createElement('div');
+                engName.className = 'rel-english';
+                engName.textContent = node.englishName;
+                card.appendChild(engName);
+
+                if (node.side !== 'self' && node.side !== 'both') {
+                    const tag = document.createElement('span');
+                    tag.className = 'side-indicator';
+                    const sideClassMap = { paternal: 'paternal-tag', maternal: 'maternal-tag', spouse: 'spouse-tag' };
+                    tag.classList.add(sideClassMap[node.side] || 'paternal-tag');
+                    tag.textContent = node.side.charAt(0).toUpperCase() + node.side.slice(1);
+                    card.appendChild(tag);
+                } else if (node.side === 'self') {
+                    const tag = document.createElement('span');
+                    tag.className = 'side-indicator self-tag';
+                    tag.textContent = 'You';
+                    card.appendChild(tag);
+                }
+
+                card.addEventListener('click', () => openDetail(node));
+                card.addEventListener('keydown', e => {
+                    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault();
+                        openDetail(node); }
+                });
+                return card;
+            }
+
+            // ─────────────────────────────────────
+            // DETAIL PANEL
+            // ─────────────────────────────────────
+            function openDetail(node) {
+                detailTitle.textContent = node.relName;
+                detailEnglish.textContent = node.englishName;
+                detailYouCall.textContent = node.relName;
+                detailTheyCall.textContent = node.reverseRel;
+                const sideMap = {
+                    paternal: "Father's Side (Paternal)",
+                    maternal: "Mother's Side (Maternal)",
+                    both: 'Both Sides',
+                    self: 'You (Reference Point)',
+                    spouse: 'Spouse / In‑Laws'
+                };
+                detailSide.textContent = sideMap[node.side] || node.side;
+                detailOverlay.classList.add('active');
+            }
+
+            function closeDetail() { detailOverlay.classList.remove('active'); }
+            detailClose.addEventListener('click', closeDetail);
+            detailOverlay.addEventListener('click', e => { if (e.target === detailOverlay) closeDetail(); });
+            document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDetail(); });
+
+            // ─────────────────────────────────────
+            // SEARCH
+            // ─────────────────────────────────────
+            function performSearch(query) {
+                const q = query.toLowerCase().trim();
+                if (q === '') {
+                    allPersonCards.forEach(({ card }) => card.classList.remove('highlighted', 'dimmed'));
+                    noResults.classList.remove('visible');
+                    searchClear.classList.remove('visible');
+                    scrollToYou();
+                    return;
+                }
+                searchClear.classList.add('visible');
+                const matchedIds = new Set();
+                familyData.forEach(node => {
+                    const haystack =
+                        `${node.relName} ${node.englishName} ${node.reverseRel} ${node.side}`.toLowerCase();
+                    if (haystack.includes(q)) matchedIds.add(node.id);
+                });
+                if (matchedIds.size === 0) {
+                    const words = q.split(/\s+/);
+                    familyData.forEach(node => {
+                        const haystack =
+                            `${node.relName} ${node.englishName} ${node.reverseRel} ${node.side}`.toLowerCase();
+                        if (words.some(w => haystack.includes(w))) matchedIds.add(node.id);
+                    });
+                }
+                let anyVisible = false;
+                allPersonCards.forEach(({ card, node }) => {
+                    if (matchedIds.has(node.id)) {
+                        card.classList.add('highlighted');
+                        card.classList.remove('dimmed');
+                        anyVisible = true;
+                    } else {
+                        card.classList.remove('highlighted');
+                        card.classList.add('dimmed');
+                    }
+                });
+                if (anyVisible && matchedIds.size > 0) {
+                    const firstMatchId = [...matchedIds][0];
+                    const firstCard = document.querySelector(`.person-card[data-id="${firstMatchId}"]`);
+                    if (firstCard) firstCard.scrollIntoView({ behavior: 'smooth', block: 'center',
+                    inline: 'center' });
+                }
+                noResults.classList.toggle('visible', !anyVisible && q !== '');
+            }
+
+            function scrollToYou() {
+                const youCard = document.querySelector('.person-card[data-id="you"]');
+                if (youCard) youCard.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+            }
+
+            searchInput.addEventListener('input', () => performSearch(searchInput.value));
+            searchClear.addEventListener('click', () => { searchInput.value = '';
+                performSearch('');
+                searchInput.focus(); });
+            searchInput.addEventListener('keydown', e => {
+                if (e.key === 'Escape') { searchInput.value = '';
+                    performSearch('');
+                    searchInput.blur(); }
+            });
+
+            // ─────────────────────────────────────
+            // ME BUTTON
+            // ─────────────────────────────────────
+            meButton.addEventListener('click', () => {
+                scrollToYou();
+                const youCard = document.querySelector('.person-card[data-id="you"]');
+                if (youCard) { youCard.classList.add('highlighted');
+                    setTimeout(() => youCard.classList.remove('highlighted'), 1300); }
+            });
+
+            // ─────────────────────────────────────
+            // SWIPE TO CLOSE DETAIL
+            // ─────────────────────────────────────
+            const detailPanel = document.getElementById('detailPanel');
+            let touchY = 0;
+            detailPanel.addEventListener('touchstart', e => { touchY = e.touches[0].clientY; }, { passive: true });
+            detailPanel.addEventListener('touchmove', e => {
+                if (e.touches[0].clientY - touchY > 45 && detailPanel.scrollTop <= 5) closeDetail();
+            }, { passive: true });
+
+            // ─────────────────────────────────────
+            // INIT
+            // ─────────────────────────────────────
+            buildTree();
+            setTimeout(scrollToYou, 450);
+            console.log('🌳 Relationships Viewer ready —', familyData.length, 'relations loaded');
+            console.log('   💍 Couple groups shown with ring connectors');
+            console.log('   🔍 Search for any relation (chacha, dotra, sarhaj, nandoi…)');
+            console.log('   🌙☀️ Theme toggle saved to localStorage');
+        })();
+    </script>
+</body>
+</html>
