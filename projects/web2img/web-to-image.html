@@ -1,0 +1,1434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Web to Image — Screenshot Capture Tool</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0&display=swap" rel="stylesheet">
+<style>
+/* ── Reset ─────────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow-x:hidden}
+
+/* ── M3 Dark Color Tokens ───────────────────────────────── */
+:root{
+  --primary:#A8C7FA;
+  --on-primary:#0A2472;
+  --primary-container:#1C3461;
+  --on-primary-container:#D6E3FF;
+  --secondary:#BBC4DB;
+  --on-secondary:#252E42;
+  --secondary-container:#3C4558;
+  --on-secondary-container:#D7E0F8;
+  --tertiary:#DDBCE8;
+  --on-tertiary:#3E2349;
+  --tertiary-container:#563B60;
+  --on-tertiary-container:#FADAFF;
+  --error:#FFB4AB;
+  --error-container:#93000A;
+  --on-error-container:#FFDAD6;
+  --background:#0F0D13;
+  --on-background:#E6E1E5;
+  --surface:#141218;
+  --on-surface:#E6E1E5;
+  --surface-variant:#49454F;
+  --on-surface-variant:#CAC4D0;
+  --surface-low:#1D1B20;
+  --surface-mid:#211F26;
+  --surface-high:#2B2930;
+  --surface-highest:#36343B;
+  --outline:#938F99;
+  --outline-variant:#49454F;
+  --success:#6DD58C;
+  --warning:#FFBD00;
+  --warn-container:rgba(255,189,0,.13);
+  --info-container:rgba(168,199,250,.1);
+  --err-container:rgba(255,180,171,.12);
+  --font-ui:'Outfit',sans-serif;
+  --font-code:'Fira Code',monospace;
+  --ease-std:cubic-bezier(.2,0,0,1);
+  --ease-dec:cubic-bezier(0,0,0,1);
+  --ease-acc:cubic-bezier(.3,0,1,1);
+  --dur-s:150ms;
+  --dur-m:300ms;
+  --dur-l:500ms;
+  --r-xs:4px;--r-sm:8px;--r-md:12px;--r-lg:16px;--r-xl:24px;--r-full:9999px;
+}
+
+/* ── Base ───────────────────────────────────────────────── */
+body{
+  background:var(--background);
+  color:var(--on-background);
+  font-family:var(--font-ui);
+  font-size:16px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+::selection{background:var(--primary-container);color:var(--on-primary-container)}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--outline);border-radius:3px}
+
+/* ── App Shell ──────────────────────────────────────────── */
+#app{
+  display:flex;
+  flex-direction:column;
+  min-height:100dvh;
+  max-width:960px;
+  margin:0 auto;
+  padding-bottom:100px;
+}
+
+/* ── Top Bar ────────────────────────────────────────────── */
+.topbar{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:14px 20px;
+  position:sticky;top:0;z-index:120;
+  background:rgba(15,13,19,.92);
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  border-bottom:1px solid rgba(147,143,153,.18);
+}
+.topbar-icon{
+  width:38px;height:38px;
+  border-radius:var(--r-md);
+  background:var(--primary-container);
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+}
+.topbar-icon .ms{font-size:20px;color:var(--on-primary-container)}
+.topbar-title{
+  font-size:19px;font-weight:700;
+  letter-spacing:-.025em;
+  color:var(--on-surface);
+  line-height:1;
+}
+.topbar-title em{color:var(--primary);font-style:normal}
+.topbar-spacer{flex:1}
+.icon-btn{
+  width:38px;height:38px;
+  border-radius:var(--r-full);
+  border:none;background:transparent;
+  color:var(--on-surface-variant);
+  cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:background var(--dur-s) var(--ease-std);
+}
+.icon-btn:hover{background:rgba(230,225,229,.08)}
+.icon-btn .ms{font-size:20px}
+
+/* ── Tab Strip ──────────────────────────────────────────── */
+.tabs{
+  display:flex;gap:6px;
+  padding:10px 20px;
+  overflow-x:auto;scrollbar-width:none;
+  -webkit-overflow-scrolling:touch;
+  border-bottom:1px solid rgba(147,143,153,.14);
+}
+.tabs::-webkit-scrollbar{display:none}
+.tab{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:8px 18px;
+  border-radius:var(--r-full);
+  border:1px solid var(--outline-variant);
+  background:transparent;
+  color:var(--on-surface-variant);
+  font-family:var(--font-ui);font-size:13.5px;font-weight:500;
+  cursor:pointer;white-space:nowrap;flex-shrink:0;
+  transition:all var(--dur-s) var(--ease-std);
+}
+.tab .ms{font-size:15px}
+.tab:hover{background:rgba(230,225,229,.07);color:var(--on-surface)}
+.tab.active{
+  background:var(--secondary-container);
+  color:var(--on-secondary-container);
+  border-color:transparent;
+}
+
+/* ── Panel ──────────────────────────────────────────────── */
+.panels{padding:16px 20px 0}
+.panel{display:none;flex-direction:column;gap:12px;animation:panel-in var(--dur-m) var(--ease-dec)}
+.panel.active{display:flex}
+@keyframes panel-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ── Code Editor ────────────────────────────────────────── */
+.editor-wrap{
+  border-radius:var(--r-lg);overflow:hidden;
+  border:1px solid var(--outline-variant);
+  background:var(--surface);
+  transition:border-color var(--dur-s);
+}
+.editor-wrap:focus-within{border-color:var(--primary)}
+.editor-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:9px 14px;
+  background:var(--surface-low);
+  border-bottom:1px solid rgba(147,143,153,.2);
+}
+.editor-header-label{
+  font-size:12px;font-weight:600;
+  color:var(--on-surface-variant);
+  letter-spacing:.06em;text-transform:uppercase;
+}
+.editor-header-actions{display:flex;gap:4px;align-items:center}
+textarea.code{
+  display:block;width:100%;
+  min-height:220px;max-height:380px;
+  padding:14px 16px;
+  background:transparent;
+  color:var(--on-surface);
+  font-family:var(--font-code);font-size:13px;line-height:1.65;
+  border:none;outline:none;resize:vertical;tab-size:2;
+}
+textarea.code::placeholder{color:var(--on-surface-variant);opacity:.5}
+
+/* ── Drop Zone ──────────────────────────────────────────── */
+.dropzone{
+  min-height:190px;
+  border-radius:var(--r-lg);
+  border:2px dashed var(--outline-variant);
+  background:var(--surface);
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:10px;
+  padding:36px 24px;cursor:pointer;text-align:center;
+  transition:all var(--dur-m) var(--ease-std);
+}
+.dropzone:hover,.dropzone.over{
+  border-color:var(--primary);
+  background:rgba(168,199,250,.06);
+}
+.dropzone .dz-icon{font-size:44px;color:var(--primary);opacity:.7}
+.dropzone .dz-title{font-size:15px;font-weight:600;color:var(--on-surface)}
+.dropzone .dz-sub{font-size:13px;color:var(--on-surface-variant)}
+.file-chip{
+  display:flex;align-items:center;gap:10px;
+  padding:12px 16px;
+  background:var(--surface-mid);
+  border:1px solid var(--outline-variant);
+  border-radius:var(--r-md);
+}
+.file-chip .ms{color:var(--primary);font-size:22px}
+.file-chip-name{font-size:14px;font-weight:600;color:var(--on-surface)}
+.file-chip-meta{font-size:12px;color:var(--on-surface-variant)}
+
+/* ── Text Field ─────────────────────────────────────────── */
+.field{
+  display:flex;align-items:center;gap:10px;
+  padding:12px 16px;
+  background:var(--surface);
+  border:1px solid var(--outline-variant);
+  border-radius:var(--r-md);
+  transition:border-color var(--dur-s);
+}
+.field:focus-within{border-color:var(--primary)}
+.field .ms{color:var(--on-surface-variant);font-size:20px;flex-shrink:0}
+.field input{
+  flex:1;background:none;border:none;outline:none;
+  color:var(--on-surface);
+  font-family:var(--font-ui);font-size:14.5px;
+}
+.field input::placeholder{color:var(--on-surface-variant);opacity:.55}
+.field select{
+  flex:1;background:none;border:none;outline:none;
+  color:var(--on-surface);
+  font-family:var(--font-ui);font-size:14.5px;cursor:pointer;
+}
+.field select option{background:var(--surface-high);color:var(--on-surface)}
+
+/* ── Form ───────────────────────────────────────────────── */
+.form-row{display:flex;flex-direction:column;gap:6px}
+.form-label{
+  font-size:11.5px;font-weight:700;
+  color:var(--on-surface-variant);
+  text-transform:uppercase;letter-spacing:.08em;
+  padding-left:2px;
+}
+
+/* ── Banner / Info ──────────────────────────────────────── */
+.banner{
+  display:flex;gap:10px;
+  padding:13px 16px;
+  border-radius:var(--r-md);
+  font-size:13px;line-height:1.55;
+}
+.banner .ms{font-size:17px;flex-shrink:0;margin-top:1px}
+.banner a{color:inherit;font-weight:600}
+.banner-info{background:var(--info-container);color:var(--primary);border:1px solid rgba(168,199,250,.2)}
+.banner-warn{background:var(--warn-container);color:var(--warning);border:1px solid rgba(255,189,0,.25)}
+.banner-err{background:var(--err-container);color:var(--error);border:1px solid rgba(255,180,171,.25)}
+
+/* ── Options Strip ──────────────────────────────────────── */
+.options{
+  display:flex;flex-wrap:wrap;gap:14px;align-items:center;
+  padding:14px 20px 0;
+}
+.opt-group{display:flex;align-items:center;gap:8px}
+.opt-label{
+  font-size:11.5px;font-weight:700;
+  color:var(--on-surface-variant);
+  text-transform:uppercase;letter-spacing:.08em;
+}
+.chips{display:flex;gap:4px}
+.chip{
+  padding:6px 14px;
+  border-radius:var(--r-full);
+  border:1px solid var(--outline-variant);
+  background:transparent;
+  color:var(--on-surface-variant);
+  font-family:var(--font-ui);font-size:12.5px;font-weight:500;
+  cursor:pointer;white-space:nowrap;
+  transition:all var(--dur-s) var(--ease-std);
+  display:inline-flex;align-items:center;gap:4px;
+}
+.chip:hover{background:rgba(230,225,229,.07);color:var(--on-surface)}
+.chip.on{background:var(--primary-container);color:var(--on-primary-container);border-color:transparent}
+.chip .ms{font-size:13px}
+
+/* ── Section ────────────────────────────────────────────── */
+.section{padding:16px 20px 0}
+.section-hd{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:10px;
+}
+.section-title{
+  display:flex;align-items:center;gap:8px;
+  font-size:11.5px;font-weight:700;
+  color:var(--on-surface-variant);
+  text-transform:uppercase;letter-spacing:.08em;
+}
+.dot{
+  width:8px;height:8px;
+  border-radius:50%;
+  background:var(--outline);
+  transition:all var(--dur-m) var(--ease-std);
+}
+.dot.live{
+  background:var(--success);
+  box-shadow:0 0 0 3px rgba(109,213,140,.2);
+}
+.section-meta{font-size:12px;color:var(--on-surface-variant)}
+
+/* ── Render Area ────────────────────────────────────────── */
+.render-box{
+  border-radius:var(--r-lg);
+  overflow:hidden;
+  border:1px solid var(--outline-variant);
+  background:var(--surface);
+  position:relative;
+  min-height:180px;
+}
+.render-empty{
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:48px 24px;gap:10px;
+  color:var(--on-surface-variant);
+}
+.render-empty .ms{font-size:48px;opacity:.25}
+.render-empty p{font-size:13px;opacity:.5;text-align:center}
+.scale-wrap{position:relative;overflow:hidden;width:100%}
+.scale-inner{transform-origin:top left;display:none}
+#render-frame{
+  display:block;border:none;
+  background:#fff;
+  /* width & height set via JS */
+}
+
+/* ── Screenshot Preview ─────────────────────────────────── */
+.preview-box{
+  border-radius:var(--r-lg);overflow:hidden;
+  border:1px solid var(--outline-variant);
+  background:
+    repeating-conic-gradient(
+      rgba(255,255,255,.04) 0% 25%,
+      rgba(255,255,255,.01) 0% 50%
+    ) 0 0/20px 20px;
+}
+#preview-img{display:block;max-width:100%;height:auto}
+.preview-actions{display:flex;flex-wrap:wrap;gap:8px;padding:12px 0 0}
+
+/* ── Buttons ────────────────────────────────────────────── */
+.btn{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:10px 22px;
+  border-radius:var(--r-full);border:none;
+  font-family:var(--font-ui);font-size:14px;font-weight:600;
+  cursor:pointer;transition:all var(--dur-s) var(--ease-std);
+}
+.btn .ms{font-size:16px}
+.btn-filled{background:var(--primary);color:var(--on-primary)}
+.btn-filled:hover{filter:brightness(1.12)}
+.btn-tonal{background:var(--secondary-container);color:var(--on-secondary-container)}
+.btn-tonal:hover{filter:brightness(1.1)}
+.btn-outline{
+  background:transparent;
+  color:var(--primary);
+  border:1px solid var(--outline);
+}
+.btn-outline:hover{background:rgba(168,199,250,.08)}
+
+/* ── FAB ────────────────────────────────────────────────── */
+.fab{
+  position:fixed;bottom:24px;right:24px;z-index:200;
+  display:flex;align-items:center;gap:12px;
+  padding:16px 28px;
+  border-radius:var(--r-xl);border:none;
+  background:var(--primary-container);
+  color:var(--on-primary-container);
+  font-family:var(--font-ui);font-size:15px;font-weight:700;
+  cursor:pointer;
+  box-shadow:0 4px 24px rgba(0,0,0,.55);
+  transition:all var(--dur-m) var(--ease-std);
+}
+.fab .ms{font-size:22px}
+.fab:hover{
+  background:var(--primary);color:var(--on-primary);
+  box-shadow:0 8px 36px rgba(0,0,0,.65);
+  transform:translateY(-2px);
+}
+.fab:active{transform:translateY(0);box-shadow:0 2px 14px rgba(0,0,0,.5)}
+.fab.busy{
+  background:var(--surface-high);
+  color:var(--on-surface-variant);
+  cursor:not-allowed;
+  transform:none;box-shadow:none;
+}
+
+/* ── Loading Overlay ────────────────────────────────────── */
+.loading{
+  position:fixed;inset:0;z-index:500;
+  background:rgba(15,13,19,.8);
+  backdrop-filter:blur(6px);
+  -webkit-backdrop-filter:blur(6px);
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:18px;
+  opacity:0;pointer-events:none;
+  transition:opacity var(--dur-m) var(--ease-std);
+}
+.loading.on{opacity:1;pointer-events:all}
+
+/* M3 indeterminate circular progress */
+.prog-ring svg{animation:rot 1.6s linear infinite;width:52px;height:52px}
+@keyframes rot{to{transform:rotate(360deg)}}
+.prog-track{fill:none;stroke:var(--surface-high);stroke-width:4.5}
+.prog-ind{
+  fill:none;stroke:var(--primary);stroke-width:4.5;
+  stroke-linecap:round;
+  stroke-dasharray:130;
+  animation:dash 1.6s ease-in-out infinite;
+}
+@keyframes dash{
+  0%{stroke-dashoffset:130;transform:rotate(0deg)}
+  50%{stroke-dashoffset:20;transform:rotate(135deg)}
+  100%{stroke-dashoffset:130;transform:rotate(720deg)}
+}
+.loading-text{
+  font-size:14px;font-weight:500;
+  color:var(--on-surface);letter-spacing:.02em;
+}
+
+/* ── Snackbar ───────────────────────────────────────────── */
+.snack{
+  position:fixed;
+  bottom:88px;left:50%;
+  transform:translateX(-50%) translateY(130%);
+  z-index:400;
+  display:flex;align-items:center;gap:10px;
+  padding:14px 20px;
+  background:#E6E1E5;color:#322F35;
+  border-radius:var(--r-sm);
+  font-family:var(--font-ui);font-size:13.5px;font-weight:500;
+  box-shadow:0 6px 28px rgba(0,0,0,.45);
+  min-width:270px;max-width:calc(100vw - 48px);
+  transition:transform var(--dur-m) var(--ease-dec);
+}
+.snack.show{transform:translateX(-50%) translateY(0)}
+.snack .ms{font-size:17px;flex-shrink:0}
+.snack.success{background:#1B5E20;color:#A5D6A7}
+.snack.error{background:#7F1D1D;color:#FECACA}
+.snack.warn{background:#78350F;color:#FDE68A}
+.snack-msg{flex:1}
+.snack-close{
+  background:none;border:none;cursor:pointer;
+  font-family:var(--font-ui);font-size:12px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.07em;
+  color:inherit;opacity:.8;flex-shrink:0;
+}
+.snack-close:hover{opacity:1}
+
+/* ── Divider ────────────────────────────────────────────── */
+.divider{height:1px;background:var(--outline-variant);margin:4px 0}
+
+/* ── Helpers ────────────────────────────────────────────── */
+.hidden{display:none!important}
+.ms{font-family:'Material Symbols Rounded';font-weight:400;font-style:normal;
+    font-size:24px;line-height:1;letter-spacing:normal;text-transform:none;
+    display:inline-block;white-space:nowrap;word-wrap:normal;
+    font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24}
+
+/* ── Responsive ─────────────────────────────────────────── */
+@media(max-width:600px){
+  .topbar{padding:12px 14px}
+  .tabs{padding:8px 14px}
+  .panels,.section,.options{padding-left:14px;padding-right:14px}
+  .fab{bottom:16px;right:16px;padding:14px 20px;font-size:14px}
+  .snack{bottom:76px}
+  .chip{padding:5px 11px;font-size:12px}
+}
+@media(max-width:400px){
+  .opt-group{flex-direction:column;align-items:flex-start;gap:4px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ── Top Bar ── -->
+  <header class="topbar">
+    <div class="topbar-icon"><span class="ms">screenshot_monitor</span></div>
+    <h1 class="topbar-title">Web&nbsp;to&nbsp;<em>Image</em></h1>
+    <div class="topbar-spacer"></div>
+    <button class="icon-btn" title="Help" id="btn-help"><span class="ms">help_outline</span></button>
+  </header>
+
+  <!-- ── Mode Tabs ── -->
+  <div class="tabs" role="tablist">
+    <button class="tab active" data-tab="paste" role="tab"><span class="ms">code</span>Paste HTML</button>
+    <button class="tab" data-tab="upload" role="tab"><span class="ms">upload_file</span>Upload File</button>
+    <button class="tab" data-tab="fetch" role="tab"><span class="ms">public</span>Fetch URL</button>
+    <button class="tab" data-tab="api" role="tab"><span class="ms">api</span>API Mode</button>
+  </div>
+
+  <!-- ── Panels ── -->
+  <div class="panels">
+
+    <!-- Paste HTML -->
+    <div class="panel active" id="panel-paste">
+      <div class="editor-wrap">
+        <div class="editor-header">
+          <span class="editor-header-label">HTML · CSS · JavaScript</span>
+          <div class="editor-header-actions">
+            <button class="icon-btn" title="Load sample" id="btn-sample"><span class="ms" style="font-size:18px">lightbulb</span></button>
+            <button class="icon-btn" title="Clear editor" id="btn-clear"><span class="ms" style="font-size:18px">delete_sweep</span></button>
+          </div>
+        </div>
+        <textarea class="code" id="html-editor" spellcheck="false" autocomplete="off"
+          placeholder="<!DOCTYPE html>&#10;<html>&#10;  <head><title>Demo</title></head>&#10;  <body>&#10;    <h1>Hello, World!</h1>&#10;  </body>&#10;</html>"></textarea>
+      </div>
+      <div class="banner banner-info">
+        <span class="ms">info</span>
+        <span>Paste complete HTML including <code>&lt;style&gt;</code> and <code>&lt;script&gt;</code> tags. Preview updates live as you type.</span>
+      </div>
+    </div>
+
+    <!-- Upload File -->
+    <div class="panel" id="panel-upload">
+      <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Upload file">
+        <input type="file" id="file-input" accept=".html,.htm,.zip" style="display:none">
+        <span class="ms dz-icon">drive_folder_upload</span>
+        <div class="dz-title">Drop your file here</div>
+        <div class="dz-sub">Accepts .html, .htm, and .zip (with index.html at root)</div>
+        <button class="btn btn-outline" id="btn-browse" style="margin-top:6px">
+          <span class="ms">folder_open</span>Browse
+        </button>
+      </div>
+      <div class="file-chip hidden" id="file-chip">
+        <span class="ms">insert_drive_file</span>
+        <div style="flex:1;min-width:0">
+          <div class="file-chip-name" id="file-chip-name"></div>
+          <div class="file-chip-meta" id="file-chip-meta"></div>
+        </div>
+        <button class="icon-btn" id="btn-clear-file"><span class="ms" style="font-size:18px">close</span></button>
+      </div>
+      <div class="banner banner-info">
+        <span class="ms">info</span>
+        <span>For ZIP files: place <strong>index.html</strong> at the root. CSS, JS, and image assets are resolved automatically.</span>
+      </div>
+    </div>
+
+    <!-- Fetch URL -->
+    <div class="panel" id="panel-fetch">
+      <div class="form-row">
+        <label class="form-label">Target URL</label>
+        <div class="field">
+          <span class="ms">link</span>
+          <input type="url" id="fetch-url" placeholder="https://example.com" autocomplete="off">
+        </div>
+      </div>
+      <div class="banner banner-warn">
+        <span class="ms">warning</span>
+        <div>
+          <strong>CORS Limitation —</strong> Most URLs will be blocked by the browser's same-origin policy and will fail to load. This works only when the server sends <code>Access-Control-Allow-Origin: *</code>.<br>
+          <strong>Tip:</strong> For reliable results with any URL, use <strong>API Mode</strong> instead.
+        </div>
+      </div>
+      <div class="banner banner-info">
+        <span class="ms">tips_and_updates</span>
+        <span>Works with: GitHub Pages, Codepen previews, or any CORS-open endpoint. External stylesheets and scripts will also be blocked by CORS.</span>
+      </div>
+    </div>
+
+    <!-- API Mode -->
+    <div class="panel" id="panel-api">
+      <div class="form-row">
+        <label class="form-label">Screenshot Provider</label>
+        <div class="field">
+          <span class="ms">hub</span>
+          <select id="api-provider">
+            <option value="screenshotone">ScreenshotOne (free: 100/mo)</option>
+            <option value="apiflash">ApiFlash (free: 100/mo)</option>
+            <option value="htmlcsstoimage">htmlcsstoimage.com (HTML input)</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <label class="form-label" id="api-key-label">API Key / Access Key</label>
+        <div class="field">
+          <span class="ms">key</span>
+          <input type="text" id="api-key" placeholder="Paste your API key here" autocomplete="off">
+        </div>
+      </div>
+      <div class="form-row hidden" id="api-secret-row">
+        <label class="form-label">API Secret</label>
+        <div class="field">
+          <span class="ms">lock</span>
+          <input type="password" id="api-secret" placeholder="API secret or password">
+        </div>
+      </div>
+      <div class="form-row" id="api-url-row">
+        <label class="form-label">Target URL</label>
+        <div class="field">
+          <span class="ms">link</span>
+          <input type="url" id="api-url" placeholder="https://example.com">
+        </div>
+      </div>
+      <div class="form-row hidden" id="api-html-row">
+        <label class="form-label">HTML Content</label>
+        <div class="editor-wrap">
+          <textarea class="code" id="api-html" style="min-height:130px" placeholder="<h1>Hello World</h1>"></textarea>
+        </div>
+      </div>
+      <div class="banner banner-info" id="api-info-banner">
+        <span class="ms">info</span>
+        <span id="api-info-text">Get a free key at <strong>screenshotone.com</strong> — no credit card needed. Free tier: 100 screenshots/month.</span>
+      </div>
+    </div>
+
+  </div><!-- /panels -->
+
+  <!-- ── Options Strip ── -->
+  <div class="options">
+    <div class="opt-group">
+      <span class="opt-label">Device</span>
+      <div class="chips">
+        <button class="chip" data-dev="mobile"><span class="ms">smartphone</span>Mobile</button>
+        <button class="chip" data-dev="tablet"><span class="ms">tablet</span>Tablet</button>
+        <button class="chip on" data-dev="desktop"><span class="ms">computer</span>Desktop</button>
+      </div>
+    </div>
+    <div class="opt-group">
+      <span class="opt-label">Scale</span>
+      <div class="chips">
+        <button class="chip on" data-scale="2">2×</button>
+        <button class="chip" data-scale="3">3×</button>
+      </div>
+    </div>
+    <div class="opt-group">
+      <span class="opt-label">Format</span>
+      <div class="chips">
+        <button class="chip on" data-fmt="png">PNG</button>
+        <button class="chip" data-fmt="jpeg">JPEG</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Live Preview ── -->
+  <div class="section">
+    <div class="section-hd">
+      <div class="section-title">
+        <span class="dot" id="render-dot"></span>
+        Live Preview
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="section-meta" id="render-dim"></span>
+        <button class="icon-btn" title="Refresh" id="btn-refresh"><span class="ms" style="font-size:18px">refresh</span></button>
+      </div>
+    </div>
+    <div class="render-box" id="render-box">
+      <div class="render-empty" id="render-empty">
+        <span class="ms">browser_not_supported</span>
+        <p>No content to preview.<br>Add HTML or a file above, then click Capture.</p>
+      </div>
+      <div class="scale-wrap" id="scale-wrap">
+        <div class="scale-inner" id="scale-inner">
+          <iframe id="render-frame" sandbox="allow-scripts allow-same-origin" title="Render Preview"></iframe>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Screenshot Preview ── -->
+  <div class="section hidden" id="capture-section">
+    <div class="section-hd">
+      <div class="section-title">
+        <span class="dot live"></span>Screenshot
+      </div>
+      <span class="section-meta" id="capture-dim"></span>
+    </div>
+    <div class="preview-box">
+      <img id="preview-img" alt="Captured screenshot">
+    </div>
+    <div class="preview-actions">
+      <button class="btn btn-filled" id="btn-download"><span class="ms">download</span>Download</button>
+      <button class="btn btn-tonal" id="btn-copy"><span class="ms">content_copy</span>Copy Image</button>
+      <button class="btn btn-outline" id="btn-clear-cap"><span class="ms">delete</span>Clear</button>
+    </div>
+  </div>
+
+  <div style="height:24px"></div>
+</div><!-- /app -->
+
+<!-- ── FAB ── -->
+<button class="fab" id="fab">
+  <span class="ms">photo_camera</span>
+  Capture Screenshot
+</button>
+
+<!-- ── Loading ── -->
+<div class="loading" id="loading">
+  <div class="prog-ring">
+    <svg viewBox="0 0 52 52">
+      <circle class="prog-track" cx="26" cy="26" r="20"/>
+      <circle class="prog-ind" cx="26" cy="26" r="20"/>
+    </svg>
+  </div>
+  <div class="loading-text" id="loading-text">Processing…</div>
+</div>
+
+<!-- ── Snackbar ── -->
+<div class="snack" id="snack" role="status" aria-live="polite">
+  <span class="ms" id="snack-icon">info</span>
+  <span class="snack-msg" id="snack-msg"></span>
+  <button class="snack-close" id="btn-snack-close">OK</button>
+</div>
+
+<!-- CDN Libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+<script>
+/* ════════════════════════════════════════════════════════════
+   WEB TO IMAGE — App Logic
+   ════════════════════════════════════════════════════════════ */
+
+const H2C_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+
+const DEVICE_W = { mobile: 390, tablet: 768, desktop: 1440 };
+
+const API_META = {
+  screenshotone: {
+    info: 'Get a free key at <strong>screenshotone.com</strong> — no credit card required. Free tier: 100 screenshots/month.',
+    urlMode: true, secretMode: false,
+  },
+  apiflash: {
+    info: 'Sign up at <strong>app.apiflash.com</strong>. Free tier includes 100 screenshots/month.',
+    urlMode: true, secretMode: false,
+  },
+  htmlcsstoimage: {
+    info: 'Sign up at <strong>htmlcsstoimage.com</strong>. Enter your User ID as the key and your API key as the secret. Renders arbitrary HTML server-side.',
+    urlMode: false, secretMode: true,
+  },
+};
+
+const SAMPLE_HTML = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+  }
+  .card {
+    background: rgba(255,255,255,0.07);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 24px;
+    padding: 60px 80px;
+    text-align: center;
+    color: #fff;
+    max-width: 600px;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.4);
+  }
+  h1 {
+    font-size: 3.5rem;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    background: linear-gradient(90deg, #a78bfa, #60a5fa, #34d399);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 16px;
+  }
+  p { font-size: 1.2rem; opacity: 0.7; line-height: 1.7; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    margin-top: 32px; padding: 10px 24px;
+    background: rgba(167,139,250,0.2);
+    border: 1px solid rgba(167,139,250,0.4);
+    border-radius: 100px;
+    font-size: 0.9rem; font-weight: 600;
+    color: #c4b5fd;
+  }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>Web to Image</h1>
+    <p>Transform any HTML, CSS &amp; JavaScript into a pixel-perfect screenshot with one click.</p>
+    <div class="badge">✦ Screenshot Tool ✦</div>
+  </div>
+</body>
+</html>`;
+
+/* ── State ───────────────────────────────────────────────── */
+const S = {
+  tab: 'paste',
+  device: 'desktop',
+  scale: 2,
+  fmt: 'png',
+  captureUrl: null,
+  fileHtml: null,
+  rendered: false,
+};
+
+/* ── DOM refs ────────────────────────────────────────────── */
+const $ = id => document.getElementById(id);
+
+const el = {
+  tabs:       document.querySelectorAll('.tab'),
+  panels:     document.querySelectorAll('.panel'),
+  editor:     $('html-editor'),
+  dropzone:   $('dropzone'),
+  fileInput:  $('file-input'),
+  fileChip:   $('file-chip'),
+  fileChipN:  $('file-chip-name'),
+  fileChipM:  $('file-chip-meta'),
+  fetchUrl:   $('fetch-url'),
+  apiProvider:$('api-provider'),
+  apiKey:     $('api-key'),
+  apiSecret:  $('api-secret'),
+  apiUrl:     $('api-url'),
+  apiHtml:    $('api-html'),
+  apiSecretR: $('api-secret-row'),
+  apiUrlR:    $('api-url-row'),
+  apiHtmlR:   $('api-html-row'),
+  apiInfoTxt: $('api-info-text'),
+  frame:      $('render-frame'),
+  scaleWrap:  $('scale-wrap'),
+  scaleInner: $('scale-inner'),
+  renderEmpty:$('render-empty'),
+  renderDot:  $('render-dot'),
+  renderDim:  $('render-dim'),
+  capSection: $('capture-section'),
+  previewImg: $('preview-img'),
+  captureDim: $('capture-dim'),
+  fab:        $('fab'),
+  loading:    $('loading'),
+  loadText:   $('loading-text'),
+  snack:      $('snack'),
+  snackIcon:  $('snack-icon'),
+  snackMsg:   $('snack-msg'),
+};
+
+/* ════════════════════════════════════════════════════════
+   TABS
+════════════════════════════════════════════════════════ */
+el.tabs.forEach(t => t.addEventListener('click', () => switchTab(t.dataset.tab)));
+
+function switchTab(id) {
+  S.tab = id;
+  el.tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === id));
+  el.panels.forEach(p => p.classList.toggle('active', p.id === `panel-${id}`));
+  clearRender();
+}
+
+/* ════════════════════════════════════════════════════════
+   OPTIONS
+════════════════════════════════════════════════════════ */
+document.querySelectorAll('[data-dev]').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('[data-dev]').forEach(x => x.classList.remove('on'));
+  b.classList.add('on'); S.device = b.dataset.dev;
+  if (S.rendered) updateScale();
+}));
+
+document.querySelectorAll('[data-scale]').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('[data-scale]').forEach(x => x.classList.remove('on'));
+  b.classList.add('on'); S.scale = parseInt(b.dataset.scale);
+}));
+
+document.querySelectorAll('[data-fmt]').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('[data-fmt]').forEach(x => x.classList.remove('on'));
+  b.classList.add('on'); S.fmt = b.dataset.fmt;
+}));
+
+/* ════════════════════════════════════════════════════════
+   PASTE HTML MODE
+════════════════════════════════════════════════════════ */
+let debounceT;
+el.editor.addEventListener('input', () => {
+  clearTimeout(debounceT);
+  debounceT = setTimeout(() => {
+    if (el.editor.value.trim()) renderHtml(el.editor.value);
+    else clearRender();
+  }, 650);
+});
+
+// Tab key support
+el.editor.addEventListener('keydown', e => {
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    const s = e.target.selectionStart, end = e.target.selectionEnd;
+    e.target.value = e.target.value.slice(0, s) + '  ' + e.target.value.slice(end);
+    e.target.selectionStart = e.target.selectionEnd = s + 2;
+  }
+});
+
+$('btn-sample').addEventListener('click', () => {
+  el.editor.value = SAMPLE_HTML;
+  el.editor.dispatchEvent(new Event('input'));
+});
+
+$('btn-clear').addEventListener('click', () => { el.editor.value = ''; clearRender(); });
+
+/* ════════════════════════════════════════════════════════
+   UPLOAD FILE MODE
+════════════════════════════════════════════════════════ */
+$('btn-browse').addEventListener('click', e => { e.stopPropagation(); el.fileInput.click(); });
+el.dropzone.addEventListener('click', () => el.fileInput.click());
+el.dropzone.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') el.fileInput.click(); });
+el.fileInput.addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
+
+el.dropzone.addEventListener('dragover', e => { e.preventDefault(); el.dropzone.classList.add('over'); });
+el.dropzone.addEventListener('dragleave', () => el.dropzone.classList.remove('over'));
+el.dropzone.addEventListener('drop', e => {
+  e.preventDefault(); el.dropzone.classList.remove('over');
+  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+});
+
+$('btn-clear-file').addEventListener('click', () => {
+  S.fileHtml = null; el.fileInput.value = '';
+  el.fileChip.classList.add('hidden');
+  clearRender();
+});
+
+async function handleFile(file) {
+  el.fileChipN.textContent = file.name;
+  el.fileChipM.textContent = fmtBytes(file.size);
+  el.fileChip.classList.remove('hidden');
+  try {
+    if (file.name.match(/\.zip$/i)) {
+      showLoad('Extracting ZIP…');
+      S.fileHtml = await extractZip(file);
+      hideLoad();
+    } else {
+      S.fileHtml = await readText(file);
+    }
+    renderHtml(S.fileHtml);
+  } catch(err) {
+    hideLoad();
+    toast('Error: ' + err.message, 'error');
+  }
+}
+
+async function extractZip(file) {
+  if (!window.JSZip) throw new Error('JSZip not loaded. Check your internet connection.');
+  const zip = await JSZip.loadAsync(file);
+  const blobs = {};
+  const mimes = {
+    css:'text/css', js:'application/javascript',
+    png:'image/png', jpg:'image/jpeg', jpeg:'image/jpeg',
+    gif:'image/gif', svg:'image/svg+xml', webp:'image/webp',
+    woff:'font/woff', woff2:'font/woff2', ttf:'font/ttf', otf:'font/otf',
+    ico:'image/x-icon', json:'application/json', txt:'text/plain',
+  };
+
+  // Extract all files to blob URLs
+  const jobs = [];
+  zip.forEach((path, entry) => {
+    if (!entry.dir) {
+      jobs.push(entry.async('uint8array').then(data => {
+        const ext = path.split('.').pop().toLowerCase();
+        const blob = new Blob([data], { type: mimes[ext] || 'application/octet-stream' });
+        const url = URL.createObjectURL(blob);
+        blobs[path] = url;
+        blobs[path.replace(/^\/?/, '/')] = url;
+        blobs[path.replace(/^\//, '')] = url;
+      }));
+    }
+  });
+  await Promise.all(jobs);
+
+  // Find index.html
+  let indexPath = null;
+  const all = Object.keys(zip.files);
+  for (const p of all) {
+    if (/^index\.(html|htm)$/i.test(p) || /\/index\.(html|htm)$/i.test(p)) {
+      if (!indexPath || p.length < indexPath.length) indexPath = p;
+    }
+  }
+  if (!indexPath) {
+    indexPath = all.find(p => !zip.files[p].dir && /\.(html|htm)$/i.test(p));
+  }
+  if (!indexPath) throw new Error('No HTML file found in ZIP');
+
+  const baseDir = indexPath.includes('/') ? indexPath.replace(/[^/]+$/, '') : '';
+  let html = await zip.files[indexPath].async('string');
+  html = rewriteUrls(html, blobs, baseDir);
+  return html;
+}
+
+function rewriteUrls(html, blobs, baseDir) {
+  // src/href attributes
+  html = html.replace(/\b(src|href|action|data)\s*=\s*(["'])([^"']+)\2/gi, (m, attr, q, url) => {
+    if (/^(https?:|\/\/|data:|blob:|#|mailto:|tel:)/i.test(url)) return m;
+    const resolved = resolve(url, baseDir);
+    const burl = blobs[resolved] || blobs[url];
+    return burl ? `${attr}=${q}${burl}${q}` : m;
+  });
+  // url() in CSS
+  html = html.replace(/url\(\s*(["']?)([^"')]+)\1\s*\)/gi, (m, q, url) => {
+    if (/^(https?:|\/\/|data:|blob:)/i.test(url)) return m;
+    const resolved = resolve(url, baseDir);
+    const burl = blobs[resolved] || blobs[url];
+    return burl ? `url("${burl}")` : m;
+  });
+  return html;
+}
+
+function resolve(url, base) {
+  if (url.startsWith('/')) return url.slice(1);
+  return (base + url).replace(/[^/]+\/\.\.\//g, '').replace(/\.\//g, '');
+}
+
+/* ════════════════════════════════════════════════════════
+   RENDER TO IFRAME
+════════════════════════════════════════════════════════ */
+function renderHtml(html) {
+  const frame = el.frame;
+  const w = DEVICE_W[S.device];
+  frame.style.width = w + 'px';
+  frame.style.height = '600px';
+
+  el.renderEmpty.style.display = 'none';
+  el.scaleInner.style.display = 'block';
+  updateScale();
+
+  frame.srcdoc = html;
+  el.renderDot.classList.remove('live');
+
+  frame.onload = () => {
+    try {
+      const d = frame.contentDocument;
+      const h = Math.max(
+        d.body ? d.body.scrollHeight : 0,
+        d.documentElement ? d.documentElement.scrollHeight : 0,
+        100
+      );
+      frame.style.height = h + 'px';
+      updateScale();
+      el.renderDot.classList.add('live');
+      el.renderDim.textContent = `${w} × ${h}px`;
+      S.rendered = true;
+    } catch(e) {
+      el.renderDot.classList.add('live');
+      S.rendered = true;
+    }
+  };
+}
+
+function updateScale() {
+  const container = el.scaleWrap.parentElement;
+  const cw = container.clientWidth - 2; // subtract border
+  const fw = DEVICE_W[S.device];
+  const scale = Math.min(1, cw / fw);
+  const fh = parseInt(el.frame.style.height) || 600;
+
+  el.scaleInner.style.transform = `scale(${scale})`;
+  el.scaleInner.style.transformOrigin = 'top left';
+  el.scaleInner.style.width = fw + 'px';
+  el.scaleWrap.style.height = Math.ceil(fh * scale) + 'px';
+  el.scaleWrap.style.display = 'block';
+}
+
+function clearRender() {
+  el.frame.srcdoc = 'about:blank';
+  el.renderEmpty.style.display = '';
+  el.scaleInner.style.display = 'none';
+  el.renderDot.classList.remove('live');
+  el.renderDim.textContent = '';
+  S.rendered = false;
+}
+
+$('btn-refresh').addEventListener('click', () => {
+  if (S.tab === 'paste' && el.editor.value.trim()) renderHtml(el.editor.value);
+  else if (S.tab === 'upload' && S.fileHtml) renderHtml(S.fileHtml);
+});
+
+/* ════════════════════════════════════════════════════════
+   CAPTURE FLOW
+════════════════════════════════════════════════════════ */
+el.fab.addEventListener('click', startCapture);
+
+async function startCapture() {
+  if (el.fab.classList.contains('busy')) return;
+
+  if (S.tab === 'api') { await captureViaApi(); return; }
+
+  let html = null;
+  if (S.tab === 'paste') {
+    html = el.editor.value.trim();
+    if (!html) { toast('Paste some HTML first', 'warn'); return; }
+  } else if (S.tab === 'upload') {
+    html = S.fileHtml;
+    if (!html) { toast('Upload a file first', 'warn'); return; }
+  } else if (S.tab === 'fetch') {
+    const url = el.fetchUrl.value.trim();
+    if (!url) { toast('Enter a URL first', 'warn'); return; }
+    showLoad('Fetching URL…');
+    try { html = await doFetch(url); }
+    catch(err) { hideLoad(); toast(err.message, 'error'); return; }
+  }
+
+  setBusy(true);
+  showLoad('Rendering content…');
+  renderHtml(html);
+
+  try {
+    await waitForLoad(el.frame, 12000);
+    showLoad('Injecting capture library…');
+    await injectH2C(el.frame.contentDocument);
+    showLoad('Capturing full-page screenshot…');
+    const dataUrl = await runCapture(el.frame);
+    hideLoad(); setBusy(false);
+    showCapture(dataUrl);
+    toast('Screenshot captured!', 'success');
+  } catch(err) {
+    hideLoad(); setBusy(false);
+    toast('Capture failed: ' + err.message, 'error');
+    console.error(err);
+  }
+}
+
+function waitForLoad(frame, timeout = 10000) {
+  return new Promise((res, rej) => {
+    const t = setTimeout(() => {
+      // Timeout isn't fatal — iframe might be partially loaded
+      res();
+    }, timeout);
+
+    if (frame.contentDocument && frame.contentDocument.readyState === 'complete') {
+      clearTimeout(t); setTimeout(res, 400); return;
+    }
+
+    const prev = frame.onload;
+    frame.onload = () => {
+      if (prev) prev();
+      clearTimeout(t);
+      // Small delay for JS execution in iframe
+      setTimeout(res, 500);
+    };
+  });
+}
+
+async function injectH2C(doc) {
+  if (!doc) throw new Error('Cannot access iframe content (CORS). The page may not allow cross-origin access.');
+  if (doc.querySelector && doc.querySelector('[data-h2c]')) return; // already injected
+  if (doc.defaultView && doc.defaultView.html2canvas) return;
+
+  return new Promise((res, rej) => {
+    const s = doc.createElement('script');
+    s.src = H2C_CDN;
+    s.setAttribute('data-h2c', '1');
+    s.crossOrigin = 'anonymous';
+    s.onload = res;
+    s.onerror = () => rej(new Error('Failed to load html2canvas. Check your internet connection.'));
+    (doc.head || doc.documentElement).appendChild(s);
+  });
+}
+
+async function runCapture(frame) {
+  const doc = frame.contentDocument;
+  const win = frame.contentWindow;
+  if (!doc || !win) throw new Error('Cannot access iframe content');
+  if (!win.html2canvas) throw new Error('Capture library not available');
+
+  const docEl = doc.documentElement;
+  const w = docEl.scrollWidth;
+  const h = docEl.scrollHeight;
+
+  // Expand frame to full content height before capture
+  const prevH = frame.style.height;
+  frame.style.height = h + 'px';
+  await raf();
+
+  const canvas = await win.html2canvas(docEl, {
+    scale: S.scale,
+    useCORS: true,
+    allowTaint: true,
+    logging: false,
+    scrollX: 0, scrollY: 0,
+    width: w, height: h,
+    windowWidth: w, windowHeight: h,
+    imageTimeout: 8000,
+  });
+
+  frame.style.height = prevH; // restore
+  updateScale();
+
+  const q = S.fmt === 'jpeg' ? 0.95 : undefined;
+  return canvas.toDataURL('image/' + S.fmt, q);
+}
+
+function raf() { return new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))); }
+
+/* ════════════════════════════════════════════════════════
+   FETCH URL MODE
+════════════════════════════════════════════════════════ */
+async function doFetch(url) {
+  let response;
+  try {
+    response = await fetch(url, { mode: 'cors', credentials: 'omit' });
+  } catch(e) {
+    throw new Error('CORS blocked — server does not allow cross-origin requests. Use API Mode instead.');
+  }
+  if (!response.ok) throw new Error(`HTTP ${response.status} ${response.statusText}`);
+  let html = await response.text();
+  // Inject base tag so relative URLs resolve correctly
+  html = html.replace(/<head[^>]*>/i, m => `${m}<base href="${url}">`);
+  return html;
+}
+
+/* ════════════════════════════════════════════════════════
+   API MODE
+════════════════════════════════════════════════════════ */
+$('api-provider').addEventListener('change', () => {
+  const p = el.apiProvider.value;
+  const m = API_META[p];
+  el.apiInfoTxt.innerHTML = m.info;
+  el.apiSecretR.classList.toggle('hidden', !m.secretMode);
+  el.apiUrlR.classList.toggle('hidden', !m.urlMode);
+  el.apiHtmlR.classList.toggle('hidden', m.urlMode);
+});
+
+async function captureViaApi() {
+  const provider = el.apiProvider.value;
+  const key = el.apiKey.value.trim();
+  const secret = el.apiSecret.value.trim();
+  const url = el.apiUrl.value.trim();
+  const html = el.apiHtml.value.trim();
+
+  if (!key) { toast('Enter your API key', 'warn'); return; }
+
+  setBusy(true);
+  showLoad('Calling screenshot API…');
+
+  try {
+    let imgSrc;
+
+    if (provider === 'screenshotone') {
+      if (!url) throw new Error('Enter a target URL');
+      const p = new URLSearchParams({
+        access_key: key, url,
+        format: S.fmt === 'jpeg' ? 'jpg' : 'png',
+        viewport_width: DEVICE_W[S.device],
+        viewport_height: 900,
+        full_page: 'true',
+        response_type: 'by_format',
+      });
+      imgSrc = 'https://api.screenshotone.com/take?' + p;
+
+    } else if (provider === 'apiflash') {
+      if (!url) throw new Error('Enter a target URL');
+      const p = new URLSearchParams({
+        access_key: key, url,
+        format: S.fmt === 'jpeg' ? 'jpeg' : 'png',
+        width: DEVICE_W[S.device],
+        full_page: 'true',
+      });
+      imgSrc = 'https://api.apiflash.com/v1/urltoimage?' + p;
+
+    } else if (provider === 'htmlcsstoimage') {
+      if (!secret) throw new Error('Enter your API secret');
+      const body = html ? { html } : url ? { url } : null;
+      if (!body) throw new Error('Enter HTML content or a URL');
+      const r = await fetch('https://hcti.io/v1/image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Basic ' + btoa(key + ':' + secret),
+        },
+        body: JSON.stringify(body),
+      });
+      if (!r.ok) {
+        const t = await r.text().catch(() => r.statusText);
+        throw new Error(`API ${r.status}: ${t}`);
+      }
+      const d = await r.json();
+      imgSrc = d.url;
+    }
+
+    if (!imgSrc) throw new Error('No image URL returned from API');
+
+    // Fetch image as data URL for reliable display + download
+    showLoad('Downloading screenshot…');
+    let dataUrl;
+    try {
+      const res = await fetch(imgSrc);
+      if (!res.ok) throw new Error('API returned ' + res.status);
+      const blob = await res.blob();
+      dataUrl = await blobToDataUrl(blob);
+    } catch {
+      // CORS on image fetch? Fall back to showing URL directly
+      dataUrl = imgSrc;
+    }
+
+    hideLoad(); setBusy(false);
+    showCapture(dataUrl);
+    toast('API screenshot captured!', 'success');
+
+  } catch(err) {
+    hideLoad(); setBusy(false);
+    toast('API error: ' + err.message, 'error');
+  }
+}
+
+/* ════════════════════════════════════════════════════════
+   PREVIEW & DOWNLOAD
+════════════════════════════════════════════════════════ */
+function showCapture(src) {
+  S.captureUrl = src;
+  el.previewImg.src = src;
+  el.capSection.classList.remove('hidden');
+
+  // Get actual dimensions
+  const img = new Image();
+  img.onload = () => {
+    el.captureDim.textContent = `${img.naturalWidth} × ${img.naturalHeight}px · ${S.fmt.toUpperCase()}`;
+  };
+  img.src = src;
+
+  setTimeout(() => el.capSection.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+}
+
+$('btn-download').addEventListener('click', () => {
+  if (!S.captureUrl) { toast('No screenshot yet', 'warn'); return; }
+  const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  const a = document.createElement('a');
+  a.href = S.captureUrl;
+  a.download = `screenshot-${ts}.${S.fmt}`;
+  a.click();
+  toast(`Saved as ${a.download}`, 'success');
+});
+
+$('btn-copy').addEventListener('click', async () => {
+  if (!S.captureUrl) { toast('No screenshot yet', 'warn'); return; }
+  try {
+    const res = await fetch(S.captureUrl);
+    const blob = await res.blob();
+    await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+    toast('Copied to clipboard!', 'success');
+  } catch {
+    toast('Copy not supported in this browser', 'error');
+  }
+});
+
+$('btn-clear-cap').addEventListener('click', () => {
+  S.captureUrl = null;
+  el.previewImg.src = '';
+  el.capSection.classList.add('hidden');
+});
+
+/* ════════════════════════════════════════════════════════
+   UI HELPERS
+════════════════════════════════════════════════════════ */
+function showLoad(msg = 'Processing…') {
+  el.loadText.textContent = msg;
+  el.loading.classList.add('on');
+}
+function hideLoad() { el.loading.classList.remove('on'); }
+
+function setBusy(v) {
+  el.fab.classList.toggle('busy', v);
+  el.fab.disabled = v;
+}
+
+let snackT;
+function toast(msg, type = 'info') {
+  clearTimeout(snackT);
+  const icons = { info: 'info', success: 'check_circle', error: 'error', warn: 'warning' };
+  el.snackIcon.textContent = icons[type] || 'info';
+  el.snackMsg.textContent = msg;
+  el.snack.className = 'snack ' + (type === 'warn' ? 'warn' : type);
+  requestAnimationFrame(() => el.snack.classList.add('show'));
+  snackT = setTimeout(() => el.snack.classList.remove('show'), 4500);
+}
+$('btn-snack-close').addEventListener('click', () => el.snack.classList.remove('show'));
+
+/* ════════════════════════════════════════════════════════
+   UTILITIES
+════════════════════════════════════════════════════════ */
+function readText(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = e => res(e.target.result);
+    r.onerror = rej;
+    r.readAsText(file);
+  });
+}
+
+function blobToDataUrl(blob) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = e => res(e.target.result);
+    r.onerror = rej;
+    r.readAsDataURL(blob);
+  });
+}
+
+function fmtBytes(n) {
+  if (n < 1024) return n + ' B';
+  if (n < 1048576) return (n / 1024).toFixed(1) + ' KB';
+  return (n / 1048576).toFixed(1) + ' MB';
+}
+
+/* ════════════════════════════════════════════════════════
+   WINDOW EVENTS
+════════════════════════════════════════════════════════ */
+window.addEventListener('resize', () => { if (S.rendered) updateScale(); });
+
+$('btn-help').addEventListener('click', () => {
+  toast('Choose a mode → add your content → click Capture Screenshot. Use API Mode for public URLs.', 'info');
+});
+
+/* ════════════════════════════════════════════════════════
+   INIT
+════════════════════════════════════════════════════════ */
+(function init() {
+  el.scaleInner.style.display = 'none';
+  // Set initial device width label
+  el.renderDim.textContent = '';
+  // Trigger API provider defaults
+  const ev = new Event('change');
+  el.apiProvider.dispatchEvent(ev);
+})();
+</script>
+</body>
+</html>
