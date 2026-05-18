@@ -177,3 +177,9 @@
   icon: fa-solid fa-file-image
   tags: [document]
   url: https://samar1h.github.io/aiasp/projects/web2img
+
+- title: Cipher Forge
+  description: Encrypt or Decrypt text with custom recipies.
+  icon: fa-solid fa-key
+  tags: []
+  url: https://samar1h.github.io/aiasp/projects/cipher-forge
