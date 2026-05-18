@@ -1,13 +1,7 @@
 **MODERN MINIMAL APP PROMPT TEMPLATE**
-
-**App Name:** `[APP NAME]`
-**Purpose:** `[WHAT THE APP DOES — 1-2 sentences]`
-**UI Description:** `[DESCRIBE THE SCREENS/LAYOUT — or write "Use your best judgment"]`
-**Additional Libraries:** `[LIST HERE, or write "None"]`
-
 ---
 
-Build a **`[APP NAME]`** Android app as a **single standalone HTML file** (all HTML, CSS, and JavaScript in one `.html` file — no external files).
+Build a **`[APP NAME]`** app as a **single standalone HTML file** (all HTML, CSS, and JavaScript in one `.html` file — no external files).
 
 **Goal:**
 `[WHAT THE APP DOES IN DETAIL]`
