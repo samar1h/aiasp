@@ -166,3 +166,8 @@
   tags: []
   url: https://samar1h.github.io/aiasp/projects/tts
   
+- title: Relationships Viewer
+  description: Shows names of all Indian Family Relationships.
+  icon: fa-solid fa-link
+  tags: []
+  url: https://samar1h.github.io/aiasp/projects/relationships 
