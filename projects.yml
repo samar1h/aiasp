@@ -175,5 +175,5 @@
 - title: Web2Img
   description: Capture full-page screenshots from HTML code, file uploads or URLs.
   icon: fa-solid fa-file-image
-  tags: []
+  tags: [document]
   url: https://samar1h.github.io/aiasp/projects/web2img
