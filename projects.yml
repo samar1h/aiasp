@@ -127,7 +127,7 @@
 - title: Clipkit
   description: A clipboard toolkit to save, preview, and export clipboard content as files.
   icon: fa-solid fa-clipboard
-  tags: [document]
+  tags: [utility]
   url: https://samar1h.github.io/aiasp/projects/clipkit/
 
 - title: Regmap
