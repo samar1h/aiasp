@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Web2Img · Isolated Capture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+:root {
+  --bg:       #0a0a0a;
+  --s1:       #141414;
+  --s2:       #1e1e1e;
+  --s3:       #282828;
+  --border:   #2c2c2c;
+  --accent:   #7c6af7;
+  --accent-l: #a89cf9;
+  --accent-d: #5a4fd6;
+  --glow:     rgba(124,106,247,0.18);
+  --text:     #f2f2f2;
+  --text2:    #8a8a8a;
+  --text3:    #555;
+  --ok:       #3ecf8e;
+  --ok-bg:    rgba(62,207,142,0.1);
+  --err:      #f06292;
+  --err-bg:   rgba(240,98,146,0.1);
+  --info:     #5b9cf0;
+  --info-bg:  rgba(91,156,240,0.1);
+  --r:        14px;
+  --r-sm:     9px;
+  --r-xs:     6px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body { height: 100%; overflow: hidden; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  max-width: 430px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.scroll-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.scroll-body::-webkit-scrollbar { display: none; }
+
+.header {
+  padding: 20px 20px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.logo-icon {
+  width: 36px; height: 36px;
+  background: var(--accent);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  box-shadow: 0 0 20px var(--glow);
+}
+.logo-text { font-size: 18px; font-weight: 700; letter-spacing: -0.5px; }
+.logo-sub { font-size: 11px; color: var(--text2); font-weight: 400; letter-spacing: 0.2px; }
+.badge {
+  font-size: 10px;
+  font-weight: 600;
+  background: var(--s2);
+  color: var(--text2);
+  padding: 4px 8px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+}
+
+.tabs {
+  display: flex;
+  gap: 6px;
+  margin: 18px 20px 0;
+  background: var(--s1);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 5px;
+  flex-shrink: 0;
+}
+.tab {
+  flex: 1;
+  padding: 10px 6px;
+  text-align: center;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text2);
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.4,0,0.2,1);
+  border: none;
+  background: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+.tab.active {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 2px 12px var(--glow);
+}
+
+.panels { padding: 16px 20px; }
+.panel { display: none; flex-direction: column; gap: 14px; animation: fadeIn 0.18s ease; }
+.panel.active { display: flex; }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+.lbl {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text3);
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.input-wrap { display: flex; flex-direction: column; gap: 7px; }
+
+.field {
+  background: var(--s1);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 13px 14px;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  outline: none;
+  width: 100%;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  caret-color: var(--accent);
+}
+.field:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--glow);
+}
+
+textarea.field {
+  resize: none;
+  min-height: 156px;
+  font-family: 'DM Mono', monospace;
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+.chips, .method-chips { display: flex; gap: 7px; }
+.chip, .method-chip {
+  flex: 1;
+  padding: 9px 4px;
+  background: var(--s1);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-xs);
+  color: var(--text2);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+.chip.active, .method-chip.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--glow);
+}
+.chip sub { font-size: 9px; font-weight: 400; display: block; color: var(--text3); margin-top: 1px; }
+.chip.active sub { color: var(--accent-l); opacity: 0.7; }
+
+.method-chip { padding: 8px 4px; font-size: 11px; letter-spacing: 0.2px; }
+
+.info-note {
+  background: var(--info-bg);
+  border-left: 3px solid var(--info);
+  padding: 8px 10px;
+  border-radius: var(--r-xs);
+  font-size: 11px;
+  color: var(--text2);
+  line-height: 1.4;
+  margin-top: 2px;
+}
+.info-note svg { vertical-align: middle; margin-right: 5px; }
+
+.upload-zone {
+  border: 2px dashed var(--border);
+  border-radius: var(--r);
+  padding: 36px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--s1);
+}
+.upload-zone:active, .upload-zone.drag { border-color: var(--accent); background: var(--glow); }
+.upload-zone .u-icon {
+  width: 52px; height: 52px;
+  background: var(--s2);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 12px;
+  font-size: 22px;
+}
+.file-badge {
+  margin-top: 10px;
+  display: none;
+  align-items: center;
+  gap: 8px;
+  background: var(--ok-bg);
+  border: 1px solid rgba(62,207,142,0.25);
+  border-radius: var(--r-xs);
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--ok);
+}
+.file-badge.show { display: flex; }
+#file-input { display: none; }
+
+.btn-primary, .btn-dl {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--r-sm);
+  padding: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: opacity 0.18s, transform 0.12s;
+  box-shadow: 0 4px 20px var(--glow);
+}
+.btn-primary:active, .btn-dl:active { transform: scale(0.97); opacity: 0.88; }
+.btn-primary:disabled { opacity: 0.38; cursor: not-allowed; box-shadow: none; transform: none; }
+.btn-dl { background: var(--s1); color: var(--text); border: 1.5px solid var(--border); box-shadow: none; }
+
+.status {
+  margin: 0 20px 4px;
+  border-radius: var(--r-sm);
+  padding: 12px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  display: none;
+  align-items: center;
+  gap: 10px;
+}
+.status.show { display: flex; }
+.status.loading { background: var(--s2); color: var(--accent-l); border: 1px solid var(--border); }
+.status.ok     { background: var(--ok-bg); color: var(--ok); border: 1px solid rgba(62,207,142,0.2); }
+.status.err    { background: var(--err-bg); color: var(--err); border: 1px solid rgba(240,98,146,0.2); }
+
+.spin {
+  width: 15px; height: 15px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.result-section { display: none; flex-direction: column; gap: 12px; padding: 0 20px 32px; }
+.result-section.show { display: flex; }
+.result-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text3);
+  text-transform: uppercase;
+}
+.result-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.result-card {
+  background: var(--s1);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+.result-img {
+  width: 100%;
+  display: block;
+  max-height: 280px;
+  object-fit: contain;
+  background: #fff;
+}
+.result-meta {
+  padding: 10px 14px;
+  font-size: 11.5px;
+  color: var(--text2);
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  font-family: 'DM Mono', monospace;
+}
+
+#render-frame {
+  position: fixed;
+  left: -9999px;
+  top: 0;
+  border: none;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.ripple-container { position: relative; overflow: hidden; }
+.ripple-el {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.25);
+  width: 60px; height: 60px;
+  margin-top: -30px; margin-left: -30px;
+  animation: ripple 0.5s linear;
+  pointer-events: none;
+}
+@keyframes ripple { from { transform: scale(0); opacity: 0.5; } to { transform: scale(4); opacity: 0; } }
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <div class="header">
+    <div class="logo">
+      <div class="logo-icon">🖼</div>
+      <div><div class="logo-text">Web2Img</div><div class="logo-sub">Isolated · Local render</div></div>
+    </div>
+    <div class="badge">ISOLATED</div>
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button class="tab active" onclick="switchTab('url')">🌐 URL</button>
+    <button class="tab" onclick="switchTab('html')">📄 HTML</button>
+    <button class="tab" onclick="switchTab('file')">📁 File</button>
+  </div>
+
+  <div class="scroll-body">
+    <div class="panels">
+      <!-- URL PANEL (enhanced with local fetch mode) -->
+      <div class="panel active" id="panel-url">
+        <div class="input-wrap">
+          <span class="lbl">Website URL</span>
+          <input class="field" id="url-input" type="url" placeholder="https://example.com" autocomplete="off">
+        </div>
+
+        <!-- Capture method toggle: API vs Local render (isolated) -->
+        <div class="input-wrap">
+          <span class="lbl">Capture method</span>
+          <div class="method-chips" id="url-method-group">
+            <div class="method-chip active" data-method="api" onclick="setUrlMethod('api')">📡 API (external)</div>
+            <div class="method-chip" data-method="local" onclick="setUrlMethod('local')">⚙️ Local fetch & render (isolated)</div>
+          </div>
+          <div class="info-note" id="method-note">
+            🔒 Local render: fetches HTML → renders inside isolated iframe → 100% style/JS isolation. No CSS leakage.
+          </div>
+        </div>
+
+        <div class="input-wrap">
+          <span class="lbl">Capture size</span>
+          <div class="chips">
+            <div class="chip" id="usz-375" onclick="setSz('url','375')">Mobile <sub>375px</sub></div>
+            <div class="chip active" id="usz-1280" onclick="setSz('url','1280')">Desktop <sub>1280px</sub></div>
+            <div class="chip" id="usz-full" onclick="setSz('url','full')">Full <sub>page</sub></div>
+          </div>
+          <div class="info-note" style="margin-top: 4px;">💡 Local render always captures full page height; width follows selection. API mode supports fullPage.</div>
+        </div>
+
+        <button class="btn-primary ripple-container" onclick="captureUrl(this)">
+          🎯 Capture Screenshot
+        </button>
+      </div>
+
+      <!-- HTML PANEL (already isolated) -->
+      <div class="panel" id="panel-html">
+        <div class="input-wrap">
+          <span class="lbl">Paste HTML code</span>
+          <textarea class="field" id="html-input" placeholder="<!DOCTYPE html><html><body><h1>Hello World</h1></body></html>"></textarea>
+        </div>
+        <div class="input-wrap">
+          <span class="lbl">Render width</span>
+          <div class="chips"><div class="chip" id="hsz-375" onclick="setSz('html','375')">Mobile<sub>375px</sub></div><div class="chip active" id="hsz-1280" onclick="setSz('html','1280')">Desktop<sub>1280px</sub></div></div>
+        </div>
+        <button class="btn-primary ripple-container" onclick="captureHtml(this)">🖌️ Convert to Image</button>
+      </div>
+
+      <!-- FILE PANEL -->
+      <div class="panel" id="panel-file">
+        <div class="upload-zone ripple-container" id="upload-zone" onclick="document.getElementById('file-input').click()" ondragover="dragOver(event,this)" ondragleave="dragLeave(this)" ondrop="dropFile(event,this)">
+          <div class="u-icon">📄</div><div class="u-title">Upload HTML file</div><div class="u-sub">tap or drop · .html</div>
+        </div>
+        <input type="file" id="file-input" accept=".html,.htm" onchange="fileSelected(this)">
+        <div class="file-badge" id="file-badge"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg><span id="file-badge-name"></span></div>
+        <div class="input-wrap"><span class="lbl">Render width</span><div class="chips"><div class="chip" id="fsz-375" onclick="setSz('file','375')">Mobile<sub>375px</sub></div><div class="chip active" id="fsz-1280" onclick="setSz('file','1280')">Desktop<sub>1280px</sub></div></div></div>
+        <button class="btn-primary ripple-container" id="file-btn" onclick="captureFile(this)" disabled>📂 Convert File</button>
+      </div>
+    </div>
+
+    <div class="status" id="status"><div class="spin" id="status-spin"></div><span id="status-msg"></span></div>
+    <div class="result-section" id="result-section">
+      <div class="result-label">Result</div>
+      <div class="result-card"><img class="result-img" id="result-img" alt="Screenshot"><div class="result-meta"><span id="result-dims">—</span><span id="result-size">—</span></div></div>
+      <button class="btn-dl ripple-container" onclick="downloadImg()">⬇️ Download Image</button>
+    </div>
+  </div>
+</div>
+
+<iframe id="render-frame" sandbox="allow-scripts allow-same-origin allow-forms allow-modals"></iframe>
+
+<script>
+'use strict';
+
+// ---------- STATE ----------
+const state = {
+  tab: 'url',
+  sz: { url: '1280', html: '1280', file: '1280' },
+  urlMethod: 'api',     // 'api' or 'local'
+  fileContent: '',
+  resultBlob: null,
+  resultFilename: 'web2img.png',
+};
+
+// ---------- DOM helpers ----------
+function switchTab(tab) {
+  state.tab = tab;
+  const tabs = ['url', 'html', 'file'];
+  document.querySelectorAll('.tab').forEach((el, i) => el.classList.toggle('active', tabs[i] === tab));
+  document.querySelectorAll('.panel').forEach((el, i) => el.classList.toggle('active', tabs[i] === tab));
+  hideStatus(); hideResult();
+}
+
+function setUrlMethod(method) {
+  state.urlMethod = method;
+  document.querySelectorAll('#url-method-group .method-chip').forEach(chip => {
+    chip.classList.toggle('active', chip.dataset.method === method);
+  });
+  const note = document.getElementById('method-note');
+  if (method === 'local') {
+    note.innerHTML = '🔒 <strong>Local isolated render</strong>: fetches HTML → renders inside sandboxed iframe → complete CSS/JS isolation, no style leakage. Full JS execution but does NOT affect parent UI.';
+  } else {
+    note.innerHTML = '📡 <strong>API mode</strong>: uses microlink/thum.io external service. No local rendering, fully isolated by design.';
+  }
+}
+
+const sizeMap = { url: ['375','1280','full'], html: ['375','1280'], file: ['375','1280'] };
+const prefixMap = { url: 'usz', html: 'hsz', file: 'fsz' };
+function setSz(ctx, val) {
+  state.sz[ctx] = val;
+  sizeMap[ctx].forEach(s => {
+    const el = document.getElementById(`${prefixMap[ctx]}-${s}`);
+    if (el) el.classList.toggle('active', s === val);
+  });
+}
+
+// Status & result
+let statusTimer;
+function showStatus(type, msg) {
+  clearTimeout(statusTimer);
+  const el = document.getElementById('status');
+  const spin = document.getElementById('status-spin');
+  document.getElementById('status-msg').textContent = msg;
+  el.className = `status show ${type}`;
+  spin.style.display = type === 'loading' ? 'block' : 'none';
+  if (type !== 'loading') statusTimer = setTimeout(hideStatus, 3800);
+}
+function hideStatus() { document.getElementById('status').className = 'status'; }
+function hideResult() { document.getElementById('result-section').classList.remove('show'); state.resultBlob = null; }
+function showResult(src, filename, blob) {
+  state.resultBlob = blob;
+  state.resultFilename = filename;
+  const img = document.getElementById('result-img');
+  img.src = src;
+  img.onload = () => {
+    document.getElementById('result-dims').textContent = `${img.naturalWidth} × ${img.naturalHeight}`;
+    document.getElementById('result-size').textContent = blob ? formatBytes(blob.size) : '';
+  };
+  document.getElementById('result-section').classList.add('show');
+}
+function formatBytes(b) { if (b<1024) return b+' B'; if(b<1048576) return (b/1024).toFixed(1)+' KB'; return (b/1048576).toFixed(2)+' MB'; }
+
+function addRipple(btn, e) {
+  const rect = btn.getBoundingClientRect();
+  const ripple = document.createElement('div');
+  ripple.className = 'ripple-el';
+  ripple.style.left = (e.clientX - rect.left) + 'px';
+  ripple.style.top = (e.clientY - rect.top) + 'px';
+  btn.appendChild(ripple);
+  setTimeout(() => ripple.remove(), 520);
+}
+
+// ---------- CORE: isolated iframe renderer (full page, no style contamination) ----------
+async function renderHtmlInIframe(htmlString, width) {
+  return new Promise((resolve, reject) => {
+    const frame = document.getElementById('render-frame');
+    frame.style.width = width + 'px';
+    frame.style.height = '900px';
+    frame.srcdoc = htmlString;
+    const timeout = setTimeout(() => reject(new Error('Render timeout (30s)')), 30000);
+    frame.onload = async () => {
+      try {
+        const doc = frame.contentDocument;
+        if (!doc) throw new Error('Cannot access iframe document');
+        await new Promise(r => setTimeout(r, 650)); // scripts/initial layout
+        const docEl = doc.documentElement;
+        const body = doc.body;
+        const fullHeight = Math.max(body?.scrollHeight || 0, docEl?.scrollHeight || 0, 500);
+        frame.style.height = fullHeight + 'px';
+        await new Promise(r => setTimeout(r, 200));
+        const canvas = await html2canvas(docEl, {
+          width, height: fullHeight, scale: 2, useCORS: true,
+          logging: false, windowWidth: width, windowHeight: fullHeight,
+          foreignObjectRendering: false, backgroundColor: '#ffffff'
+        });
+        clearTimeout(timeout);
+        const dataUrl = canvas.toDataURL('image/png');
+        const blob = await (await fetch(dataUrl)).blob();
+        frame.srcdoc = '';
+        resolve({ dataUrl, blob });
+      } catch (err) { clearTimeout(timeout); reject(err); }
+    };
+    frame.onerror = () => { clearTimeout(timeout); reject(new Error('iframe load error')); };
+  });
+}
+
+// Utility: inject <base> into HTML for relative resources
+function injectBaseIntoTargetHtml(html, baseUrl) {
+  const headCloseIndex = html.toLowerCase().indexOf('</head>');
+  const baseTag = `<base href="${baseUrl}">`;
+  if (headCloseIndex !== -1) {
+    return html.slice(0, headCloseIndex) + baseTag + html.slice(headCloseIndex);
+  } else {
+    const htmlOpen = html.indexOf('<html');
+    if (htmlOpen !== -1) {
+      const headInsert = html.indexOf('<head>');
+      if (headInsert !== -1) return html.slice(0, headInsert+6) + baseTag + html.slice(headInsert+6);
+      else return html.replace('<html', `<html><head>${baseTag}</head>`);
+    }
+    return `<!DOCTYPE html><html><head>${baseTag}</head><body>${html}</body></html>`;
+  }
+}
+
+// ---------- URL CAPTURE (with isolated local render mode) ----------
+async function captureUrl(btn) {
+  addRipple(btn, event);
+  const rawUrl = document.getElementById('url-input').value.trim();
+  if (!rawUrl) { showStatus('err', 'Enter a URL first'); return; }
+  let url = rawUrl;
+  if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+  try { new URL(url); } catch { showStatus('err', 'Invalid URL format'); return; }
+  hideResult();
+
+  if (state.urlMethod === 'api') {
+    await captureUrlViaApi(btn, url);
+  } else {
+    await captureUrlViaLocalFetch(btn, url);
+  }
+}
+
+// Existing API method (unchanged but robust)
+async function captureUrlViaApi(btn, url) {
+  showStatus('loading', 'API screenshot request…');
+  btn.disabled = true;
+  const sz = state.sz.url;
+  const isFull = sz === 'full';
+  const width = sz === '375' ? 375 : 1280;
+  try {
+    const params = new URLSearchParams({ url, screenshot: 'true', meta: 'false' });
+    if (isFull) params.set('fullPage', 'true');
+    if (sz === '375') params.set('viewport', '{"width":375,"height":812}');
+    const apiRes = await fetchWithTimeout(`https://api.microlink.io/?${params}`, 25000);
+    if (!apiRes.ok) throw new Error(`API ${apiRes.status}`);
+    const json = await apiRes.json();
+    if (json.status !== 'success') throw new Error(json.message || 'microlink failed');
+    const imgUrl = json?.data?.screenshot?.url;
+    if (!imgUrl) throw new Error('No screenshot URL');
+    const blob = await fetchImgBlob(imgUrl);
+    const objUrl = URL.createObjectURL(blob);
+    showStatus('ok', '✓ Screenshot captured (API)');
+    showResult(objUrl, `screenshot-${Date.now()}.png`, blob);
+  } catch (e) {
+    showStatus('loading', 'Fallback: thum.io…');
+    try {
+      const thumbUrl = `https://image.thum.io/get/width/${width}${isFull ? '/fullpage' : '/crop/900'}/${encodeURIComponent(url)}`;
+      const blob = await fetchImgBlob(thumbUrl, 20000);
+      const objUrl = URL.createObjectURL(blob);
+      showStatus('ok', '✓ Fallback screenshot');
+      showResult(objUrl, `screenshot-${Date.now()}.jpg`, blob);
+    } catch (e2) { showStatus('err', 'API failed: ' + (e.message || 'network error')); }
+  } finally { btn.disabled = false; }
+}
+
+// NEW MODE: Local fetch HTML + isolated iframe render (complete isolation)
+async function captureUrlViaLocalFetch(btn, url) {
+  showStatus('loading', 'Fetching HTML via proxy (CORS-safe)…');
+  btn.disabled = true;
+  try {
+    // Use public CORS proxy (allorigins) to retrieve HTML content
+    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+    const htmlResponse = await fetchWithTimeout(proxyUrl, 20000);
+    if (!htmlResponse.ok) throw new Error(`Fetch failed (${htmlResponse.status})`);
+    let htmlContent = await htmlResponse.text();
+    if (!htmlContent || htmlContent.length < 10) throw new Error('Empty HTML response');
+    // Inject base tag to fix relative assets
+    htmlContent = injectBaseIntoTargetHtml(htmlContent, url);
+    // Determine render width: full page always full-height, width from selection
+    let renderWidth = 1280;
+    const szVal = state.sz.url;
+    if (szVal === '375') renderWidth = 375;
+    else if (szVal === '1280') renderWidth = 1280;
+    else if (szVal === 'full') renderWidth = 1280; // full width desktop for readability
+    showStatus('loading', 'Rendering isolated iframe (JS enabled, no style bleed)…');
+    const { dataUrl, blob } = await renderHtmlInIframe(htmlContent, renderWidth);
+    const filename = `local-render-${Date.now()}.png`;
+    showStatus('ok', '✓ Local render: full isolation, JS executed, no CSS conflict');
+    showResult(dataUrl, filename, blob);
+  } catch (err) {
+    console.error(err);
+    showStatus('err', `Local render failed: ${err.message}. Note: some sites block proxies or require auth.`);
+  } finally { btn.disabled = false; }
+}
+
+// ---------- HTML mode & File mode (already isolated, reuse renderer) ----------
+async function captureHtml(btn) {
+  addRipple(btn, event);
+  const html = document.getElementById('html-input').value.trim();
+  if (!html) { showStatus('err', 'Paste HTML first'); return; }
+  hideResult(); btn.disabled = true; showStatus('loading', 'Rendering HTML (isolated)…');
+  try {
+    const width = parseInt(state.sz.html);
+    const { dataUrl, blob } = await renderHtmlInIframe(html, width);
+    showStatus('ok', '✓ HTML converted');
+    showResult(dataUrl, `html-export-${Date.now()}.png`, blob);
+  } catch (e) { showStatus('err', 'Render error: ' + e.message); } finally { btn.disabled = false; }
+}
+
+function fileSelected(inp) { if(inp.files[0]) readHTMLFile(inp.files[0]); }
+function dragOver(e, zone) { e.preventDefault(); zone.classList.add('drag'); }
+function dragLeave(zone) { zone.classList.remove('drag'); }
+function dropFile(e, zone) {
+  e.preventDefault(); zone.classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if (file && /\.html?$/i.test(file.name)) readHTMLFile(file);
+  else showStatus('err', 'Drop .html file only');
+}
+function readHTMLFile(file) {
+  const reader = new FileReader();
+  reader.onload = ev => {
+    state.fileContent = ev.target.result;
+    document.getElementById('file-badge-name').textContent = file.name;
+    document.getElementById('file-badge').classList.add('show');
+    document.getElementById('file-btn').disabled = false;
+  };
+  reader.onerror = () => showStatus('err', 'File read error');
+  reader.readAsText(file);
+}
+async function captureFile(btn) {
+  addRipple(btn, event);
+  if (!state.fileContent) { showStatus('err', 'Upload HTML file first'); return; }
+  hideResult(); btn.disabled = true; showStatus('loading', 'Rendering file…');
+  try {
+    const width = parseInt(state.sz.file);
+    const { dataUrl, blob } = await renderHtmlInIframe(state.fileContent, width);
+    showStatus('ok', '✓ File rendered isolated');
+    showResult(dataUrl, `file-export-${Date.now()}.png`, blob);
+  } catch (e) { showStatus('err', 'Render fail: ' + e.message); } finally { btn.disabled = false; }
+}
+
+// ---------- Helpers ----------
+async function fetchWithTimeout(req, ms) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), ms);
+  try { return await fetch(req, { signal: controller.signal }); } finally { clearTimeout(id); }
+}
+async function fetchImgBlob(imgUrl, timeout=25000) {
+  const res = await fetchWithTimeout(imgUrl, timeout);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return await res.blob();
+}
+
+function downloadImg() {
+  if (!state.resultBlob) {
+    const img = document.getElementById('result-img');
+    if (img.src) { const a = document.createElement('a'); a.href = img.src; a.download = state.resultFilename; a.click(); }
+    return;
+  }
+  const url = URL.createObjectURL(state.resultBlob);
+  const a = document.createElement('a'); a.href = url; a.download = state.resultFilename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+document.getElementById('url-input').addEventListener('keydown', e => { if(e.key === 'Enter') captureUrl(document.querySelector('#panel-url .btn-primary')); });
+setUrlMethod('api'); // default API
+</script>
+</body>
+</html>
