@@ -188,7 +188,7 @@
       s.currentSem = sem;
       
       try {
-        const response = await fetch(`https://samar1h.github.io/bpharm-syllabus/syllabus/sem${sem}.json`);
+        const response = await fetch(`https://samar1h.github.io/aiasp/projects/bpharm-syllabus/syllabus/sem${sem}.json`);
         if (!response.ok) {
           throw new Error(`Failed to load syllabus for semester ${sem}`);
         }
