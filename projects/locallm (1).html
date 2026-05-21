@@ -1,0 +1,1755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#050508">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>LocalLM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap">
+<style>
+/* ──────────────────────────────────────────────
+   RESET & TOKENS
+────────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root {
+  --bg:        #050508;
+  --s0:        #0c0c12;
+  --s1:        #13131c;
+  --s2:        #1a1a26;
+  --s3:        #222230;
+  --border:    #24243a;
+  --border-hi: #333350;
+  --tx:        #d4d4e8;
+  --tx2:       #7272a0;
+  --tx3:       #3e3e60;
+  --acc:       #7c6bfd;
+  --acc-dim:   #5e50d4;
+  --acc-glow:  rgba(124,107,253,0.12);
+  --teal:      #3ecfb8;
+  --amber:     #e8a230;
+  --red:       #f05060;
+  --red-bg:    rgba(240,80,96,0.08);
+  --user-bg:   #101020;
+  --font:      'IBM Plex Sans', system-ui, sans-serif;
+  --mono:      'IBM Plex Mono', 'Cascadia Code', monospace;
+  --r:         10px;
+  --r-lg:      16px;
+  --r-xl:      22px;
+  --t:         150ms cubic-bezier(.4,0,.2,1);
+  --shadow:    0 8px 32px rgba(0,0,0,.5);
+  --safe-b:    env(safe-area-inset-bottom, 0px);
+  --safe-t:    env(safe-area-inset-top, 0px);
+}
+
+html,body{height:100%;overflow:hidden;font-family:var(--font);background:var(--bg);color:var(--tx);
+  -webkit-font-smoothing:antialiased;font-size:15px;line-height:1.5}
+
+/* subtle dot-grid background texture */
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:radial-gradient(circle,rgba(124,107,253,.07) 1px,transparent 1px);
+  background-size:28px 28px;
+}
+
+/* ──────────────────────────────────────────────
+   APP SHELL
+────────────────────────────────────────────── */
+#app{
+  display:flex;flex-direction:column;
+  height:100%;height:100dvh;
+  max-width:880px;margin:0 auto;
+  position:relative;z-index:1;
+}
+
+/* ──────────────────────────────────────────────
+   HEADER
+────────────────────────────────────────────── */
+#header{
+  display:flex;align-items:center;gap:8px;
+  padding:10px 14px;
+  padding-top:calc(10px + var(--safe-t));
+  background:linear-gradient(180deg,var(--s0) 0%,rgba(12,12,18,.92) 100%);
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  position:sticky;top:0;z-index:20;
+}
+
+#hd-left{flex:1;min-width:0}
+
+#app-name{
+  font-family:var(--mono);font-size:12px;font-weight:600;
+  letter-spacing:.1em;color:var(--acc);
+  display:flex;align-items:center;gap:6px;
+}
+
+#app-name::before{
+  content:'';width:6px;height:6px;border-radius:50%;
+  background:var(--acc);box-shadow:0 0 8px var(--acc);
+}
+
+#model-status{
+  font-family:var(--mono);font-size:10px;color:var(--tx3);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px;
+  display:flex;align-items:center;gap:5px;
+}
+
+.sd{width:5px;height:5px;border-radius:50%;flex-shrink:0;transition:background var(--t)}
+.sd.idle   {background:var(--tx3)}
+.sd.loading{background:var(--amber);animation:pulse 1s ease infinite}
+.sd.ready  {background:var(--teal)}
+.sd.gen    {background:var(--acc);animation:pulse .7s ease infinite}
+.sd.error  {background:var(--red)}
+
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+
+.hbtn{
+  width:34px;height:34px;border-radius:8px;
+  border:1px solid var(--border);background:var(--s1);
+  color:var(--tx2);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all var(--t);flex-shrink:0;
+  -webkit-tap-highlight-color:transparent;
+}
+.hbtn:hover,.hbtn:active{background:var(--s2);color:var(--tx);border-color:var(--border-hi)}
+.hbtn svg{width:15px;height:15px;stroke-width:1.75}
+
+/* ──────────────────────────────────────────────
+   MODEL PANEL
+────────────────────────────────────────────── */
+#model-panel{
+  background:var(--s0);border-bottom:1px solid var(--border);
+  flex-shrink:0;transition:max-height .3s cubic-bezier(.4,0,.2,1),opacity .25s ease;
+  max-height:600px;overflow:hidden;
+}
+#model-panel.closed{max-height:0;opacity:0;pointer-events:none}
+
+.p-inner{padding:14px 14px 0}
+.p-label{
+  font-family:var(--mono);font-size:10px;font-weight:600;
+  letter-spacing:.12em;text-transform:uppercase;
+  color:var(--tx3);margin-bottom:8px;
+}
+
+.model-list{display:flex;flex-direction:column;gap:5px}
+
+.mc{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 11px;border-radius:var(--r);
+  border:1px solid var(--border);background:var(--s1);
+  cursor:pointer;transition:all var(--t);
+  -webkit-tap-highlight-color:transparent;
+  position:relative;overflow:hidden;
+}
+.mc::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:2px;
+  background:var(--acc);opacity:0;transition:opacity var(--t);
+}
+.mc:hover{border-color:var(--border-hi);background:var(--s2)}
+.mc.sel{border-color:rgba(124,107,253,.4);background:var(--acc-glow)}
+.mc.sel::before{opacity:1}
+.mc.loaded-model{border-color:rgba(62,207,184,.3)}
+
+.m-info{flex:1;min-width:0}
+.m-name{font-size:13px;font-weight:600;color:var(--tx)}
+.m-desc{font-family:var(--mono);font-size:10px;color:var(--tx2);margin-top:2px}
+
+.badge{
+  font-family:var(--mono);font-size:9px;font-weight:600;
+  padding:2px 7px;border-radius:20px;flex-shrink:0;letter-spacing:.05em;
+}
+.bf{background:rgba(62,207,184,.12);color:var(--teal)}
+.bb{background:rgba(124,107,253,.12);color:var(--acc)}
+.bc{background:rgba(232,162,48,.12);color:var(--amber)}
+.bl{background:rgba(240,80,96,.12);color:var(--red)}
+
+#load-area{padding:10px 14px 14px;display:flex;flex-direction:column;gap:10px}
+
+#load-btn{
+  width:100%;height:40px;border-radius:var(--r);border:none;
+  background:var(--acc);color:#fff;
+  font-family:var(--mono);font-size:12px;font-weight:600;letter-spacing:.06em;
+  cursor:pointer;transition:all var(--t);
+}
+#load-btn:hover{background:var(--acc-dim)}
+#load-btn:disabled{opacity:.4;cursor:not-allowed}
+
+#prog-area{display:flex;flex-direction:column;gap:7px}
+
+.pi{display:flex;flex-direction:column;gap:4px}
+.pi-row{display:flex;justify-content:space-between;align-items:center}
+.pi-name{
+  font-family:var(--mono);font-size:10px;color:var(--tx2);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:75%;
+}
+.pi-pct{font-family:var(--mono);font-size:10px;color:var(--tx3)}
+.pi-track{height:2px;background:var(--s3);border-radius:1px;overflow:hidden}
+.pi-fill{height:100%;background:var(--acc);border-radius:1px;transition:width .15s ease;min-width:2px}
+.pi-fill.done{background:var(--teal)}
+
+/* ──────────────────────────────────────────────
+   CHAT
+────────────────────────────────────────────── */
+#chat{
+  flex:1;overflow-y:auto;overflow-x:hidden;
+  padding:14px;display:flex;flex-direction:column;gap:14px;
+  -webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+  scroll-behavior:smooth;
+}
+#chat::-webkit-scrollbar{width:3px}
+#chat::-webkit-scrollbar-track{background:transparent}
+#chat::-webkit-scrollbar-thumb{background:var(--s3);border-radius:2px}
+
+/* empty state */
+#empty{
+  flex:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  text-align:center;padding:24px;gap:12px;opacity:.55;
+}
+#empty .icon{
+  width:52px;height:52px;border-radius:14px;
+  background:var(--acc-glow);border:1px solid rgba(124,107,253,.2);
+  display:flex;align-items:center;justify-content:center;
+}
+#empty h2{font-size:17px;font-weight:600}
+#empty p{font-size:13px;color:var(--tx2);max-width:260px;line-height:1.6}
+
+/* messages */
+.mw{display:flex;flex-direction:column;gap:5px;animation:fadeUp .2s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+.mw.user{align-items:flex-end}
+.mw.ai{align-items:flex-start}
+
+.mmeta{
+  display:flex;align-items:center;gap:7px;
+  font-family:var(--mono);font-size:10px;color:var(--tx3);
+  padding:0 3px;
+}
+.mrole{font-weight:600;letter-spacing:.05em;color:var(--tx2)}
+.mtime{opacity:.6}
+
+.mb{
+  max-width:min(88%,680px);
+  padding:9px 13px;
+  font-size:14px;line-height:1.7;
+  word-break:break-word;position:relative;
+}
+.mw.user .mb{
+  border-radius:var(--r-lg) var(--r-lg) 4px var(--r-lg);
+  background:var(--user-bg);
+  border:1px solid rgba(124,107,253,.15);
+  color:var(--tx);
+}
+.mw.ai .mb{
+  border-radius:4px var(--r-lg) var(--r-lg) var(--r-lg);
+  background:var(--s1);border:1px solid var(--border);
+  border-left:2px solid rgba(124,107,253,.35);
+  color:var(--tx);
+}
+
+/* markdown in bubbles */
+.mb pre{
+  background:var(--s2);border:1px solid var(--border);border-radius:7px;
+  padding:10px 12px;overflow-x:auto;margin:8px 0;
+  font-family:var(--mono);font-size:12px;line-height:1.5;
+}
+.mb code{
+  font-family:var(--mono);font-size:12px;
+  background:var(--s2);padding:1px 5px;border-radius:4px;
+}
+.mb pre code{background:none;padding:0;font-size:12px}
+.mb strong{font-weight:600;color:var(--tx)}
+.mb em{font-style:italic;color:var(--tx2)}
+.mb p{margin:0 0 6px}
+.mb p:last-child{margin:0}
+.mb ul,.mb ol{padding-left:18px;margin:4px 0}
+.mb li{margin:2px 0}
+.mb h1,.mb h2,.mb h3{font-weight:600;margin:10px 0 4px;color:var(--tx)}
+.mb h1{font-size:16px}.mb h2{font-size:15px}.mb h3{font-size:14px}
+.mb blockquote{
+  border-left:2px solid var(--acc);padding-left:10px;
+  color:var(--tx2);font-style:italic;margin:6px 0;
+}
+
+/* streaming cursor */
+.cur{
+  display:inline-block;width:2px;height:13px;
+  background:var(--acc);margin-left:2px;vertical-align:middle;
+  animation:blink .75s step-end infinite;
+}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+/* stats bar */
+.sbar{
+  display:flex;flex-wrap:wrap;gap:10px;
+  font-family:var(--mono);font-size:10px;color:var(--tx3);
+  padding:0 3px;min-height:14px;
+}
+.si{display:flex;gap:3px}
+.sk{opacity:.6}.sv{color:var(--acc)}
+.sv.live{color:var(--amber)}
+
+/* action buttons */
+.mactions{
+  display:flex;gap:3px;opacity:0;transition:opacity var(--t);
+  padding:0 3px;
+}
+.mw:hover .mactions,.mw:focus-within .mactions{opacity:1}
+.mw.user .mactions{justify-content:flex-end}
+
+.abtn{
+  height:24px;padding:0 8px;border-radius:6px;
+  border:1px solid var(--border);background:var(--s1);
+  color:var(--tx3);font-family:var(--mono);font-size:10px;
+  cursor:pointer;transition:all var(--t);
+  display:flex;align-items:center;gap:4px;
+  -webkit-tap-highlight-color:transparent;
+}
+.abtn:hover{color:var(--tx);background:var(--s2);border-color:var(--border-hi)}
+.abtn.danger{color:var(--red);border-color:rgba(240,80,96,.2)}
+.abtn.danger:hover{background:var(--red-bg)}
+.abtn svg{width:11px;height:11px;flex-shrink:0}
+
+/* edit mode */
+.edit-ta{
+  width:100%;padding:8px 11px;
+  border-radius:var(--r);border:1px solid var(--acc);
+  background:var(--s1);color:var(--tx);
+  font-family:var(--font);font-size:13px;line-height:1.5;
+  resize:none;outline:none;min-height:56px;
+}
+.edit-row{display:flex;gap:6px;margin-top:6px;justify-content:flex-end}
+.ebtn{
+  padding:5px 14px;border-radius:6px;font-family:var(--mono);
+  font-size:11px;font-weight:600;cursor:pointer;border:none;
+  transition:all var(--t);
+}
+.esave{background:var(--acc);color:#fff}
+.esave:hover{background:var(--acc-dim)}
+.ecancel{background:var(--s2);color:var(--tx2);border:1px solid var(--border)}
+.ecancel:hover{color:var(--tx)}
+
+/* system notice */
+.sys-notice{
+  align-self:center;font-family:var(--mono);font-size:10px;
+  color:var(--tx3);background:var(--s1);border:1px solid var(--border);
+  border-radius:20px;padding:4px 12px;letter-spacing:.04em;
+}
+
+/* ──────────────────────────────────────────────
+   SCROLL BTN
+────────────────────────────────────────────── */
+#scroll-btn{
+  position:absolute;right:14px;bottom:80px;
+  width:34px;height:34px;border-radius:50%;
+  background:var(--s2);border:1px solid var(--border-hi);
+  color:var(--tx2);cursor:pointer;
+  display:none;align-items:center;justify-content:center;
+  box-shadow:var(--shadow);transition:all var(--t);z-index:15;
+  -webkit-tap-highlight-color:transparent;
+}
+#scroll-btn.vis{display:flex}
+#scroll-btn:hover{background:var(--s3);color:var(--tx)}
+#scroll-btn svg{width:15px;height:15px}
+
+/* ──────────────────────────────────────────────
+   INPUT AREA
+────────────────────────────────────────────── */
+#input-area{
+  background:linear-gradient(0deg,var(--s0) 0%,rgba(12,12,18,.95) 100%);
+  border-top:1px solid var(--border);
+  padding:10px 14px;
+  padding-bottom:calc(10px + var(--safe-b));
+  flex-shrink:0;backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+}
+
+#inp-row{display:flex;gap:8px;align-items:flex-end}
+
+#inp-wrap{flex:1;min-width:0;position:relative}
+
+#msg-ta{
+  width:100%;min-height:40px;max-height:130px;
+  padding:10px 13px;border-radius:var(--r-xl);
+  border:1px solid var(--border);background:var(--s1);
+  color:var(--tx);font-family:var(--font);font-size:14px;
+  line-height:1.5;resize:none;outline:none;
+  transition:border-color var(--t);overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+}
+#msg-ta:focus{border-color:rgba(124,107,253,.5)}
+#msg-ta::placeholder{color:var(--tx3)}
+#msg-ta:disabled{opacity:.4}
+
+#send-btn{
+  width:40px;height:40px;border-radius:50%;border:none;
+  background:var(--acc);color:#fff;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;transition:all var(--t);
+  -webkit-tap-highlight-color:transparent;
+}
+#send-btn:hover{background:var(--acc-dim);transform:scale(1.06)}
+#send-btn:active{transform:scale(.94)}
+#send-btn:disabled{opacity:.35;cursor:not-allowed;transform:none}
+#send-btn svg{width:17px;height:17px}
+
+#stop-btn{
+  width:40px;height:40px;border-radius:50%;border:1px solid var(--red);
+  background:var(--red-bg);color:var(--red);cursor:pointer;
+  display:none;align-items:center;justify-content:center;
+  flex-shrink:0;transition:all var(--t);
+  -webkit-tap-highlight-color:transparent;
+}
+#stop-btn:hover{background:rgba(240,80,96,.16)}
+#stop-btn.vis{display:flex}
+#stop-btn svg{width:14px;height:14px}
+
+#char-ctr{
+  font-family:var(--mono);font-size:10px;color:var(--tx3);
+  text-align:right;margin-top:4px;height:12px;
+}
+
+/* ──────────────────────────────────────────────
+   SETTINGS DRAWER
+────────────────────────────────────────────── */
+#overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.65);
+  z-index:50;opacity:0;pointer-events:none;
+  transition:opacity .25s ease;backdrop-filter:blur(3px);
+}
+#overlay.on{opacity:1;pointer-events:all}
+
+#drawer{
+  position:fixed;top:0;right:0;bottom:0;
+  width:min(88vw,360px);
+  background:var(--s0);border-left:1px solid var(--border);
+  z-index:51;display:flex;flex-direction:column;
+  transform:translateX(100%);
+  transition:transform .25s cubic-bezier(.4,0,.2,1);
+  overflow:hidden;
+}
+#drawer.on{transform:translateX(0)}
+
+#dr-hd{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 16px;padding-top:calc(14px + var(--safe-t));
+  border-bottom:1px solid var(--border);flex-shrink:0;
+}
+#dr-hd h2{font-family:var(--mono);font-size:14px;font-weight:600}
+
+#dr-body{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:20px}
+
+.sg h3{
+  font-family:var(--mono);font-size:10px;font-weight:600;
+  letter-spacing:.12em;text-transform:uppercase;
+  color:var(--tx3);margin-bottom:10px;
+}
+.sr{margin-bottom:12px}
+.sl{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+.sl span:first-child{font-size:13px;font-weight:500}
+.sv-tag{font-family:var(--mono);font-size:11px;color:var(--acc)}
+
+input[type=range].slider{
+  width:100%;height:3px;border-radius:2px;
+  background:var(--s3);-webkit-appearance:none;outline:none;cursor:pointer;
+}
+input[type=range].slider::-webkit-slider-thumb{
+  -webkit-appearance:none;width:17px;height:17px;border-radius:50%;
+  background:var(--acc);border:2px solid var(--s0);
+  box-shadow:0 0 0 1px var(--acc);
+}
+
+.inp{
+  width:100%;padding:9px 11px;border-radius:var(--r);
+  border:1px solid var(--border);background:var(--s1);
+  color:var(--tx);font-family:var(--font);font-size:13px;
+  outline:none;transition:border-color var(--t);
+}
+.inp:focus{border-color:rgba(124,107,253,.5)}
+
+textarea.inp{resize:none;min-height:76px;line-height:1.5}
+
+.togrow{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.togl-lbl{font-size:13px;font-weight:500}
+.tog{
+  width:38px;height:21px;border-radius:11px;
+  background:var(--s3);position:relative;cursor:pointer;
+  transition:background var(--t);border:none;outline:none;flex-shrink:0;
+}
+.tog::after{
+  content:'';position:absolute;width:15px;height:15px;border-radius:50%;
+  background:#fff;top:3px;left:3px;transition:transform var(--t);
+}
+.tog.on{background:var(--acc)}
+.tog.on::after{transform:translateX(17px)}
+
+.dbg{
+  background:var(--s1);border:1px solid var(--border);border-radius:var(--r);
+  padding:10px 12px;display:flex;flex-direction:column;gap:5px;
+}
+.drow{display:flex;justify-content:space-between;gap:8px}
+.dk{font-family:var(--mono);font-size:10px;color:var(--tx3)}
+.dv{font-family:var(--mono);font-size:10px;color:var(--tx);text-align:right}
+
+.dbtn{
+  width:100%;padding:9px;border-radius:var(--r);
+  border:1px solid var(--border);background:var(--s1);
+  color:var(--tx2);font-family:var(--mono);font-size:12px;
+  cursor:pointer;transition:all var(--t);letter-spacing:.02em;
+}
+.dbtn:hover{background:var(--s2);color:var(--tx);border-color:var(--border-hi)}
+.dbtn.danger{border-color:rgba(240,80,96,.25);color:var(--red);background:var(--red-bg)}
+.dbtn.danger:hover{background:rgba(240,80,96,.15)}
+
+/* ──────────────────────────────────────────────
+   ERROR TOAST
+────────────────────────────────────────────── */
+#toast{
+  position:fixed;bottom:calc(68px + var(--safe-b) + 8px);
+  left:50%;transform:translateX(-50%) translateY(16px);
+  background:var(--s1);border:1px solid rgba(240,80,96,.35);
+  border-radius:var(--r);padding:10px 13px;
+  font-size:12px;max-width:min(92vw,420px);width:max-content;
+  z-index:100;opacity:0;pointer-events:none;
+  transition:all .22s ease;
+  display:flex;align-items:flex-start;gap:9px;
+  box-shadow:var(--shadow);
+}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:all}
+.t-icon{color:var(--red);flex-shrink:0;margin-top:1px}
+.t-body{flex:1;min-width:0}
+.t-title{font-family:var(--mono);font-weight:600;color:var(--red);font-size:11px;margin-bottom:2px}
+.t-msg{color:var(--tx2);line-height:1.4;word-break:break-word;font-size:12px}
+.t-close{background:none;border:none;color:var(--tx3);cursor:pointer;font-size:15px;
+  line-height:1;padding:0;flex-shrink:0;transition:color var(--t)}
+.t-close:hover{color:var(--tx)}
+
+/* ──────────────────────────────────────────────
+   COPY TOAST
+────────────────────────────────────────────── */
+.cptoast{
+  position:fixed;bottom:calc(68px + var(--safe-b) + 8px);
+  left:50%;transform:translateX(-50%);
+  background:var(--s2);border:1px solid var(--border-hi);
+  color:var(--tx);padding:5px 14px;border-radius:20px;
+  font-family:var(--mono);font-size:11px;font-weight:600;
+  z-index:200;pointer-events:none;
+  animation:cpFade 1.6s ease forwards;
+}
+@keyframes cpFade{
+  0%{opacity:0;transform:translateX(-50%) translateY(8px)}
+  15%{opacity:1;transform:translateX(-50%) translateY(0)}
+  70%{opacity:1}
+  100%{opacity:0;transform:translateX(-50%) translateY(-8px)}
+}
+
+/* ──────────────────────────────────────────────
+   MISC
+────────────────────────────────────────────── */
+.gap8{gap:8px}
+
+/* high-z relative for scroll btn */
+#chat-wrap{position:relative;flex:1;min-height:0;display:flex;flex-direction:column}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <!-- FILE:// WARNING BANNER (hidden by default, shown by JS) -->
+  <div id="file-warn" style="display:none;align-items:center;gap:8px;padding:7px 14px;background:rgba(232,162,48,.1);border-bottom:1px solid rgba(232,162,48,.25);font-family:var(--mono);font-size:10px;color:var(--amber);flex-shrink:0;">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    <span>Opening from <strong>file://</strong> — SharedArrayBuffer unavailable. Serve via HTTP for faster multi-thread inference: <code>python3 -m http.server</code></span>
+  </div>
+
+  <!-- HEADER -->
+  <header id="header">
+    <div id="hd-left">
+      <div id="app-name">LocalLM</div>
+      <div id="model-status">
+        <span class="sd idle" id="sd"></span>
+        <span id="st">No model loaded</span>
+      </div>
+    </div>
+    <button class="hbtn" id="model-btn" title="Models" aria-label="Toggle model panel">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="7" y="7" width="10" height="10" rx="1"/><path d="M9 2v2M12 2v2M15 2v2M9 20v2M12 20v2M15 20v2M2 9h2M2 12h2M2 15h2M20 9h2M20 12h2M20 15h2"/></svg>
+    </button>
+    <button class="hbtn" id="settings-btn" title="Settings" aria-label="Settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </button>
+    <button class="hbtn" id="clear-btn" title="Clear chat" aria-label="Clear chat">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+    </button>
+  </header>
+
+  <!-- MODEL PANEL -->
+  <div id="model-panel">
+    <div class="p-inner">
+      <div class="p-label">Select Model (CPU/WASM — no GPU required)</div>
+      <div class="model-list" id="model-list"></div>
+    </div>
+    <div id="load-area">
+      <button id="load-btn" disabled>Select a model above</button>
+      <button id="retry-worker-btn" style="display:none;width:100%;height:38px;border-radius:var(--r);border:1px solid rgba(240,80,96,.35);background:var(--red-bg);color:var(--red);font-family:var(--mono);font-size:11px;font-weight:600;cursor:pointer;align-items:center;justify-content:center;gap:6px;margin-top:6px;">↺ Retry Worker Boot</button>
+      <div id="prog-area"></div>
+    </div>
+  </div>
+
+  <!-- CHAT WRAPPER -->
+  <div id="chat-wrap">
+    <div id="chat" role="log" aria-live="polite" aria-label="Chat">
+      <div id="empty">
+        <div class="icon">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#7c6bfd" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <h2>LocalLM</h2>
+        <p>On-device AI — runs 100% in your browser, CPU only, no data leaves your device.</p>
+      </div>
+    </div>
+    <button id="scroll-btn" aria-label="Scroll to bottom">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+    </button>
+  </div>
+
+  <!-- INPUT -->
+  <div id="input-area">
+    <div id="inp-row">
+      <div id="inp-wrap">
+        <textarea id="msg-ta" placeholder="Load a model to start…" rows="1" disabled aria-label="Message input"></textarea>
+      </div>
+      <button id="stop-btn" aria-label="Stop">
+        <svg viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="5" width="14" height="14" rx="2"/></svg>
+      </button>
+      <button id="send-btn" disabled aria-label="Send">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+      </button>
+    </div>
+    <div id="char-ctr"></div>
+  </div>
+</div>
+
+<!-- DRAWER OVERLAY -->
+<div id="overlay"></div>
+
+<!-- SETTINGS DRAWER -->
+<aside id="drawer" aria-label="Settings">
+  <div id="dr-hd">
+    <h2>Settings</h2>
+    <button class="hbtn" id="dr-close" aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div id="dr-body">
+    <div class="sg">
+      <h3>Generation</h3>
+      <div class="sr">
+        <div class="sl"><span>Temperature</span><span class="sv-tag" id="vtemp">0.70</span></div>
+        <input type="range" class="slider" id="stemp" min="0" max="2" step="0.05" value="0.7">
+      </div>
+      <div class="sr">
+        <div class="sl"><span>Max Tokens</span><span class="sv-tag" id="vmtok">512</span></div>
+        <input type="range" class="slider" id="smtok" min="64" max="2048" step="64" value="512">
+      </div>
+      <div class="sr">
+        <div class="sl"><span>Top P</span><span class="sv-tag" id="vtopp">0.90</span></div>
+        <input type="range" class="slider" id="stopp" min="0.05" max="1" step="0.05" value="0.9">
+      </div>
+      <div class="sr">
+        <div class="sl"><span>Repetition Penalty</span><span class="sv-tag" id="vrpen">1.10</span></div>
+        <input type="range" class="slider" id="srpen" min="1.0" max="1.5" step="0.01" value="1.1">
+      </div>
+    </div>
+    <div class="sg">
+      <h3>System Prompt</h3>
+      <textarea class="inp" id="sys-prompt" rows="4">You are a helpful, concise assistant running locally in the browser. You are direct and avoid unnecessary filler.</textarea>
+    </div>
+    <div class="sg">
+      <h3>Interface</h3>
+      <div class="togrow"><span class="togl-lbl">Stream tokens live</span><button class="tog on" id="tog-stream" aria-pressed="true"></button></div>
+      <div class="togrow"><span class="togl-lbl">Show token stats</span><button class="tog on" id="tog-stats" aria-pressed="true"></button></div>
+      <div class="togrow"><span class="togl-lbl">Auto-scroll</span><button class="tog on" id="tog-scroll" aria-pressed="true"></button></div>
+    </div>
+    <div class="sg">
+      <h3>Debug / System Info</h3>
+      <div class="dbg">
+        <div class="drow"><span class="dk">Browser</span><span class="dv" id="di-br">—</span></div>
+        <div class="drow"><span class="dk">CPU Cores</span><span class="dv" id="di-cores">—</span></div>
+        <div class="drow"><span class="dk">Heap Limit</span><span class="dv" id="di-mem">—</span></div>
+        <div class="drow"><span class="dk">WASM SIMD</span><span class="dv" id="di-simd">—</span></div>
+        <div class="drow"><span class="dk">SharedArrayBuf</span><span class="dv" id="di-sab">—</span></div>
+        <div class="drow"><span class="dk">Worker Threads</span><span class="dv" id="di-wt">—</span></div>
+        <div class="drow"><span class="dk">Loaded Model</span><span class="dv" id="di-model">—</span></div>
+        <div class="drow"><span class="dk">Load Time</span><span class="dv" id="di-lt">—</span></div>
+        <div class="drow"><span class="dk">Avg Tok/s</span><span class="dv" id="di-tps">—</span></div>
+        <div class="drow"><span class="dk">Generations</span><span class="dv" id="di-gens">0</span></div>
+      </div>
+    </div>
+    <div class="sg">
+      <h3>Data</h3>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button class="dbtn" id="btn-export">Export Chat (JSON)</button>
+        <button class="dbtn danger" id="btn-clrcache">Clear Model Cache</button>
+        <button class="dbtn danger" id="btn-clrchat">Clear Chat History</button>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- ERROR TOAST -->
+<div id="toast" role="alert">
+  <div class="t-icon">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+    </svg>
+  </div>
+  <div class="t-body">
+    <div class="t-title" id="t-title">Error</div>
+    <div class="t-msg" id="t-msg"></div>
+  </div>
+  <button class="t-close" id="t-close">✕</button>
+</div>
+
+<!-- ─────────────────────────────────────────────────────────────
+     WORKER SOURCE — type="text/x-worker" keeps it inert/unparsed
+     No escaping issues; worker reads this via textContent
+───────────────────────────────────────────────────────────────── -->
+<script id="worker-src" type="text/x-worker">
+// ═══════════════════════════════════════════════════════════════════
+//  GLOBAL SAFETY NET — catches crashes BEFORE the dynamic import
+//  resolves (syntax errors, CORS failures, OOM at startup).
+//  These handlers must come first — before any async code.
+// ═══════════════════════════════════════════════════════════════════
+self.addEventListener('error', function(e) {
+  try {
+    self.postMessage({
+      type: 'error',
+      msg:  'Worker startup crash: ' + (e.message || 'Unknown error'),
+      hint: e.filename ? 'at ' + (e.filename || '') + ':' + (e.lineno || '') : ''
+    });
+  } catch (_) {}
+  e.preventDefault();
+}, true);
+
+self.addEventListener('unhandledrejection', function(e) {
+  try {
+    const reason = e.reason;
+    const msg    = reason?.message || String(reason) || 'Unhandled promise rejection';
+    const hint   = reason?.stack   ? reason.stack.split('\n')[1]?.trim() || '' : '';
+    self.postMessage({ type: 'error', msg, hint });
+  } catch (_) {}
+  e.preventDefault();
+});
+
+// ── STATE ─────────────────────────────────────────────────────────
+let _pipeline    = null;
+let _TextStreamer = null;
+let _env         = null;
+let pipe         = null;
+let loadedModelId = null;
+let abortCtrl    = null;
+let libReady     = false;
+
+// ── THREAD COUNT ─────────────────────────────────────────────────
+//  SharedArrayBuffer (needed for ONNX multi-threading) requires
+//  COOP + COEP HTTP headers that most file servers don't send.
+//  Running from file:// means SAB is unavailable → worker crash.
+//  ALWAYS force numThreads=1 for safe operation everywhere.
+//  (ONNX Runtime gracefully falls back to single-thread WASM.)
+const HAS_SAB    = typeof SharedArrayBuffer !== 'undefined';
+const NUM_THREADS = HAS_SAB ? Math.min(navigator.hardwareConcurrency || 2, 4) : 1;
+
+// ── LOAD LIBRARY (dynamic import with full error handling) ────────
+//  Static `import` at the top of a module worker cannot be caught.
+//  A failed static import crashes the worker with a generic "Unknown
+//  worker error" that gives no useful information. Dynamic import()
+//  lets us catch the failure and post a meaningful error message.
+async function initLib() {
+  try {
+    // Pin to a known-good v3 patch release — avoids surprise breakage
+    const CDN = 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.4.1';
+    const mod  = await import(CDN);
+
+    _pipeline    = mod.pipeline;
+    _TextStreamer = mod.TextStreamer;
+    _env         = mod.env;
+
+    // ── Configure ONNX WASM backend ────────────────────────────
+    _env.allowRemoteModels = true;
+    _env.allowLocalModels  = false;
+
+    // CRITICAL: do NOT set proxy=false — removed/broken in v3,
+    // causes "no available backend found" crash on many browsers.
+    _env.backends.onnx.wasm.numThreads = NUM_THREADS;
+
+    libReady = true;
+    self.postMessage({ type: 'ready', threads: NUM_THREADS, sab: HAS_SAB });
+
+  } catch (err) {
+    const msg   = err?.message || String(err);
+    const isNet = msg.includes('fetch') || msg.includes('network') ||
+                  msg.includes('Failed to load') || msg.includes('NetworkError');
+    self.postMessage({
+      type: 'init_error',
+      msg:  'Could not load AI library: ' + msg,
+      hint: isNet
+        ? 'Check your internet connection — the AI library (~2 MB) downloads on first use.'
+        : 'If opening from file://, serve via a local HTTP server (e.g. python3 -m http.server).',
+      sab:  HAS_SAB
+    });
+  }
+}
+
+initLib();
+
+// ── MESSAGE ROUTER ────────────────────────────────────────────────
+self.onmessage = async ({ data }) => {
+  if (!libReady) {
+    self.postMessage({ type: 'error', msg: 'Library still initializing — please wait a moment and retry.' });
+    return;
+  }
+  try {
+    if      (data.type === 'load')     await doLoad(data);
+    else if (data.type === 'generate') await doGenerate(data);
+    else if (data.type === 'abort')    { if (abortCtrl) abortCtrl.abort(); }
+    else if (data.type === 'unload')   {
+      pipe = null; loadedModelId = null;
+      self.postMessage({ type: 'unloaded' });
+    }
+  } catch (err) {
+    self.postMessage({
+      type:  'error',
+      msg:   err?.message || String(err),
+      stack: err?.stack   || ''
+    });
+  }
+};
+
+// ── LOAD MODEL ───────────────────────────────────────────────────
+async function doLoad({ modelId, dtype }) {
+  if (pipe && loadedModelId === modelId) {
+    self.postMessage({ type: 'loaded', modelId, cached: true, threads: NUM_THREADS });
+    return;
+  }
+
+  pipe = null;
+  loadedModelId = null;
+  self.postMessage({ type: 'loading', modelId });
+
+  const t0 = performance.now();
+
+  try {
+    pipe = await _pipeline('text-generation', modelId, {
+      dtype:             dtype || 'q4',
+      device:            'wasm',
+      progress_callback: p => self.postMessage({ type: 'progress', p }),
+    });
+
+    loadedModelId = modelId;
+    const elapsed = ((performance.now() - t0) / 1000).toFixed(2);
+    self.postMessage({ type: 'loaded', modelId, cached: false, elapsed, threads: NUM_THREADS });
+
+  } catch (err) {
+    pipe = null;
+    throw err; // re-throw — caught by outer handler, posted as 'error'
+  }
+}
+
+// ── GENERATE ─────────────────────────────────────────────────────
+async function doGenerate({ messages, params }) {
+  if (!pipe) throw new Error('No model loaded — load a model first.');
+
+  abortCtrl = new AbortController();
+
+  let tokCount = 0;
+  const t0 = performance.now();
+
+  const streamer = new _TextStreamer(pipe.tokenizer, {
+    skip_prompt:       true,
+    skip_special_tokens: true,
+    callback_function: text => {
+      tokCount++;
+      const elapsed = (performance.now() - t0) / 1000;
+      const tps     = elapsed > 0.1 ? (tokCount / elapsed).toFixed(1) : null;
+      self.postMessage({ type: 'token', text, tokCount, tps });
+    },
+  });
+
+  try {
+    const output = await pipe(messages, {
+      max_new_tokens:     params.maxTokens ?? 512,
+      temperature:        params.temperature ?? 0.7,
+      top_p:              params.topP ?? 0.9,
+      repetition_penalty: params.repPen ?? 1.1,
+      do_sample:          (params.temperature ?? 0.7) > 0,
+      streamer:           params.stream ? streamer : undefined,
+      signal:             abortCtrl.signal,
+    });
+
+    const elapsed = ((performance.now() - t0) / 1000).toFixed(2);
+    const tps     = elapsed > 0 ? (tokCount / parseFloat(elapsed)).toFixed(1) : null;
+
+    let finalText = null;
+    if (!params.stream) {
+      const gen = output[0]?.generated_text;
+      finalText = Array.isArray(gen) ? gen.at(-1)?.content : String(gen ?? '');
+    }
+
+    self.postMessage({ type: 'done', elapsed, tokCount, tps, finalText });
+
+  } catch (err) {
+    const isAbort = err?.name === 'AbortError'
+      || err?.message?.toLowerCase().includes('abort')
+      || err?.message?.toLowerCase().includes('interrupt');
+    if (isAbort) {
+      self.postMessage({ type: 'aborted', tokCount });
+    } else {
+      throw err;
+    }
+  } finally {
+    abortCtrl = null;
+  }
+}
+</script>
+
+<!-- ─────────────────────────────────────────────
+     MAIN APP SCRIPT
+───────────────────────────────────────────── -->
+<script>
+'use strict';
+
+/* ── MODELS ─────────────────────────────────── */
+const MODELS = [
+  { id:'HuggingFaceTB/SmolLM2-135M-Instruct', name:'SmolLM2 135M',  desc:'~100 MB · Fastest · Good for quick tests',         badge:'Fast',     bc:'bf', dtype:'q4', ctx:2048 },
+  { id:'HuggingFaceTB/SmolLM2-360M-Instruct', name:'SmolLM2 360M',  desc:'~280 MB · Best speed/quality for most uses',        badge:'Balanced', bc:'bb', dtype:'q4', ctx:2048 },
+  { id:'Mozilla/Qwen2.5-0.5B-Instruct',        name:'Qwen2.5 0.5B', desc:'~400 MB · Strong reasoning, multilingual',          badge:'Capable',  bc:'bc', dtype:'q4', ctx:4096 },
+  { id:'HuggingFaceTB/SmolLM2-1.7B-Instruct', name:'SmolLM2 1.7B', desc:'~1.1 GB · Best quality · needs ~2 GB free RAM',     badge:'Large',    bc:'bl', dtype:'q4', ctx:8192 },
+];
+
+/* ── APP STATE ──────────────────────────────── */
+const S = {
+  selectedModel: null,
+  loadedModel:   null,
+  workerOk:      false,
+  modelOk:       false,
+  generating:    false,
+  msgs:          [], // { id, role, content, ts, stats }
+  panelOpen:     true,
+  drawerOpen:    false,
+  toastTimer:    null,
+  progMap:       {},
+  genStats:      { totalGens: 0, tpsSum: 0, loadTime: null },
+  cfg: {
+    temperature: 0.7,
+    maxTokens:   512,
+    topP:        0.9,
+    repPen:      1.1,
+    sysPrompt:  'You are a helpful, concise assistant running locally in the browser. You are direct and avoid unnecessary filler.',
+    stream:      true,
+    showStats:   true,
+    autoScroll:  true,
+  },
+  // streaming state
+  streamId:      null,
+  streamEl:      null,
+  streamText:    '',
+};
+
+/* ── WORKER ─────────────────────────────────── */
+let W = null;
+
+function bootWorker() {
+  if (W) { try{ W.terminate() } catch(_){} W = null; }
+  S.workerOk = false;
+
+  // Hide retry button if shown
+  const rb = q('#retry-worker-btn');
+  if (rb) rb.style.display = 'none';
+
+  const code = document.getElementById('worker-src').textContent;
+  let blobUrl;
+  try {
+    blobUrl = URL.createObjectURL(new Blob([code], { type:'text/javascript' }));
+    W = new Worker(blobUrl, { type:'module' });
+    URL.revokeObjectURL(blobUrl);
+  } catch(e) {
+    showErr('Worker Failed', 'Could not create module worker: ' + e.message +
+      '. Requires Chrome 80+, Firefox 114+, or Safari 16+.');
+    setStatus('error', 'Worker creation failed');
+    return false;
+  }
+
+  setStatus('loading', 'Initializing AI library…');
+  W.onmessage = onWorker;
+  W.onerror = e => {
+    // This fires for uncaught errors that escape the worker's own handlers.
+    // With dynamic import + global error listeners in the worker, this should
+    // be rare — but keep it as a final safety net.
+    console.error('[Worker native error]', e);
+    const msg = e.message || 'Unknown worker error';
+    showErr('Worker Crashed', msg +
+      ' — This sometimes happens on file:// origins or in private/sandboxed tabs.');
+    setStatus('error', 'Worker crashed');
+    if (S.generating) { S.generating = false; finalizeStream(false); updateUI(); }
+    q('#retry-worker-btn').style.display = 'flex';
+  };
+  W.onmessageerror = e => console.error('[Worker message error]', e);
+  return true;
+}
+
+function onWorker({ data: d }) {
+  switch (d.type) {
+
+    case 'ready':
+      S.workerOk = true;
+      updateDebug('wt', d.threads + ' thread' + (d.threads > 1 ? 's' : '') + (d.sab ? '' : ' (no SAB)'));
+      updateDebug('sab', d.sab ? '✓ Yes (multi-thread)' : '✗ No (single-thread — serve via HTTP)');
+      // Clear the "booting" status if it was set
+      if (!S.modelOk) setStatus('idle', 'Ready — select a model');
+      break;
+
+    // New: library failed to even initialize (network error, CORS, etc.)
+    case 'init_error':
+      S.workerOk = false;
+      console.error('[Worker init]', d.msg, d.hint || '');
+      showErr('Library Init Failed', d.msg + (d.hint ? '\n\n' + d.hint : ''));
+      setStatus('error', 'Library failed to load');
+      q('#retry-worker-btn').style.display = 'flex';
+      break;
+
+    case 'loading':
+      setStatus('loading', 'Downloading ' + modelName(d.modelId) + '…');
+      S.progMap = {};
+      q('#prog-area').innerHTML = '';
+      q('#load-btn').disabled = true;
+      q('#load-btn').textContent = 'Downloading…';
+      break;
+
+    case 'progress':
+      handleProgress(d.p);
+      break;
+
+    case 'loaded':
+      onLoaded(d);
+      break;
+
+    case 'token':
+      onToken(d);
+      break;
+
+    case 'done':
+      onDone(d);
+      break;
+
+    case 'aborted':
+      onAborted(d);
+      break;
+
+    case 'error':
+      console.error('[LLM]', d.msg, d.stack || '');
+      showErr('Model Error', d.msg + (d.hint ? ' — ' + d.hint : ''));
+      if (S.generating) { S.generating = false; finalizeStream(false); }
+      if (!S.modelOk) {
+        setStatus('error', 'Load failed');
+        q('#load-btn').disabled = false;
+        q('#load-btn').textContent = 'Retry Load';
+      } else {
+        setStatus('ready', S.loadedModel?.name || 'Ready');
+      }
+      updateUI();
+      break;
+  }
+}
+
+/* ── PROGRESS ───────────────────────────────── */
+function handleProgress(p) {
+  if (!p || !p.file) return;
+  const key = p.file;
+  const sid = 'pi-' + safeId(key);
+
+  if (!S.progMap[key]) {
+    S.progMap[key] = { pct: 0 };
+    const el = document.createElement('div');
+    el.className = 'pi';
+    el.id = sid;
+    el.innerHTML = `
+      <div class="pi-row">
+        <span class="pi-name" title="${esc(p.file)}">${esc(shortName(p.file))}</span>
+        <span class="pi-pct" id="${sid}-pct">0%</span>
+      </div>
+      <div class="pi-track"><div class="pi-fill" id="${sid}-bar" style="width:0%"></div></div>`;
+    q('#prog-area').appendChild(el);
+  }
+
+  const pctEl = q(`#${sid}-pct`);
+  const barEl = q(`#${sid}-bar`);
+
+  if (p.status === 'done' || p.status === 'ready' || p.status === 'loaded') {
+    if (pctEl) pctEl.textContent = '✓';
+    if (barEl) { barEl.style.width = '100%'; barEl.classList.add('done'); }
+    S.progMap[key].done = true;
+    return;
+  }
+
+  const pct = p.progress != null ? p.progress
+    : (p.total > 0 ? (p.loaded / p.total * 100) : 0);
+  S.progMap[key].pct = pct;
+
+  if (pctEl) pctEl.textContent = p.total > 0 ? Math.round(pct) + '%' : fmtBytes(p.loaded || 0);
+  if (barEl) barEl.style.width = Math.min(100, pct || 0) + '%';
+}
+
+/* ── MODEL LOADED ───────────────────────────── */
+function onLoaded(d) {
+  S.modelOk = true;
+  S.loadedModel = MODELS.find(m => m.id === d.modelId) || { id: d.modelId, name: d.modelId };
+  if (d.elapsed) S.genStats.loadTime = parseFloat(d.elapsed);
+
+  setStatus('ready', S.loadedModel.name + (d.cached ? ' (cached)' : ''));
+  updateUI();
+
+  q('#load-btn').disabled = false;
+  q('#load-btn').textContent = 'Reload Model';
+
+  // debug
+  updateDebug('model', S.loadedModel.name);
+  updateDebug('wt', d.threads + ' threads');
+  if (d.elapsed) updateDebug('lt', d.elapsed + 's');
+
+  // Close panel
+  if (!d.cached) {
+    setTimeout(() => { q('#prog-area').innerHTML = ''; S.progMap = {}; }, 2000);
+  }
+  if (S.panelOpen) togglePanel(false);
+}
+
+/* ── CHAT / STREAMING ───────────────────────── */
+function sendMsg() {
+  const ta = q('#msg-ta');
+  const text = ta.value.trim();
+  if (!text || !S.modelOk || S.generating) return;
+
+  ta.value = '';
+  resizeTa(ta);
+  updateCharCtr('');
+
+  addMsg('user', text);
+  beginAiMsg();
+  sendToWorker();
+}
+
+function addMsg(role, content) {
+  const id = 'msg-' + Date.now() + '-' + Math.random().toString(36).slice(2,7);
+  S.msgs.push({ id, role, content, ts: Date.now(), stats: null });
+
+  removeEmpty();
+  const w = document.createElement('div');
+  w.className = 'mw ' + (role === 'user' ? 'user' : 'ai');
+  w.id = id;
+  w.innerHTML = msgHTML(role, content, id, false);
+  q('#chat').appendChild(w);
+  bindActions(w, id, role);
+  scrollBot();
+  return id;
+}
+
+function beginAiMsg() {
+  S.streamId = 'msg-' + Date.now();
+  S.streamText = '';
+
+  removeEmpty();
+  const w = document.createElement('div');
+  w.className = 'mw ai';
+  w.id = S.streamId;
+  w.innerHTML = msgShell();
+  q('#chat').appendChild(w);
+
+  S.streamEl = w.querySelector('.mcontent');
+  // add cursor
+  const cur = document.createElement('span');
+  cur.className = 'cur'; cur.id = 'cur';
+  S.streamEl.appendChild(cur);
+
+  scrollBot();
+}
+
+function sendToWorker() {
+  S.generating = true;
+  updateUI();
+  setStatus('gen', 'Generating…');
+
+  W.postMessage({
+    type: 'generate',
+    messages: buildContext(),
+    params: {
+      temperature: S.cfg.temperature,
+      maxTokens:   S.cfg.maxTokens,
+      topP:        S.cfg.topP,
+      repPen:      S.cfg.repPen,
+      stream:      S.cfg.stream,
+    },
+  });
+}
+
+function buildContext() {
+  const out = [];
+  if (S.cfg.sysPrompt) out.push({ role:'system', content: S.cfg.sysPrompt });
+  // last 30 msgs to stay within context
+  for (const m of S.msgs.slice(-30)) out.push({ role: m.role, content: m.content });
+  return out;
+}
+
+function onToken({ text, tokCount, tps }) {
+  if (!S.streamEl) return;
+  S.streamText += text;
+
+  const cur = q('#cur');
+  if (cur) cur.remove();
+
+  // During streaming: raw text with newlines, no heavy markdown
+  S.streamEl.innerHTML = rawHtml(S.streamText);
+
+  const newCur = document.createElement('span');
+  newCur.className = 'cur'; newCur.id = 'cur';
+  S.streamEl.appendChild(newCur);
+
+  // live stats
+  if (S.cfg.showStats && S.streamId) {
+    const sb = q(`#${S.streamId} .sbar`);
+    if (sb && tps) sb.innerHTML = `
+      <span class="si"><span class="sk">tok/s</span><span class="sv live">${tps}</span></span>
+      <span class="si"><span class="sk">tokens</span><span class="sv live">${tokCount}</span></span>
+      <span class="si"><span class="sv live">⚡ live</span></span>`;
+  }
+
+  if (S.cfg.autoScroll) scrollBot();
+}
+
+function onDone({ elapsed, tokCount, tps, finalText }) {
+  if (!S.cfg.stream && finalText) S.streamText = finalText;
+
+  finalizeStream(true, { elapsed, tokCount, tps });
+
+  S.generating = false;
+  S.genStats.totalGens++;
+  if (tps) {
+    S.genStats.tpsSum += parseFloat(tps);
+    updateDebug('tps', (S.genStats.tpsSum / S.genStats.totalGens).toFixed(1) + ' tok/s');
+  }
+  updateDebug('gens', S.genStats.totalGens);
+  setStatus('ready', S.loadedModel?.name || 'Ready');
+  updateUI();
+  scrollBot();
+}
+
+function onAborted({ tokCount }) {
+  finalizeStream(false, { tokCount });
+  S.generating = false;
+  setStatus('ready', S.loadedModel?.name || 'Ready');
+  updateUI();
+
+  // Mark as stopped
+  const w = q('#' + S.streamId);
+  if (w) {
+    const meta = w.querySelector('.mmeta');
+    if (meta) {
+      const chip = document.createElement('span');
+      chip.style.cssText = 'font-family:var(--mono);font-size:10px;color:var(--tx3);background:var(--s2);border:1px solid var(--border);padding:1px 7px;border-radius:20px';
+      chip.textContent = '⏹ stopped';
+      meta.appendChild(chip);
+    }
+  }
+}
+
+function finalizeStream(ok, stats) {
+  q('#cur')?.remove();
+
+  if (!S.streamEl) return;
+
+  if (S.streamText) {
+    // Full markdown render on completion
+    S.streamEl.innerHTML = renderMd(S.streamText);
+  } else if (!ok) {
+    S.streamEl.innerHTML = '<em style="color:var(--tx3)">Generation stopped.</em>';
+  }
+
+  // Stats bar
+  if (stats && S.cfg.showStats && S.streamId) {
+    const sb = q(`#${S.streamId} .sbar`);
+    if (sb) sb.innerHTML = buildStats(stats);
+  }
+
+  // Bind actions now that content is final
+  const w = q(`#${S.streamId}`);
+  if (w) {
+    const acts = w.querySelector('.mactions');
+    if (acts) {
+      acts.innerHTML = actionBtns('ai', S.streamId);
+      bindActions(w, S.streamId, 'ai');
+    }
+  }
+
+  if (S.streamText) {
+    S.msgs.push({ id: S.streamId, role:'assistant', content: S.streamText, ts: Date.now(), stats });
+  }
+
+  S.streamEl = null;
+  S.streamText = '';
+  S.streamId = null;
+}
+
+/* ── MESSAGE ACTIONS ────────────────────────── */
+function bindActions(wrapper, id, role) {
+  wrapper.querySelectorAll('[data-act]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const act = btn.dataset.act;
+      if (act === 'copy')   copyMsg(id);
+      else if (act === 'edit')   editMsg(wrapper, id);
+      else if (act === 'regen')  regenMsg(id);
+      else if (act === 'del')    delMsg(id);
+    });
+  });
+}
+
+function copyMsg(id) {
+  const m = S.msgs.find(x => x.id === id);
+  if (!m) return;
+  navigator.clipboard?.writeText(m.content)?.catch(() => fallbackCopy(m.content));
+  if (!navigator.clipboard) fallbackCopy(m.content);
+  showCopyToast('Copied!');
+}
+
+function fallbackCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text; ta.style.cssText = 'position:fixed;opacity:0';
+  document.body.appendChild(ta); ta.select();
+  document.execCommand('copy'); ta.remove();
+}
+
+function editMsg(wrapper, id) {
+  if (S.generating) return;
+  const m = S.msgs.find(x => x.id === id);
+  if (!m) return;
+
+  const bubble = wrapper.querySelector('.mb');
+  const origContent = m.content;
+
+  bubble.innerHTML = `
+    <textarea class="edit-ta" id="eta-${id}">${esc(origContent)}</textarea>
+    <div class="edit-row">
+      <button class="ebtn ecancel" id="ec-${id}">Cancel</button>
+      <button class="ebtn esave" id="es-${id}">Save & Send</button>
+    </div>`;
+
+  const ta = q(`#eta-${id}`);
+  ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px';
+  ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length);
+
+  q(`#ec-${id}`).onclick = () => {
+    bubble.innerHTML = `<div class="mcontent">${renderMd(origContent)}</div>`;
+    bindActions(wrapper, id, 'user');
+  };
+
+  q(`#es-${id}`).onclick = () => {
+    const newTxt = ta.value.trim();
+    if (!newTxt) return;
+
+    m.content = newTxt;
+    // Remove all messages after this one
+    const idx = S.msgs.findIndex(x => x.id === id);
+    if (idx >= 0) {
+      S.msgs.splice(idx + 1).forEach(rm => q('#' + rm.id)?.remove());
+    }
+
+    bubble.innerHTML = `<div class="mcontent">${renderMd(newTxt)}</div>`;
+    bindActions(wrapper, id, 'user');
+
+    if (!S.modelOk) { showErr('No Model', 'Load a model first.'); return; }
+    beginAiMsg();
+    sendToWorker();
+  };
+}
+
+function delMsg(id) {
+  if (S.generating) return;
+  const idx = S.msgs.findIndex(x => x.id === id);
+  if (idx >= 0) S.msgs.splice(idx, 1);
+  const el = q('#' + id);
+  if (el) { el.style.opacity = '0'; el.style.transition = 'opacity .2s'; setTimeout(() => el.remove(), 200); }
+  if (!S.msgs.length) showEmpty();
+}
+
+function regenMsg(id) {
+  if (S.generating || !S.modelOk) return;
+  const idx = S.msgs.findIndex(x => x.id === id);
+  if (idx < 0) return;
+  S.msgs.splice(idx).forEach(rm => q('#' + rm.id)?.remove());
+  beginAiMsg();
+  sendToWorker();
+}
+
+/* ── HTML BUILDERS ──────────────────────────── */
+function msgHTML(role, content, id, isStream) {
+  const t = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  return `
+    <div class="mmeta">
+      <span class="mrole">${role==='user'?'You':'AI'}</span>
+      <span class="mtime">${t}</span>
+    </div>
+    <div class="mb"><div class="mcontent">${isStream ? '' : renderMd(content)}</div></div>
+    <div class="sbar"></div>
+    <div class="mactions">${isStream ? '' : actionBtns(role==='user'?'user':'ai', id)}</div>`;
+}
+
+function msgShell() {
+  const t = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  return `
+    <div class="mmeta"><span class="mrole">AI</span><span class="mtime">${t}</span></div>
+    <div class="mb"><div class="mcontent"></div></div>
+    <div class="sbar"></div>
+    <div class="mactions"></div>`;
+}
+
+function actionBtns(role, id) {
+  const ico = {
+    copy: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`,
+    edit: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`,
+    regen:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3"/></svg>`,
+    del:  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>`,
+  };
+  let h = `<button class="abtn" data-act="copy" title="Copy">${ico.copy}Copy</button>`;
+  if (role==='user')  h += `<button class="abtn" data-act="edit" title="Edit">${ico.edit}Edit</button>`;
+  if (role!=='user')  h += `<button class="abtn" data-act="regen" title="Retry">${ico.regen}Retry</button>`;
+  h += `<button class="abtn danger" data-act="del" title="Delete">${ico.del}Del</button>`;
+  return h;
+}
+
+function buildStats({ elapsed, tokCount, tps }) {
+  const parts = [];
+  if (tps)      parts.push(`<span class="si"><span class="sk">tok/s</span><span class="sv">${tps}</span></span>`);
+  if (tokCount) parts.push(`<span class="si"><span class="sk">tokens</span><span class="sv">${tokCount}</span></span>`);
+  if (elapsed)  parts.push(`<span class="si"><span class="sk">time</span><span class="sv">${elapsed}s</span></span>`);
+  return parts.join('');
+}
+
+/* ── MARKDOWN RENDERER ──────────────────────── */
+function renderMd(raw) {
+  if (!raw) return '';
+  let s = esc(raw);
+
+  // fenced code blocks
+  s = s.replace(/```(\w+)?\n?([\s\S]*?)```/g, (_, lang, code) =>
+    `<pre><code class="${lang ? 'lang-' + lang : ''}">${code.trim()}</code></pre>`);
+
+  // inline code
+  s = s.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+
+  // bold
+  s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  s = s.replace(/__(.+?)__/g, '<strong>$1</strong>');
+
+  // italic
+  s = s.replace(/\*(?!\s)(.+?)(?<!\s)\*/g, '<em>$1</em>');
+
+  // headings
+  s = s.replace(/^###\s+(.+)$/gm, '<h3>$1</h3>');
+  s = s.replace(/^##\s+(.+)$/gm, '<h2>$1</h2>');
+  s = s.replace(/^#\s+(.+)$/gm, '<h1>$1</h1>');
+
+  // blockquotes
+  s = s.replace(/^&gt;\s(.+)$/gm, '<blockquote>$1</blockquote>');
+
+  // unordered lists
+  s = s.replace(/^[-*]\s+(.+)$/gm, '<li>$1</li>');
+  s = s.replace(/(<li>[\s\S]*?<\/li>)/g, '<ul>$1</ul>');
+  // collapse nested ul
+  s = s.replace(/<\/ul>\s*<ul>/g, '');
+
+  // newlines → paragraphs (skip after block elements)
+  s = s.replace(/\n\n+/g, '</p><p>');
+  s = s.replace(/\n/g, '<br>');
+  if (!s.startsWith('<')) s = '<p>' + s + '</p>';
+
+  return s;
+}
+
+// Raw display during streaming (fast, minimal)
+function rawHtml(text) {
+  return esc(text).replace(/\n/g, '<br>');
+}
+
+/* ── UI STATE ───────────────────────────────── */
+function setStatus(state, text) {
+  q('#sd').className = 'sd ' + state;
+  q('#st').textContent = text;
+}
+
+function updateUI() {
+  const canSend = S.modelOk && !S.generating;
+  const ta = q('#msg-ta');
+  ta.disabled = !canSend;
+  q('#send-btn').disabled = !canSend;
+
+  if (S.generating) {
+    q('#stop-btn').classList.add('vis');
+    q('#send-btn').style.display = 'none';
+    ta.placeholder = 'Generating…';
+  } else {
+    q('#stop-btn').classList.remove('vis');
+    q('#send-btn').style.display = '';
+    ta.placeholder = S.modelOk ? 'Message… (Enter to send, Shift+Enter for newline)' : 'Load a model to start…';
+  }
+}
+
+function scrollBot(force) {
+  if (force || S.cfg.autoScroll) {
+    requestAnimationFrame(() => { q('#chat').scrollTop = q('#chat').scrollHeight; });
+  }
+}
+
+function showEmpty() {
+  if (q('#empty')) return;
+  const el = document.createElement('div');
+  el.id = 'empty';
+  el.innerHTML = `<div class="icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#7c6bfd" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><h2>LocalLM</h2><p>Chat cleared. Start a new conversation.</p>`;
+  q('#chat').prepend(el);
+}
+
+function removeEmpty() { q('#empty')?.remove(); }
+
+function togglePanel(force) {
+  S.panelOpen = force !== undefined ? force : !S.panelOpen;
+  q('#model-panel').classList.toggle('closed', !S.panelOpen);
+}
+
+function toggleDrawer(open) {
+  S.drawerOpen = open;
+  q('#drawer').classList.toggle('on', open);
+  q('#overlay').classList.toggle('on', open);
+}
+
+/* ── ERROR / FEEDBACK ───────────────────────── */
+function showErr(title, msg) {
+  q('#t-title').textContent = title;
+  q('#t-msg').textContent = msg;
+  q('#toast').classList.add('on');
+  clearTimeout(S.toastTimer);
+  S.toastTimer = setTimeout(() => q('#toast').classList.remove('on'), 9000);
+}
+
+function showCopyToast(txt) {
+  document.querySelectorAll('.cptoast').forEach(e => e.remove());
+  const el = document.createElement('div');
+  el.className = 'cptoast'; el.textContent = txt;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1700);
+}
+
+/* ── DEBUG ──────────────────────────────────── */
+function updateDebug(key, val) {
+  const el = q('#di-' + key);
+  if (el) el.textContent = val;
+}
+
+function initDebug() {
+  const ua = navigator.userAgent;
+  const br = ua.includes('Edg') ? 'Edge' : ua.includes('Chrome') ? 'Chrome' :
+             ua.includes('Firefox') ? 'Firefox' : ua.includes('Safari') ? 'Safari' : 'Unknown';
+  updateDebug('br', br);
+  updateDebug('cores', (navigator.hardwareConcurrency || '?') + ' cores');
+
+  if (performance.memory) {
+    updateDebug('mem', (performance.memory.jsHeapSizeLimit / 1024 / 1024).toFixed(0) + ' MB');
+  } else { updateDebug('mem', 'N/A'); }
+
+  // WASM SIMD detection
+  try {
+    const b = new Uint8Array([0,97,115,109,1,0,0,0,1,5,1,96,0,1,123,3,2,1,0,10,10,1,8,0,65,0,253,15,253,98,11]);
+    updateDebug('simd', WebAssembly.validate(b) ? '✓ Yes' : '✗ No');
+  } catch { updateDebug('simd', 'Unknown'); }
+
+  // SharedArrayBuffer (already set in init, but refresh here too)
+  const sab = typeof SharedArrayBuffer !== 'undefined';
+  updateDebug('sab', sab ? '✓ Yes (multi-thread)' : '✗ No (serve via HTTP)');
+}
+
+/* ── MODEL LIST ─────────────────────────────── */
+function renderModels() {
+  const list = q('#model-list');
+  list.innerHTML = '';
+  MODELS.forEach(m => {
+    const c = document.createElement('div');
+    c.className = 'mc';
+    c.dataset.mid = m.id;
+    c.innerHTML = `<div class="m-info"><div class="m-name">${m.name}</div><div class="m-desc">${m.desc}</div></div><span class="badge ${m.bc}">${m.badge}</span>`;
+    c.addEventListener('click', () => {
+      S.selectedModel = m;
+      document.querySelectorAll('.mc').forEach(x => x.classList.remove('sel'));
+      c.classList.add('sel');
+      q('#load-btn').disabled = false;
+      q('#load-btn').textContent = 'Load ' + m.name;
+    });
+    list.appendChild(c);
+  });
+}
+
+/* ── SETTINGS ───────────────────────────────── */
+function bindSettings() {
+  const sliders = [
+    ['stemp',  'vtemp',  'temperature', v => v.toFixed(2)],
+    ['smtok',  'vmtok',  'maxTokens',   v => Math.round(v)],
+    ['stopp',  'vtopp',  'topP',        v => v.toFixed(2)],
+    ['srpen',  'vrpen',  'repPen',      v => v.toFixed(2)],
+  ];
+  sliders.forEach(([sId, vId, key, fmt]) => {
+    q('#' + sId).addEventListener('input', e => {
+      S.cfg[key] = parseFloat(e.target.value);
+      q('#' + vId).textContent = fmt(S.cfg[key]);
+    });
+  });
+
+  q('#sys-prompt').addEventListener('input', e => { S.cfg.sysPrompt = e.target.value; });
+
+  function bindToggle(id, key) {
+    const btn = q('#' + id);
+    btn.addEventListener('click', () => {
+      S.cfg[key] = !S.cfg[key];
+      btn.classList.toggle('on', S.cfg[key]);
+      btn.setAttribute('aria-pressed', S.cfg[key]);
+    });
+  }
+  bindToggle('tog-stream', 'stream');
+  bindToggle('tog-stats',  'showStats');
+  bindToggle('tog-scroll', 'autoScroll');
+
+  q('#btn-export').addEventListener('click', () => {
+    const j = JSON.stringify({ model: S.loadedModel?.id, ts: new Date().toISOString(), messages: S.msgs }, null, 2);
+    const url = URL.createObjectURL(new Blob([j], { type:'application/json' }));
+    const a = document.createElement('a'); a.href = url; a.download = 'locallm-chat-' + Date.now() + '.json'; a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  q('#btn-clrcache').addEventListener('click', async () => {
+    try {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+      showCopyToast('Cache cleared');
+    } catch(e) { showErr('Cache Error', e.message); }
+  });
+
+  q('#btn-clrchat').addEventListener('click', () => {
+    if (S.generating) { showErr('Busy', 'Stop generation first.'); return; }
+    S.msgs = [];
+    q('#chat').innerHTML = '';
+    showEmpty();
+    toggleDrawer(false);
+  });
+}
+
+/* ── SCROLL BUTTON ──────────────────────────── */
+function initScrollBtn() {
+  const chat = q('#chat'), btn = q('#scroll-btn');
+  chat.addEventListener('scroll', () => {
+    const atBot = chat.scrollHeight - chat.scrollTop - chat.clientHeight < 80;
+    btn.classList.toggle('vis', !atBot && chat.scrollHeight > chat.clientHeight + 150);
+  });
+  btn.addEventListener('click', () => scrollBot(true));
+}
+
+/* ── TEXTAREA ───────────────────────────────── */
+function resizeTa(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 130) + 'px';
+}
+
+function updateCharCtr(val) {
+  const ctr = q('#char-ctr');
+  ctr.textContent = val.length > 200 ? val.length + ' chars' : '';
+}
+
+/* ── UTILS ──────────────────────────────────── */
+const q = sel => document.querySelector(sel);
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+const safeId = s => s.replace(/[^a-zA-Z0-9]/g,'_');
+const shortName = s => s.length > 40 ? '…' + s.slice(-37) : s;
+const modelName = id => MODELS.find(m => m.id === id)?.name || id;
+const fmtBytes = b => b < 1048576 ? (b/1024).toFixed(0)+'KB' : (b/1048576).toFixed(1)+'MB';
+
+/* ── INIT ───────────────────────────────────── */
+function init() {
+  // ── File:// origin detection ────────────────────────────────
+  if (location.protocol === 'file:') {
+    q('#file-warn').style.display = 'flex';
+  }
+  // Show SAB status immediately (before worker boots)
+  const sabNow = typeof SharedArrayBuffer !== 'undefined';
+  updateDebug('sab', sabNow ? '✓ Yes (multi-thread capable)' : '✗ No (single-thread — serve via HTTP)');
+
+  if (!bootWorker()) return;
+
+  renderModels();
+  bindSettings();
+  initDebug();
+  initScrollBtn();
+  setStatus('loading', 'Initializing AI library…');
+  updateUI();
+
+  // Header buttons
+  q('#model-btn').addEventListener('click',    () => togglePanel());
+  q('#settings-btn').addEventListener('click', () => toggleDrawer(true));
+  q('#dr-close').addEventListener('click',     () => toggleDrawer(false));
+  q('#overlay').addEventListener('click',      () => toggleDrawer(false));
+  q('#clear-btn').addEventListener('click',    () => {
+    if (S.generating) { showErr('Busy','Stop generation first.'); return; }
+    S.msgs = []; q('#chat').innerHTML = ''; showEmpty();
+  });
+
+  // Retry worker boot button
+  q('#retry-worker-btn').addEventListener('click', () => {
+    if (bootWorker()) {
+      setStatus('loading', 'Re-initializing AI library…');
+    }
+  });
+
+  // Load button
+  q('#load-btn').addEventListener('click', () => {
+    if (!S.selectedModel) { showErr('No model selected','Pick a model from the list.'); return; }
+    if (!S.workerOk)      { showErr('Worker not ready','Please wait a moment or hit "Retry Worker Boot".'); return; }
+    W.postMessage({ type:'load', modelId: S.selectedModel.id, dtype: S.selectedModel.dtype });
+  });
+
+  // Send / stop
+  q('#send-btn').addEventListener('click', sendMsg);
+  q('#stop-btn').addEventListener('click', () => { if (S.generating && W) W.postMessage({ type:'abort' }); });
+
+  // Toast close
+  q('#t-close').addEventListener('click', () => q('#toast').classList.remove('on'));
+
+  // Textarea
+  const ta = q('#msg-ta');
+  ta.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (!ta.disabled) sendMsg(); }
+  });
+  ta.addEventListener('input', () => { resizeTa(ta); updateCharCtr(ta.value); });
+
+  // Prevent background scroll on mobile
+  document.addEventListener('touchmove', e => {
+    if (e.target === document.body || e.target === q('#app')) e.preventDefault();
+  }, { passive:false });
+
+  // Handle visibility change — don't crash when tab goes background
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && S.generating) {
+      console.warn('[LocalLM] Tab hidden during generation — this may slow inference');
+    }
+  });
+}
+
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+else init();
+</script>
+</body>
+</html>
