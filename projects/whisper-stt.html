@@ -1,0 +1,1571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Whisper · On-Device Speech to Text</title>
+<style>
+/* ── TOKENS ─────────────────────────────────────── */
+:root {
+  --bg:        #0a0a0d;
+  --bg1:       #111116;
+  --bg2:       #18181f;
+  --bg3:       #1f1f28;
+  --border:    #28282f;
+  --border2:   #35353f;
+  --accent:    #7c5cfc;
+  --accent2:   #a78bfa;
+  --accent-bg: rgba(124,92,252,.1);
+  --accent-border: rgba(124,92,252,.35);
+  --text:      #dddde8;
+  --text2:     #8888a0;
+  --text3:     #484858;
+  --green:     #4ade80;
+  --green-bg:  rgba(74,222,128,.08);
+  --green-bdr: rgba(74,222,128,.3);
+  --yellow:    #fbbf24;
+  --yellow-bg: rgba(251,191,36,.08);
+  --yellow-bdr:rgba(251,191,36,.3);
+  --red:       #f87171;
+  --red-bg:    rgba(248,113,113,.08);
+  --red-bdr:   rgba(248,113,113,.3);
+  --r:         12px;
+  --r2:        8px;
+  --r3:        6px;
+  --font-mono: 'SF Mono','Fira Code','Cascadia Code',ui-monospace,monospace;
+}
+
+/* ── RESET ───────────────────────────────────────── */
+*,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { color-scheme: dark; scroll-behavior: smooth; }
+
+/* ── BASE ────────────────────────────────────────── */
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.55;
+  min-height: 100dvh;
+  /* Subtle grid texture */
+  background-image:
+    linear-gradient(rgba(124,92,252,.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(124,92,252,.015) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+#app {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 0 14px 96px;
+}
+
+/* ── HEADER ──────────────────────────────────────── */
+.hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22px 0 16px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+.hdr-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.hdr-icon {
+  width: 32px; height: 32px;
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-border);
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  font-size: 16px;
+  line-height: 1;
+}
+.hdr-title {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -.3px;
+  color: var(--text);
+}
+.hdr-title span { color: var(--accent2); }
+.hdr-sub {
+  font-size: 11px;
+  color: var(--text3);
+  letter-spacing: .3px;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.sys-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--border2);
+  background: var(--bg2);
+  color: var(--text2);
+  letter-spacing: .2px;
+  white-space: nowrap;
+}
+.sys-badge.ok   { color:var(--green);  border-color:var(--green-bdr);  background:var(--green-bg);  }
+.sys-badge.warn { color:var(--yellow); border-color:var(--yellow-bdr); background:var(--yellow-bg); }
+.sys-badge.err  { color:var(--red);    border-color:var(--red-bdr);    background:var(--red-bg);    }
+
+/* ── ALERTS ──────────────────────────────────────── */
+#alerts { margin-bottom: 14px; }
+.alert {
+  padding: 10px 14px;
+  border-radius: var(--r2);
+  font-size: 12.5px;
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+.alert.warn { background:var(--yellow-bg); border:1px solid var(--yellow-bdr); color:var(--yellow); }
+.alert.err  { background:var(--red-bg);    border:1px solid var(--red-bdr);    color:var(--red);    }
+
+/* ── STEP CARDS ──────────────────────────────────── */
+.card {
+  background: var(--bg1);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 16px;
+  margin-bottom: 10px;
+  transition: border-color .25s, opacity .2s;
+  position: relative;
+}
+.card::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: calc(var(--r) + 1px);
+  background: linear-gradient(135deg, rgba(124,92,252,.12), transparent 60%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .3s;
+}
+.card.locked {
+  opacity: .35;
+  pointer-events: none;
+}
+.card.lit { border-color: var(--accent-border); }
+.card.lit::before { opacity: 1; }
+
+/* ── CARD HEADER ─────────────────────────────────── */
+.card-hdr {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 14px;
+}
+.step-num {
+  width: 22px; height: 22px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-border);
+  color: var(--accent2);
+  font-size: 11px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  font-variant-numeric: tabular-nums;
+}
+.card-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  color: var(--text2);
+}
+
+/* ── FORM ELEMENTS ───────────────────────────────── */
+select, input[type="text"] {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  transition: border-color .2s;
+}
+select {
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238888a0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 11px center;
+  padding-right: 34px;
+}
+select:focus, input[type="text"]:focus { border-color: var(--accent); }
+input[type="text"]::placeholder { color: var(--text3); }
+
+/* ── BUTTONS ─────────────────────────────────────── */
+button {
+  cursor: pointer;
+  border: none;
+  border-radius: var(--r2);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 16px;
+  transition: all .15s;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.btn-main {
+  width: 100%;
+  background: var(--accent);
+  color: #fff;
+  margin-top: 12px;
+  letter-spacing: -.1px;
+  position: relative;
+  overflow: hidden;
+}
+.btn-main::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,.1) 0%, transparent 60%);
+  pointer-events: none;
+}
+.btn-main:hover:not(:disabled) {
+  background: #6a49e8;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(124,92,252,.4);
+}
+.btn-main:active:not(:disabled) { transform: none; box-shadow: none; }
+.btn-main:disabled { opacity: .4; cursor: not-allowed; }
+
+.btn-ghost {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+.btn-ghost:hover:not(:disabled) { border-color: var(--accent-border); color: var(--accent2); }
+.btn-ghost:disabled { opacity: .4; cursor: not-allowed; }
+
+/* ── RECORD BUTTON ───────────────────────────────── */
+.btn-rec-toggle {
+  width: 100%;
+  padding: 14px;
+  font-size: 14px;
+  background: var(--bg2);
+  border: 2px solid var(--border);
+  color: var(--text2);
+  border-radius: var(--r2);
+  letter-spacing: -.1px;
+}
+.btn-rec-toggle:hover:not(:disabled) {
+  border-color: var(--red-bdr);
+  color: var(--red);
+  background: var(--red-bg);
+}
+.btn-rec-toggle.active {
+  border-color: var(--red);
+  color: var(--red);
+  background: var(--red-bg);
+  animation: pulse-rec 2s ease-in-out infinite;
+}
+.btn-rec-toggle:disabled { opacity: .4; cursor: not-allowed; }
+@keyframes pulse-rec {
+  0%,100% { box-shadow: 0 0 0 0 rgba(248,113,113,.3); }
+  50%      { box-shadow: 0 0 0 10px rgba(248,113,113,0); }
+}
+#rec-timer {
+  text-align: center;
+  font-size: 12px;
+  color: var(--red);
+  margin-top: 8px;
+  min-height: 18px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  letter-spacing: .5px;
+}
+
+/* ── TABS ────────────────────────────────────────── */
+.tab-row {
+  display: flex;
+  gap: 3px;
+  background: var(--bg2);
+  border-radius: var(--r2);
+  padding: 3px;
+  margin-bottom: 14px;
+}
+.tab-btn {
+  flex: 1;
+  padding: 7px 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  border-radius: var(--r3);
+  background: transparent;
+  color: var(--text2);
+  letter-spacing: -.1px;
+}
+.tab-btn.on {
+  background: var(--bg1);
+  color: var(--text);
+  box-shadow: 0 1px 4px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.04);
+}
+
+/* ── DOWNLOAD PROGRESS ───────────────────────────── */
+#dl-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 12px 0 0;
+}
+.dl-item {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+  padding: 9px 12px;
+}
+.dl-row1 {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 3px;
+}
+.dl-name {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--text2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+.dl-pct {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent2);
+  white-space: nowrap;
+  min-width: 52px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.dl-pct.cached { color: var(--text3); }
+.dl-pct.done   { color: var(--green); }
+.dl-bytes {
+  font-size: 10.5px;
+  color: var(--text3);
+  margin-bottom: 5px;
+  font-variant-numeric: tabular-nums;
+}
+.bar-track {
+  height: 3px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  border-radius: 2px;
+  transition: width .3s ease;
+  min-width: 2px;
+}
+.bar-fill.done   { background: linear-gradient(90deg, var(--green), #22c55e); }
+.bar-fill.cached { background: var(--text3); }
+
+/* ── DROP ZONE ───────────────────────────────────── */
+#drop-zone {
+  position: relative;
+  border: 2px dashed var(--border);
+  border-radius: var(--r2);
+  padding: 28px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color .2s, background .2s;
+}
+#drop-zone:hover, #drop-zone.over {
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+}
+#drop-zone input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+  font-size: 0;
+}
+#drop-label {
+  pointer-events: none;
+  color: var(--text2);
+  font-size: 13.5px;
+}
+#drop-label strong { color: var(--accent2); }
+#drop-label small {
+  display: block;
+  color: var(--text3);
+  font-size: 11.5px;
+  margin-top: 4px;
+}
+
+/* ── AUDIO PREVIEW ───────────────────────────────── */
+#audio-preview {
+  margin-top: 12px;
+  padding: 12px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+}
+audio {
+  width: 100%;
+  height: 36px;
+  margin-bottom: 6px;
+  accent-color: var(--accent);
+}
+#audio-meta {
+  font-size: 11px;
+  color: var(--text3);
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono);
+}
+
+/* ── MESSAGES ────────────────────────────────────── */
+.msg {
+  margin-top: 10px;
+  padding: 9px 13px;
+  border-radius: var(--r2);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.msg.info   { background:var(--accent-bg);   border:1px solid var(--accent-border); color:var(--accent2); }
+.msg.ok     { background:var(--green-bg);    border:1px solid var(--green-bdr);     color:var(--green);   }
+.msg.warn   { background:var(--yellow-bg);   border:1px solid var(--yellow-bdr);    color:var(--yellow);  }
+.msg.err    { background:var(--red-bg);      border:1px solid var(--red-bdr);       color:var(--red);     }
+.msg code   { font-family:var(--font-mono); font-size:.9em; word-break:break-all; }
+
+/* ── SPINNER ─────────────────────────────────────── */
+.spin {
+  display: inline-block;
+  width: 13px; height: 13px;
+  border: 2px solid rgba(124,92,252,.2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin .6s linear infinite;
+  vertical-align: middle;
+  margin-right: 5px;
+  flex-shrink: 0;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── INDETERMINATE BAR ───────────────────────────── */
+.ibar {
+  height: 3px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 10px;
+}
+.ibar::after {
+  content: '';
+  display: block;
+  height: 100%;
+  width: 28%;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  animation: ibar-slide 1.3s ease-in-out infinite;
+}
+@keyframes ibar-slide {
+  0%   { transform: translateX(-250%); }
+  100% { transform: translateX(500%);  }
+}
+
+/* ── RESULT ──────────────────────────────────────── */
+#result-box {
+  width: 100%;
+  min-height: 96px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+  color: var(--text);
+  font-size: 15px;
+  font-family: inherit;
+  line-height: 1.65;
+  padding: 12px 14px;
+  resize: vertical;
+  outline: none;
+  transition: border-color .2s;
+}
+#result-box:focus { border-color: var(--border2); }
+.result-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+}
+#copy-ok {
+  font-size: 12px;
+  color: var(--green);
+  font-weight: 600;
+}
+
+/* ── DEV LOG ─────────────────────────────────────── */
+#log-wrap {
+  margin-top: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+  background: var(--bg1);
+}
+#log-hdr {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 9px 14px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+}
+.log-title {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .9px;
+  color: var(--text3);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.log-dot {
+  width: 6px; height: 6px;
+  background: var(--accent);
+  border-radius: 50%;
+  box-shadow: 0 0 6px var(--accent);
+  animation: blink 2.5s ease-in-out infinite;
+}
+@keyframes blink {
+  0%,100% { opacity: 1; }
+  50%      { opacity: .25; }
+}
+.log-controls { display: flex; gap: 5px; }
+.log-controls button {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 9px;
+  background: var(--bg1);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  border-radius: var(--r3);
+}
+.log-controls button:hover { color: var(--text); border-color: var(--border2); }
+
+#log-body {
+  max-height: 220px;
+  overflow-y: auto;
+  padding: 5px 0;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  line-height: 1.45;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+#log-body.collapsed { display: none; }
+
+.le {
+  display: flex;
+  gap: 8px;
+  padding: 2px 12px;
+  border-left: 2px solid transparent;
+}
+.le:hover { background: var(--bg2); }
+.le.success { border-left-color: var(--green); }
+.le.warning { border-left-color: var(--yellow); }
+.le.error   { border-left-color: var(--red); }
+.le.info    { border-left-color: var(--accent); }
+.le-ts  { color: var(--text3); flex-shrink: 0; user-select: none; font-variant-numeric: tabular-nums; }
+.le-msg { color: var(--text2); word-break: break-word; }
+.le.error   .le-msg { color: var(--red); }
+.le.warning .le-msg { color: var(--yellow); }
+.le.success .le-msg { color: var(--green); }
+
+/* ── UTILS ───────────────────────────────────────── */
+.hidden { display: none !important; }
+.mt10 { margin-top: 10px; }
+.mt12 { margin-top: 12px; }
+
+/* ── RESPONSIVE ──────────────────────────────────── */
+@media (min-width: 480px) {
+  body { font-size: 15px; }
+  #app { padding: 0 20px 100px; }
+  .hdr { padding: 26px 0 18px; }
+  .hdr-title { font-size: 17px; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ── HEADER ── -->
+  <header class="hdr">
+    <div class="hdr-brand">
+      <div class="hdr-icon">🎙</div>
+      <div>
+        <div class="hdr-title"><span>Whisper</span> STT</div>
+        <div class="hdr-sub">On-Device · No API · No Upload</div>
+      </div>
+    </div>
+    <div class="sys-badge" id="sys-badge">Checking…</div>
+  </header>
+
+  <!-- ── ALERTS ── -->
+  <div id="alerts"></div>
+
+  <!-- ── STEP 1 · MODEL ── -->
+  <section class="card" id="card-model">
+    <div class="card-hdr">
+      <div class="step-num">1</div>
+      <div class="card-title">Choose &amp; Load Model</div>
+    </div>
+
+    <select id="model-sel">
+      <option value="Xenova/whisper-tiny">Whisper Tiny — ~39 MB · fastest, lowest accuracy</option>
+      <option value="Xenova/whisper-base">Whisper Base — ~74 MB</option>
+      <option value="Xenova/whisper-small" selected>Whisper Small — ~244 MB · recommended balance</option>
+      <option value="Xenova/whisper-small.en">Whisper Small.en — ~244 MB · English only, faster</option>
+      <option value="Xenova/whisper-medium">Whisper Medium — ~769 MB · high accuracy</option>
+      <option value="Xenova/whisper-large-v3-turbo">Whisper Large v3 Turbo — ~809 MB · best quality</option>
+    </select>
+
+    <div id="dl-list"></div>
+
+    <button class="btn-main" id="btn-load">Load Model</button>
+    <div id="model-msg"></div>
+  </section>
+
+  <!-- ── STEP 2 · AUDIO INPUT ── -->
+  <section class="card locked" id="card-audio">
+    <div class="card-hdr">
+      <div class="step-num">2</div>
+      <div class="card-title">Audio Input</div>
+    </div>
+
+    <div class="tab-row">
+      <button class="tab-btn on" id="tab-rec-btn">🎤 Record</button>
+      <button class="tab-btn"    id="tab-up-btn">📁 Upload File</button>
+    </div>
+
+    <!-- Record panel -->
+    <div id="panel-rec">
+      <button class="btn-rec-toggle" id="btn-rec">⏺ Start Recording</button>
+      <div id="rec-timer"></div>
+    </div>
+
+    <!-- Upload panel -->
+    <div id="panel-up" class="hidden">
+      <div id="drop-zone">
+        <input type="file" id="file-in" accept="audio/*,video/*">
+        <div id="drop-label">
+          <div>📂 <strong>Choose file</strong> or drag &amp; drop</div>
+          <small>Audio or video — MP3, WAV, FLAC, OGG, M4A, MP4, WebM, MKV…</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Audio preview -->
+    <div id="audio-preview" class="hidden">
+      <audio id="audio-el" controls></audio>
+      <div id="audio-meta"></div>
+    </div>
+
+    <div id="audio-msg"></div>
+  </section>
+
+  <!-- ── STEP 3 · LANGUAGE ── -->
+  <section class="card locked" id="card-lang">
+    <div class="card-hdr">
+      <div class="step-num">3</div>
+      <div class="card-title">Language <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text3)">(optional)</span></div>
+    </div>
+    <input type="text" id="lang-in"
+           placeholder="Auto-detect — or enter ISO 639-1 code: en, fr, de, es, zh, ja, pt…">
+    <div class="msg info mt10" style="font-size:12px;padding:7px 11px;">
+      Leave blank for auto-detection. Use ISO codes: <code>en</code> English · <code>fr</code> French · <code>de</code> German · <code>es</code> Spanish · <code>zh</code> Chinese · <code>ja</code> Japanese
+    </div>
+  </section>
+
+  <!-- ── STEP 4 · TRANSCRIBE ── -->
+  <section class="card locked" id="card-tx">
+    <div class="card-hdr">
+      <div class="step-num">4</div>
+      <div class="card-title">Transcribe</div>
+    </div>
+    <button class="btn-main" id="btn-tx" style="margin-top:0">▶ Transcribe Audio</button>
+    <div id="tx-msg"></div>
+  </section>
+
+  <!-- ── STEP 5 · RESULT ── -->
+  <section class="card hidden" id="card-result">
+    <div class="card-hdr">
+      <div class="step-num">5</div>
+      <div class="card-title">Result</div>
+    </div>
+    <textarea id="result-box" readonly spellcheck="false"></textarea>
+    <div class="result-row">
+      <button class="btn-ghost" id="btn-copy">📋 Copy Text</button>
+      <span id="copy-ok"></span>
+    </div>
+  </section>
+
+  <!-- ── DEV LOG ── -->
+  <div id="log-wrap">
+    <div id="log-hdr">
+      <div class="log-title">
+        <div class="log-dot"></div>
+        Developer Log
+      </div>
+      <div class="log-controls">
+        <button id="btn-log-toggle">Collapse</button>
+        <button id="btn-log-clear">Clear</button>
+      </div>
+    </div>
+    <div id="log-body"></div>
+  </div>
+
+</div><!-- /#app -->
+
+<script type="module">
+'use strict';
+
+// ═══════════════════════════════════════════════════════════════════════
+// CONSTANTS
+// ═══════════════════════════════════════════════════════════════════════
+const TARGET_SR      = 16_000;   // Whisper requires 16 kHz mono
+const CHUNK_LEN_S    = 30;       // seconds per chunk (Whisper max window)
+const STRIDE_LEN_S   = 5;        // overlap for chunk stitching
+const MAX_FILE_BYTES = 500 * 1024 * 1024; // 500 MB guard
+
+const CDN_URL =
+  'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3/dist/transformers.min.js';
+
+// ═══════════════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════════════
+let _pipeline     = null;   // Transformers.js `pipeline` fn — set after import
+let _env          = null;   // Transformers.js `env` object — set after import
+let pipe          = null;   // Loaded ASR pipeline instance
+let loadedModelId = null;   // ID of the currently loaded model
+let audioFloat32  = null;   // Decoded + resampled audio as Float32Array @16 kHz
+let audioBlobURL  = null;   // Object URL for <audio> element playback
+let recStream     = null;   // MediaStream from microphone
+let recRecorder   = null;   // MediaRecorder instance
+let recChunks     = [];     // Accumulated recording blobs
+let isRec         = false;  // Is microphone recording active?
+let recTimerID    = null;   // setInterval handle for timer display
+let recStartMs    = 0;      // performance.now() at recording start
+const dlMap = new Map();    // file → { loaded, total, pct, done, cached, initMs }
+
+// ═══════════════════════════════════════════════════════════════════════
+// DOM REFERENCES
+// ═══════════════════════════════════════════════════════════════════════
+const g = id => document.getElementById(id);
+
+const sysBadge     = g('sys-badge');
+const alertsBox    = g('alerts');
+
+const cardModel    = g('card-model');
+const modelSel     = g('model-sel');
+const dlList       = g('dl-list');
+const btnLoad      = g('btn-load');
+const modelMsg     = g('model-msg');
+
+const cardAudio    = g('card-audio');
+const tabRecBtn    = g('tab-rec-btn');
+const tabUpBtn     = g('tab-up-btn');
+const panelRec     = g('panel-rec');
+const panelUp      = g('panel-up');
+const btnRec       = g('btn-rec');
+const recTimer     = g('rec-timer');
+const dropZone     = g('drop-zone');
+const fileIn       = g('file-in');
+const audioPreview = g('audio-preview');
+const audioEl      = g('audio-el');
+const audioMeta    = g('audio-meta');
+const audioMsg     = g('audio-msg');
+
+const cardLang     = g('card-lang');
+const langIn       = g('lang-in');
+
+const cardTx       = g('card-tx');
+const btnTx        = g('btn-tx');
+const txMsg        = g('tx-msg');
+
+const cardResult   = g('card-result');
+const resultBox    = g('result-box');
+const btnCopy      = g('btn-copy');
+const copyOk       = g('copy-ok');
+
+const logBody      = g('log-body');
+const btnLogToggle = g('btn-log-toggle');
+const btnLogClear  = g('btn-log-clear');
+
+// ═══════════════════════════════════════════════════════════════════════
+// LOGGING
+// ═══════════════════════════════════════════════════════════════════════
+function log(msg, type = 'info') {
+  const now = new Date();
+  const ts  = now.toTimeString().slice(0, 8) + '.'
+              + String(now.getMilliseconds()).padStart(3, '0');
+
+  const row = document.createElement('div');
+  row.className = `le ${type}`;
+  row.innerHTML =
+    `<span class="le-ts">${ts}</span><span class="le-msg">${esc(msg)}</span>`;
+  logBody.appendChild(row);
+  logBody.scrollTop = logBody.scrollHeight;
+
+  const fn = type === 'error' ? 'error' : type === 'warning' ? 'warn' : 'log';
+  console[fn](`[Whisper STT ${ts}]`, msg);
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// UTILITIES
+// ═══════════════════════════════════════════════════════════════════════
+function esc(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function fmtBytes(n) {
+  if (!n || n === 0) return '0 B';
+  const units = ['B','KB','MB','GB'];
+  let i = 0; let v = n;
+  while (v >= 1024 && i < units.length - 1) { v /= 1024; i++; }
+  return v.toFixed(1) + '\u202F' + units[i];
+}
+
+function fmtTime(s) {
+  const m = Math.floor(s / 60);
+  const sec = String(Math.floor(s % 60)).padStart(2, '0');
+  return `${m}:${sec}`;
+}
+
+function setMsg(el, html, type = 'info') {
+  el.innerHTML = `<div class="msg ${type}">${html}</div>`;
+}
+function clearMsg(el) { el.innerHTML = ''; }
+
+function lock(el)   { el.classList.add('locked'); }
+function unlock(el) { el.classList.remove('locked'); }
+function lit(el)    { el.classList.add('lit'); }
+function unlit(el)  { el.classList.remove('lit'); }
+function show(el)   { el.classList.remove('hidden'); }
+function hide(el)   { el.classList.add('hidden'); }
+
+function addAlert(msg, type = 'warn') {
+  const div = document.createElement('div');
+  div.className = `alert ${type}`;
+  div.textContent = msg;
+  alertsBox.appendChild(div);
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// SYSTEM CHECK
+// ═══════════════════════════════════════════════════════════════════════
+function sysCheck() {
+  log('Running system capability checks…');
+
+  let hasError = false;
+
+  // ── WebAssembly ──
+  if (typeof WebAssembly === 'undefined' || typeof WebAssembly.instantiate !== 'function') {
+    log('WebAssembly: NOT available — app cannot run', 'error');
+    addAlert('❌ WebAssembly is not available in this browser. This app requires WebAssembly to run. Please use a modern browser.', 'err');
+    hasError = true;
+  } else {
+    log('WebAssembly: available ✓', 'success');
+  }
+
+  // ── SharedArrayBuffer ──
+  if (typeof SharedArrayBuffer === 'undefined') {
+    log('SharedArrayBuffer: not available → single-threaded WASM mode (slower)', 'warning');
+    addAlert(
+      '⚠ SharedArrayBuffer is unavailable. Running in single-threaded WASM mode, which is slower. ' +
+      'For multi-threaded performance, this page must be served with Cross-Origin-Isolation headers ' +
+      '(COOP + COEP). The app will still work correctly.',
+      'warn'
+    );
+  } else {
+    log('SharedArrayBuffer: available ✓ (multi-threaded WASM possible)', 'success');
+  }
+
+  // ── getUserMedia / Microphone ──
+  if (!navigator.mediaDevices?.getUserMedia) {
+    log('getUserMedia: not available — recording disabled', 'warning');
+    addAlert('⚠ Microphone API (getUserMedia) is not available. Recording is disabled. File upload still works.', 'warn');
+    btnRec.disabled = true;
+    btnRec.title = 'Microphone not available in this context (requires HTTPS or localhost)';
+  } else {
+    log('getUserMedia: available ✓', 'success');
+  }
+
+  // ── AudioContext ──
+  if (!window.AudioContext && !window.webkitAudioContext) {
+    log('AudioContext: not available — audio decoding disabled', 'error');
+    addAlert('❌ Web Audio API (AudioContext) is not available. Cannot decode or resample audio.', 'err');
+    hasError = true;
+  } else {
+    log('AudioContext: available ✓', 'success');
+  }
+
+  // ── OfflineAudioContext ──
+  if (!window.OfflineAudioContext) {
+    log('OfflineAudioContext: not available — resampling disabled', 'error');
+    addAlert('❌ OfflineAudioContext is not available. Cannot resample audio to 16 kHz.', 'err');
+    hasError = true;
+  } else {
+    log('OfflineAudioContext: available ✓', 'success');
+  }
+
+  if (hasError) {
+    sysBadge.textContent = 'Unsupported';
+    sysBadge.className   = 'sys-badge err';
+    btnLoad.disabled = true;
+  } else if (alertsBox.children.length > 0) {
+    sysBadge.textContent = 'Warning';
+    sysBadge.className   = 'sys-badge warn';
+  } else {
+    sysBadge.textContent = 'Ready';
+    sysBadge.className   = 'sys-badge ok';
+  }
+
+  log('System check complete');
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// DOWNLOAD PROGRESS DISPLAY
+// ═══════════════════════════════════════════════════════════════════════
+function renderDL() {
+  if (dlMap.size === 0) { dlList.innerHTML = ''; return; }
+
+  dlList.innerHTML = '';
+  for (const [file, info] of dlMap) {
+    const short  = file.split('/').pop();
+    const pct    = info.done ? 100 : Math.min(99.9, info.pct || 0);
+    const fclass = info.cached ? 'cached' : info.done ? 'done' : '';
+    const plabel = info.cached ? 'cached ✓' : info.done ? '✓ done' : `${pct.toFixed(0)}%`;
+    const pcls   = info.cached ? 'dl-pct cached' : info.done ? 'dl-pct done' : 'dl-pct';
+
+    const d = document.createElement('div');
+    d.className = 'dl-item';
+    d.innerHTML = `
+      <div class="dl-row1">
+        <span class="dl-name" title="${esc(file)}">${esc(short)}</span>
+        <span class="${pcls}">${esc(plabel)}</span>
+      </div>
+      ${info.total > 0
+        ? `<div class="dl-bytes">${fmtBytes(info.loaded)} / ${fmtBytes(info.total)}</div>`
+        : ''}
+      <div class="bar-track">
+        <div class="bar-fill ${fclass}" style="width:${pct}%"></div>
+      </div>`;
+    dlList.appendChild(d);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// MODEL LOADING
+// ═══════════════════════════════════════════════════════════════════════
+async function doLoadModel() {
+  const modelId = modelSel.value;
+
+  // Already loaded — unlock downstream steps and bail
+  if (pipe && loadedModelId === modelId) {
+    log(`Model already loaded: ${modelId} ✓`, 'success');
+    setMsg(modelMsg, `✓ ${esc(modelId)} is already loaded and ready.`, 'ok');
+    afterModelLoaded();
+    return;
+  }
+
+  // Switching to a different model — reset state
+  if (pipe && loadedModelId !== modelId) {
+    log(`Switching model: ${loadedModelId} → ${modelId}`);
+    pipe = null;
+    loadedModelId = null;
+    audioFloat32 = null;
+    hide(audioPreview);
+    hide(cardResult);
+  }
+
+  log(`Loading model: ${modelId}`);
+  log(`Config → backend: wasm  |  dtype: q8  |  chunking: ${CHUNK_LEN_S}s / stride: ${STRIDE_LEN_S}s`);
+
+  dlMap.clear();
+  renderDL();
+  btnLoad.disabled  = true;
+  modelSel.disabled = true;
+
+  setMsg(modelMsg,
+    `<span class="spin"></span>Downloading model files… First load may take a while depending on your connection.` +
+    `<div class="ibar"></div>`,
+    'info'
+  );
+
+  // ── Progress callback ──
+  const progress_callback = (evt) => {
+    const { status, file = '', progress = 0, loaded = 0, total = 0 } = evt;
+
+    if (status === 'initiate') {
+      log(`  ↓ initiate: ${file}`);
+      dlMap.set(file, { loaded: 0, total: 0, pct: 0, done: false, cached: false, initMs: Date.now() });
+      renderDL();
+    }
+
+    else if (status === 'download') {
+      // Some versions emit 'download' instead of / in addition to 'progress'
+      if (!dlMap.has(file)) {
+        dlMap.set(file, { loaded: 0, total: 0, pct: 0, done: false, cached: false, initMs: Date.now() });
+      }
+      renderDL();
+    }
+
+    else if (status === 'progress') {
+      const prev = dlMap.get(file) || { initMs: Date.now() };
+      dlMap.set(file, {
+        ...prev,
+        loaded: loaded || 0,
+        total:  total  || 0,
+        pct:    progress || 0,
+        done:   false,
+        cached: false,
+      });
+      renderDL();
+    }
+
+    else if (status === 'done') {
+      const prev    = dlMap.get(file) || { initMs: Date.now() };
+      const elapsed = Date.now() - (prev.initMs || Date.now());
+      // If file "completes" in <250 ms without substantial loaded bytes tracked → cached
+      const cached  = elapsed < 250 && !(prev.loaded > 4096);
+      dlMap.set(file, { ...prev, pct: 100, done: true, cached });
+      log(`  ${cached ? '[cached] ' : '✓ '}${file}`, cached ? 'info' : 'success');
+      renderDL();
+    }
+
+    else if (status === 'ready') {
+      log('Pipeline status: ready ✓', 'success');
+    }
+  };
+
+  try {
+    pipe = await _pipeline('automatic-speech-recognition', modelId, {
+      dtype:  'q8',
+      device: 'wasm',
+      progress_callback,
+    });
+
+    loadedModelId = modelId;
+    log(`Model ready: ${modelId} ✓`, 'success');
+    setMsg(modelMsg, `✓ Model loaded: <strong>${esc(modelId)}</strong>`, 'ok');
+    afterModelLoaded();
+
+  } catch (err) {
+    const msg = err?.message || String(err);
+    log(`Model load failed: ${msg}`, 'error');
+    setMsg(modelMsg,
+      `❌ Failed to load model.<br><code>${esc(msg)}</code>` +
+      `<br><small style="opacity:.7">Try a smaller model, check console for details, or verify your internet connection.</small>`,
+      'err'
+    );
+    pipe = null;
+    console.error(err);
+  } finally {
+    btnLoad.disabled  = false;
+    modelSel.disabled = false;
+  }
+}
+
+function afterModelLoaded() {
+  unlock(cardAudio);
+  unlock(cardLang);
+  lit(cardAudio);
+  if (audioFloat32) {
+    unlock(cardTx);
+    lit(cardTx);
+    unlit(cardAudio);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// AUDIO DECODE + RESAMPLE → Float32Array @16 kHz mono
+// ═══════════════════════════════════════════════════════════════════════
+async function decodeAndResample(blob) {
+  log('Decoding audio data…');
+
+  // Read blob as ArrayBuffer
+  const arrayBuf = await blob.arrayBuffer();
+
+  // ── Step 1: Decode with AudioContext ──
+  const AC = window.AudioContext || window.webkitAudioContext;
+  const ac = new AC();
+  let decoded;
+  try {
+    // Promise-based decodeAudioData with callback fallback for max compat
+    decoded = await new Promise((resolve, reject) =>
+      ac.decodeAudioData(arrayBuf.slice(0), resolve, reject)
+    );
+  } catch (e) {
+    await ac.close().catch(() => {});
+    throw new Error(`Audio decode failed: ${e.message || e}. ` +
+      'The file format may be unsupported by this browser.');
+  }
+  await ac.close().catch(() => {});
+
+  const { numberOfChannels: nCh, sampleRate: srcRate, length, duration } = decoded;
+
+  if (duration === 0 || length === 0) {
+    throw new Error('Audio appears to be empty (zero duration). Please check the file.');
+  }
+
+  log(`Decoded: ${nCh}ch · ${srcRate.toLocaleString()} Hz · ${duration.toFixed(3)}s · ${length.toLocaleString()} frames`);
+
+  // ── Step 2: Mix to mono ──
+  let mono;
+  if (nCh === 1) {
+    mono = decoded.getChannelData(0).slice(); // copy — don't mutate the decoded buffer
+  } else {
+    mono = new Float32Array(length);
+    for (let ch = 0; ch < nCh; ch++) {
+      const chData = decoded.getChannelData(ch);
+      for (let i = 0; i < length; i++) mono[i] += chData[i];
+    }
+    const invNCh = 1 / nCh;
+    for (let i = 0; i < length; i++) mono[i] *= invNCh;
+    log(`Mixed ${nCh} channels → mono`);
+  }
+
+  // ── Step 3: Resample to TARGET_SR via OfflineAudioContext ──
+  if (srcRate === TARGET_SR) {
+    log('No resampling needed (already 16 kHz) ✓');
+    return { data: mono, duration, srcRate };
+  }
+
+  log(`Resampling ${srcRate.toLocaleString()} Hz → ${TARGET_SR.toLocaleString()} Hz…`);
+
+  const targetLen = Math.max(1, Math.round(duration * TARGET_SR));
+  const offCtx = new OfflineAudioContext(1, targetLen, TARGET_SR);
+
+  // Build a single-channel AudioBuffer at the source sample rate.
+  // OfflineAudioContext.createBuffer() accepts a sampleRate argument that may
+  // differ from the context's own rate; the BufferSourceNode resamples on render.
+  const srcBuf = offCtx.createBuffer(1, length, srcRate);
+  srcBuf.getChannelData(0).set(mono);
+
+  const src = offCtx.createBufferSource();
+  src.buffer = srcBuf;
+  src.connect(offCtx.destination);
+  src.start(0);
+
+  const rendered  = await offCtx.startRendering();
+  const resampled = rendered.getChannelData(0).slice(); // copy out
+  log(`Resampled: ${resampled.length.toLocaleString()} samples @${TARGET_SR.toLocaleString()} Hz ✓`);
+  return { data: resampled, duration, srcRate };
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// HANDLE AUDIO BLOB (shared pathway after record / upload)
+// ═══════════════════════════════════════════════════════════════════════
+async function handleAudioBlob(blob, label) {
+  clearMsg(audioMsg);
+  hide(audioPreview);
+  audioFloat32 = null;
+
+  if (!blob || blob.size === 0) {
+    setMsg(audioMsg, '❌ The audio blob is empty. Nothing to process.', 'err');
+    log('Empty blob — skipped', 'error');
+    return;
+  }
+
+  log(`Audio source: "${label}" · ${fmtBytes(blob.size)} · type="${blob.type || 'unknown'}"`);
+  setMsg(audioMsg, `<span class="spin"></span>Decoding and resampling audio to 16 kHz mono…`, 'info');
+
+  // Set up preview player immediately so the user can hear what was captured
+  if (audioBlobURL) URL.revokeObjectURL(audioBlobURL);
+  audioBlobURL = URL.createObjectURL(blob);
+  audioEl.src  = audioBlobURL;
+  show(audioPreview);
+
+  try {
+    const { data, duration, srcRate } = await decodeAndResample(blob);
+    audioFloat32 = data;
+
+    const sampleCount = data.length;
+    audioMeta.textContent =
+      `${fmtTime(duration)} · src ${srcRate.toLocaleString()} Hz → 16 000 Hz · ` +
+      `${sampleCount.toLocaleString()} samples · ${fmtBytes(sampleCount * 4)}`;
+
+    log(`Audio ready: ${sampleCount.toLocaleString()} samples, duration ${fmtTime(duration)} ✓`, 'success');
+    clearMsg(audioMsg);
+
+    // Unlock transcription step if model is ready
+    if (pipe) {
+      unlock(cardTx);
+      lit(cardTx);
+      unlit(cardAudio);
+    } else {
+      setMsg(audioMsg,
+        '✓ Audio processed. Load a model (Step 1) to continue.', 'ok');
+    }
+
+  } catch (err) {
+    log(`Audio processing failed: ${err.message}`, 'error');
+    setMsg(audioMsg, `❌ ${esc(err.message)}`, 'err');
+    audioFloat32 = null;
+    hide(audioPreview);
+    console.error(err);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// MICROPHONE RECORDING
+// ═══════════════════════════════════════════════════════════════════════
+async function toggleRec() {
+  if (isRec) stopRec(); else await startRec();
+}
+
+async function startRec() {
+  log('Requesting microphone access…');
+  clearMsg(audioMsg);
+
+  try {
+    recStream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        channelCount:     1,
+        echoCancellation: true,
+        noiseSuppression: true,
+        // Note: sampleRate constraint is advisory and not always honoured
+      }
+    });
+  } catch (err) {
+    const isDenied = err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError';
+    const hint = isDenied
+      ? 'Microphone permission was denied. Please allow microphone access in your browser settings and try again.'
+      : `Microphone error (${err.name}): ${err.message}`;
+    log(`Mic error: ${hint}`, 'error');
+    setMsg(audioMsg, `❌ ${esc(hint)}`, 'err');
+    return;
+  }
+
+  log('Microphone access granted ✓');
+  recChunks = [];
+
+  // Pick the best supported MIME type
+  const mime = pickMime();
+  log(`MediaRecorder MIME: ${mime || 'browser default'}`);
+
+  try {
+    recRecorder = new MediaRecorder(recStream, mime ? { mimeType: mime } : {});
+  } catch (e) {
+    recRecorder = new MediaRecorder(recStream);
+    log(`MIME constraint ignored: ${e.message}`, 'warning');
+  }
+
+  recRecorder.addEventListener('dataavailable', e => {
+    if (e.data?.size > 0) recChunks.push(e.data);
+  });
+
+  recRecorder.addEventListener('error', e => {
+    log(`MediaRecorder error: ${e.error?.message || e}`, 'error');
+    stopRec();
+  });
+
+  recRecorder.addEventListener('stop', async () => {
+    log(`Recording stopped — ${recChunks.length} chunk(s) collected`);
+    const blobType = recRecorder.mimeType || 'audio/webm';
+    const blob = new Blob(recChunks, { type: blobType });
+    recChunks = [];
+
+    // Release mic track
+    recStream?.getTracks().forEach(t => t.stop());
+    recStream = null;
+
+    log(`Recording blob: ${fmtBytes(blob.size)}, type="${blob.type}"`);
+    await handleAudioBlob(blob, 'microphone recording');
+  });
+
+  // Collect data every 500 ms for a responsive stop
+  recRecorder.start(500);
+  isRec      = true;
+  recStartMs = Date.now();
+
+  btnRec.textContent = '⬛ Stop Recording';
+  btnRec.classList.add('active');
+
+  recTimerID = setInterval(() => {
+    const s = (Date.now() - recStartMs) / 1000;
+    recTimer.textContent = `● REC  ${fmtTime(s)}`;
+  }, 500);
+
+  log('Recording started…');
+}
+
+function stopRec() {
+  clearInterval(recTimerID);
+  recTimerID = null;
+  recTimer.textContent = '';
+
+  if (recRecorder && recRecorder.state !== 'inactive') {
+    try { recRecorder.stop(); } catch (e) { /* ignore */ }
+  }
+
+  isRec = false;
+  btnRec.textContent = '⏺ Start Recording';
+  btnRec.classList.remove('active');
+  log('Stopping recorder…');
+}
+
+function pickMime() {
+  const candidates = [
+    'audio/webm;codecs=opus',
+    'audio/webm',
+    'audio/ogg;codecs=opus',
+    'audio/mp4',
+  ];
+  return candidates.find(t => {
+    try { return MediaRecorder.isTypeSupported(t); } catch { return false; }
+  }) || '';
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// FILE UPLOAD
+// ═══════════════════════════════════════════════════════════════════════
+async function handleFile(file) {
+  if (!file) return;
+
+  const ext = file.name.split('.').pop().toLowerCase();
+  log(`File selected: "${file.name}" · ${fmtBytes(file.size)} · type="${file.type || ext}"`);
+
+  if (file.size === 0) {
+    setMsg(audioMsg, '❌ The selected file is empty (0 bytes).', 'err');
+    log('File is 0 bytes — skipped', 'error');
+    return;
+  }
+
+  if (file.size > MAX_FILE_BYTES) {
+    const msg = `File is too large (${fmtBytes(file.size)}). Please use a file under ${fmtBytes(MAX_FILE_BYTES)}.`;
+    setMsg(audioMsg, `❌ ${esc(msg)}`, 'err');
+    log(msg, 'error');
+    return;
+  }
+
+  await handleAudioBlob(file, file.name);
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// TRANSCRIPTION
+// ═══════════════════════════════════════════════════════════════════════
+async function doTranscribe() {
+  if (!pipe) {
+    setMsg(txMsg, '❌ No model is loaded. Please complete Step 1 first.', 'err');
+    return;
+  }
+  if (!audioFloat32 || audioFloat32.length === 0) {
+    setMsg(txMsg, '❌ No audio is available. Please complete Step 2 first.', 'err');
+    return;
+  }
+
+  const lang = langIn.value.trim().toLowerCase() || null;
+  const dur  = audioFloat32.length / TARGET_SR;
+  const numChunks = Math.ceil(dur / CHUNK_LEN_S);
+
+  log(`Transcription starting…`);
+  log(`  Audio: ${fmtTime(dur)} · ${audioFloat32.length.toLocaleString()} samples`);
+  log(`  Language: ${lang ? lang : 'auto-detect'}`);
+  log(`  Chunking: ${CHUNK_LEN_S}s chunks / ${STRIDE_LEN_S}s stride (~${numChunks} chunk${numChunks !== 1 ? 's' : ''})`);
+  log(`  Model: ${loadedModelId}`);
+
+  btnTx.disabled = true;
+  lock(cardAudio);
+  hide(cardResult);
+  setMsg(txMsg,
+    `<span class="spin"></span>` +
+    `Transcribing ${fmtTime(dur)} of audio` +
+    (numChunks > 1 ? ` in ~${numChunks} chunks` : '') +
+    `…<div class="ibar"></div>`,
+    'info'
+  );
+
+  try {
+    const opts = {
+      chunk_length_s:  CHUNK_LEN_S,
+      stride_length_s: STRIDE_LEN_S,
+      // return_timestamps: true enables proper chunk stitching for long audio
+      return_timestamps: true,
+    };
+    if (lang) opts.language = lang;
+
+    const t0  = performance.now();
+    const out  = await pipe(audioFloat32, opts);
+    const took = ((performance.now() - t0) / 1000).toFixed(2);
+
+    // Extract text — handle both {text} and {text, chunks[]} shapes
+    const text = (
+      (typeof out?.text === 'string' ? out.text : '') ||
+      (Array.isArray(out?.chunks) ? out.chunks.map(c => c.text).join(' ') : '') ||
+      ''
+    ).trim();
+
+    const wordCount = text ? text.split(/\s+/).filter(Boolean).length : 0;
+    log(`Transcription complete in ${took}s — ${text.length} chars, ~${wordCount} words`, 'success');
+
+    if (!text) {
+      log('No speech detected in the audio', 'warning');
+      setMsg(txMsg,
+        '⚠ No speech detected. Tips: try a larger model, ensure the audio is clear, or specify the language explicitly.',
+        'warn'
+      );
+    } else {
+      clearMsg(txMsg);
+      resultBox.value = text;
+      show(cardResult);
+      lit(cardResult);
+      // Scroll result into view on mobile
+      setTimeout(() => cardResult.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
+      log(`Result preview: "${text.slice(0, 140)}${text.length > 140 ? '…' : ''}"`, 'success');
+    }
+
+  } catch (err) {
+    const msg = err?.message || String(err);
+    log(`Transcription error: ${msg}`, 'error');
+    setMsg(txMsg, `❌ Transcription failed:<br><code>${esc(msg)}</code>`, 'err');
+    console.error(err);
+  } finally {
+    btnTx.disabled = false;
+    unlock(cardAudio);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// CLIPBOARD
+// ═══════════════════════════════════════════════════════════════════════
+async function doCopy() {
+  const text = resultBox.value;
+  if (!text) return;
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    // Legacy fallback
+    resultBox.select();
+    document.execCommand('copy');
+  }
+  log('Text copied to clipboard ✓', 'success');
+  copyOk.textContent = '✓ Copied!';
+  setTimeout(() => { copyOk.textContent = ''; }, 2200);
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// TAB SWITCHER
+// ═══════════════════════════════════════════════════════════════════════
+function switchTab(which) {
+  if (which === 'rec') {
+    tabRecBtn.classList.add('on');   tabUpBtn.classList.remove('on');
+    show(panelRec); hide(panelUp);
+  } else {
+    tabUpBtn.classList.add('on');    tabRecBtn.classList.remove('on');
+    show(panelUp);  hide(panelRec);
+    if (isRec) stopRec(); // stop recording if switching away
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// EVENT WIRING
+// ═══════════════════════════════════════════════════════════════════════
+btnLoad.addEventListener('click', doLoadModel);
+
+btnRec.addEventListener('click', toggleRec);
+
+tabRecBtn.addEventListener('click', () => switchTab('rec'));
+tabUpBtn .addEventListener('click', () => switchTab('up'));
+
+fileIn.addEventListener('change', e => {
+  const f = e.target.files?.[0];
+  if (f) handleFile(f);
+  e.target.value = ''; // allow re-selecting the same file
+});
+
+// Drag-and-drop on upload zone
+dropZone.addEventListener('dragover', e => {
+  e.preventDefault();
+  dropZone.classList.add('over');
+});
+dropZone.addEventListener('dragleave', e => {
+  if (!dropZone.contains(e.relatedTarget)) dropZone.classList.remove('over');
+});
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('over');
+  const f = e.dataTransfer?.files?.[0];
+  if (f) handleFile(f);
+});
+
+btnTx  .addEventListener('click', doTranscribe);
+btnCopy.addEventListener('click', doCopy);
+
+btnLogToggle.addEventListener('click', () => {
+  const col = logBody.classList.toggle('collapsed');
+  btnLogToggle.textContent = col ? 'Expand' : 'Collapse';
+});
+btnLogClear.addEventListener('click', () => {
+  logBody.innerHTML = '';
+  log('Log cleared');
+});
+
+// Warn if user tries to leave while recording
+window.addEventListener('beforeunload', e => {
+  if (isRec) { e.preventDefault(); e.returnValue = ''; }
+});
+
+// ═══════════════════════════════════════════════════════════════════════
+// INIT — dynamic import of Transformers.js for robust error handling
+// ═══════════════════════════════════════════════════════════════════════
+async function init() {
+  log('Whisper On-Device STT — initialising');
+  log(`Loading Transformers.js v3 from CDN…`);
+  log(`URL: ${CDN_URL}`);
+
+  try {
+    const mod = await import(CDN_URL);
+    _pipeline = mod.pipeline;
+    _env      = mod.env;
+
+    // ── Force WASM backend — disable WebGPU / WebNN ──
+    // Primary mechanism: device:'wasm' in pipeline() call.
+    // Additionally disable the proxy worker so we get synchronous error
+    // propagation from WASM operations for clearer error messages.
+    // Remove this line if you need SharedArrayBuffer multi-threading
+    // (which requires cross-origin isolation headers).
+    _env.backends.onnx.wasm.proxy = false;
+
+    log('Transformers.js loaded ✓ — backend: WASM (proxy disabled)', 'success');
+  } catch (err) {
+    const msg = err?.message || String(err);
+    log(`Failed to load Transformers.js: ${msg}`, 'error');
+    addAlert(
+      `❌ Could not load Transformers.js from CDN: ${msg}. ` +
+      'Please check your internet connection and reload the page.',
+      'err'
+    );
+    sysBadge.textContent = 'Error';
+    sysBadge.className   = 'sys-badge err';
+    btnLoad.disabled = true;
+    console.error(err);
+    return; // abort — no point running checks if the library failed to load
+  }
+
+  sysCheck();
+  log('Ready — select a model and click "Load Model" to begin');
+}
+
+init();
+</script>
+</body>
+</html>
