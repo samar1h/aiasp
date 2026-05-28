@@ -183,3 +183,21 @@
   icon: fa-solid fa-key
   tags: []
   url: https://samar1h.github.io/aiasp/projects/cipher-forge
+
+- title: LocalLM
+  description: Run language models inside browser tabs.
+  icon: fa-solid fa-key
+  tags: []
+  url: https://samar1h.github.io/aiasp/projects/locallm
+
+- title: WhisperSTT
+  description: Run whisper ai models inside browser to convert audio to text.
+  icon: fa-solid fa-key
+  tags: []
+  url: https://samar1h.github.io/aiasp/projects/whisper-stt
+
+- title: Vide IDE
+  description: Vibe coding with ai in a browser tab.
+  icon: fa-solid fa-key
+  tags: []
+  url: https://samar1h.github.io/aiasp/projects/vide-ide
