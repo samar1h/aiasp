@@ -133,7 +133,7 @@
 - title: Regmap
   description: Global Regulatory Agencies Explorer.
   icon: fa-solid fa-gavel
-  tags: []
+  tags: [info]
   url: https://samar1h.github.io/aiasp/projects/regmap/
   
 - title: Outsmarted
@@ -151,25 +151,25 @@
 - title: CSS Guide
   description: Learn CSS Basics.
   icon: fa-solid fa-info
-  tags: []
+  tags: [info]
   url: https://samar1h.github.io/aiasp/projects/css-guide/
 
 - title: CSS Guide v2
   description: Learn CSS Basics, Interactively.
   icon: fa-solid fa-info
-  tags: []
+  tags: [info]
   url: https://samar1h.github.io/aiasp/projects/css-guide/v2
 
 - title: TTS
   description: Text to speech.
   icon: fa-solid fa-bullhorn
-  tags: []
+  tags: [utility]
   url: https://samar1h.github.io/aiasp/projects/tts
   
 - title: Relationships Viewer
   description: Shows names of all Indian Family Relationships.
   icon: fa-solid fa-link
-  tags: []
+  tags: [info]
   url: https://samar1h.github.io/aiasp/projects/relationships 
 
 - title: Web2Img
@@ -181,7 +181,7 @@
 - title: Cipher Forge
   description: Encrypt or Decrypt text with custom recipies.
   icon: fa-solid fa-key
-  tags: []
+  tags: [security]
   url: https://samar1h.github.io/aiasp/projects/cipher-forge
 
 - title: LocalLM
