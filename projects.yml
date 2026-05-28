@@ -61,13 +61,13 @@
 - title: Equation Plotter
   description: A web-based tool for graphing and visualizing mathematical equations interactively.
   icon: https://raw.githubusercontent.com/samar1h/aiasp/refs/heads/main/projects/equation-plotter/build/favicon.ico
-  tags: [math]
+  tags: []
   url: https://samar1h.github.io/aiasp/projects/equation-plotter/build/
 
 - title: Permutation Finder
   description: A web-based tool designed to generate all possible permutations of a given word or phrase.
   icon: https://raw.githubusercontent.com/samar1h/aiasp/refs/heads/main/projects/permutation-finder/dark/favicon-32x32.png
-  tags: [math]
+  tags: []
   url: https://samar1h.github.io/aiasp/projects/permutation-finder/
 
 - title: Pediatric Dosage
