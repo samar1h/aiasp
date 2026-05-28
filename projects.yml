@@ -10,6 +10,24 @@
   tags: []
   url: https://samar1h.github.io/aiasp/projects/bpharm-syllabus/
 
+- title: LocalLM
+  description: Run language models inside browser tabs.
+  icon: fa-solid fa-robot
+  tags: [ai]
+  url: https://samar1h.github.io/aiasp/projects/locallm
+
+- title: WhisperSTT
+  description: Run whisper ai models inside browser to convert audio to text.
+  icon: fa-solid fa-microphone
+  tags: [ai]
+  url: https://samar1h.github.io/aiasp/projects/whisper-stt
+
+- title: Vide IDE
+  description: Vibe coding with ai in a browser tab.
+  icon: fa-solid fa-code
+  tags: [ai]
+  url: https://samar1h.github.io/aiasp/projects/vibe-ide
+
 - title: Counter
   description: Perfect for keeping count of anything—workouts, habits, inventory, and more!
   icon: fa-solid fa-square-plus
@@ -19,13 +37,13 @@
 - title: Barcode Generator
   description: A simple and easy to use program to generate barcodes.
   icon: fa-solid fa-barcode
-  tags: [generator]
+  tags: [document]
   url: https://samar1h.github.io/aiasp/projects/barcode-generator/
 
 - title: QR Code Generator
   description: A simple QR Code Generator that lets you create customizable QR codes for URLs, text, WiFi, payments, and more.
   icon: https://raw.githubusercontent.com/samar1h/aiasp/refs/heads/main/projects/qrcode-generator/favicon.ico
-  tags: [generator]
+  tags: [document]
   url: https://samar1h.github.io/aiasp/projects/qrcode-generator/
 
 - title: Hush Image
@@ -184,20 +202,4 @@
   tags: [security]
   url: https://samar1h.github.io/aiasp/projects/cipher-forge
 
-- title: LocalLM
-  description: Run language models inside browser tabs.
-  icon: fa-solid fa-robot
-  tags: [ai]
-  url: https://samar1h.github.io/aiasp/projects/locallm
 
-- title: WhisperSTT
-  description: Run whisper ai models inside browser to convert audio to text.
-  icon: fa-solid fa-microphone
-  tags: [ai]
-  url: https://samar1h.github.io/aiasp/projects/whisper-stt
-
-- title: Vide IDE
-  description: Vibe coding with ai in a browser tab.
-  icon: fa-solid fa-code
-  tags: [ai]
-  url: https://samar1h.github.io/aiasp/projects/vibe-ide
