@@ -14,7 +14,7 @@
   description: Sort Images to generate a pdf quickly.
   icon: fa-solid fa-file-image
   tags: [document]
-  url: https://samar1h.github.io/aiasp/projects/image-sorter/
+  url: https://samar1h.github.io/aiasp/projects/pagestack/
 
 - title: LocalLM
   description: Run language models inside browser tabs.
