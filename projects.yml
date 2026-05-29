@@ -10,6 +10,12 @@
   tags: []
   url: https://samar1h.github.io/aiasp/projects/bpharm-syllabus/
 
+- title: PageStack
+  description: Sort Images to generate a pdf quickly.
+  icon: fa-solid fa-file-image
+  tags: [document]
+  url: https://samar1h.github.io/aiasp/projects/image-sorter/
+
 - title: LocalLM
   description: Run language models inside browser tabs.
   icon: fa-solid fa-robot
