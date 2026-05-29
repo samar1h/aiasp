@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+<title>PageStack — Image Sorter</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0a0a; --surface:#141414; --card:#1c1c1e; --card2:#242426;
+  --border:#2a2a2e; --accent:#6c63ff; --accent2:#ff6584; --accent3:#43e97b;
+  --text:#f0f0f0; --text2:#a0a0a8; --text3:#4a4a52;
+  --danger:#ff453a; --warn:#ffd60a; --r:16px; --rs:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;}
+/* allow pinch zoom — no overscroll-behavior:none on body */
+body{overscroll-behavior-x:none;}
+
+#app{max-width:480px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column;position:relative;}
+
+/* ── SCREENS ── */
+.screen{display:none;flex-direction:column;min-height:100dvh;}
+.screen.active{display:flex;animation:fadeIn .22s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ── HEADER ── */
+.hdr{padding:14px 16px 12px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);background:var(--bg);position:sticky;top:0;z-index:200;flex-shrink:0;}
+.hdr-title{font-family:'Space Mono',monospace;font-size:14px;color:var(--text);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.back-btn{width:40px;height:40px;min-width:40px;border-radius:10px;background:var(--card);border:1px solid var(--border);color:var(--text2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;}
+.back-btn:active{background:var(--card2);}
+
+/* ── BUTTONS ── */
+.btn{min-height:50px;border-radius:var(--rs);font-family:'DM Sans',sans-serif;font-size:15px;font-weight:500;cursor:pointer;border:none;display:inline-flex;align-items:center;justify-content:center;gap:7px;transition:all .15s;padding:0 18px;line-height:1;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:active{background:#5850e0;transform:scale(.98);}
+.btn-primary:disabled{background:var(--card2);color:var(--text3);cursor:not-allowed;transform:none;}
+.btn-secondary{background:var(--card);color:var(--text);border:1px solid var(--border);}
+.btn-secondary:active{background:var(--card2);}
+.btn-danger{background:rgba(255,69,58,.12);color:var(--danger);border:1px solid rgba(255,69,58,.25);}
+.btn-success{background:var(--accent3);color:#0a0a0a;font-weight:600;}
+.btn-success:active{opacity:.85;transform:scale(.98);}
+.btn-warn{background:rgba(255,214,10,.12);color:var(--warn);border:1px solid rgba(255,214,10,.25);}
+.btn-sm{min-height:36px;font-size:13px;padding:0 12px;border-radius:8px;}
+.btn-xs{min-height:30px;font-size:12px;padding:0 10px;border-radius:7px;}
+
+/* ── LOGO ── */
+.logo{font-family:'Space Mono',monospace;font-size:21px;font-weight:700;letter-spacing:-.03em;}
+.logo span{color:var(--accent);}
+
+/* ════════════════════════════════
+   SCREEN 1 — UPLOAD
+════════════════════════════════ */
+#s-upload{padding:20px;gap:18px;}
+.upload-zone{width:100%;border:2px dashed var(--border);border-radius:22px;padding:44px 20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;cursor:pointer;transition:all .2s;background:var(--surface);min-height:240px;position:relative;}
+.upload-zone.drag-over{border-color:var(--accent);background:rgba(108,99,255,.08);}
+.upload-icon{font-size:48px;line-height:1;}
+.upload-zone h2{font-size:19px;font-weight:500;color:var(--text);text-align:center;}
+.upload-zone p{font-size:13px;color:var(--text3);text-align:center;line-height:1.5;}
+#file-input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.upload-count{font-family:'Space Mono',monospace;font-size:36px;font-weight:700;color:var(--accent);}
+.upload-meta{font-size:13px;color:var(--text2);margin-top:2px;}
+
+/* ════════════════════════════════
+   SCREEN 2 — METHOD
+════════════════════════════════ */
+.method-scroll{flex:1;overflow-y:auto;padding:18px;}
+.method-scroll h2{font-size:20px;font-weight:500;margin-bottom:4px;}
+.method-scroll .sub{font-size:13px;color:var(--text2);margin-bottom:16px;}
+.method-cards{display:flex;flex-direction:column;gap:9px;}
+.m-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px;display:flex;align-items:flex-start;gap:12px;cursor:pointer;transition:all .13s;-webkit-user-select:none;user-select:none;}
+.m-card:active{background:var(--card2);border-color:var(--accent);transform:scale(.99);}
+.m-icon{font-size:26px;flex-shrink:0;width:46px;height:46px;background:var(--surface);border-radius:11px;display:flex;align-items:center;justify-content:center;}
+.m-name{font-size:14px;font-weight:600;margin-bottom:3px;}
+.m-desc{font-size:12px;color:var(--text2);line-height:1.5;}
+.m-badge{font-family:'Space Mono',monospace;font-size:9px;padding:2px 6px;border-radius:20px;font-weight:700;margin-top:5px;display:inline-block;letter-spacing:.04em;}
+.bg-fast{background:rgba(67,233,123,.12);color:var(--accent3);}
+.bg-vis{background:rgba(108,99,255,.12);color:var(--accent);}
+.bg-prec{background:rgba(255,214,10,.12);color:var(--warn);}
+
+/* ════════════════════════════════
+   SCREEN 3 — SORT (shared)
+════════════════════════════════ */
+.sort-hdr{padding:10px 14px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border);background:var(--bg);position:sticky;top:0;z-index:200;flex-shrink:0;flex-wrap:wrap;row-gap:8px;}
+.prog-pill{font-family:'Space Mono',monospace;font-size:11px;background:var(--card);border:1px solid var(--border);padding:5px 10px;border-radius:20px;white-space:nowrap;color:var(--text2);flex-shrink:0;}
+.prog-pill b{color:var(--text);}
+.sort-toolbar{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap;justify-content:flex-end;}
+.sort-body{flex:1;overflow-y:auto;display:flex;flex-direction:column;}
+.sort-footer{padding:14px 16px;border-top:1px solid var(--border);background:var(--bg);display:flex;gap:10px;flex-shrink:0;}
+
+/* ── ZOOM VIEWER overlay ── */
+#zoom-overlay{position:fixed;inset:0;background:rgba(0,0,0,.96);z-index:9000;display:none;flex-direction:column;align-items:center;justify-content:center;touch-action:none;}
+#zoom-overlay.open{display:flex;}
+#zoom-overlay .close-zoom{position:absolute;top:14px;right:14px;width:44px;height:44px;background:rgba(255,255,255,.1);border-radius:50%;border:none;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10;}
+#zoom-container{width:100%;height:100%;overflow:auto;display:flex;align-items:center;justify-content:center;touch-action:pinch-zoom pan-x pan-y;}
+#zoom-img{max-width:none;max-height:none;display:block;transition:transform .1s;cursor:zoom-in;}
+.zoom-hint{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);font-size:12px;color:rgba(255,255,255,.4);font-family:'Space Mono',monospace;white-space:nowrap;pointer-events:none;}
+.zoom-nav{position:absolute;top:50%;transform:translateY(-50%);width:44px;height:64px;background:rgba(255,255,255,.08);border:none;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:8px;}
+.zoom-nav.prev{left:8px;}
+.zoom-nav.next{right:8px;}
+.zoom-rotate-btn{position:absolute;bottom:24px;right:14px;width:44px;height:44px;background:rgba(255,255,255,.1);border-radius:50%;border:none;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+
+/* ── IMAGE CARD (shared thumbnail touch to zoom) ── */
+.zoomable{cursor:zoom-in;}
+
+/* ── MANUAL METHOD ── */
+.manual-img-frame{position:relative;width:100%;background:var(--surface);border-radius:var(--r);overflow:hidden;display:flex;align-items:center;justify-content:center;min-height:300px;max-height:52dvh;}
+.manual-img-frame img{max-width:100%;max-height:52dvh;object-fit:contain;display:block;}
+.img-overlay-btns{position:absolute;top:10px;right:10px;display:flex;flex-direction:column;gap:8px;}
+.overlay-btn{width:44px;height:44px;background:rgba(15,15,15,.88);border-radius:10px;border:1px solid rgba(255,255,255,.1);color:#fff;font-size:19px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.overlay-btn:active{background:rgba(108,99,255,.5);}
+.num-input{background:var(--card);border:1.5px solid var(--border);border-radius:var(--rs);color:var(--text);font-family:'Space Mono',monospace;font-size:30px;text-align:center;padding:12px;width:100%;outline:none;transition:border-color .15s;-moz-appearance:textfield;}
+.num-input::-webkit-outer-spin-button,.num-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+.num-input:focus{border-color:var(--accent);}
+.num-input.bad{border-color:var(--danger);}
+.conflict-msg{color:var(--danger);font-size:12px;text-align:center;min-height:16px;}
+
+/* ── DRAG GRID ── */
+.thumb-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;padding:14px;}
+.t-item{position:relative;border-radius:9px;overflow:hidden;background:var(--surface);aspect-ratio:3/4;cursor:grab;border:2px solid transparent;transition:border-color .12s,transform .12s;}
+.t-item.sortable-chosen{border-color:var(--accent);transform:scale(1.05);z-index:10;}
+.t-item.sortable-ghost{opacity:.25;}
+.t-item img{width:100%;height:100%;object-fit:cover;pointer-events:none;}
+.t-num{position:absolute;bottom:3px;left:3px;background:rgba(0,0,0,.82);color:#fff;font-family:'Space Mono',monospace;font-size:9px;font-weight:700;padding:2px 5px;border-radius:4px;line-height:1.5;}
+.t-rot{position:absolute;top:3px;right:3px;width:26px;height:26px;background:rgba(15,15,15,.85);border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer;border:1px solid rgba(255,255,255,.1);}
+.t-zoom{position:absolute;top:3px;left:3px;width:26px;height:26px;background:rgba(15,15,15,.85);border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer;border:1px solid rgba(255,255,255,.1);color:var(--text2);}
+
+/* ── AUTO LIST ── */
+.auto-list{display:flex;flex-direction:column;gap:7px;padding:14px;}
+.a-item{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--border);border-radius:var(--rs);padding:8px 10px;}
+.a-num{font-family:'Space Mono',monospace;font-size:13px;font-weight:700;width:38px;height:38px;min-width:38px;border-radius:8px;background:var(--card2);display:flex;align-items:center;justify-content:center;color:var(--accent);}
+.a-thumb{width:44px;height:55px;min-width:44px;border-radius:6px;overflow:hidden;cursor:zoom-in;position:relative;}
+.a-thumb img{width:100%;height:100%;object-fit:cover;}
+.a-name{flex:1;font-size:12px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+/* ── SWIPE ── */
+.swipe-wrap{flex:1;display:flex;flex-direction:column;padding:14px;gap:12px;min-height:0;}
+.swipe-card{position:relative;flex:1;border-radius:var(--r);overflow:hidden;background:var(--surface);display:flex;align-items:center;justify-content:center;min-height:280px;user-select:none;touch-action:pan-y;}
+.swipe-card img{max-width:100%;max-height:100%;object-fit:contain;pointer-events:none;}
+.swipe-hint-row{display:flex;justify-content:space-between;font-size:11px;color:var(--text3);padding:0 2px;}
+.swipe-hint-row .r{color:var(--accent3);}
+.swipe-hint-row .l{color:var(--accent2);}
+.sw-prog{height:3px;background:var(--card);border-radius:2px;overflow:hidden;}
+.sw-prog-bar{height:100%;background:var(--accent);border-radius:2px;transition:width .3s;}
+.swipe-btns{display:flex;gap:8px;}
+
+/* ── SPLIT COMPARE ── */
+.split-wrap{display:flex;flex-direction:column;gap:10px;padding:14px;flex:1;min-height:0;}
+.split-imgs{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.split-card{background:var(--card);border:1.5px solid var(--border);border-radius:var(--r);overflow:hidden;display:flex;flex-direction:column;}
+.split-img-area{aspect-ratio:3/4;overflow:hidden;display:flex;align-items:center;justify-content:center;background:var(--surface);position:relative;cursor:zoom-in;}
+.split-img-area img{width:100%;height:100%;object-fit:contain;pointer-events:none;}
+.split-pick{min-height:48px;border:none;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;transition:all .12s;}
+.split-pick.L{background:rgba(255,101,132,.15);color:var(--accent2);}
+.split-pick.R{background:rgba(108,99,255,.15);color:var(--accent);}
+.split-pick:active{opacity:.65;}
+.split-sub{text-align:center;font-size:11px;color:var(--text3);font-family:'Space Mono',monospace;}
+
+/* ── REVIEW ── */
+.rev-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;padding:14px;}
+.rev-thumb{position:relative;border-radius:9px;overflow:hidden;background:var(--surface);aspect-ratio:3/4;cursor:zoom-in;}
+.rev-thumb img{width:100%;height:100%;object-fit:cover;}
+.rev-num{position:absolute;bottom:3px;left:3px;background:rgba(0,0,0,.85);color:#fff;font-family:'Space Mono',monospace;font-size:9px;font-weight:700;padding:2px 5px;border-radius:4px;}
+.rev-footer{padding:14px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:9px;background:var(--bg);flex-shrink:0;}
+.rev-row{display:flex;gap:9px;}
+
+/* ── PDF OVERLAY ── */
+#pdf-overlay{position:fixed;inset:0;background:rgba(8,8,8,.97);display:none;flex-direction:column;align-items:center;justify-content:center;gap:20px;z-index:9999;padding:40px;}
+#pdf-overlay.on{display:flex;}
+.pdf-spin{width:56px;height:56px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.pdf-bar-wrap{width:100%;max-width:300px;background:var(--card);border-radius:4px;height:5px;overflow:hidden;}
+.pdf-bar{height:100%;background:var(--accent);border-radius:4px;transition:width .25s;}
+.pdf-lbl{font-family:'Space Mono',monospace;font-size:13px;color:var(--text2);text-align:center;}
+.pdf-cnt{font-size:28px;font-weight:700;font-family:'Space Mono',monospace;color:var(--accent);}
+
+/* ── DIALOG ── */
+#dlg-overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;align-items:flex-end;justify-content:center;z-index:8888;padding:16px;animation:fadeIn .18s;}
+#dlg-overlay.on{display:flex;}
+.dlg-box{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:22px;width:100%;max-width:440px;}
+.dlg-title{font-size:16px;font-weight:600;margin-bottom:8px;}
+.dlg-body{font-size:13px;color:var(--text2);margin-bottom:18px;line-height:1.6;}
+.dlg-actions{display:flex;gap:9px;}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--card2);border:1px solid var(--border);border-radius:40px;padding:9px 18px;font-size:13px;color:var(--text);z-index:9100;transition:transform .28s cubic-bezier(.34,1.56,.64,1);white-space:nowrap;pointer-events:none;}
+#toast.show{transform:translateX(-50%) translateY(0);}
+
+/* ── MISC ── */
+.sec-label{font-size:11px;font-family:'Space Mono',monospace;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:9px;}
+.empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--text3);font-size:14px;text-align:center;padding:40px;}
+.gap-warn{background:rgba(255,69,58,.08);border:1px solid rgba(255,69,58,.2);border-radius:var(--rs);padding:11px 13px;font-size:12px;color:var(--text2);margin-bottom:12px;}
+.gap-warn b{color:var(--danger);}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ══════════════════════════════════════
+     SCREEN 1 — UPLOAD
+══════════════════════════════════════ -->
+<div id="s-upload" class="screen active">
+  <div style="padding:22px 20px 0;"><div class="logo">Page<span>Stack</span></div></div>
+  <div style="flex:1;display:flex;flex-direction:column;padding:20px;gap:16px;justify-content:center;">
+    <div class="upload-zone" id="upload-zone">
+      <input type="file" id="file-input" multiple accept="image/*,.heic,.heif">
+      <div class="upload-icon" id="uz-icon">📁</div>
+      <h2 id="uz-title">Tap to add images</h2>
+      <p id="uz-sub">JPG · PNG · WEBP · HEIC<br>Select as many as you need</p>
+    </div>
+    <div id="upload-status" style="display:none;text-align:center;">
+      <div class="upload-count" id="upload-count">0</div>
+      <div class="upload-meta">images loaded</div>
+      <div style="margin-top:12px;display:flex;gap:8px;justify-content:center;">
+        <button class="btn btn-secondary btn-sm" id="add-more-btn">＋ Add more</button>
+        <button class="btn btn-danger btn-sm" id="clear-btn">Clear all</button>
+      </div>
+    </div>
+  </div>
+  <div style="padding:0 20px 28px;">
+    <button class="btn btn-primary" id="continue-btn" style="width:100%;" disabled>Continue →</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN 2 — METHOD
+══════════════════════════════════════ -->
+<div id="s-method" class="screen">
+  <div class="hdr">
+    <button class="back-btn" data-back="s-upload">←</button>
+    <div class="hdr-title">Sort Method</div>
+  </div>
+  <div class="method-scroll">
+    <h2>How do you want to sort?</h2>
+    <p class="sub" id="method-sub"></p>
+    <div class="method-cards" id="method-cards"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN 3 — SORT
+══════════════════════════════════════ -->
+<div id="s-sort" class="screen">
+  <div class="sort-hdr">
+    <button class="back-btn" data-back="s-method">←</button>
+    <div class="prog-pill"><b id="prog-assigned">0</b>/<b id="prog-total">0</b> assigned</div>
+    <div class="sort-toolbar" id="sort-toolbar"></div>
+  </div>
+  <div class="sort-body" id="sort-body"></div>
+  <div class="sort-footer" id="sort-footer" style="display:none;">
+    <button class="btn btn-success" id="done-btn" style="flex:1;font-size:16px;">Done sorting →</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN 4 — REVIEW
+══════════════════════════════════════ -->
+<div id="s-review" class="screen">
+  <div class="hdr">
+    <button class="back-btn" id="review-back-btn">←</button>
+    <div class="hdr-title">Review — <span id="review-count-lbl"></span></div>
+  </div>
+  <div style="flex:1;overflow-y:auto;">
+    <div class="rev-grid" id="rev-grid"></div>
+  </div>
+  <div class="rev-footer">
+    <div class="rev-row">
+      <button class="btn btn-secondary" id="edit-order-btn" style="flex:1;">✏️ Edit order</button>
+      <button class="btn btn-secondary" id="change-method-btn" style="flex:1;">↩ Change method</button>
+    </div>
+    <button class="btn btn-success" id="gen-pdf-btn" style="width:100%;font-size:16px;min-height:54px;">Generate PDF ↓</button>
+  </div>
+</div>
+
+</div><!-- #app -->
+
+<!-- ══ ZOOM VIEWER ══ -->
+<div id="zoom-overlay">
+  <button class="close-zoom" id="zoom-close">✕</button>
+  <button class="zoom-nav prev" id="zoom-prev" style="display:none;">‹</button>
+  <button class="zoom-nav next" id="zoom-next" style="display:none;">›</button>
+  <div id="zoom-container">
+    <img id="zoom-img" src="" alt="">
+  </div>
+  <button class="zoom-rotate-btn" id="zoom-rotate-btn" title="Rotate">↻</button>
+  <div class="zoom-hint" id="zoom-hint">Pinch or scroll to zoom · tap ↻ to rotate</div>
+</div>
+
+<!-- ══ DIALOG ══ -->
+<div id="dlg-overlay">
+  <div class="dlg-box">
+    <div class="dlg-title" id="dlg-title"></div>
+    <div class="dlg-body" id="dlg-body"></div>
+    <div class="dlg-actions" id="dlg-actions"></div>
+  </div>
+</div>
+
+<!-- ══ PDF OVERLAY ══ -->
+<div id="pdf-overlay">
+  <div class="pdf-spin"></div>
+  <div class="pdf-cnt" id="pdf-cnt">0 / 0</div>
+  <div class="pdf-bar-wrap"><div class="pdf-bar" id="pdf-bar" style="width:0%"></div></div>
+  <div class="pdf-lbl" id="pdf-lbl">Building PDF…</div>
+</div>
+
+<!-- ══ TOAST ══ -->
+<div id="toast"></div>
+
+<script>
+$(function(){
+
+/* ════════════════════════════════════════════
+   STATE
+════════════════════════════════════════════ */
+const S = {
+  images: [],      // {id, file, dataURL, rotation, order}
+  method: null,
+  sorted: [],      // final order for PDF
+  prevRots: null,  // undo buffer
+};
+let uid = 0;
+let currentCtrl = null; // active sort method controller
+
+/* ════════════════════════════════════════════
+   NAVIGATION
+════════════════════════════════════════════ */
+function show(id){
+  $('.screen').removeClass('active');
+  $('#'+id).addClass('active');
+}
+$(document).on('click','.back-btn[data-back]',function(){
+  show($(this).data('back'));
+});
+
+/* ════════════════════════════════════════════
+   TOAST
+════════════════════════════════════════════ */
+let toastTimer;
+function toast(msg, ms=2400){
+  clearTimeout(toastTimer);
+  $('#toast').text(msg).addClass('show');
+  toastTimer = setTimeout(()=>$('#toast').removeClass('show'), ms);
+}
+
+/* ════════════════════════════════════════════
+   DIALOG
+════════════════════════════════════════════ */
+function dialog(title, body, btns){
+  return new Promise(res=>{
+    $('#dlg-title').text(title);
+    $('#dlg-body').html(body);
+    const $a = $('#dlg-actions').empty();
+    btns.forEach(b=>{
+      $(`<button class="btn ${b.cls||'btn-secondary'}" style="flex:1">${b.label}</button>`)
+        .on('click',()=>{ $('#dlg-overlay').removeClass('on'); res(b.val); })
+        .appendTo($a);
+    });
+    $('#dlg-overlay').addClass('on');
+  });
+}
+
+/* ════════════════════════════════════════════
+   ZOOM VIEWER
+════════════════════════════════════════════ */
+const Zoom = (function(){
+  let imgs = [];     // array of image objects from state
+  let idx  = 0;
+  let scale = 1;
+  const MIN=1, MAX=5;
+  let pDist = null;
+  let isDragging = false, dragStartX, dragStartY, scrollLeft, scrollTop;
+
+  function open(imageArr, startIdx, showNav){
+    imgs = imageArr; idx = startIdx;
+    $('#zoom-prev, #zoom-next').toggle(!!showNav && imgs.length > 1);
+    render();
+    $('#zoom-overlay').addClass('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function close(){
+    $('#zoom-overlay').removeClass('open');
+    document.body.style.overflow = '';
+    scale = 1;
+  }
+  function render(){
+    const img = imgs[idx];
+    const $img = $('#zoom-img');
+    scale = 1;
+    $img.css('transform', `rotate(${img.rotation}deg) scale(1)`);
+    $img.attr('src', img.dataURL);
+    // Fit to screen initially
+    $img.css({maxWidth:'100vw', maxHeight:'100dvh', width:'auto', height:'auto'});
+    const $c = $('#zoom-container');
+    $c.scrollLeft(0).scrollTop(0);
+  }
+  function applyScale(s){
+    scale = Math.max(MIN, Math.min(MAX, s));
+    const img = imgs[idx];
+    $('#zoom-img').css('transform', `rotate(${img.rotation}deg) scale(${scale})`);
+  }
+
+  // Wheel zoom
+  $('#zoom-container').on('wheel', function(e){
+    e.preventDefault();
+    const delta = e.originalEvent.deltaY > 0 ? -0.15 : 0.15;
+    applyScale(scale + delta);
+  });
+
+  // Pinch zoom
+  $('#zoom-container').on('touchstart', function(e){
+    if(e.originalEvent.touches.length === 2){
+      const t = e.originalEvent.touches;
+      pDist = Math.hypot(t[0].clientX-t[1].clientX, t[0].clientY-t[1].clientY);
+    }
+  });
+  $('#zoom-container').on('touchmove', function(e){
+    if(e.originalEvent.touches.length === 2 && pDist !== null){
+      e.preventDefault();
+      const t = e.originalEvent.touches;
+      const d = Math.hypot(t[0].clientX-t[1].clientX, t[0].clientY-t[1].clientY);
+      applyScale(scale * (d/pDist));
+      pDist = d;
+    }
+  });
+  $('#zoom-container').on('touchend', function(e){ if(e.originalEvent.touches.length < 2) pDist = null; });
+
+  // Double-tap toggle
+  let lastTap = 0;
+  $('#zoom-container').on('touchend', function(e){
+    if(e.originalEvent.touches.length > 0) return;
+    const now = Date.now();
+    if(now - lastTap < 280){ applyScale(scale > 1.2 ? 1 : 2.5); }
+    lastTap = now;
+  });
+
+  $('#zoom-close').on('click', close);
+  $('#zoom-rotate-btn').on('click', function(){
+    const img = imgs[idx];
+    img.rotation = (img.rotation + 90) % 360;
+    render();
+    if(currentCtrl && currentCtrl.refresh) currentCtrl.refresh();
+  });
+  $('#zoom-prev').on('click', function(){ if(idx>0){ idx--; render(); } });
+  $('#zoom-next').on('click', function(){ if(idx<imgs.length-1){ idx++; render(); } });
+
+  // Swipe left/right to navigate when nav is on
+  let swipeStartX=0;
+  $('#zoom-container').on('touchstart',function(e){ if(e.originalEvent.touches.length===1) swipeStartX=e.originalEvent.touches[0].clientX; });
+  $('#zoom-container').on('touchend',function(e){
+    if(scale>1.1) return; // only swipe-nav at 1x
+    const dx = e.originalEvent.changedTouches[0].clientX - swipeStartX;
+    if(Math.abs(dx)>60 && $('#zoom-prev').is(':visible')){
+      if(dx<0 && idx<imgs.length-1){ idx++; render(); }
+      else if(dx>0 && idx>0){ idx--; render(); }
+    }
+  });
+
+  return { open, close };
+})();
+
+/* ════════════════════════════════════════════
+   FILE UPLOAD
+════════════════════════════════════════════ */
+function loadFiles(files){
+  const arr = Array.from(files).filter(f=>f.type.startsWith('image/')||/\.(heic|heif)$/i.test(f.name));
+  if(!arr.length) return;
+  let done = 0;
+  arr.forEach(file=>{
+    const r = new FileReader();
+    r.onload = e=>{
+      S.images.push({id:uid++, file, dataURL:e.target.result, rotation:0, order:null});
+      done++;
+      if(done === arr.length) refreshUploadUI();
+    };
+    r.readAsDataURL(file);
+  });
+}
+
+function refreshUploadUI(){
+  const n = S.images.length;
+  if(n){
+    $('#upload-status').show();
+    $('#upload-count').text(n);
+    $('#uz-icon').text('✅');
+    $('#uz-title').text('Tap to add more');
+    $('#uz-sub').text('or drop images here');
+    $('#continue-btn').prop('disabled', false);
+  } else {
+    $('#upload-status').hide();
+    $('#uz-icon').text('📁');
+    $('#uz-title').text('Tap to add images');
+    $('#uz-sub').text('JPG · PNG · WEBP · HEIC\nSelect as many as you need');
+    $('#continue-btn').prop('disabled', true);
+  }
+}
+
+// The file input is inside the zone — clicking anywhere in zone triggers it
+// We do NOT stopPropagation anywhere on the zone
+$('#upload-zone').on('dragover',e=>{e.preventDefault();$('#upload-zone').addClass('drag-over');});
+$('#upload-zone').on('dragleave',()=>$('#upload-zone').removeClass('drag-over'));
+$('#upload-zone').on('drop',e=>{
+  e.preventDefault();
+  $('#upload-zone').removeClass('drag-over');
+  loadFiles(e.originalEvent.dataTransfer.files);
+});
+$('#file-input').on('change',function(){ loadFiles(this.files); this.value=''; });
+$('#add-more-btn').on('click',e=>{e.stopPropagation(); $('#file-input').click();});
+$('#clear-btn').on('click',e=>{e.stopPropagation(); S.images=[]; refreshUploadUI();});
+$('#continue-btn').on('click',()=>{
+  $('#method-sub').text(`${S.images.length} images ready`);
+  show('s-method');
+});
+
+/* ════════════════════════════════════════════
+   METHOD CARDS
+════════════════════════════════════════════ */
+const METHODS = [
+  {id:'manual', icon:'🔢', name:'Manual numbering',
+   desc:'View one image at a time, type its page number. Best when you know exactly where each page belongs.',
+   badge:null},
+  {id:'dragdrop', icon:'⠿', name:'Drag & drop grid',
+   desc:'All images as thumbnails in a 3-column grid. Long-press and drag to reorder.',
+   badge:'bg-vis', blabel:'👁 Visual'},
+  {id:'auto', icon:'⚡', name:'Auto-order + fix',
+   desc:'Pre-numbered 1–N in upload order. Scroll and tap only the ones that need changing.',
+   badge:'bg-fast', blabel:'⚡ Fastest'},
+  {id:'swipe', icon:'👆', name:'Swipe to sequence',
+   desc:'One image at a time — swipe right to place next, swipe left to flag and revisit later.',
+   badge:'bg-fast', blabel:'⚡ Fast'},
+  {id:'bubble', icon:'⚖️', name:'Split compare',
+   desc:'Two images side by side — tap which comes first. Repeats until full order is resolved.',
+   badge:'bg-prec', blabel:'🎯 Precise'},
+];
+METHODS.forEach(m=>{
+  $(`<div class="m-card" data-method="${m.id}">
+      <div class="m-icon">${m.icon}</div>
+      <div>
+        <div class="m-name">${m.name}</div>
+        <div class="m-desc">${m.desc}</div>
+        ${m.badge?`<span class="m-badge ${m.badge}">${m.blabel}</span>`:''}
+      </div>
+    </div>`).appendTo('#method-cards');
+});
+$('#method-cards').on('click','.m-card',function(){
+  S.method=$(this).data('method');
+  S.images.forEach(i=>{ i.order=null; });
+  initSort(S.method);
+  show('s-sort');
+});
+
+/* ════════════════════════════════════════════
+   SORT SCREEN — shared setup
+════════════════════════════════════════════ */
+function initSort(method){
+  $('#sort-footer').hide();
+  $('#sort-body').empty();
+  S.prevRots = null;
+  buildToolbar();
+  updateProgress();
+
+  const map = {manual:manualMethod, dragdrop:dragdropMethod, auto:autoMethod, swipe:swipeMethod, bubble:bubbleMethod};
+  currentCtrl = map[method]();
+}
+
+function buildToolbar(){
+  const $tb = $('#sort-toolbar').empty();
+  $(`<button class="btn btn-secondary btn-sm" id="auto-orient-btn">⟳ Auto-orient</button>`)
+    .on('click', doAutoOrient)
+    .appendTo($tb);
+  if(S.prevRots){
+    $(`<button class="btn btn-warn btn-sm">↺ Undo orient</button>`)
+      .on('click',()=>{
+        S.prevRots.forEach(r=>{ const i=S.images.find(x=>x.id===r.id); if(i) i.rotation=r.rotation; });
+        S.prevRots=null;
+        toast('Rotations restored');
+        if(currentCtrl?.refresh) currentCtrl.refresh();
+        buildToolbar();
+      }).appendTo($tb);
+  }
+}
+
+async function doAutoOrient(){
+  // Ask: which direction?
+  const dir = await dialog(
+    'Auto-orient all images',
+    'Which orientation should all images be rotated to?',
+    [
+      {label:'↺ Cancel', val:'cancel', cls:'btn-secondary'},
+      {label:'⬜ Portrait', val:'portrait', cls:'btn-primary'},
+      {label:'⬛ Landscape', val:'landscape', cls:'btn-secondary'},
+    ]
+  );
+  if(dir==='cancel') return;
+
+  const ok = await dialog(
+    'Confirm auto-orient',
+    `All images will be rotated to ${dir} orientation. Current rotations will be overwritten.\n\nThis can be undone.`,
+    [
+      {label:'Cancel', val:false, cls:'btn-secondary'},
+      {label:`Apply`, val:true, cls:'btn-primary'},
+    ]
+  );
+  if(!ok) return;
+
+  // Save undo buffer
+  S.prevRots = S.images.map(i=>({id:i.id, rotation:i.rotation}));
+  let changed = 0;
+
+  // We need image natural dims — we load them
+  const promises = S.images.map(img=>new Promise(res=>{
+    if(img._w && img._h){ res(); return; }
+    const el=new Image();
+    el.onload=()=>{ img._w=el.naturalWidth; img._h=el.naturalHeight; res(); };
+    el.src=img.dataURL;
+  }));
+  await Promise.all(promises);
+
+  S.images.forEach(img=>{
+    const w = img._w||1, h = img._h||1;
+    // Effective dims after current rotation
+    const effectiveW = (img.rotation===90||img.rotation===270) ? h : w;
+    const effectiveH = (img.rotation===90||img.rotation===270) ? w : h;
+    const isPortrait = effectiveH >= effectiveW;
+
+    if(dir==='portrait' && !isPortrait){
+      img.rotation = (img.rotation + 90) % 360; changed++;
+    } else if(dir==='landscape' && isPortrait){
+      img.rotation = (img.rotation + 90) % 360; changed++;
+    }
+  });
+
+  toast(`Auto-oriented ${changed} image${changed!==1?'s':''}`);
+  buildToolbar(); // add undo button
+  if(currentCtrl?.refresh) currentCtrl.refresh();
+}
+
+function updateProgress(){
+  const total = S.images.length;
+  const assigned = S.images.filter(i=>i.order!==null).length;
+  $('#prog-assigned').text(assigned);
+  $('#prog-total').text(total);
+  if(assigned >= total) $('#sort-footer').show();
+}
+
+$('#done-btn').on('click', async()=>{
+  const gaps = findGaps();
+  if(gaps.length){
+    const go = await dialog(
+      'Missing page numbers',
+      `Some page numbers are missing: <b style="color:var(--danger)">${gaps.slice(0,12).join(', ')}${gaps.length>12?'…':''}</b><br><br>Continue anyway?`,
+      [{label:'Go back', val:false, cls:'btn-secondary'},{label:'Continue', val:true, cls:'btn-primary'}]
+    );
+    if(!go) return;
+  }
+  buildReview();
+  show('s-review');
+});
+
+function findGaps(){
+  const orders = S.images.map(i=>i.order).filter(o=>o!==null).map(Number).sort((a,b)=>a-b);
+  if(!orders.length) return [];
+  const gaps=[];
+  for(let i=orders[0];i<=orders[orders.length-1];i++) if(!orders.includes(i)) gaps.push(i);
+  return gaps;
+}
+
+/* ════════════════════════════════════════════
+   METHOD 1 — MANUAL NUMBERING
+════════════════════════════════════════════ */
+function manualMethod(){
+  const imgs = [...S.images];
+  let idx = 0;
+
+  function render(){
+    const $b = $('#sort-body').empty();
+    if(idx >= imgs.length){ updateProgress(); $('#sort-footer').show(); return; }
+    const img = imgs[idx];
+
+    const $wrap = $('<div>').css({padding:'14px',display:'flex',flexDirection:'column',gap:'12px'}).appendTo($b);
+
+    // Counter
+    $(`<div style="text-align:center;font-family:'Space Mono',monospace;font-size:11px;color:var(--text3)">${idx+1} of ${imgs.length}</div>`).appendTo($wrap);
+
+    // Image
+    const $frame = $('<div class="manual-img-frame">').appendTo($wrap);
+    $(`<img src="${img.dataURL}" style="transform:rotate(${img.rotation}deg);max-width:100%;max-height:52dvh;object-fit:contain;">`).appendTo($frame);
+    const $btns = $('<div class="img-overlay-btns">').appendTo($frame);
+    $('<button class="overlay-btn" title="Rotate">↻</button>').on('click',()=>{
+      img.rotation=(img.rotation+90)%360;
+      $frame.find('img').css('transform',`rotate(${img.rotation}deg)`);
+    }).appendTo($btns);
+    $('<button class="overlay-btn" title="Zoom" style="font-size:16px;">🔍</button>').on('click',()=>{
+      Zoom.open(imgs, idx, true);
+    }).appendTo($btns);
+
+    // Number input
+    const $ctrl = $('<div>').css({display:'flex',flexDirection:'column',gap:'10px'}).appendTo($wrap);
+    $('<div style="text-align:center;font-size:13px;color:var(--text2);">Enter page number for this image</div>').appendTo($ctrl);
+
+    const usedOrders = S.images.filter(i=>i.id!==img.id&&i.order!==null).map(i=>Number(i.order));
+    const $inp = $(`<input type="number" inputmode="numeric" min="1" class="num-input" placeholder="e.g. 5" value="${img.order!==null?img.order:''}">`).appendTo($ctrl);
+    const $cmsg = $('<div class="conflict-msg"></div>').appendTo($ctrl);
+
+    $inp.on('input',function(){
+      const v=parseInt($(this).val());
+      if(!isNaN(v)&&usedOrders.includes(v)){
+        $(this).addClass('bad'); $cmsg.text('⚠ Number already used');
+      } else { $(this).removeClass('bad'); $cmsg.text(''); }
+    });
+
+    // Nav row
+    const $nav = $('<div>').css({display:'flex',gap:'8px'}).appendTo($ctrl);
+    if(idx>0) $('<button class="btn btn-secondary" style="flex:1">← Back</button>').on('click',()=>{ saveAndGo(-1); }).appendTo($nav);
+    $('<button class="btn btn-primary" style="flex:1">Next →</button>').on('click',()=>{ saveAndGo(1); }).appendTo($nav);
+    $('<button class="btn btn-secondary btn-sm" style="width:100%;margin-top:2px">Skip (decide later)</button>').on('click',()=>{ img.order=null; idx++; updateProgress(); render(); }).appendTo($ctrl);
+
+    function saveAndGo(delta){
+      const v=parseInt($inp.val());
+      img.order = (!isNaN(v)&&v>0) ? v : null;
+      idx = Math.max(0, idx+delta);
+      updateProgress();
+      render();
+    }
+
+    setTimeout(()=>$inp.focus(),80);
+  }
+
+  render();
+  return { refresh(){ render(); } };
+}
+
+/* ════════════════════════════════════════════
+   METHOD 2 — DRAG & DROP GRID
+════════════════════════════════════════════ */
+function dragdropMethod(){
+  S.images.forEach((img,i)=>{ if(img.order===null) img.order=i+1; });
+
+  function render(){
+    const $b = $('#sort-body').empty();
+    const $wrap = $('<div>').appendTo($b);
+    $('<div style="padding:14px 14px 0;font-size:12px;color:var(--text3);">Long-press to drag · tap 🔍 to zoom · tap ↻ to rotate</div>').appendTo($wrap);
+    const sorted = [...S.images].sort((a,b)=>a.order-b.order);
+    const $grid = $('<div class="thumb-grid" id="dd-grid">').appendTo($wrap);
+
+    sorted.forEach((img,i)=>{
+      $(`<div class="t-item" data-id="${img.id}">
+          <img src="${img.dataURL}" style="transform:rotate(${img.rotation}deg)">
+          <div class="t-num">${i+1}</div>
+          <div class="t-zoom" data-action="zoom" data-id="${img.id}">🔍</div>
+          <div class="t-rot" data-action="rot" data-id="${img.id}">↻</div>
+        </div>`).appendTo($grid);
+    });
+
+    $grid.on('click','[data-action="rot"]',function(e){
+      e.stopPropagation();
+      const id=+$(this).data('id');
+      const img=S.images.find(x=>x.id===id);
+      img.rotation=(img.rotation+90)%360;
+      $(this).closest('.t-item').find('img').css('transform',`rotate(${img.rotation}deg)`);
+    });
+    $grid.on('click','[data-action="zoom"]',function(e){
+      e.stopPropagation();
+      const id=+$(this).data('id');
+      const sortedArr=[...S.images].sort((a,b)=>a.order-b.order);
+      const idx=sortedArr.findIndex(x=>x.id===id);
+      Zoom.open(sortedArr, idx, true);
+    });
+
+    Sortable.create(document.getElementById('dd-grid'),{
+      animation:120, delay:200, delayOnTouchOnly:true,
+      ghostClass:'sortable-ghost', chosenClass:'sortable-chosen',
+      onEnd(){
+        const ids=[]; $('#dd-grid .t-item').each(function(){ ids.push(+$(this).data('id')); });
+        ids.forEach((id,i)=>{ const img=S.images.find(x=>x.id===id); if(img) img.order=i+1; });
+        $('#dd-grid .t-num').each(function(i){ $(this).text(i+1); });
+        updateProgress();
+      }
+    });
+
+    updateProgress();
+    $('#sort-footer').show();
+  }
+
+  render();
+  return { refresh(){ render(); } };
+}
+
+/* ════════════════════════════════════════════
+   METHOD 3 — AUTO ORDER + FIX
+════════════════════════════════════════════ */
+function autoMethod(){
+  S.images.forEach((img,i)=>{ if(img.order===null) img.order=i+1; });
+
+  function render(){
+    const $b = $('#sort-body').empty();
+    $('<div style="padding:14px 14px 0;font-size:12px;color:var(--text3);">Tap Edit to change a number · tap thumbnail to zoom</div>').appendTo($b);
+    const $list = $('<div class="auto-list">').appendTo($b);
+    const sorted=[...S.images].sort((a,b)=>a.order-b.order);
+
+    sorted.forEach(img=>{
+      const $row = $(`<div class="a-item">
+          <div class="a-num">${img.order}</div>
+          <div class="a-thumb" data-id="${img.id}">
+            <img src="${img.dataURL}" style="transform:rotate(${img.rotation}deg);width:100%;height:100%;object-fit:cover;">
+          </div>
+          <div class="a-name">${img.file?img.file.name:''}</div>
+        </div>`);
+      $('<button class="btn btn-secondary btn-sm">Edit</button>').on('click',()=>editNum(img)).appendTo($row);
+      $row.appendTo($list);
+    });
+
+    $list.on('click','.a-thumb',function(){
+      const id=+$(this).data('id');
+      const sortedArr=[...S.images].sort((a,b)=>a.order-b.order);
+      const idx=sortedArr.findIndex(x=>x.id===id);
+      Zoom.open(sortedArr, idx, true);
+    });
+
+    updateProgress();
+    $('#sort-footer').show();
+  }
+
+  async function editNum(img){
+    const val = await inputPrompt(`Change page number (currently ${img.order}):`, img.order);
+    if(val!==null && !isNaN(val) && val>0){ img.order=val; render(); }
+  }
+
+  render();
+  return { refresh(){ render(); } };
+}
+
+/* ════════════════════════════════════════════
+   METHOD 4 — SWIPE TO SEQUENCE
+════════════════════════════════════════════ */
+function swipeMethod(){
+  let queue=[...S.images];
+  let flagged=[];
+  let seq=1;
+  let phase='main';
+
+  function render(){
+    const $b=$('#sort-body').empty().css({flex:'1',display:'flex',flexDirection:'column',minHeight:0,overflow:'hidden'});
+
+    if(phase==='main' && queue.length===0 && flagged.length>0){
+      phase='flagged'; queue=[...flagged]; flagged=[];
+    }
+    if(queue.length===0){
+      updateProgress(); $('#sort-footer').show();
+      $('<div class="empty-state"><div style="font-size:40px">✓</div><div>All images sequenced!</div></div>').appendTo($b);
+      return;
+    }
+
+    const img=queue[0];
+    const total=S.images.length;
+    const placed=S.images.filter(i=>i.order!==null).length;
+    const pct=Math.round((placed/total)*100);
+
+    const $w=$('<div class="swipe-wrap">').appendTo($b);
+    if(phase==='flagged') $('<div style="text-align:center;font-size:12px;color:var(--accent2);font-family:Space Mono,monospace">Reviewing flagged images</div>').appendTo($w);
+    $(`<div class="sw-prog"><div class="sw-prog-bar" style="width:${pct}%"></div></div>`).appendTo($w);
+    $(`<div class="swipe-hint-row"><span class="l">← Flag / skip</span><span class="r">Place next →</span></div>`).appendTo($w);
+
+    const $card=$(`<div class="swipe-card">
+        <img src="${img.dataURL}" style="transform:rotate(${img.rotation}deg);" id="sw-img">
+        <div class="img-overlay-btns">
+          <button class="overlay-btn" id="sw-rot" title="Rotate">↻</button>
+          <button class="overlay-btn" id="sw-zoom" style="font-size:16px;" title="Zoom">🔍</button>
+        </div>
+      </div>`).appendTo($w);
+
+    $('#sw-rot').on('click',()=>{ img.rotation=(img.rotation+90)%360; $('#sw-img').css('transform',`rotate(${img.rotation}deg)`); });
+    $('#sw-zoom').on('click',()=>Zoom.open([img],0,false));
+
+    // Touch swipe
+    let sx=0,sy=0,moved=false;
+    $card.on('touchstart',e=>{
+      sx=e.originalEvent.touches[0].clientX;
+      sy=e.originalEvent.touches[0].clientY;
+      moved=false;
+    });
+    $card.on('touchmove',e=>{
+      const dx=e.originalEvent.touches[0].clientX-sx;
+      const dy=e.originalEvent.touches[0].clientY-sy;
+      if(Math.abs(dx)>Math.abs(dy)+10){
+        e.preventDefault();
+        moved=true;
+        $card.css({transform:`translateX(${dx}px) rotate(${dx*.025}deg)`,transition:'none'});
+      }
+    });
+    $card.on('touchend',e=>{
+      if(!moved){ $card.css({transform:'',transition:''}); return; }
+      const dx=e.originalEvent.changedTouches[0].clientX-sx;
+      $card.css('transition','transform .22s,opacity .22s');
+      if(dx>75){ $card.css({transform:'translateX(200px) rotate(12deg)',opacity:0}); setTimeout(()=>placeNext(img),200); }
+      else if(dx<-75){ $card.css({transform:'translateX(-200px) rotate(-12deg)',opacity:0}); setTimeout(()=>flagImg(img),200); }
+      else { $card.css({transform:'',transition:'transform .2s'}); }
+    });
+
+    const $btns=$('<div class="swipe-btns">').appendTo($w);
+    $('<button class="btn btn-secondary" style="flex:1">← Flag</button>').on('click',()=>flagImg(img)).appendTo($btns);
+    $('<button class="btn btn-primary" style="flex:1">Place next →</button>').on('click',()=>placeNext(img)).appendTo($btns);
+    $(`<div style="text-align:center;font-size:11px;color:var(--text3)">${queue.length} remaining${flagged.length?` · ${flagged.length} flagged`:''}</div>`).appendTo($w);
+  }
+
+  function placeNext(img){ img.order=seq++; queue.shift(); updateProgress(); render(); }
+  function flagImg(img){ img.order=null; flagged.push(img); queue.shift(); updateProgress(); render(); }
+
+  render();
+  return { refresh(){ seq=1; render(); } };
+}
+
+/* ════════════════════════════════════════════
+   METHOD 5 — SPLIT COMPARE (merge sort)
+════════════════════════════════════════════ */
+function bubbleMethod(){
+  const arr=[...S.images];
+  let done=0;
+  const est=Math.ceil(arr.length * Math.log2(arr.length+1));
+  let sortingDone=false;
+  let resolveFn=null;
+
+  async function mergeSortAsync(a){
+    if(a.length<=1) return a;
+    const mid=Math.floor(a.length/2);
+    const [L,R]=await Promise.all([mergeSortAsync(a.slice(0,mid)), mergeSortAsync(a.slice(mid))]);
+    return mergeAsync(L,R);
+  }
+  async function mergeAsync(L,R){
+    const out=[];
+    let i=0,j=0;
+    while(i<L.length&&j<R.length){
+      const w=await compare(L[i],R[j]);
+      if(w===L[i]) out.push(L[i++]); else out.push(R[j++]);
+    }
+    return out.concat(L.slice(i)).concat(R.slice(j));
+  }
+
+  function compare(a,b){
+    return new Promise(res=>{ resolveFn=res; renderPair(a,b); });
+  }
+
+  function renderPair(a,b){
+    const $b=$('#sort-body').empty().css({flex:'1',display:'flex',flexDirection:'column',minHeight:0,overflow:'hidden'});
+    if(sortingDone) return;
+    const pct=Math.min(100,Math.round((done/est)*100));
+    const $w=$('<div class="split-wrap">').appendTo($b);
+
+    $(`<div class="split-sub">~${pct}% done · comparison ${done+1}</div>`).appendTo($w);
+    $(`<div class="split-sub" style="color:var(--text2);font-family:'DM Sans',sans-serif;font-size:13px;">Tap which image should come first in the document</div>`).appendTo($w);
+
+    const $imgs=$('<div class="split-imgs">').appendTo($w);
+
+    [a,b].forEach((img,side)=>{
+      const $card=$(`<div class="split-card">
+          <div class="split-img-area" data-side="${side}">
+            <img src="${img.dataURL}" style="transform:rotate(${img.rotation}deg)">
+            <div class="img-overlay-btns">
+              <button class="overlay-btn" style="width:36px;height:36px;font-size:15px;" data-rot="${img.id}">↻</button>
+              <button class="overlay-btn" style="width:36px;height:36px;font-size:14px;" data-zoom="${img.id}">🔍</button>
+            </div>
+          </div>
+          <button class="split-pick ${side===0?'L':'R'}">${side===0?'← First':'First →'}</button>
+        </div>`).appendTo($imgs);
+      $card.find(`[data-rot="${img.id}"]`).on('click',e=>{ e.stopPropagation(); img.rotation=(img.rotation+90)%360; $card.find('img').css('transform',`rotate(${img.rotation}deg)`); });
+      $card.find(`[data-zoom="${img.id}"]`).on('click',e=>{ e.stopPropagation(); Zoom.open([a,b], side, false); });
+      $card.find('.split-pick').on('click',()=>{ done++; resolveFn(img); });
+    });
+
+    $('<div class="split-sub" style="margin-top:4px;">Pinch/zoom on any image for a closer look</div>').appendTo($w);
+  }
+
+  // Kick off
+  mergeSortAsync(arr).then(result=>{
+    sortingDone=true;
+    result.forEach((img,i)=>img.order=i+1);
+    updateProgress();
+    $('#sort-footer').show();
+    const $b=$('#sort-body').empty().css({flex:'1',display:'flex',flexDirection:'column'});
+    $('<div class="empty-state"><div style="font-size:40px">✓</div><div style="font-size:17px;font-weight:600">Sort complete!</div><div style="font-size:13px;color:var(--text2)">'+(result.length)+' images ordered</div></div>').appendTo($b);
+  });
+
+  // Seed first comparison if we have images
+  if(arr.length<=1){
+    if(arr.length===1) arr[0].order=1;
+    sortingDone=true;
+    updateProgress();
+    $('#sort-footer').show();
+  }
+
+  return { refresh(){} };
+}
+
+/* ════════════════════════════════════════════
+   INPUT PROMPT (inline dialog)
+════════════════════════════════════════════ */
+function inputPrompt(prompt, current){
+  return new Promise(res=>{
+    const $ov=$('<div>').css({position:'fixed',inset:0,background:'rgba(0,0,0,.72)',display:'flex',alignItems:'flex-end',justifyContent:'center',zIndex:8888,padding:'16px'}).appendTo('body');
+    const $box=$('<div>').css({background:'var(--card)',border:'1px solid var(--border)',borderRadius:'20px',padding:'20px',width:'100%',maxWidth:'440px'}).appendTo($ov);
+    $(`<p style="font-size:13px;color:var(--text2);margin-bottom:10px;">${prompt}</p>`).appendTo($box);
+    const $inp=$(`<input type="number" inputmode="numeric" min="1" class="num-input" value="${current||''}" placeholder="Page number">`).appendTo($box);
+    const $row=$('<div>').css({display:'flex',gap:'8px',marginTop:'12px'}).appendTo($box);
+    $('<button class="btn btn-secondary" style="flex:1">Cancel</button>').on('click',()=>{ $ov.remove(); res(null); }).appendTo($row);
+    $('<button class="btn btn-primary" style="flex:1">Set</button>').on('click',()=>{ const v=parseInt($inp.val()); $ov.remove(); res(isNaN(v)?null:v); }).appendTo($row);
+    setTimeout(()=>$inp.focus(),80);
+  });
+}
+
+/* ════════════════════════════════════════════
+   REVIEW SCREEN
+════════════════════════════════════════════ */
+function buildReview(){
+  // Assign any unordered images to the end
+  const ordered=S.images.filter(i=>i.order!==null).sort((a,b)=>a.order-b.order);
+  const unordered=S.images.filter(i=>i.order===null);
+  const maxO=ordered.length ? ordered[ordered.length-1].order : 0;
+  unordered.forEach((img,i)=>img.order=maxO+i+1);
+  S.sorted=[...S.images].sort((a,b)=>a.order-b.order);
+
+  const $g=$('#rev-grid').empty();
+  S.sorted.forEach((img,i)=>{
+    const $t=$(`<div class="rev-thumb" data-idx="${i}">
+        <img src="${img.dataURL}" style="transform:rotate(${img.rotation}deg);width:100%;height:100%;object-fit:cover;">
+        <div class="rev-num">${img.order}</div>
+      </div>`).appendTo($g);
+  });
+  $g.on('click','.rev-thumb',function(){
+    const idx=+$(this).data('idx');
+    Zoom.open(S.sorted, idx, true);
+  });
+
+  $('#review-count-lbl').text(`${S.sorted.length} pages`);
+}
+
+$('#review-back-btn').on('click',()=>{ initSort(S.method); show('s-sort'); });
+$('#edit-order-btn').on('click',()=>{ initSort(S.method); show('s-sort'); });
+$('#change-method-btn').on('click',()=>show('s-method'));
+
+/* ════════════════════════════════════════════
+   PDF GENERATION
+════════════════════════════════════════════ */
+$('#gen-pdf-btn').on('click', generatePDF);
+
+async function generatePDF(){
+  const imgs=S.sorted;
+  if(!imgs.length){ toast('No images to export'); return; }
+
+  $('#pdf-overlay').addClass('on');
+  $('#pdf-cnt').text(`0 / ${imgs.length}`);
+  $('#pdf-bar').css('width','0%');
+  $('#pdf-lbl').text('Initialising…');
+  await sleep(60);
+
+  const {jsPDF}=window.jspdf;
+  const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
+  const PW=210, PH=297;
+  const MARGIN=10; // 10mm margin all sides
+  const AREA_W=PW-MARGIN*2;
+  const AREA_H=PH-MARGIN*2;
+
+  for(let i=0;i<imgs.length;i++){
+    const img=imgs[i];
+    if(i>0) pdf.addPage();
+
+    $('#pdf-cnt').text(`${i+1} / ${imgs.length}`);
+    $('#pdf-bar').css('width',`${Math.round(((i+1)/imgs.length)*100)}%`);
+    $('#pdf-lbl').text(`Page ${i+1} of ${imgs.length}…`);
+    await sleep(0);
+
+    try{
+      const rotated=await rotateDataURL(img.dataURL, img.rotation);
+      const dims=await getImgDims(rotated);
+      const iW=dims.w, iH=dims.h;
+      const iRatio=iW/iH;
+      const aRatio=AREA_W/AREA_H;
+      let dW=AREA_W, dH=AREA_H;
+      if(iRatio>aRatio){ dH=AREA_W/iRatio; } else { dW=AREA_H*iRatio; }
+      const oX=MARGIN+(AREA_W-dW)/2;
+      const oY=MARGIN+(AREA_H-dH)/2;
+      pdf.addImage(rotated,'JPEG',oX,oY,dW,dH,undefined,'FAST');
+    }catch(e){ console.warn('img error',e); }
+  }
+
+  $('#pdf-lbl').text('Saving…');
+  await sleep(80);
+  pdf.save('pagestack.pdf');
+  $('#pdf-overlay').removeClass('on');
+  toast('PDF saved! 🎉', 3000);
+}
+
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+function getImgDims(url){
+  return new Promise(res=>{
+    const i=new Image();
+    i.onload=()=>res({w:i.naturalWidth,h:i.naturalHeight});
+    i.src=url;
+  });
+}
+
+function rotateDataURL(url, deg){
+  return new Promise(res=>{
+    if(deg===0||deg===360){ res(url); return; }
+    const i=new Image();
+    i.onload=()=>{
+      const c=document.createElement('canvas');
+      if(deg===90||deg===270){ c.width=i.height; c.height=i.width; }
+      else { c.width=i.width; c.height=i.height; }
+      const ctx=c.getContext('2d');
+      ctx.translate(c.width/2,c.height/2);
+      ctx.rotate(deg*Math.PI/180);
+      ctx.drawImage(i,-i.width/2,-i.height/2);
+      res(c.toDataURL('image/jpeg',0.88));
+    };
+    i.src=url;
+  });
+}
+
+}); // end $(function)
+</script>
+</body>
+</html>
