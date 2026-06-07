@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>NETPULSE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #07080a;
+  --s1:       #0f1114;
+  --s2:       #161a1e;
+  --border:   #1e2228;
+  --border2:  #252b33;
+  --teal:     #00e8c6;
+  --amber:    #ff9f1c;
+  --red:      #ff3c5a;
+  --dim:      #4a5568;
+  --mid:      #718096;
+  --text:     #e2e8f0;
+  --mono:     'DM Mono', monospace;
+  --display:  'Oxanium', sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html { font-size: 16px; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--mono);
+  min-height: 100dvh;
+  overflow-x: hidden;
+  padding-bottom: 3rem;
+}
+
+/* subtle grid texture */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0,232,198,0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,232,198,0.015) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.wrap { position: relative; z-index: 1; max-width: 430px; margin: 0 auto; padding: 0 1.25rem; }
+
+/* ── HEADER ── */
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 1.5rem 0 1.25rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1.5rem;
+}
+
+.logo {
+  font-family: var(--display);
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: 0.25em;
+  color: var(--teal);
+}
+
+.logo span { color: var(--mid); font-weight: 300; }
+
+.header-meta { text-align: right; }
+
+.ip-val {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--text);
+  display: block;
+  letter-spacing: 0.05em;
+}
+
+.isp-val {
+  font-size: 0.6rem;
+  color: var(--dim);
+  display: block;
+  margin-top: 0.15rem;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── GAUGE ── */
+.gauge-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.gauge-outer {
+  position: relative;
+  width: 260px;
+  height: 200px; /* cropped - shows 270° arc */
+  overflow: hidden;
+  margin-bottom: -20px;
+}
+
+#gaugeSvg {
+  width: 260px;
+  height: 260px;
+  position: absolute;
+  top: 0; left: 0;
+}
+
+.g-track { fill: none; stroke: var(--s2); stroke-width: 10; stroke-linecap: round; }
+.g-tick  { fill: none; stroke: var(--border2); stroke-width: 1.5; }
+.g-fill  {
+  fill: none;
+  stroke: var(--teal);
+  stroke-width: 10;
+  stroke-linecap: round;
+  /* 270° of circumference = 2π×100 × 0.75 = 471.24 */
+  stroke-dasharray: 0 628.32;
+  transition: stroke-dasharray 0.25s ease, stroke 0.3s;
+  filter: drop-shadow(0 0 6px var(--teal));
+}
+
+.gauge-center {
+  position: absolute;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  pointer-events: none;
+}
+
+.g-number {
+  font-family: var(--display);
+  font-size: 3.75rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--text);
+  letter-spacing: -0.03em;
+  transition: color 0.3s;
+}
+
+.g-unit {
+  font-size: 0.6rem;
+  color: var(--dim);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+}
+
+.g-phase {
+  font-size: 0.55rem;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: var(--teal);
+  margin-top: 0.3rem;
+  height: 0.75rem;
+  transition: color 0.3s;
+}
+
+/* gauge scale labels */
+.gauge-labels {
+  display: flex;
+  width: 240px;
+  justify-content: space-between;
+  font-size: 0.55rem;
+  color: var(--dim);
+  margin-top: 0.25rem;
+  padding: 0 0.5rem;
+}
+
+/* ── PHASE STRIP ── */
+.phase-strip {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin: 1rem 0 1.5rem;
+  width: 100%;
+}
+
+.phase-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  position: relative;
+}
+
+.phase-item::after {
+  content: '';
+  position: absolute;
+  top: 7px;
+  right: -50%;
+  width: 100%;
+  height: 1px;
+  background: var(--border2);
+  transition: background 0.4s;
+}
+
+.phase-item:last-child::after { display: none; }
+
+.phase-dot {
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border2);
+  background: var(--bg);
+  transition: all 0.3s;
+  position: relative;
+  z-index: 1;
+}
+
+.phase-label {
+  font-size: 0.5rem;
+  color: var(--dim);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  transition: color 0.3s;
+}
+
+.phase-item.active .phase-dot {
+  border-color: var(--teal);
+  background: var(--teal);
+  box-shadow: 0 0 10px var(--teal);
+}
+
+.phase-item.active .phase-label { color: var(--teal); }
+
+.phase-item.done .phase-dot {
+  border-color: var(--dim);
+  background: var(--dim);
+}
+
+.phase-item.done .phase-label { color: var(--dim); }
+
+.phase-item.done::after { background: var(--dim); }
+
+/* ── PRIMARY CARDS ── */
+.primary-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.pcard {
+  background: var(--s1);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.875rem 0.5rem;
+  text-align: center;
+  transition: border-color 0.3s;
+}
+
+.pcard.active-card { border-color: var(--teal); }
+
+.pc-label {
+  font-size: 0.5rem;
+  color: var(--dim);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+
+.pc-arrow { color: var(--mid); margin-right: 0.15rem; }
+
+.pc-val {
+  font-family: var(--display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--mid);
+  line-height: 1;
+  transition: color 0.3s;
+}
+
+.pc-val.filled { color: var(--text); }
+
+.pc-unit {
+  font-size: 0.48rem;
+  color: var(--dim);
+  margin-top: 0.2rem;
+  letter-spacing: 0.15em;
+}
+
+/* ── WAVEFORM ── */
+.wave-wrap {
+  background: var(--s1);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  position: relative;
+  height: 72px;
+}
+
+.wave-label {
+  position: absolute;
+  top: 0.5rem; left: 0.75rem;
+  font-size: 0.5rem;
+  color: var(--dim);
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+}
+
+.wave-peak {
+  position: absolute;
+  top: 0.5rem; right: 0.75rem;
+  font-size: 0.55rem;
+  color: var(--mid);
+}
+
+#waveCanvas { width: 100%; height: 100%; display: block; }
+
+/* ── STAT SECTIONS ── */
+.stat-section { margin-bottom: 1.25rem; }
+
+.section-hd {
+  font-size: 0.5rem;
+  color: var(--dim);
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  padding: 0.5rem 0.75rem;
+  background: var(--s1);
+  border: 1px solid var(--border);
+  border-bottom: none;
+  border-radius: 10px 10px 0 0;
+}
+
+.stat-table {
+  background: var(--s1);
+  border: 1px solid var(--border);
+  border-radius: 0 0 10px 10px;
+  overflow: hidden;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.65rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+
+.stat-row:last-child { border-bottom: none; }
+.stat-row:hover { background: var(--s2); }
+
+.s-name {
+  font-size: 0.6rem;
+  color: var(--mid);
+  letter-spacing: 0.05em;
+}
+
+.s-val {
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: var(--text);
+  letter-spacing: 0.05em;
+}
+
+.s-val.dash { color: var(--dim); }
+.s-val.good { color: var(--teal); }
+.s-val.warn { color: var(--amber); }
+.s-val.bad  { color: var(--red); }
+
+/* quality bars */
+.qbar {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+}
+
+.qseg {
+  width: 18px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--border2);
+  transition: background 0.4s;
+}
+
+.qseg.on { background: var(--teal); }
+.qseg.on-warn { background: var(--amber); }
+.qseg.on-bad  { background: var(--red); }
+
+/* ── RUN BUTTON ── */
+.run-wrap { margin: 1.5rem 0 1rem; }
+
+#runBtn {
+  width: 100%;
+  padding: 1.1rem;
+  background: transparent;
+  border: 1px solid var(--teal);
+  border-radius: 10px;
+  color: var(--teal);
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: background 0.25s, color 0.25s, box-shadow 0.25s;
+}
+
+#runBtn:hover:not(:disabled) {
+  background: var(--teal);
+  color: var(--bg);
+  box-shadow: 0 0 40px rgba(0,232,198,0.25);
+}
+
+#runBtn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+#runBtn .shimmer {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(0,232,198,0.12) 50%, transparent 100%);
+  transform: translateX(-100%);
+}
+
+#runBtn.testing .shimmer { animation: shimmer 1.4s infinite; }
+
+@keyframes shimmer { to { transform: translateX(100%); } }
+
+/* ── HISTORY ── */
+.history-wrap { margin-bottom: 1rem; display: none; }
+
+.hist-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+}
+
+.hchip {
+  background: var(--s1);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.55rem;
+  color: var(--mid);
+}
+
+.hchip b { color: var(--teal); font-weight: 500; }
+
+/* ── FOOTER ── */
+footer {
+  text-align: center;
+  padding: 1.5rem 0 0.5rem;
+  font-size: 0.5rem;
+  color: var(--dim);
+  letter-spacing: 0.25em;
+}
+
+/* ── ANIMATIONS ── */
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+.blink { animation: blink 1s infinite; }
+
+@keyframes fadein { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+.fadein { animation: fadein 0.4s ease forwards; }
+
+/* glow ring during test */
+.gauge-outer.glow::before {
+  content: '';
+  position: absolute;
+  inset: -30px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0,232,198,0.07) 0%, transparent 65%);
+  animation: pulseGlow 2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes pulseGlow {
+  0%,100% { opacity: 0.6; transform: scale(1); }
+  50%      { opacity: 1;   transform: scale(1.04); }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- HEADER -->
+<header>
+  <div class="logo">NET<span>PULSE</span></div>
+  <div class="header-meta">
+    <span class="ip-val" id="ipVal">—.—.—.—</span>
+    <span class="isp-val" id="ispVal">detecting…</span>
+  </div>
+</header>
+
+<!-- GAUGE -->
+<div class="gauge-section">
+  <div class="gauge-outer" id="gaugeOuter">
+    <svg id="gaugeSvg" viewBox="0 0 220 220">
+      <!-- 270° track: dasharray=471.24 (75% of 628.32), offset rotates to start at bottom-left -->
+      <circle class="g-track" cx="110" cy="110" r="90"
+        stroke-dasharray="471.24 157.08"
+        transform="rotate(135 110 110)"/>
+
+      <!-- tick marks at 0%, 25%, 50%, 75%, 100% of arc -->
+      <line class="g-tick" x1="110" y1="24"  x2="110" y2="36"  transform="rotate(135  110 110)"/>
+      <line class="g-tick" x1="110" y1="24"  x2="110" y2="32"  transform="rotate(202.5 110 110)"/>
+      <line class="g-tick" x1="110" y1="24"  x2="110" y2="36"  transform="rotate(270  110 110)"/>
+      <line class="g-tick" x1="110" y1="24"  x2="110" y2="32"  transform="rotate(337.5 110 110)"/>
+      <line class="g-tick" x1="110" y1="24"  x2="110" y2="36"  transform="rotate(45   110 110)"/>
+
+      <!-- fill arc -->
+      <circle id="gFill" class="g-fill" cx="110" cy="110" r="90"
+        stroke-dasharray="0 628.32"
+        transform="rotate(135 110 110)"/>
+    </svg>
+
+    <div class="gauge-center">
+      <div class="g-number" id="gNum">—</div>
+      <div class="g-unit">Mbps</div>
+      <div class="g-phase" id="gPhase">ready</div>
+    </div>
+  </div>
+
+  <div class="gauge-labels">
+    <span>0</span><span>250</span><span>500</span><span>750</span><span>1G</span>
+  </div>
+</div>
+
+<!-- PHASE STRIP -->
+<div class="phase-strip">
+  <div class="phase-item" id="ph-ping">
+    <div class="phase-dot"></div>
+    <div class="phase-label">Ping</div>
+  </div>
+  <div class="phase-item" id="ph-dl">
+    <div class="phase-dot"></div>
+    <div class="phase-label">Download</div>
+  </div>
+  <div class="phase-item" id="ph-ul">
+    <div class="phase-dot"></div>
+    <div class="phase-label">Upload</div>
+  </div>
+</div>
+
+<!-- PRIMARY CARDS -->
+<div class="primary-row">
+  <div class="pcard" id="card-dl">
+    <div class="pc-label"><span class="pc-arrow">↓</span>Down</div>
+    <div class="pc-val" id="dlVal">—</div>
+    <div class="pc-unit">Mbps</div>
+  </div>
+  <div class="pcard" id="card-ping">
+    <div class="pc-label"><span class="pc-arrow">◎</span>Ping</div>
+    <div class="pc-val" id="pingVal">—</div>
+    <div class="pc-unit">ms</div>
+  </div>
+  <div class="pcard" id="card-ul">
+    <div class="pc-label"><span class="pc-arrow">↑</span>Up</div>
+    <div class="pc-val" id="ulVal">—</div>
+    <div class="pc-unit">Mbps</div>
+  </div>
+</div>
+
+<!-- LIVE WAVEFORM -->
+<div class="wave-wrap">
+  <div class="wave-label">Live Throughput</div>
+  <div class="wave-peak" id="wavePeak"></div>
+  <canvas id="waveCanvas"></canvas>
+</div>
+
+<!-- ── STATS ── -->
+
+<!-- Latency -->
+<div class="stat-section">
+  <div class="section-hd">Latency Analysis</div>
+  <div class="stat-table">
+    <div class="stat-row"><span class="s-name">Average Ping</span><span class="s-val dash" id="s-pavg">—</span></div>
+    <div class="stat-row"><span class="s-name">Minimum Ping</span><span class="s-val dash" id="s-pmin">—</span></div>
+    <div class="stat-row"><span class="s-name">Maximum Ping</span><span class="s-val dash" id="s-pmax">—</span></div>
+    <div class="stat-row"><span class="s-name">Jitter</span><span class="s-val dash" id="s-jitter">—</span></div>
+    <div class="stat-row"><span class="s-name">Packet Loss</span><span class="s-val dash" id="s-loss">—</span></div>
+  </div>
+</div>
+
+<!-- Connection Timing -->
+<div class="stat-section">
+  <div class="section-hd">Connection Timing</div>
+  <div class="stat-table">
+    <div class="stat-row"><span class="s-name">DNS Lookup</span><span class="s-val dash" id="s-dns">—</span></div>
+    <div class="stat-row"><span class="s-name">TCP Handshake</span><span class="s-val dash" id="s-tcp">—</span></div>
+    <div class="stat-row"><span class="s-name">TLS Negotiation</span><span class="s-val dash" id="s-tls">—</span></div>
+    <div class="stat-row"><span class="s-name">Time to First Byte</span><span class="s-val dash" id="s-ttfb">—</span></div>
+    <div class="stat-row"><span class="s-name">Content Transfer</span><span class="s-val dash" id="s-transfer">—</span></div>
+    <div class="stat-row"><span class="s-name">Total Request</span><span class="s-val dash" id="s-total">—</span></div>
+  </div>
+</div>
+
+<!-- Throughput Detail -->
+<div class="stat-section">
+  <div class="section-hd">Throughput Detail</div>
+  <div class="stat-table">
+    <div class="stat-row"><span class="s-name">Download Peak</span><span class="s-val dash" id="s-dlpeak">—</span></div>
+    <div class="stat-row"><span class="s-name">Download Average</span><span class="s-val dash" id="s-dlavg">—</span></div>
+    <div class="stat-row"><span class="s-name">Upload Peak</span><span class="s-val dash" id="s-ulpeak">—</span></div>
+    <div class="stat-row"><span class="s-name">Upload Average</span><span class="s-val dash" id="s-ulavg">—</span></div>
+    <div class="stat-row"><span class="s-name">Bytes Transferred</span><span class="s-val dash" id="s-bytes">—</span></div>
+    <div class="stat-row"><span class="s-name">Test Duration</span><span class="s-val dash" id="s-duration">—</span></div>
+  </div>
+</div>
+
+<!-- Browser Net Info -->
+<div class="stat-section">
+  <div class="section-hd">Browser Network API</div>
+  <div class="stat-table">
+    <div class="stat-row"><span class="s-name">Connection Type</span><span class="s-val dash" id="s-conntype">—</span></div>
+    <div class="stat-row"><span class="s-name">Effective Type</span><span class="s-val dash" id="s-efftype">—</span></div>
+    <div class="stat-row"><span class="s-name">Browser Downlink Est.</span><span class="s-val dash" id="s-bdownlink">—</span></div>
+    <div class="stat-row"><span class="s-name">Browser RTT Est.</span><span class="s-val dash" id="s-brtt">—</span></div>
+    <div class="stat-row"><span class="s-name">Data Saver Mode</span><span class="s-val dash" id="s-datasaver">—</span></div>
+  </div>
+</div>
+
+<!-- Use Case Quality -->
+<div class="stat-section">
+  <div class="section-hd">Use-Case Quality</div>
+  <div class="stat-table">
+    <div class="stat-row">
+      <span class="s-name">4K Streaming</span>
+      <span class="s-val qbar" id="q-stream">
+        <span class="qseg"></span><span class="qseg"></span><span class="qseg"></span><span class="qseg"></span><span class="qseg"></span>
+      </span>
+    </div>
+    <div class="stat-row">
+      <span class="s-name">Online Gaming</span>
+      <span class="s-val qbar" id="q-gaming">
+        <span class="qseg"></span><span class="qseg"></span><span class="qseg"></span><span class="qseg"></span><span class="qseg"></span>
+      </span>
+    </div>
+    <div class="stat-row">
+      <span class="s-name">Video Calls</span>
+      <span class="s-val qbar" id="q-calls">
+        <span class="qseg"></span><span class="qseg"></span><span class="qseg"></span><span class="qseg"></span><span class="qseg"></span>
+      </span>
+    </div>
+    <div class="stat-row">
+      <span class="s-name">Cloud Backup</span>
+      <span class="s-val qbar" id="q-backup">
+        <span class="qseg"></span><span class="qseg"></span><span class="qseg"></span><span class="qseg"></span><span class="qseg"></span>
+      </span>
+    </div>
+    <div class="stat-row"><span class="s-name">Overall Score</span><span class="s-val dash" id="q-overall">—</span></div>
+  </div>
+</div>
+
+<!-- RUN BUTTON -->
+<div class="run-wrap">
+  <button id="runBtn" onclick="startTest()">
+    <span class="shimmer"></span>
+    ▶ &nbsp; RUN TEST
+  </button>
+</div>
+
+<!-- HISTORY -->
+<div class="history-wrap" id="historyWrap">
+  <div class="section-hd" style="border-radius:10px;border:1px solid var(--border);">Recent Tests</div>
+  <div class="hist-chips" id="histChips"></div>
+</div>
+
+<footer>NETPULSE · cloudflare endpoints · resource timing api</footer>
+</div>
+
+<script>
+/* ─── CONFIG ───────────────────────────────────────────── */
+const CF = 'https://speed.cloudflare.com';
+const PING_N   = 16;
+const DL_SIZES = [100_000, 1_000_000, 10_000_000, 25_000_000];
+const UL_SIZES = [1_000_000, 5_000_000, 10_000_000];
+const GAUGE_MAX = 1000; /* Mbps */
+
+/* ─── STATE ────────────────────────────────────────────── */
+let running = false;
+let waveData = [];
+let history  = [];
+let testStart = 0;
+let totalBytes = 0;
+let dlSamples = [], ulSamples = [];
+let currentColor = 'var(--teal)';
+
+/* ─── CANVAS ───────────────────────────────────────────── */
+const canvas = document.getElementById('waveCanvas');
+const ctx    = canvas.getContext('2d');
+
+function resizeCanvas() {
+  const p = canvas.parentElement;
+  canvas.width  = p.clientWidth - 24;
+  canvas.height = p.clientHeight - 2;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+function drawWave() {
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  if (waveData.length < 2) return;
+
+  const pts  = waveData.slice(-100);
+  const peak = Math.max(...pts, 1);
+
+  /* gradient fill */
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, currentColor === 'var(--amber)'
+    ? 'rgba(255,159,28,0.18)' : 'rgba(0,232,198,0.15)');
+  grad.addColorStop(1, 'rgba(0,0,0,0)');
+
+  ctx.beginPath();
+  pts.forEach((v, i) => {
+    const x = (i / (pts.length - 1)) * W;
+    const y = H - (v / peak) * H * 0.88 - 2;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  const lastX = W;
+  const lastY = H - (pts[pts.length - 1] / peak) * H * 0.88 - 2;
+  ctx.lineTo(lastX, H); ctx.lineTo(0, H); ctx.closePath();
+  ctx.fillStyle = grad; ctx.fill();
+
+  /* line */
+  ctx.beginPath();
+  pts.forEach((v, i) => {
+    const x = (i / (pts.length - 1)) * W;
+    const y = H - (v / peak) * H * 0.88 - 2;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.strokeStyle = currentColor === 'var(--amber)' ? '#ff9f1c' : '#00e8c6';
+  ctx.lineWidth = 1.5;
+  ctx.lineJoin  = 'round';
+  ctx.stroke();
+
+  document.getElementById('wavePeak').textContent =
+    peak >= 1 ? `peak ${peak >= 10 ? Math.round(peak) : peak.toFixed(1)} Mbps` : '';
+}
+
+/* ─── GAUGE ────────────────────────────────────────────── */
+const gFill  = document.getElementById('gFill');
+const gNum   = document.getElementById('gNum');
+const gPhase = document.getElementById('gPhase');
+const ARC    = 471.24; /* 270° of circumference 2π×90 */
+const CIRC   = 628.32;
+
+function setGauge(mbps, phase, color) {
+  const pct = Math.min(mbps / GAUGE_MAX, 1);
+  const arc = pct * ARC;
+  gFill.style.strokeDasharray = `${arc} ${CIRC}`;
+  gFill.style.stroke = color;
+  gFill.style.filter = `drop-shadow(0 0 7px ${color})`;
+  gNum.textContent   = mbps === 0 ? '0' : mbps >= 10 ? Math.round(mbps) : mbps.toFixed(1);
+  gNum.style.color   = color;
+  if (phase) gPhase.textContent = phase;
+  currentColor = color === '#00e8c6' ? 'var(--teal)' : 'var(--amber)';
+}
+
+function resetGauge() {
+  gFill.style.strokeDasharray = `0 ${CIRC}`;
+  gNum.textContent = '—';
+  gNum.style.color = '';
+  gPhase.textContent = 'ready';
+  currentColor = 'var(--teal)';
+}
+
+/* ─── PHASES ───────────────────────────────────────────── */
+function phaseSet(id, state) {
+  const el = document.getElementById(`ph-${id}`);
+  el.className = `phase-item${state ? ' ' + state : ''}`;
+}
+
+function allPhaseReset() {
+  ['ping','dl','ul'].forEach(p => phaseSet(p, ''));
+}
+
+/* ─── HELPERS ──────────────────────────────────────────── */
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const fms  = ms  => ms < 1 ? '< 1 ms' : `${ms.toFixed(1)} ms`;
+const fmb  = mbps => mbps >= 10 ? `${Math.round(mbps)} Mbps` : `${mbps.toFixed(2)} Mbps`;
+const fmtBytes = b => b > 1e9 ? `${(b/1e9).toFixed(2)} GB`
+                    : b > 1e6 ? `${(b/1e6).toFixed(1)} MB`
+                    : `${(b/1e3).toFixed(0)} KB`;
+
+function setStat(id, val, cls) {
+  const el = document.getElementById(id);
+  el.textContent = val;
+  el.className = 's-val' + (cls ? ' ' + cls : '');
+}
+
+function colorPing(ms)    { return ms < 30 ? 'good' : ms < 80  ? 'warn' : 'bad'; }
+function colorJitter(ms)  { return ms < 10 ? 'good' : ms < 30  ? 'warn' : 'bad'; }
+function colorLoss(pct)   { return pct === 0 ? 'good' : pct < 5 ? 'warn' : 'bad'; }
+function colorMbps(mbps)  { return mbps > 50 ? 'good' : mbps > 10 ? 'warn' : 'bad'; }
+
+/* ─── IP ───────────────────────────────────────────────── */
+async function detectIP() {
+  try {
+    const d = await (await fetch('https://ipapi.co/json/')).json();
+    document.getElementById('ipVal').textContent = d.ip || '—';
+    const org = (d.org || '').replace(/^AS\d+\s+/,'').slice(0, 28);
+    document.getElementById('ispVal').textContent = org || d.city || '—';
+  } catch {
+    try {
+      const d = await (await fetch('https://api.ipify.org?format=json')).json();
+      document.getElementById('ipVal').textContent = d.ip;
+      document.getElementById('ispVal').textContent = '—';
+    } catch { document.getElementById('ipVal').textContent = 'unavailable'; }
+  }
+}
+
+/* ─── BROWSER NET INFO ─────────────────────────────────── */
+function loadNetAPI() {
+  const c = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  if (c) {
+    setStat('s-conntype',   c.type        || 'unknown');
+    setStat('s-efftype',    c.effectiveType || '—');
+    setStat('s-bdownlink',  c.downlink != null ? `${c.downlink} Mbps` : '—');
+    setStat('s-brtt',       c.rtt      != null ? `${c.rtt} ms`    : '—');
+    setStat('s-datasaver',  c.saveData  ? 'enabled' : 'disabled');
+  } else {
+    ['s-conntype','s-efftype','s-bdownlink','s-brtt','s-datasaver']
+      .forEach(id => setStat(id, 'API N/A'));
+  }
+}
+
+/* ─── RESOURCE TIMING ──────────────────────────────────── */
+function extractTiming(url) {
+  const entries = performance.getEntriesByName(url, 'resource');
+  if (!entries.length) return null;
+  const e = entries[entries.length - 1];
+  return {
+    dns:      e.domainLookupEnd  - e.domainLookupStart,
+    tcp:      e.connectEnd       - e.connectStart,
+    tls:      e.secureConnectionStart > 0 ? e.connectEnd - e.secureConnectionStart : null,
+    ttfb:     e.responseStart    - e.requestStart,
+    transfer: e.responseEnd      - e.responseStart,
+    total:    e.responseEnd      - e.startTime,
+  };
+}
+
+function applyTiming(t) {
+  if (!t) return;
+  setStat('s-dns',  t.dns  > 0.5 ? fms(t.dns)  : '< 1 ms');
+  setStat('s-tcp',  t.tcp  > 0.5 ? fms(t.tcp)  : 'reused');
+  setStat('s-tls',  t.tls  != null ? fms(t.tls) : 'n/a (cached)');
+  setStat('s-ttfb', t.ttfb > 0    ? fms(t.ttfb) : '—');
+  setStat('s-transfer', t.transfer > 0 ? fms(t.transfer) : '—');
+  setStat('s-total',    t.total    > 0 ? fms(t.total)    : '—');
+}
+
+/* ─── PING TEST ────────────────────────────────────────── */
+async function runPingTest() {
+  phaseSet('ping', 'active');
+  gPhase.textContent = 'pinging…';
+  const pings = []; let failed = 0;
+
+  for (let i = 0; i < PING_N; i++) {
+    try {
+      const t0 = performance.now();
+      await fetch(`${CF}/__ping?_=${Date.now()}${i}`, { method: 'HEAD', cache: 'no-store' });
+      pings.push(performance.now() - t0);
+    } catch { failed++; }
+    await sleep(60);
+  }
+
+  if (!pings.length) return { avg: 999, min: 999, max: 999, jitter: 999, loss: 100 };
+
+  const avg    = pings.reduce((a, b) => a + b, 0) / pings.length;
+  const min    = Math.min(...pings);
+  const max    = Math.max(...pings);
+  const jitter = pings.slice(1).reduce((acc, v, i) => acc + Math.abs(v - pings[i]), 0) / (pings.length - 1);
+  const loss   = parseFloat(((failed / PING_N) * 100).toFixed(1));
+
+  setStat('s-pavg',   fms(avg),    colorPing(avg));
+  setStat('s-pmin',   fms(min),    colorPing(min));
+  setStat('s-pmax',   fms(max),    colorPing(max));
+  setStat('s-jitter', fms(jitter), colorJitter(jitter));
+  setStat('s-loss',   `${loss}%`,  colorLoss(loss));
+
+  const pv = document.getElementById('pingVal');
+  pv.textContent = Math.round(avg);
+  pv.classList.add('filled');
+
+  phaseSet('ping', 'done');
+  return { avg, min, max, jitter, loss };
+}
+
+/* ─── DOWNLOAD TEST ────────────────────────────────────── */
+async function runDownloadTest() {
+  phaseSet('dl', 'active');
+  document.getElementById('card-dl').classList.add('active-card');
+  waveData = []; dlSamples = [];
+  let timingApplied = false;
+
+  for (const size of DL_SIZES) {
+    if (!running) break;
+    const url = `${CF}/__down?bytes=${size}&_=${Math.random()}`;
+    const t0  = performance.now();
+    let loaded = 0, lastT = t0, lastLoaded = 0;
+
+    try {
+      const resp = await fetch(url, { cache: 'no-store' });
+      const reader = resp.body.getReader();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        loaded += value.length;
+        totalBytes += value.length;
+        const now = performance.now();
+        const dt  = now - lastT;
+
+        if (dt > 80) {
+          const chunk  = ((loaded - lastLoaded) * 8) / (dt * 1000);
+          const avgNow = (loaded * 8) / ((now - t0) * 1000);
+          waveData.push(chunk);
+          dlSamples.push(chunk);
+          drawWave();
+          setGauge(avgNow, 'downloading…', '#00e8c6');
+          const dv = document.getElementById('dlVal');
+          dv.textContent = avgNow >= 10 ? Math.round(avgNow) : avgNow.toFixed(1);
+          dv.classList.add('filled');
+          lastT = now; lastLoaded = loaded;
+        }
+      }
+
+      if (!timingApplied) {
+        applyTiming(extractTiming(url));
+        timingApplied = true;
+      }
+    } catch { /* continue to next size */ }
+  }
+
+  const dlPeak = dlSamples.length ? Math.max(...dlSamples) : 0;
+  const dlAvg  = dlSamples.length ? dlSamples.reduce((a,b)=>a+b,0)/dlSamples.length : 0;
+  setStat('s-dlpeak', fmb(dlPeak), colorMbps(dlPeak));
+  setStat('s-dlavg',  fmb(dlAvg),  colorMbps(dlAvg));
+
+  document.getElementById('card-dl').classList.remove('active-card');
+  phaseSet('dl', 'done');
+  return dlPeak;
+}
+
+/* ─── UPLOAD TEST ──────────────────────────────────────── */
+async function runUploadTest() {
+  phaseSet('ul', 'active');
+  document.getElementById('card-ul').classList.add('active-card');
+  waveData = []; ulSamples = [];
+
+  for (const size of UL_SIZES) {
+    if (!running) break;
+    /* create semi-random blob */
+    const buf  = new Uint8Array(size);
+    const seed = new Uint8Array(Math.min(size, 65536));
+    crypto.getRandomValues(seed);
+    buf.set(seed);
+    const blob = new Blob([buf]);
+
+    const t0 = performance.now();
+    try {
+      await fetch(`${CF}/__up`, {
+        method: 'POST', body: blob, cache: 'no-store',
+        headers: { 'Content-Type': 'application/octet-stream' },
+      });
+      const elapsed = (performance.now() - t0) / 1000;
+      const mbps    = (size * 8) / (elapsed * 1_000_000);
+      totalBytes   += size;
+      ulSamples.push(mbps);
+      waveData.push(mbps);
+      drawWave();
+      setGauge(mbps, 'uploading…', '#ff9f1c');
+      const uv = document.getElementById('ulVal');
+      uv.textContent = mbps >= 10 ? Math.round(mbps) : mbps.toFixed(1);
+      uv.classList.add('filled');
+    } catch { /* continue */ }
+  }
+
+  const ulPeak = ulSamples.length ? Math.max(...ulSamples) : 0;
+  const ulAvg  = ulSamples.length ? ulSamples.reduce((a,b)=>a+b,0)/ulSamples.length : 0;
+  setStat('s-ulpeak', fmb(ulPeak), colorMbps(ulPeak));
+  setStat('s-ulavg',  fmb(ulAvg),  colorMbps(ulAvg));
+
+  document.getElementById('card-ul').classList.remove('active-card');
+  phaseSet('ul', 'done');
+  return ulPeak;
+}
+
+/* ─── QUALITY SCORES ───────────────────────────────────── */
+function fillBar(id, score, maxScore) {
+  const pct  = Math.min(score / maxScore, 1);
+  const bars = Math.round(pct * 5);
+  const cls  = pct >= 0.8 ? 'on' : pct >= 0.5 ? 'on-warn' : 'on-bad';
+  document.querySelectorAll(`#${id} .qseg`).forEach((s, i) => {
+    s.className = 'qseg' + (i < bars ? ` ${cls}` : '');
+  });
+  return bars;
+}
+
+function computeQuality(dl, ul, ping, jitter) {
+  /* 4K streaming: needs ≥25 Mbps dl, latency <150ms */
+  const streamScore = Math.min(100, (dl / 25) * 60 + (ping < 150 ? 40 : ping < 300 ? 20 : 0));
+  /* gaming: ping & jitter dominate */
+  const gameScore = Math.max(0, 100 - ping * 0.8 - jitter * 2);
+  /* video calls: needs reasonable up+down, low jitter */
+  const callScore = Math.min(100, ((dl + ul) / 20) * 60 + (jitter < 20 ? 40 : jitter < 50 ? 20 : 0));
+  /* cloud backup: upload focused */
+  const backupScore = Math.min(100, (ul / 20) * 100);
+
+  fillBar('q-stream',  streamScore, 100);
+  fillBar('q-gaming',  gameScore,   100);
+  fillBar('q-calls',   callScore,   100);
+  fillBar('q-backup',  backupScore, 100);
+
+  const overall = Math.round((streamScore + gameScore + callScore + backupScore) / 4);
+  const oCls    = overall >= 75 ? 'good' : overall >= 45 ? 'warn' : 'bad';
+  setStat('q-overall', `${overall} / 100`, oCls);
+}
+
+/* ─── HISTORY ──────────────────────────────────────────── */
+function addHistory(dl, ul, ping) {
+  history.unshift({ dl, ul, ping });
+  if (history.length > 6) history.pop();
+  document.getElementById('historyWrap').style.display = 'block';
+  document.getElementById('histChips').innerHTML = history.map(h =>
+    `<div class="hchip">↓<b>${Math.round(h.dl)}</b> ↑<b>${Math.round(h.ul)}</b> ◎<b>${Math.round(h.ping)}</b></div>`
+  ).join('');
+}
+
+/* ─── RESET UI ─────────────────────────────────────────── */
+function resetUI() {
+  ['dlVal','ulVal','pingVal'].forEach(id => {
+    const el = document.getElementById(id);
+    el.textContent = '—'; el.classList.remove('filled');
+  });
+  [
+    's-pavg','s-pmin','s-pmax','s-jitter','s-loss',
+    's-dns','s-tcp','s-tls','s-ttfb','s-transfer','s-total',
+    's-dlpeak','s-dlavg','s-ulpeak','s-ulavg','s-bytes','s-duration',
+    'q-overall'
+  ].forEach(id => setStat(id, '—', 'dash'));
+
+  /* reset quality bars */
+  ['q-stream','q-gaming','q-calls','q-backup'].forEach(id => {
+    document.querySelectorAll(`#${id} .qseg`).forEach(s => s.className = 'qseg');
+  });
+
+  waveData = []; dlSamples = []; ulSamples = []; totalBytes = 0;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  document.getElementById('wavePeak').textContent = '';
+  resetGauge();
+  allPhaseReset();
+}
+
+/* ─── MAIN TEST ────────────────────────────────────────── */
+async function startTest() {
+  if (running) return;
+  running = true;
+  testStart = performance.now();
+
+  const btn = document.getElementById('runBtn');
+  btn.disabled = true;
+  btn.classList.add('testing');
+  btn.innerHTML = '<span class="shimmer"></span>● &nbsp; TESTING…';
+
+  document.getElementById('gaugeOuter').classList.add('glow');
+  resetUI();
+  loadNetAPI();
+
+  const pingRes = await runPingTest();
+  const dlMbps  = await runDownloadTest();
+  const ulMbps  = await runUploadTest();
+
+  /* final stats */
+  const elapsed = (performance.now() - testStart) / 1000;
+  setStat('s-bytes',    fmtBytes(totalBytes));
+  setStat('s-duration', `${elapsed.toFixed(1)} s`);
+
+  computeQuality(dlMbps, ulMbps, pingRes.avg, pingRes.jitter);
+  addHistory(dlMbps, ulMbps, pingRes.avg);
+
+  /* final gauge shows download */
+  setGauge(dlMbps, 'complete', '#00e8c6');
+  gNum.style.color = '';
+
+  /* update primary ping card */
+  const pv = document.getElementById('pingVal');
+  pv.textContent = Math.round(pingRes.avg);
+  pv.classList.add('filled');
+
+  document.getElementById('gaugeOuter').classList.remove('glow');
+  btn.disabled = false;
+  btn.classList.remove('testing');
+  btn.innerHTML = '<span class="shimmer"></span>↺ &nbsp; RUN AGAIN';
+  running = false;
+}
+
+/* ─── INIT ─────────────────────────────────────────────── */
+detectIP();
+loadNetAPI();
+</script>
+</body>
+</html>
