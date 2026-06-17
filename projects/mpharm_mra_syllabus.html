@@ -1,0 +1,1411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>🐾 M.Pharm MRA — Syllabus</title>
+<style>
+  :root {
+    --bg: #0f0f11;
+    --surface: #1a1a1f;
+    --surface2: #22222a;
+    --border: #2e2e38;
+    --accent: #f5a623;
+    --accent2: #e07b00;
+    --text: #e8e8ec;
+    --muted: #888899;
+    --tag: #2a2a35;
+    --sem1: #1e3a4a;
+    --sem2: #1a3a2a;
+    --sem3: #3a2a1e;
+    --sem4: #2a1e3a;
+    --good: #3aaf6a;
+    --radius: 10px;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 15px; line-height: 1.55; -webkit-text-size-adjust: 100%; }
+  body { min-height: 100vh; padding-bottom: 100px; }
+
+  /* HEADER */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 16px 10px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .header-top { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .paw { font-size: 22px; }
+  .app-title { font-size: 17px; font-weight: 700; color: var(--accent); letter-spacing: -0.3px; }
+  .app-sub { font-size: 11px; color: var(--muted); }
+  .search-wrap { position: relative; }
+  .search-wrap input {
+    width: 100%; padding: 9px 12px 9px 36px;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 20px; color: var(--text); font-size: 14px;
+    outline: none; -webkit-appearance: none;
+  }
+  .search-wrap input:focus { border-color: var(--accent); }
+  .search-wrap input::placeholder { color: var(--muted); }
+  .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 14px; pointer-events: none; }
+  .search-clear {
+    position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+    background: var(--muted); color: var(--bg); border: none; border-radius: 50%;
+    width: 18px; height: 18px; font-size: 11px; cursor: pointer;
+    display: none; align-items: center; justify-content: center;
+    font-weight: 700; line-height: 1;
+  }
+  .search-clear.show { display: flex; }
+
+  /* NAV TABS */
+  .nav-tabs {
+    display: flex; overflow-x: auto; gap: 6px; padding: 10px 16px 0;
+    border-bottom: 1px solid var(--border);
+    scrollbar-width: none; background: var(--surface);
+    position: sticky; top: 97px; z-index: 99;
+  }
+  .nav-tabs::-webkit-scrollbar { display: none; }
+  .tab-btn {
+    flex-shrink: 0; padding: 7px 14px; border-radius: 20px 20px 0 0;
+    background: transparent; border: 1px solid transparent; border-bottom: none;
+    color: var(--muted); font-size: 13px; font-weight: 500; cursor: pointer;
+    transition: all .18s; white-space: nowrap;
+  }
+  .tab-btn.active { background: var(--bg); color: var(--accent); border-color: var(--border); margin-bottom: -1px; }
+  .tab-btn:not(.active):hover { color: var(--text); }
+
+  /* CONTENT SECTIONS */
+  .section { display: none; padding: 14px 16px; }
+  .section.active { display: block; }
+
+  /* SEMESTER PILLS */
+  .sem-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .sem-pill {
+    padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--text); font-size: 13px;
+    font-weight: 500; cursor: pointer; transition: all .18s;
+  }
+  .sem-pill.s1 { border-color: #1e6a8a; }
+  .sem-pill.s2 { border-color: #1a6a3a; }
+  .sem-pill.s3 { border-color: #6a4a1e; }
+  .sem-pill.s4 { border-color: #4a2a6a; }
+  .sem-pill.active, .sem-pill:hover { background: var(--accent); border-color: var(--accent); color: #000; font-weight: 600; }
+  .sem-pill.s1.active, .sem-pill.s1:hover { background: #1e6a8a; color: #fff; border-color: #1e6a8a; }
+  .sem-pill.s2.active, .sem-pill.s2:hover { background: #1a6a3a; color: #fff; border-color: #1a6a3a; }
+  .sem-pill.s3.active, .sem-pill.s3:hover { background: #6a4a1e; color: #fff; border-color: #6a4a1e; }
+  .sem-pill.s4.active, .sem-pill.s4:hover { background: #4a2a6a; color: #fff; border-color: #4a2a6a; }
+
+  /* SUBJECT CARDS */
+  .subject-list { display: flex; flex-direction: column; gap: 8px; }
+  .subject-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden;
+    transition: border-color .18s;
+  }
+  .subject-card:hover { border-color: var(--accent); }
+  .subject-header {
+    padding: 13px 15px; cursor: pointer; display: flex; align-items: flex-start; gap: 10px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .subject-code {
+    font-size: 11px; font-weight: 700; color: var(--accent); letter-spacing: 0.5px;
+    background: rgba(245,166,35,0.12); padding: 2px 7px; border-radius: 5px;
+    flex-shrink: 0; margin-top: 1px; white-space: nowrap;
+  }
+  .subject-name { font-size: 15px; font-weight: 600; flex: 1; }
+  .subject-type {
+    font-size: 11px; color: var(--muted); flex-shrink: 0; margin-top: 2px;
+  }
+  .chevron { margin-left: auto; font-size: 13px; color: var(--muted); transition: transform .22s; flex-shrink: 0; padding-top: 2px; }
+  .subject-card.open .chevron { transform: rotate(180deg); }
+  .subject-body { display: none; padding: 0 15px 15px; }
+  .subject-card.open .subject-body { display: block; }
+
+  /* META ROW */
+  .meta-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; padding-top: 4px; }
+  .meta-badge {
+    font-size: 11px; padding: 3px 9px; border-radius: 5px;
+    background: var(--tag); color: var(--muted); border: 1px solid var(--border);
+  }
+  .meta-badge.marks { color: var(--good); border-color: #1a4a2a; background: #0f2a18; }
+
+  /* SCOPE / OBJECTIVES */
+  .info-block { margin-bottom: 14px; }
+  .info-label { font-size: 11px; font-weight: 700; color: var(--accent); letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 6px; }
+  .info-text { font-size: 13.5px; color: #c8c8d0; line-height: 1.6; }
+  .obj-list { padding-left: 0; list-style: none; }
+  .obj-list li { font-size: 13px; color: #c0c0cc; padding: 3px 0 3px 18px; position: relative; }
+  .obj-list li::before { content: "→"; position: absolute; left: 0; color: var(--accent); }
+
+  /* UNITS */
+  .units-section { margin-bottom: 14px; }
+  .unit-item { border-left: 2px solid var(--border); padding: 8px 12px; margin-bottom: 8px; border-radius: 0 6px 6px 0; background: var(--surface2); }
+  .unit-item:hover { border-left-color: var(--accent); }
+  .unit-header { display: flex; align-items: center; gap: 8px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .unit-num { font-size: 10px; font-weight: 700; color: var(--accent); letter-spacing: 0.5px; background: rgba(245,166,35,0.1); padding: 2px 6px; border-radius: 4px; flex-shrink: 0; }
+  .unit-title-text { font-size: 13.5px; font-weight: 600; flex: 1; }
+  .unit-hrs { font-size: 11px; color: var(--muted); flex-shrink: 0; }
+  .unit-chevron { font-size: 11px; color: var(--muted); transition: transform .2s; }
+  .unit-item.open .unit-chevron { transform: rotate(180deg); }
+  .unit-body { display: none; font-size: 13px; color: #b8b8c4; line-height: 1.6; margin-top: 8px; }
+  .unit-item.open .unit-body { display: block; }
+
+  /* REFS */
+  .refs-section { margin-top: 10px; }
+  .ref-item { font-size: 12.5px; color: #a0a0b0; padding: 5px 0; border-top: 1px solid var(--border); line-height: 1.5; }
+  .ref-num { color: var(--accent); font-weight: 600; margin-right: 4px; }
+  .website-link { color: #6ab4f5; word-break: break-all; font-size: 12px; }
+
+  /* PRACTICALS */
+  .practical-list { list-style: none; }
+  .practical-list li { font-size: 13px; color: #b8b8c4; padding: 5px 0 5px 22px; border-top: 1px solid var(--border); position: relative; }
+  .practical-list li::before { content: attr(data-n); position: absolute; left: 0; color: var(--accent); font-weight: 700; font-size: 11px; min-width: 18px; }
+
+  /* DIVIDER */
+  .divider { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
+
+  /* MARKS TABLE */
+  .marks-table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-bottom: 10px; }
+  .marks-table th { background: var(--tag); color: var(--accent); padding: 7px 9px; text-align: left; font-size: 11px; letter-spacing: 0.3px; }
+  .marks-table td { padding: 7px 9px; border-top: 1px solid var(--border); color: var(--text); }
+  .marks-table tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+
+  /* GRADES TABLE */
+  .grade-O { color: #f5c842; font-weight: 700; }
+  .grade-A { color: #7fc8f8; }
+  .grade-B { color: #7af09a; }
+  .grade-pass { color: var(--good); }
+  .grade-F { color: #f07a7a; }
+
+  /* SEARCH RESULTS */
+  .search-results { display: flex; flex-direction: column; gap: 8px; }
+  .result-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 12px 14px; cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .result-card:active { background: var(--surface2); }
+  .result-sem { font-size: 11px; color: var(--muted); margin-bottom: 3px; }
+  .result-name { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+  .result-snippet { font-size: 12.5px; color: var(--muted); }
+  mark { background: rgba(245,166,35,0.28); color: var(--text); border-radius: 2px; padding: 0 1px; }
+  .no-results { text-align: center; padding: 40px 20px; color: var(--muted); font-size: 15px; }
+  .no-results .dog { font-size: 40px; display: block; margin-bottom: 10px; }
+
+  /* QUICK REF */
+  .quick-grid { display: flex; flex-direction: column; gap: 10px; }
+  .quick-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 13px 15px; }
+  .quick-card h3 { font-size: 14px; font-weight: 700; color: var(--accent); margin-bottom: 8px; }
+  .quick-card p, .quick-card li { font-size: 13px; color: #c0c0cc; line-height: 1.6; }
+  .quick-card ul { padding-left: 16px; }
+  .quick-card li { margin-bottom: 3px; }
+
+  /* BOTTOM NAV */
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
+    background: var(--surface); border-top: 1px solid var(--border);
+    display: flex; padding: 8px 0 env(safe-area-inset-bottom, 8px);
+  }
+  .nav-item {
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+    padding: 4px 0; cursor: pointer; color: var(--muted);
+    transition: color .18s; -webkit-tap-highlight-color: transparent; border: none; background: none;
+  }
+  .nav-item.active { color: var(--accent); }
+  .nav-icon { font-size: 20px; }
+  .nav-label { font-size: 10px; font-weight: 500; }
+
+  /* SWIPE HINT */
+  .breadcrumb { font-size: 12px; color: var(--muted); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+  .bc-sep { opacity: 0.4; }
+
+  /* BACK BTN */
+  .back-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 13px; color: var(--accent); margin-bottom: 12px;
+    cursor: pointer; border: none; background: none; padding: 4px 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .back-btn:hover { opacity: 0.8; }
+
+  /* PROGRESS BAR */
+  .progress-bar { height: 3px; background: var(--border); border-radius: 2px; margin-bottom: 10px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--accent); transition: width .3s; }
+
+  /* ANNOUNCEMENT */
+  .announce { background: rgba(245,166,35,0.1); border: 1px solid rgba(245,166,35,0.3); border-radius: 8px; padding: 10px 13px; font-size: 12.5px; color: var(--accent); margin-bottom: 14px; }
+
+  /* FLOATING SEARCH HINT */
+  .hint { font-size: 12px; color: var(--muted); text-align: center; padding: 8px; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-top">
+    <span class="paw">🐾</span>
+    <div>
+      <div class="app-title">M.Pharm Syllabus</div>
+      <div class="app-sub">Pharmaceutical Regulatory Affairs (MRA) · PCI 2016-17</div>
+    </div>
+  </div>
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input type="search" id="searchInput" placeholder="Search subjects, units, topics…" autocomplete="off" autocorrect="off" spellcheck="false">
+    <button class="search-clear" id="searchClear">✕</button>
+  </div>
+</div>
+
+<!-- NAV TABS (desktop/large) -->
+<div class="nav-tabs" id="navTabs" style="display:none">
+  <button class="tab-btn active" data-tab="syllabus">📚 Syllabus</button>
+  <button class="tab-btn" data-tab="search">🔍 Search</button>
+  <button class="tab-btn" data-tab="refs">📎 References</button>
+  <button class="tab-btn" data-tab="quick">⚡ Quick Ref</button>
+</div>
+
+<!-- MAIN CONTENT -->
+<div id="searchSection" class="section" style="display:none">
+  <div id="searchResults" class="search-results"></div>
+</div>
+
+<div id="syllabusSection" class="section active">
+  <div class="sem-pills" id="semPills">
+    <button class="sem-pill s1 active" data-sem="1">Sem I</button>
+    <button class="sem-pill s2" data-sem="2">Sem II</button>
+    <button class="sem-pill s3" data-sem="3">Sem III</button>
+    <button class="sem-pill s4" data-sem="4">Sem IV</button>
+  </div>
+  <div id="subjectList" class="subject-list"></div>
+</div>
+
+<div id="refsSection" class="section" style="display:none">
+  <div class="announce">📌 All references from the official PCI M.Pharm (MRA) syllabus 2016-17</div>
+  <div id="refsBySubject"></div>
+</div>
+
+<div id="quickSection" class="section" style="display:none">
+  <div class="quick-grid" id="quickGrid"></div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+  <button class="nav-item active" data-nav="syllabus">
+    <span class="nav-icon">📚</span><span class="nav-label">Syllabus</span>
+  </button>
+  <button class="nav-item" data-nav="search">
+    <span class="nav-icon">🔍</span><span class="nav-label">Search</span>
+  </button>
+  <button class="nav-item" data-nav="refs">
+    <span class="nav-icon">📎</span><span class="nav-label">Refs</span>
+  </button>
+  <button class="nav-item" data-nav="quick">
+    <span class="nav-icon">⚡</span><span class="nav-label">Quick Ref</span>
+  </button>
+</div>
+
+<script>
+// ===== DATA =====
+const SEMESTERS = {
+  1: {
+    label: "Semester I",
+    subjects: [
+      {
+        code: "MRA 101T",
+        name: "Good Regulatory Practices",
+        type: "Theory",
+        credits: "4",
+        marks: { internal: 25, external: 75, total: 100 },
+        hours: 60,
+        scope: "Imparts fundamental knowledge on various Good Regulatory Practices viz., cGMP, GLP, GALP and GDP for Pharmaceuticals, Cosmetics, Food & Nutraceuticals, Medical devices, In-vitro Diagnostic Medical Devices (IVDs) and biological products.",
+        objectives: [
+          "Understand key regulatory and compliance elements w.r.t. GMP, GLP, GALP and GDP",
+          "Prepare and implement checklists and SOPs for various Good Regulatory Practices",
+          "Implement Good Regulatory Practices in Healthcare and related Industries",
+          "Prepare for readiness and conduct of audits and inspections"
+        ],
+        units: [
+          {
+            num: "UNIT 1",
+            title: "Current Good Manufacturing Practices",
+            hrs: 12,
+            content: "Introduction, US cGMP Part 210 and Part 211. EC Principles of GMP (Directive 91/356/EEC) Article 6 to Article 14 and WHO cGMP guidelines. GAMP-5; Medical device and IVDs Global Harmonization Task Force (GHTF) Guidance docs."
+          },
+          {
+            num: "UNIT 2",
+            title: "Good Laboratory Practices",
+            hrs: 12,
+            content: "Introduction, USFDA GLP Regulations (Subpart A to Subpart K), Controlling the GLP inspection process, Documentation, Audit, goals of Laboratory Quality Audit, Audit tools, Future of GLP regulations, relevant ISO and Quality Council of India (QCI) Standards."
+          },
+          {
+            num: "UNIT 3",
+            title: "Good Automated Laboratory Practices (GALP)",
+            hrs: 12,
+            content: "Introduction to GALP, Principles of GALP, GALP Requirements, SOPs of GALP, Training Documentation, 21 CFR Part 11, General check list of 21 CFR Part 11, Software Evaluation checklist, relevant ISO and QCI Standards."
+          },
+          {
+            num: "UNIT 4",
+            title: "Good Distribution Practices (GDP)",
+            hrs: 12,
+            content: "Introduction to GDP, Legal GDP requirements worldwide, Principles, Personnel, Documentation, Premises and Equipment, Deliveries to Customers, Returns, Self-Inspection, Provision of information, Stability testing principles, WHO GDP, USP GDP (Supply chain integrity), relevant CDSCO guidance and ISO standards."
+          },
+          {
+            num: "UNIT 5",
+            title: "Quality Management Systems",
+            hrs: 12,
+            content: "Concept of Quality, Total Quality Management, Quality by design, Six Sigma concept, Out of Specifications (OOS), Change control. Validation: Types of Validation, Types of Qualification, Validation master plan (VMP), Analytical Method Validation. Validation of utilities (Compressed air, steam, water systems, HVAC) and Cleaning Validation. ICH process, ICH guidelines (quality, safety, efficacy), ISO 13485, Sch MIII and other CDSCO regulatory guidance documents."
+          }
+        ],
+        refs: [
+          "Good Laboratory Practice Regulations, Sandy Weinberg, 4th Ed., Drugs and Pharmaceutical Sciences, Vol.168",
+          "Good Pharmaceutical Manufacturing Practice, Rational and Compliance by John Sharp, CRC Press",
+          "Establishing a cGMP Laboratory Audit System, A Practical Guide by David M. Bleisner, Wiley",
+          "How to Practice GLP by PP Sharma, Vandana Publications",
+          "Laboratory Auditing for Quality and Regulatory Compliance by Donald C. Singer, Vol.150",
+          "Drugs & Cosmetics Act, Rules & Amendments"
+        ],
+        websites: []
+      },
+      {
+        code: "MRA 102T",
+        name: "Documentation and Regulatory Writing",
+        type: "Theory",
+        credits: "4",
+        marks: { internal: 25, external: 75, total: 100 },
+        hours: 60,
+        scope: "Imparts fundamental knowledge on documentation and general principles involved in regulatory writing and submission to agencies.",
+        objectives: [
+          "Know the various documents pertaining to drugs in pharmaceutical industry",
+          "Understand the basics of regulatory compilation",
+          "Create and assemble regulatory submissions as per requirements of agencies",
+          "Follow up submissions and post approval document requirements"
+        ],
+        units: [
+          {
+            num: "UNIT 1",
+            title: "Documentation in Pharmaceutical Industry",
+            hrs: 12,
+            content: "Exploratory Product Development Brief (EPDB) for Drug substance and Drug product, Product Development Plan (PDP), Product Development Report (PDR), Master Formula Record, Batch Manufacturing Record (BMR) and its calculations, Batch Reconciliation, Batch Packaging Records, Print pack specifications, Distribution records, Certificate of Analysis (CoA), Site Master File and Drug Master Files (DMF)."
+          },
+          {
+            num: "UNIT 2",
+            title: "Dossier Preparation and Submission",
+            hrs: 12,
+            content: "Introduction and overview of dossiers, contents and organization of dossier, binders and sections, compilation and review of dossier. Paper submissions, overview and modules of CTD, electronic CTD (eCTD) submissions — planning, requirements, regulatory bindings, Tool and Technologies, electronic dossier submission process and validation, Electronic Submission Gateway (ESG). Non eCTD electronic submissions (NeeS), Asian CTD (ACTD), Sugam system of CDSCO."
+          },
+          {
+            num: "UNIT 3",
+            title: "Audits",
+            hrs: 12,
+            content: "Introduction, Definition, Summary, Types of audits, GMP compliance audit, Audit policy, Internal and External Audits, Second Party Audits, External third party audits, Auditing strategies, Preparation and conducting audit, Audit analysis, audit report, audit follow up. Auditing/inspection of manufacturing facilities by regulatory agencies. Timelines for audits/inspection. GHTF study group 4 guidance document. ISO 13485."
+          },
+          {
+            num: "UNIT 4",
+            title: "Inspections",
+            hrs: 12,
+            content: "Pre-approval inspections, Inspection of pharmaceutical manufacturers, Inspection of drug distribution channels, Quality systems requirements for national GMP inspectorates, inspection report, model certificate of GMP, Root cause analysis, Corrective and Preventive action (CAPA)."
+          },
+          {
+            num: "UNIT 5",
+            title: "Product Life Cycle Management",
+            hrs: 12,
+            content: "Prior Approval Supplement (PAS), Post Approval Changes (SUPAC), Changes Being Effected in 30 Days (CBE-30), Annual Report, Post marketing Reporting Requirements, Post approval Labeling Changes, Lifecycle Management, FDA Inspection and Enforcement, Establishment Inspection Report (EIR), Warning Letters, Recalls, Seizure and Injunctions. ISO Risk Management Standard."
+          }
+        ],
+        refs: [
+          "Compliance Auditing for Pharmaceutical Manufacturers — Karen Ginsbury and Gil Bismuth, Interpharm/CRC",
+          "Pharmaceutical Manufacturing Handbook, Regulations and Quality — Shayne Cox Gad, Wiley-Interscience",
+          "Handbook of Microbiological Quality Control — Rosamund M. Baird et al., CRC Press, 2000",
+          "Laboratory Auditing for Quality and Regulatory Compliance — Donald C. Singer et al., Taylor & Francis (2005)",
+          "Implementing Juran's Road Map for Quality Leadership — Al Endres, Wiley, 2000",
+          "Understanding, Managing and Implementing Quality — Jiju Antony; David Preece, Routledge, 2002",
+          "Organizing for High Performance — Edward E. Lawler et al., Jossey-Bass, 2001",
+          "Corporate Culture and the Quality Organization — James W. Fairfield-Sonn, Quorum Books, 2001",
+          "The Quality Management Sourcebook — Christine Avery; Diane Zabel, Routledge, 1997",
+          "The Quality Toolbox, 2nd Ed. — Nancy R. Tague, ASQ Publications",
+          "Juran's Quality Handbook, 6th Ed. — Joseph M. Juran and Joseph A. De Feo, ASQ Publications",
+          "Root Cause Analysis: The Core of Problem Solving and Corrective Action — Duke Okes, 2009, ASQ",
+          "International Medical Device Regulators Forum (IMDRF) Medical Device Single Audit Program (MDSAP)"
+        ],
+        websites: []
+      },
+      {
+        code: "MRA 103T",
+        name: "Clinical Research Regulations",
+        type: "Theory",
+        credits: "4",
+        marks: { internal: 25, external: 75, total: 100 },
+        hours: 60,
+        scope: "Imparts fundamental knowledge on clinical development process of drugs, pharmaceuticals and Medical Devices, phases and conduct of clinical trials, regulations and guidance governing clinical research in India, USA and EU.",
+        objectives: [
+          "History, origin and ethics of clinical and biomedical research and evaluation",
+          "Clinical drug, medical device development process and different types and phases of clinical trials",
+          "Regulatory requirements and guidance for conduct of clinical trials and research"
+        ],
+        units: [
+          {
+            num: "UNIT 1",
+            title: "Clinical Drug Development Process",
+            hrs: 12,
+            content: "Different types of clinical studies. Phases of clinical trials, Clinical Trial protocol. Phase 0 studies. Phase I and subtypes (single ascending, multiple ascending, dose escalation, food effect studies, drug-drug interaction, PK end points). Phase II studies (proof of concept/principle to establish efficacy). Phase III studies (multi-ethnicity, global clinical trial, registration studies). Phase IV studies (Post Marketing Studies; PSUR). Clinical Investigation and Evaluation of Medical Devices & IVDs."
+          },
+          {
+            num: "UNIT 2",
+            title: "Ethics in Clinical Research",
+            hrs: 12,
+            content: "Historical Perspectives: Nuremberg Code, Thalidomide study, Nazi Trials, Tuskegee Syphilis Study, The Belmont Report, Declaration of Helsinki. Origin of ICH-GCP guidelines. Ethics of randomized clinical trials. Role of placebo. Ethics in special populations. IRB/IEC/EC — composition, roles, responsibilities, review and approval process, ongoing monitoring of safety data. Data safety monitoring boards. Responsibilities of sponsor, CRO, and investigator. Ethical principles governing informed consent. Patient Information Sheet and Informed Consent Form."
+          },
+          {
+            num: "UNIT 3",
+            title: "Regulations Governing Clinical Trials",
+            hrs: 12,
+            content: "India: Schedule Y & Medical Device Guidance. USA: NDA 505(b)(1), NDA 505(b)(2), ANDA 505(j). FDA Guidance for Industry — Acceptance of Foreign Clinical Studies. FDA Clinical Trials Guidance — GCP. EU: Clinical Research regulations (EMA)."
+          },
+          {
+            num: "UNIT 4",
+            title: "Clinical Research Related Guidelines",
+            hrs: 12,
+            content: "Good Clinical Practice Guidelines (ICH GCP E6). Indian GCP Guidelines. ICMR Ethical Guidelines for Biomedical Research. CDSCO guidelines. GHTF study group 5 guidance documents. Regulatory Guidance on Efficacy and Safety: ICH E4 (Dose Response), E7 (Geriatrics), E8 (General Considerations), E10 (Choice of Control Groups), E11 (Pediatric Population). General biostatistics principles applied in clinical research."
+          },
+          {
+            num: "UNIT 5",
+            title: "USA & EU Guidance (CFR & EMA)",
+            hrs: 12,
+            content: "USA FDA Guidance: 21 CFR Part 50 (Protection of Human Subjects), Part 54 (Financial Disclosure), Part 312 (IND Application), Part 314 (FDA Approval to Market New Drug), Part 320 (BA/BE requirements), Part 812 (Investigational Device Exemptions), Part 822 (Post-market surveillance). FDA Safety Reporting for INDs and BA/BE Studies. FDA Med Watch. Guidance for Good Pharmacovigilance Practices. EU: EU Directives 2001, EudraLex Vol. 3, EU Annual Safety Report (ASR), Volume 9A Pharmacovigilance, EU MDD, ISO 14155."
+          }
+        ],
+        refs: [
+          "Clinical Trials and Human Research: A Practical Guide to Regulatory Compliance — Fay A. Rozovsky and Rodney K. Adams",
+          "HIPAA and Human Subjects Research — Mark Barnes, JD, LLM and Jennifer Kulynych, JD, PhD",
+          "Principles and Practices of Clinical Research, 2nd Ed. — John I. Gallin and Frederick P. Ognibene",
+          "Reviewing Clinical Trials: A Guide for the Ethics Committee — Johan PE Karlberg and Marjorie A Speers",
+          "International Pharmaceutical Product Registration — Anthony C. Cartwright, Taylor & Francis",
+          "New Drug Approval Process: The Global Challenge — Guarino, Richard A; Marcel Dekker Inc., NY",
+          "FDA Regulatory Affairs — Douglas J. Pisano, David Mantus; CRC Press",
+          "Country Specific Guidelines from official websites",
+          "Drugs & Cosmetics Act & Rules and Amendments"
+        ],
+        websites: [
+          "EU Clinical Research Directive 2001: http://www.eortc.be/services/doc/clinical-eudirective-04-april-01.pdf",
+          "Code of Federal Regulations, FDA: http://www.accessdata.fda.gov/scripts/cdrh/cfdocs/cfcfr/cfrsearch.cfm",
+          "ICH Guidelines: http://www.ich.org/products/guidelines.html",
+          "Eudralex Guidelines: http://www.gmpcompliance.info/euguide.htm",
+          "MHRA: http://www.mhra.gov.uk",
+          "CDSCO Guidance: http://cdsco.nic.in/CDSCO-GuidanceForIndustry.pdf",
+          "ICMR Ethical Guidelines: http://icmr.nic.in/ethical_guidelines.pdf"
+        ]
+      },
+      {
+        code: "MRA 104T",
+        name: "Regulations & Legislation for Drugs, Cosmetics, Medical Devices, Biologicals, Herbals, Food & Nutraceuticals in India + IPR",
+        type: "Theory",
+        credits: "4",
+        marks: { internal: 25, external: 75, total: 100 },
+        hours: 60,
+        scope: "Imparts fundamental knowledge on regulations and legislation in India w.r.t. Drugs & Cosmetics, Medical Devices, Biologicals & Herbals, and Food & Nutraceuticals — covering manufacture, import & registration, export, sale, marketing authorization, clinical trials and IPR.",
+        objectives: [
+          "Know different Acts and guidelines regulating Drugs & Cosmetics, Medical Devices, Biologicals & Herbals, and Food & Nutraceuticals in India",
+          "Understand approval process and regulatory requirements for all these categories"
+        ],
+        units: [
+          {
+            num: "UNIT 1",
+            title: "Acts, Rules & Amendments (India)",
+            hrs: 12,
+            content: "Drugs and Cosmetics Act 1940 and Rules 1945: DPCO and NPPA. Other relevant provisions (rules, schedules, guidelines for approval of Drugs & Cosmetics, Medical Devices, Biologicals & Herbals, and Food & Nutraceuticals in India). Other relevant Acts: Narcotic Drugs and Psychotropic Substances Act; Medicinal and Toilet Preparations (Excise Duties) Act 1955; Pharmacy Act 1948; Drugs and Magic Remedies (Objectionable Advertisements) Act 1955; Prevention of Cruelty to Animals Act."
+          },
+          {
+            num: "UNIT 2",
+            title: "Regulatory Requirements & Approval Procedures (India)",
+            hrs: 12,
+            content: "CDSCO and State Licensing Authority: Organization, Responsibilities. Rules, regulations, guidelines and standards for regulatory filing. Format and contents of Regulatory dossier filing. Clinical trial/investigations."
+          },
+          {
+            num: "UNIT 3",
+            title: "Indian Pharmacopoeia, BIS, ISO & Relevant Standards",
+            hrs: 12,
+            content: "Indian Pharmacopoeia (IP) standards, BIS standards, ISO and other relevant standards applicable to Drugs & Cosmetics, Medical Devices, Biologicals & Herbals, and Food & Nutraceuticals."
+          },
+          {
+            num: "UNIT 4",
+            title: "BA/BE, Stability, Preclinical Studies & Ethics",
+            hrs: 12,
+            content: "Bioavailability and Bioequivalence data (BA & BE), BCS Classification of Drugs, Regulatory Requirements for Bioequivalence study. Stability requirements: ICH and WHO. Guidelines for Drug testing in animals/Preclinical Studies. Animal testing: Rationale, CPCSEA Guidelines. Ethical guidelines for human participants. ICMR-DBT Guidelines for Stem Cell Research."
+          },
+          {
+            num: "UNIT 5",
+            title: "Intellectual Property Rights (IPR)",
+            hrs: 12,
+            content: "Patent, Trademark, Copyright, Industrial Designs and Geographical Indications. Indian Patent Scenario. IPR vs Regulatory Affairs."
+          }
+        ],
+        refs: [
+          "Manual of Patent Practice & Procedure, 3rd Ed. — The Patent Office of India",
+          "Patent Failure — James Bessen and Michael J. Meurer",
+          "Principles and Practice of Clinical Trial Medicine — Richard Chin and Bruce Y. Lee",
+          "Ethical Guidelines for Biomedical Research on Human Participants — ICMR New Delhi 2006",
+          "CPCSEA Guidelines for Laboratory Animal Facility — CPCSEA",
+          "ICH E6 Guideline — Good Clinical Practice, ICH Harmonised Tripartite",
+          "Guidance for Industry on Submission of Clinical Trial Application — CDSCO",
+          "Guidance on Requirement of Chemical & Pharmaceutical Information including Stability Study Data — CDSCO",
+          "Guidelines for Import and Manufacture of Medical Devices — CDSCO",
+          "Guidelines from official website of CDSCO: www.cdsco.nic.in"
+        ],
+        websites: []
+      },
+      {
+        code: "MRA 105P",
+        name: "Regulatory Affairs Practical I",
+        type: "Practical",
+        credits: "6",
+        marks: { internal: 50, external: 100, total: 150 },
+        hours: 72,
+        scope: "Practical application of regulatory skills developed in Semester I theory courses.",
+        objectives: [],
+        units: [],
+        practicals: [
+          "Case studies (4 Nos.) of each of Good Pharmaceutical Practices",
+          "Documentation for in-process and finished products Quality control tests for Solid, liquid, Semisolid and Sterile preparations",
+          "Preparation of SOPs, Analytical reports (Stability and validation)",
+          "Protocol preparation for documentation of various types of records (BMR, MFR, DR)",
+          "Labeling comparison between brand & generics",
+          "Preparation of clinical trial protocol for registering trial in India",
+          "Registration for conducting BA/BE studies in India",
+          "Import of drugs for research and developmental activities",
+          "Preparation of regulatory dossier as per Indian CTD format and submission in SUGAM",
+          "Registering for different Intellectual Property Rights in India",
+          "GMP Audit Requirements as per CDSCO",
+          "Preparation and documentation for Indian Patent application",
+          "Preparation of checklist for registration of IND as per ICH CTD format",
+          "Preparation of checklist for registration of NDA as per ICH CTD format",
+          "Preparation of checklist for registration of ANDA as per ICH CTD format",
+          "Case studies on response with scientific rationale to USFDA Warning Letter",
+          "Preparation of submission checklist of IMPD for EU submission",
+          "Comparison study of marketing authorization procedures in EU",
+          "Comparative study of DMF system in US, EU and Japan",
+          "Preparation of regulatory submission using eCTD software",
+          "Preparation of Clinical Trial Application (CTA) for US submission",
+          "Preparation of Clinical Trial Application (CTA) for EU submission",
+          "Comparison of Clinical Trial Application requirements of US, EU and Japan",
+          "Regulatory requirements checklist for conducting clinical trials in India",
+          "Regulatory requirements checklist for conducting clinical trials in Europe",
+          "Regulatory requirements checklist for conducting clinical trials in USA"
+        ],
+        refs: []
+      },
+      {
+        code: "Seminar",
+        name: "Seminar / Assignment",
+        type: "Seminar",
+        credits: "-",
+        marks: { internal: 0, external: 0, total: 100 },
+        hours: 0,
+        scope: "Seminar or assignment presentation as part of Semester I evaluation.",
+        objectives: [],
+        units: [],
+        refs: []
+      }
+    ]
+  },
+  2: {
+    label: "Semester II",
+    subjects: [
+      {
+        code: "MRA 201T",
+        name: "Regulatory Aspects of Drugs & Cosmetics",
+        type: "Theory",
+        credits: "4",
+        marks: { internal: 25, external: 75, total: 100 },
+        hours: 60,
+        scope: "Imparts fundamental knowledge on drug development process, regulatory requirements for approval of new drugs, drug products and cosmetics in regulated and semi-regulated countries (USA, EU, Japan, WHO, Emerging Markets).",
+        objectives: [
+          "Process of drug discovery, development and generic product development",
+          "Regulatory approval process and registration procedures for API and drug products in US, EU",
+          "Cosmetics regulations in regulated and semi-regulated countries",
+          "Comparative study of India with other global regulated markets"
+        ],
+        units: [
+          {
+            num: "UNIT 1",
+            title: "USA & Canada",
+            hrs: 12,
+            content: "Organization and functions of FDA. Federal Register and CFR (Code of Federal Regulations). History and evolution of FFDCA, Hatch Waxman Act and Orange Book, Purple Book. Drug Master Files (DMF) system in US. Regulatory Approval Process: IND, NDA, ANDA, SNDA; Orphan drugs and Combination Products; Changes to an approved NDA/ANDA. Regulatory considerations for manufacturing, packaging and labeling of pharmaceuticals in USA. Legislation and regulations for import, manufacture, distribution and sale of cosmetics in USA and Canada."
+          },
+          {
+            num: "UNIT 2",
+            title: "European Union & Australia",
+            hrs: 12,
+            content: "Organization and structure of EMA & EDQM. General guidelines, ASMF (Active Substance Master Files) system in EU. Content and approval process of IMPD. Marketing Authorization procedures in EU: Centralized procedure, Decentralized procedure, Mutual recognition procedure and National Procedure. Regulatory considerations for manufacturing, packaging and labeling. Eudralex directives for human medicines, Variations & extensions, CEP/CoS, MA transfers, Qualified Person (QP). Legislation and regulations for import, manufacture, distribution and sale of cosmetics in EU & Australia."
+          },
+          {
+            num: "UNIT 3",
+            title: "Japan",
+            hrs: 12,
+            content: "Organization of PMDA. Pharmaceutical Laws and regulations. Types of registration applications. DMF system in Japan. Drug regulatory approval process. Regulatory considerations for manufacturing, packaging and labeling in Japan. Post marketing surveillance in Japan. Legislation and regulations for import, manufacture, distribution and sale of cosmetics in Japan."
+          },
+          {
+            num: "UNIT 4",
+            title: "Emerging Markets & WHO",
+            hrs: 12,
+            content: "Introduction, Countries covered, Study of the world map. Various committees: ASEAN, APEC, EAC, GCC, PANDRH, SADC. WHO: WHO GMP, Regulatory Requirements for registration of drugs through prequalification programme, Certificate of Pharmaceutical Product (CoPP) — General and Country Specific (South Africa, Egypt, Algeria, Morocco, Nigeria, Kenya, Botswana)."
+          },
+          {
+            num: "UNIT 5",
+            title: "Brazil, ASEAN, CIS & GCC Countries",
+            hrs: 12,
+            content: "ASEAN Countries: Introduction to ACTD. Regulatory requirements in China, South Korea and ASEAN Region (Vietnam, Malaysia, Philippines, Singapore, Thailand). CIS (Commonwealth Independent States): Russia, Kazakhstan, Ukraine. GCC (Gulf Cooperation Council): Saudi Arabia and UAE. Legislation and regulations for cosmetics in Brazil, ASEAN, CIS and GCC Countries."
+          }
+        ],
+        refs: [
+          "Generic Drug Product Development, Solid Oral Dosage Forms — Leon Shargel and Isader Kaufer, Marcel Dekker, Vol.143",
+          "The Pharmaceutical Regulatory Process — Ira R. Berry, Marcel Dekker, Vol.144",
+          "The Pharmaceutical Regulatory Process, 2nd Ed. — Ira R. Berry and Robert P. Martin, Vol.185",
+          "New Drug Approval Process: Accelerating Global Registrations — Richard A. Guarino, MD, 5th Ed., Vol.190",
+          "Guidebook for Drug Regulatory Submissions — Sandy Weinberg, John Wiley & Sons",
+          "Drugs: From Discovery to Approval, 2nd Ed. — Rick Ng",
+          "New Drug Development: A Regulatory Overview, 8th Ed. — Mark Mathieu",
+          "Pharmaceutical Risk Management — Jeffrey E. Fetterman, Wayne L. Pines and Gary H. Slatko",
+          "Preparation and Maintenance of the IND Application in eCTD Format — William K. Sietsema",
+          "Country Specific Guidelines from official websites",
+          "WHO list of MRA Websites: http://www.who.int/medicines/areas/quality_safety/regulation_legislation/ListMRAWebsites.pdf",
+          "Roadmap to an ASEAN Economic Community — Denis Hew, ISEAS Publications, 2005",
+          "ASEAN — Rodolfo C. Severino, ISEAS Publications, 2005",
+          "Building a Future with Brics — Mark Kobayashi-Hillary, Springer",
+          "Outsourcing to India: The Offshore Advantage — Mark Kobayashi-Hillary, Springer",
+          "Global Pharmaceutical Policy — Frederick M. Abbott, Graham Dukes, Maurice Nelson Graham Dukes"
+        ],
+        websites: ["http://www.who.int/medicines/areas/quality_safety/regulation_legislation/ListMRAWebsites.pdf"]
+      },
+      {
+        code: "MRA 202T",
+        name: "Regulatory Aspects of Herbal & Biologicals",
+        type: "Theory",
+        credits: "4",
+        marks: { internal: 25, external: 75, total: 100 },
+        hours: 60,
+        scope: "Imparts fundamental knowledge on Regulatory Requirements, Licensing and Registration, Regulation on Labelling of Biologics in India, USA and Europe, including Biologics, Vaccines and Blood Products.",
+        objectives: [
+          "Know the regulatory Requirements for Biologics and Vaccines",
+          "Understand the regulation for newly developed biologics and biosimilars",
+          "Know the pre-clinical and clinical development considerations of biologics",
+          "Understand Regulatory Requirements of Blood and/or Its Components Including Blood Products"
+        ],
+        units: [
+          {
+            num: "UNIT 1",
+            title: "India — Biologics",
+            hrs: 12,
+            content: "Introduction. Applicable Regulations and Guidelines. Principles for Development of Similar Biologics. Data Requirements for Preclinical Studies, Clinical Trial Application, Market Authorization Application. Post-Market Data for Similar Biologics. Pharmacovigilance. GMP and GDP."
+          },
+          {
+            num: "UNIT 2",
+            title: "USA — Biologics & Biosimilars",
+            hrs: 12,
+            content: "Introduction to Biologics. Difference between generic drug and biosimilars. Laws, regulations and guidance on biologics/biosimilars. Development and approval of biologics and biosimilars (IND, PMA, BLA, NDA, 510(k)). Pre-clinical and clinical development considerations. Advertising, labelling and packing of biologics."
+          },
+          {
+            num: "UNIT 3",
+            title: "European Union — Biologics",
+            hrs: 12,
+            content: "Introduction to Biologics in EU. Directives, scientific guidelines and guidance. Comparability/biosimilarity assessment. Plasma master file, TSE/BSE evaluation. Development and regulatory approval of biologics (Investigational medicinal products and biosimilars). Pre-clinical and clinical development considerations. Stability, safety, advertising, labelling and packing in EU."
+          },
+          {
+            num: "UNIT 4",
+            title: "Vaccine & Blood Products Regulations",
+            hrs: 12,
+            content: "Vaccine regulations in India, US and EU: Clinical evaluation, Marketing authorisation, Registration or licensing, Quality assessment, Pharmacovigilance. Blood and Blood Products Regulations in India, US and EU: Regulatory Requirements of Blood and/or Its Components. Label Requirements. ISBT (International Society of Blood Transfusion) and IHN (International Haemovigilance Network)."
+          },
+          {
+            num: "UNIT 5",
+            title: "Herbal Products",
+            hrs: 12,
+            content: "Quality, safety and legislation for herbal products in India, USA and European Union."
+          }
+        ],
+        refs: [
+          "FDA Regulatory Affairs: A Guide for Prescription Drugs, Medical Devices, and Biologics — Douglas J. Pisano, David S. Mantus; Informa, 2008",
+          "Biological Drug Products: Development and Strategies — Wei Wang, Manmohan Singh; Wiley, 2013",
+          "Development of Vaccines: From Discovery to Clinical Testing — Manmohan Singh, Indresh K. Srivastava; Wiley, 2011",
+          "Guidelines on Similar Biologics: Regulatory Requirements for Marketing Authorization in India",
+          "WHO Biologicals: www.who.int/biologicals/en",
+          "FDA Biologics Guidance: www.fda.gov/BiologicsBloodVaccines/GuidanceComplianceRegulatoryInformation",
+          "ISBT: www.isbtweb.org",
+          "IHN: www.ihn-org.com",
+          "CDSCO: www.cdsco.nic.in",
+          "EMA Scientific Guidelines: www.ema.europa.eu"
+        ],
+        websites: ["www.who.int/biologicals/en","www.fda.gov/BiologicsBloodVaccines/","www.isbtweb.org","www.ihn-org.com","www.cdsco.nic.in","www.ema.europa.eu"]
+      },
+      {
+        code: "MRA 203T",
+        name: "Regulatory Aspects of Medical Devices",
+        type: "Theory",
+        credits: "4",
+        marks: { internal: 25, external: 75, total: 100 },
+        hours: 60,
+        scope: "Imparts fundamental knowledge on medical devices and IVDs, basis of classification, product life cycle, regulatory requirements for approval in regulated countries like US, EU, and Asian countries, along with WHO regulations.",
+        objectives: [
+          "Basics of medical devices and IVDs, process of development, ethical and quality considerations",
+          "Harmonization initiatives for approval and marketing of medical devices and IVDs",
+          "Regulatory approval process for medical devices and IVDs in India, US, Canada, EU, Japan and ASEAN",
+          "Clinical evaluation and investigation of medical devices and IVDs"
+        ],
+        units: [
+          {
+            num: "UNIT 1",
+            title: "Introduction to Medical Devices & IMDRF/GHTF",
+            hrs: 12,
+            content: "Introduction, Definition, Risk-based classification and Essential Principles of Medical Devices and IVDs. Differentiating medical devices, IVDs and Combination Products from pharmaceuticals. History of Medical Device Regulation. Product Lifecycle and Classification of Medical Devices. IMDRF/GHTF: Introduction, Organizational Structure, Purpose and Functions, Regulatory Guidelines, Working Groups, STED, GMDN."
+          },
+          {
+            num: "UNIT 2",
+            title: "Ethics, Quality & Clinical Investigation",
+            hrs: 12,
+            content: "Clinical Investigation of Medical Devices. Clinical Investigation Plan for Medical Devices. GCP for Clinical Investigation of medical devices (ISO 14155:2011). Quality System Regulations: ISO 13485. Quality Risk Management: ISO 14971. Validation and Verification of Medical devices. Adverse Event Reporting of Medical devices."
+          },
+          {
+            num: "UNIT 3",
+            title: "USA — Medical Devices",
+            hrs: 12,
+            content: "Introduction, Classification. Regulatory approval process: 510(k) Premarket Notification, Pre-Market Approval (PMA), Investigational Device Exemption (IDE). Quality System Requirements: 21 CFR Part 820. Labeling requirements: 21 CFR Part 801. Post marketing surveillance and Unique Device Identification (UDI). Basics of IVDs, classification and approval process."
+          },
+          {
+            num: "UNIT 4",
+            title: "European Union — Medical Devices",
+            hrs: 12,
+            content: "Introduction, Classification, Regulatory approval process for Medical Devices (Medical Device Directive, Active Implantable Medical Device Directive) and IVDs (In Vitro Diagnostics Directive). CE certification process. Basics of IVDs, classification and approval process."
+          },
+          {
+            num: "UNIT 5",
+            title: "ASEAN, China & Japan",
+            hrs: 12,
+            content: "Medical Devices and IVDs: Regulatory registration procedures, Quality System requirements and clinical evaluation and investigation in ASEAN, China and Japan. IMDRF study groups and guidance documents."
+          }
+        ],
+        refs: [
+          "FDA Regulatory Affairs: A Guide for Prescription Drugs, Medical Devices, and Biologics — Douglas J. Pisano, David Mantus",
+          "Medical Device Development: A Regulatory Overview — Jonathan S. Kahan",
+          "Medical Product Regulatory Affairs: Pharmaceuticals, Diagnostics, Medical Devices — John J. Tobin and Gary Walsh",
+          "Compliance Handbook for Pharmaceuticals, Medical Devices and Biologics — Carmen Medina",
+          "Country Specific Guidelines from official websites"
+        ],
+        websites: []
+      },
+      {
+        code: "MRA 204T",
+        name: "Regulatory Aspects of Food & Nutraceuticals",
+        type: "Theory",
+        credits: "4",
+        marks: { internal: 25, external: 75, total: 100 },
+        hours: 60,
+        scope: "Imparts fundamental knowledge on Regulatory Requirements, Registration and Labeling Regulations of Nutraceuticals in India, USA and Europe, including regulatory aspects for nutraceuticals and food supplements.",
+        objectives: [
+          "Know the regulatory requirements for nutraceuticals",
+          "Understand the regulation for registration and labeling of nutraceuticals and food supplements in India, USA and Europe"
+        ],
+        units: [
+          {
+            num: "UNIT 1",
+            title: "Introduction to Nutraceuticals",
+            hrs: 12,
+            content: "History of Food and Nutraceutical Regulations. Meaning of Nutraceuticals, Dietary Supplements, Functional Foods, Medical Foods. Scope and Opportunities in Nutraceutical Market."
+          },
+          {
+            num: "UNIT 2",
+            title: "Global Aspects & WHO Guidelines",
+            hrs: 12,
+            content: "WHO guidelines on nutrition. NSF International: Its Role in the Dietary Supplements and Nutraceuticals Industries. NSF Certification. NSF Standards for Food and Dietary Supplements. Good Manufacturing Practices for Nutraceuticals."
+          },
+          {
+            num: "UNIT 3",
+            title: "India — Food Safety & Standards",
+            hrs: 12,
+            content: "Food Safety and Standards Act. Food Safety and Standards Authority of India (FSSAI): Organization and Functions. Regulations for import, manufacture and sale of nutraceutical products in India. Recommended Dietary Allowances (RDA) in India."
+          },
+          {
+            num: "UNIT 4",
+            title: "USA — Nutraceuticals",
+            hrs: 12,
+            content: "US FDA Food Safety Modernization Act. Dietary Supplement Health and Education Act (DSHEA). US Regulations for manufacture and sale of nutraceuticals and dietary supplements. Labelling Requirements and Label Claims for Dietary Supplements. Recommended Dietary Allowances (RDA) in the USA."
+          },
+          {
+            num: "UNIT 5",
+            title: "European Union — Nutraceuticals",
+            hrs: 12,
+            content: "European Food Safety Authority (EFSA): Organization and Functions. EU Directives and regulations for manufacture and sale of nutraceuticals and dietary supplements. Nutrition labelling. European Regulation on Novel Foods and Novel Food Ingredients. Recommended Dietary Allowances (RDA) in Europe."
+          }
+        ],
+        refs: [
+          "Regulation of Functional Foods and Nutraceuticals: A Global Perspective — Clare M. Hasler (Wiley Online Library)",
+          "Nutraceutical and Functional Food Regulations in the United States and Around the World — Debasis Bagchi (Academic Press, Elsevier)",
+          "WHO Publications on Nutrition: http://www.who.int/publications/guidelines/nutrition/en/",
+          "EU Nutraceutical Study: http://www.europarl.europa.eu/RegData/etudes/STUD/2015/536324/IPOL_STU(2015)536324_EN.pdf",
+          "Handbook of Nutraceuticals — Yashwant Pathak (CRC Press)",
+          "Food Regulation: Law, Science, Policy and Practice — Neal D. Fortin (Wiley)",
+          "Country Specific Guidelines from official websites"
+        ],
+        websites: ["http://www.who.int/publications/guidelines/nutrition/en/"]
+      },
+      {
+        code: "MRA 205P",
+        name: "Regulatory Affairs Practical II",
+        type: "Practical",
+        credits: "6",
+        marks: { internal: 50, external: 100, total: 150 },
+        hours: 72,
+        scope: "Practical application of regulatory skills developed in Semester II theory courses.",
+        objectives: [],
+        units: [],
+        practicals: [
+          "Case studies on Change Management/Change Control, Deviations",
+          "Corrective & Preventive Actions (CAPA)",
+          "Documentation of raw materials analysis as per official monographs",
+          "Preparation of audit checklist for various agencies",
+          "Preparation of submission to FDA using eCTD software",
+          "Preparation of submission to EMA using eCTD software",
+          "Preparation of submission to MHRA using eCTD software",
+          "Preparation of Biologics License Applications (BLA)",
+          "Preparation of documents required for Vaccine Product Approval",
+          "Comparison of clinical trial application requirements of US, EU and India of Biologics",
+          "Preparation of Checklist for Registration of Blood and Blood Products",
+          "Registration requirement comparison study in 5 emerging markets (WHO) and preparing checklist for market authorization",
+          "Registration requirement comparison study in emerging markets (BRICS) and preparing checklist for market authorization",
+          "Registration requirement comparison study in emerging markets (China and South Korea) and preparing checklist for market authorization",
+          "Registration requirement comparison study in emerging markets (ASEAN) and preparing checklist for market authorization",
+          "Registration requirement comparison study in emerging markets (GCC) and preparing checklist for market authorization",
+          "Checklists for 510k and PMA for US market",
+          "Checklist for CE marking for various classes of devices for EU",
+          "STED Application for Class III Devices",
+          "Audit Checklist for Medical Device Facility",
+          "Clinical Investigation Plan for Medical Devices"
+        ],
+        refs: []
+      },
+      {
+        code: "Seminar",
+        name: "Seminar / Assignment",
+        type: "Seminar",
+        credits: "-",
+        marks: { internal: 0, external: 0, total: 100 },
+        hours: 0,
+        scope: "Seminar or assignment presentation as part of Semester II evaluation.",
+        objectives: [],
+        units: [],
+        refs: []
+      }
+    ]
+  },
+  3: {
+    label: "Semester III",
+    subjects: [
+      {
+        code: "MRM 301T",
+        name: "Research Methodology & Biostatistics",
+        type: "Theory",
+        credits: "4",
+        marks: { internal: 25, external: 75, total: 100 },
+        hours: 60,
+        scope: "Common subject for all M.Pharm specializations in Semester III. Covers general research methodology, biostatistics, medical research ethics, animal ethics (CPCSEA) and Declaration of Helsinki.",
+        objectives: [
+          "Understand research design, study types, controls, randomization and blinding",
+          "Apply biostatistical tests to pharmaceutical/medical research data",
+          "Appreciate ethical principles in medical and biomedical research"
+        ],
+        units: [
+          {
+            num: "UNIT I",
+            title: "General Research Methodology",
+            hrs: 12,
+            content: "Research: objective, requirements, practical difficulties. Review of literature. Study design, types of studies. Strategies to eliminate errors/bias. Controls, randomization, crossover design, placebo, blinding techniques."
+          },
+          {
+            num: "UNIT II",
+            title: "Biostatistics",
+            hrs: 12,
+            content: "Definition, application, sample size, importance of sample size, factors influencing sample size, dropouts. Statistical tests of significance, types of significance tests. Parametric tests (Student's t-test, ANOVA, Correlation coefficient, regression). Non-parametric tests (Wilcoxon rank tests, analysis of variance, correlation, chi-square test). Null hypothesis, P values, degree of freedom, interpretation of P values."
+          },
+          {
+            num: "UNIT III",
+            title: "Medical Research Ethics",
+            hrs: 12,
+            content: "History, values in medical ethics. Autonomy, beneficence, non-maleficence, double effect. Conflicts between autonomy and beneficence/non-maleficence. Euthanasia, informed consent, confidentiality. Criticisms of orthodox medical ethics. Importance of communication, control resolution, guidelines, ethics committees. Cultural concerns, truth telling, online business practices, conflicts of interest, referral, vendor relationships, treatment of family members, sexual relationships, fatality."
+          },
+          {
+            num: "UNIT IV",
+            title: "CPCSEA Guidelines for Laboratory Animal Facility",
+            hrs: 12,
+            content: "Goals, veterinary care, quarantine, surveillance, diagnosis, treatment and control of disease. Personal hygiene, location of animal facilities to laboratories. Anesthesia, euthanasia, physical facilities, environment, animal husbandry. Record keeping, SOPs, personnel and training, transport of lab animals."
+          },
+          {
+            num: "UNIT V",
+            title: "Declaration of Helsinki",
+            hrs: 12,
+            content: "History, introduction. Basic principles for all medical research. Additional principles for medical research combined with medical care."
+          }
+        ],
+        refs: []
+      },
+      {
+        code: "Journal Club",
+        name: "Journal Club",
+        type: "Internal Assessment",
+        credits: "-",
+        marks: { internal: 25, external: 0, total: 25 },
+        hours: 0,
+        scope: "Journal club presentations as part of Semester III internal assessment.",
+        objectives: [],
+        units: [],
+        refs: []
+      },
+      {
+        code: "Dissertation",
+        name: "Discussion / Presentation (Proposal Presentation)",
+        type: "Internal Assessment",
+        credits: "-",
+        marks: { internal: 50, external: 0, total: 50 },
+        hours: 0,
+        scope: "Dissertation proposal presentation and discussion as part of Semester III assessment.",
+        objectives: [],
+        units: [],
+        refs: []
+      },
+      {
+        code: "Research Work",
+        name: "Research Work (Dissertation)",
+        type: "Research",
+        credits: "-",
+        marks: { internal: 0, external: 350, total: 350 },
+        hours: 0,
+        scope: "All M.Pharm students shall undertake a project under the supervision of a teacher in Semester III to IV and submit a report. 4 copies (typed & bound, not less than 75 pages). Dissertation: Objectives 50M, Methodology 150M, Results & Discussions 250M, Conclusions 50M = 500M total. Presentation: Work 100M, Communication 50M, Q&A 100M = 250M total.",
+        objectives: [],
+        units: [],
+        refs: []
+      }
+    ]
+  },
+  4: {
+    label: "Semester IV",
+    subjects: [
+      {
+        code: "Journal Club",
+        name: "Journal Club",
+        type: "Internal Assessment",
+        credits: "-",
+        marks: { internal: 25, external: 0, total: 25 },
+        hours: 0,
+        scope: "Journal club presentations as part of Semester IV internal assessment.",
+        objectives: [],
+        units: [],
+        refs: []
+      },
+      {
+        code: "Dissertation",
+        name: "Discussion / Presentation (Thesis Presentation)",
+        type: "Internal Assessment",
+        credits: "-",
+        marks: { internal: 75, external: 0, total: 75 },
+        hours: 0,
+        scope: "Final thesis/dissertation presentation and discussion as part of Semester IV assessment.",
+        objectives: [],
+        units: [],
+        refs: []
+      },
+      {
+        code: "Research Work",
+        name: "Research Work & Colloquium",
+        type: "Research",
+        credits: "-",
+        marks: { internal: 0, external: 400, total: 400 },
+        hours: 0,
+        scope: "Final submission of Research Work and Colloquium. Students must have successfully completed all courses of Semesters I, II, and III before being eligible for Semester IV examinations. CGPA Calculation: (C1×S1 + C2×S2 + C3×S3 + C4×S4) / (C1+C2+C3+C4)",
+        objectives: [],
+        units: [],
+        refs: []
+      }
+    ]
+  }
+};
+
+// Build refs by subject
+const ALL_REFS = {};
+Object.entries(SEMESTERS).forEach(([sem, semData]) => {
+  semData.subjects.forEach(sub => {
+    if (sub.refs && sub.refs.length > 0) {
+      ALL_REFS[sub.code + " — " + sub.name] = { sem: semData.label, refs: sub.refs, websites: sub.websites || [] };
+    }
+  });
+});
+
+// QUICK REF DATA
+const QUICK_DATA = [
+  {
+    title: "📊 Marks Scheme — Theory (Sem I & II)",
+    content: `<table class="marks-table"><thead><tr><th>Component</th><th>Marks</th><th>Duration</th></tr></thead><tbody>
+      <tr><td>Continuous Mode (Internal)</td><td>10</td><td>—</td></tr>
+      <tr><td>Sessional Exam (Internal)</td><td>15</td><td>1 Hr</td></tr>
+      <tr><td><b>Internal Total</b></td><td><b>25</b></td><td>—</td></tr>
+      <tr><td>End Semester Exam (External)</td><td>75</td><td>3 Hrs</td></tr>
+      <tr><td><b>Grand Total</b></td><td><b>100</b></td><td>—</td></tr>
+    </tbody></table>`
+  },
+  {
+    title: "🔬 Marks Scheme — Practical (Sem I & II)",
+    content: `<table class="marks-table"><thead><tr><th>Component</th><th>Marks</th><th>Duration</th></tr></thead><tbody>
+      <tr><td>Continuous Mode (Internal)</td><td>20</td><td>—</td></tr>
+      <tr><td>Sessional Exam (Internal)</td><td>30</td><td>6 Hrs</td></tr>
+      <tr><td><b>Internal Total</b></td><td><b>50</b></td><td>—</td></tr>
+      <tr><td>End Semester Exam (External)</td><td>100</td><td>6 Hrs</td></tr>
+      <tr><td><b>Grand Total</b></td><td><b>150</b></td><td>—</td></tr>
+    </tbody></table>`
+  },
+  {
+    title: "📝 Grading System",
+    content: `<table class="marks-table"><thead><tr><th>%</th><th>Grade</th><th>Points</th><th>Performance</th></tr></thead><tbody>
+      <tr><td>90–100</td><td class="grade-O">O</td><td>10</td><td>Outstanding</td></tr>
+      <tr><td>80–89.99</td><td class="grade-A">A</td><td>9</td><td>Excellent</td></tr>
+      <tr><td>70–79.99</td><td class="grade-B">B</td><td>8</td><td>Good</td></tr>
+      <tr><td>60–69.99</td><td>C</td><td>7</td><td>Fair</td></tr>
+      <tr><td>50–59.99</td><td class="grade-pass">D</td><td>6</td><td>Average</td></tr>
+      <tr><td>&lt;50</td><td class="grade-F">F</td><td>0</td><td>Fail</td></tr>
+    </tbody></table>`
+  },
+  {
+    title: "🎓 Class Declaration",
+    content: `<ul><li><b style="color:#f5c842">First Class with Distinction</b> — CGPA ≥ 7.50</li><li><b style="color:#7fc8f8">First Class</b> — CGPA 6.00–7.49</li><li><b>Second Class</b> — CGPA 5.00–5.99</li></ul><br><p style="color:var(--muted);font-size:12px">Pass = 50% minimum in each course (including internal assessment)</p>`
+  },
+  {
+    title: "📅 Attendance Requirements",
+    content: `<table class="marks-table"><thead><tr><th>Attendance %</th><th>Theory Marks</th><th>Practical Marks</th></tr></thead><tbody>
+      <tr><td>95–100%</td><td>8</td><td>10</td></tr>
+      <tr><td>90–94%</td><td>6</td><td>7.5</td></tr>
+      <tr><td>85–89%</td><td>4</td><td>5</td></tr>
+      <tr><td>80–84%</td><td>2</td><td>2.5</td></tr>
+      <tr><td class="grade-F">&lt;80%</td><td class="grade-F">0</td><td class="grade-F">0</td></tr>
+    </tbody></table><p style="color:var(--muted);font-size:12px;margin-top:8px">⚠️ Minimum 80% attendance required separately for theory and practical</p>`
+  },
+  {
+    title: "📆 Exam Schedule",
+    content: `<table class="marks-table"><thead><tr><th>Semester</th><th>Regular</th><th>Failed</th></tr></thead><tbody>
+      <tr><td>I & III</td><td>Nov/Dec</td><td>May/Jun</td></tr>
+      <tr><td>II & IV</td><td>May/Jun</td><td>Nov/Dec</td></tr>
+    </tbody></table><p style="color:var(--muted);font-size:12px;margin-top:8px">Each semester = minimum 100 working days. Odd semesters: Jun/Jul–Nov/Dec. Even semesters: Dec/Jan–May/Jun</p>`
+  },
+  {
+    title: "📋 ATKT Rules",
+    content: `<ul><li>Student can carry forward ALL courses of Sem I & II till Sem III exams</li><li>NOT eligible for Sem IV until ALL courses of Sem I, II, III are successfully completed</li><li>CGPA awarded only on successful completion of all IV semesters</li><li>Grade AB (Absent) = Fail, counted as one head for ATKT</li></ul>`
+  },
+  {
+    title: "🔬 Dissertation Evaluation",
+    content: `<p style="font-size:12.5px;color:var(--muted);margin-bottom:8px">Book Evaluation (500 Marks):</p><table class="marks-table"><thead><tr><th>Criterion</th><th>Marks</th></tr></thead><tbody>
+      <tr><td>Objectives of the work done</td><td>50</td></tr>
+      <tr><td>Methodology adopted</td><td>150</td></tr>
+      <tr><td>Results and Discussions</td><td>250</td></tr>
+      <tr><td>Conclusions and Outcomes</td><td>50</td></tr>
+    </tbody></table><br><p style="font-size:12.5px;color:var(--muted);margin-bottom:8px">Presentation Evaluation (250 Marks):</p><table class="marks-table"><thead><tr><th>Criterion</th><th>Marks</th></tr></thead><tbody>
+      <tr><td>Presentation of work</td><td>100</td></tr>
+      <tr><td>Communication skills</td><td>50</td></tr>
+      <tr><td>Question and answer skills</td><td>100</td></tr>
+    </tbody></table>`
+  },
+  {
+    title: "📚 Credit Summary — MRA",
+    content: `<table class="marks-table"><thead><tr><th>Semester</th><th>Subjects</th><th>Total Marks</th></tr></thead><tbody>
+      <tr><td>Sem I</td><td>GRP, Doc&RegW, ClinRes, Regs&Leg, Prac-I, Seminar</td><td>650</td></tr>
+      <tr><td>Sem II</td><td>Drugs&Cosm, Herbal&Bio, Med Dev, Food&Nutra, Prac-II, Seminar</td><td>650</td></tr>
+      <tr><td>Sem III</td><td>ResMeth, Journal Club, Proposal, Research Work</td><td>525</td></tr>
+      <tr><td>Sem IV</td><td>Journal Club, Thesis Presentation, Research & Colloquium</td><td>500</td></tr>
+    </tbody></table>`
+  }
+];
+
+// ===== UI STATE =====
+let currentSem = 1;
+let currentNav = "syllabus";
+let searchTimeout = null;
+
+// ===== RENDER FUNCTIONS =====
+
+function renderSubjects(sem) {
+  const container = document.getElementById("subjectList");
+  const subjects = SEMESTERS[sem].subjects;
+  container.innerHTML = subjects.map((sub, idx) => buildSubjectCard(sub, idx)).join("");
+  attachSubjectListeners();
+}
+
+function buildSubjectCard(sub, idx) {
+  const typeClass = sub.type === "Practical" ? "🔬" : sub.type === "Seminar" ? "🗣️" : sub.type === "Research" ? "🧪" : sub.type === "Internal Assessment" ? "📋" : "📖";
+  const hasContent = (sub.units && sub.units.length > 0) || (sub.practicals && sub.practicals.length > 0) || sub.scope;
+  return `<div class="subject-card" data-idx="${idx}">
+    <div class="subject-header" onclick="toggleSubject(this.parentElement)">
+      <span class="subject-code">${sub.code}</span>
+      <div style="flex:1">
+        <div class="subject-name">${sub.name}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">${typeClass} ${sub.type} · ${sub.marks.total} marks${sub.hours ? ' · ' + sub.hours + 'hrs' : ''}</div>
+      </div>
+      ${hasContent ? '<span class="chevron">▾</span>' : ''}
+    </div>
+    ${hasContent ? `<div class="subject-body">${buildSubjectBody(sub)}</div>` : ''}
+  </div>`;
+}
+
+function buildSubjectBody(sub) {
+  let html = '';
+  
+  // Meta badges
+  html += `<div class="meta-row">
+    <span class="meta-badge">Int: ${sub.marks.internal}M</span>
+    <span class="meta-badge">Ext: ${sub.marks.external}M</span>
+    <span class="meta-badge marks">Total: ${sub.marks.total}M</span>
+    ${sub.hours ? `<span class="meta-badge">${sub.hours} hrs</span>` : ''}
+    ${sub.credits && sub.credits !== '-' ? `<span class="meta-badge">${sub.credits} credits</span>` : ''}
+  </div>`;
+  
+  // Scope
+  if (sub.scope) {
+    html += `<div class="info-block"><div class="info-label">Scope</div><div class="info-text">${sub.scope}</div></div>`;
+  }
+  
+  // Objectives
+  if (sub.objectives && sub.objectives.length > 0) {
+    html += `<div class="info-block"><div class="info-label">Objectives</div><ul class="obj-list">
+      ${sub.objectives.map(o => `<li>${o}</li>`).join("")}
+    </ul></div>`;
+  }
+  
+  // Units
+  if (sub.units && sub.units.length > 0) {
+    html += `<div class="info-label">Units</div><div class="units-section">
+      ${sub.units.map((u, ui) => `<div class="unit-item" data-ui="${ui}">
+        <div class="unit-header" onclick="toggleUnit(this.parentElement)">
+          <span class="unit-num">${u.num}</span>
+          <span class="unit-title-text">${u.title}</span>
+          ${u.hrs ? `<span class="unit-hrs">${u.hrs}h</span>` : ''}
+          <span class="unit-chevron">▾</span>
+        </div>
+        <div class="unit-body">${u.content}</div>
+      </div>`).join("")}
+    </div>`;
+  }
+  
+  // Practicals
+  if (sub.practicals && sub.practicals.length > 0) {
+    html += `<div class="info-label" style="margin-top:10px">Practical Exercises</div>
+    <ul class="practical-list" style="margin-top:8px">
+      ${sub.practicals.map((p, i) => `<li data-n="${i+1}">${p}</li>`).join("")}
+    </ul>`;
+  }
+  
+  // References
+  if (sub.refs && sub.refs.length > 0) {
+    html += `<hr class="divider">
+    <div class="refs-section">
+      <div class="info-label">References</div>
+      ${sub.refs.map((r, i) => `<div class="ref-item"><span class="ref-num">${i+1}.</span>${r}</div>`).join("")}
+    </div>`;
+  }
+  
+  // Websites
+  if (sub.websites && sub.websites.length > 0) {
+    html += `<div class="refs-section" style="margin-top:6px">
+      <div class="info-label">Recommended Websites</div>
+      ${sub.websites.map(w => `<div class="ref-item"><span class="website-link">${w}</span></div>`).join("")}
+    </div>`;
+  }
+  
+  return html;
+}
+
+function attachSubjectListeners() {}
+
+function toggleSubject(card) {
+  const isOpen = card.classList.contains("open");
+  card.classList.toggle("open", !isOpen);
+}
+
+function toggleUnit(item) {
+  item.classList.toggle("open");
+}
+
+function renderRefs() {
+  const container = document.getElementById("refsBySubject");
+  let html = '';
+  Object.entries(ALL_REFS).forEach(([subName, data]) => {
+    html += `<div class="quick-card" style="margin-bottom:10px">
+      <h3 style="font-size:12px;margin-bottom:4px;color:var(--muted)">${data.sem}</h3>
+      <h3>${subName}</h3>
+      <div style="margin-top:8px">
+        ${data.refs.map((r, i) => `<div class="ref-item"><span class="ref-num">${i+1}.</span>${r}</div>`).join("")}
+        ${data.websites && data.websites.length > 0 ? data.websites.map(w => `<div class="ref-item"><span class="website-link">🔗 ${w}</span></div>`).join("") : ''}
+      </div>
+    </div>`;
+  });
+  container.innerHTML = html;
+}
+
+function renderQuick() {
+  const container = document.getElementById("quickGrid");
+  container.innerHTML = QUICK_DATA.map(q => `
+    <div class="quick-card">
+      <h3>${q.title}</h3>
+      <div style="margin-top:8px">${q.content}</div>
+    </div>`).join("");
+}
+
+// ===== SEARCH =====
+function performSearch(query) {
+  const q = query.trim().toLowerCase();
+  if (!q) {
+    document.getElementById("searchResults").innerHTML = `<div class="hint">🐾 Type above to search subjects, units, topics, and references</div>`;
+    return;
+  }
+  
+  const results = [];
+  Object.entries(SEMESTERS).forEach(([sem, semData]) => {
+    semData.subjects.forEach(sub => {
+      let snippets = [];
+      let score = 0;
+      const searchable = [sub.name, sub.code, sub.scope || '', ...(sub.objectives||[]), ...(sub.units||[]).flatMap(u=>[u.title, u.content]), ...(sub.refs||[])].join(" ").toLowerCase();
+      
+      if (sub.name.toLowerCase().includes(q)) { score += 10; snippets.push(highlight(sub.name, q)); }
+      if (sub.code.toLowerCase().includes(q)) { score += 8; }
+      
+      (sub.units||[]).forEach(u => {
+        if (u.title.toLowerCase().includes(q)) { score += 6; snippets.push(highlight(u.num + ": " + u.title, q)); }
+        if (u.content.toLowerCase().includes(q)) { score += 4; snippets.push(highlight(extractSnippet(u.content, q), q)); }
+      });
+      
+      if (sub.scope && sub.scope.toLowerCase().includes(q)) { score += 3; if (!snippets.length) snippets.push(highlight(extractSnippet(sub.scope, q), q)); }
+      (sub.refs||[]).forEach(r => { if (r.toLowerCase().includes(q)) { score += 2; snippets.push("Ref: " + highlight(extractSnippet(r, q), q)); } });
+      (sub.practicals||[]).forEach(p => { if (p.toLowerCase().includes(q)) { score += 3; snippets.push(highlight(p, q)); } });
+      
+      if (score > 0) {
+        results.push({ sem: semData.label, sub, semNum: parseInt(sem), snippet: snippets[0] || '', score });
+      }
+    });
+  });
+  
+  results.sort((a, b) => b.score - a.score);
+  
+  const container = document.getElementById("searchResults");
+  if (!results.length) {
+    container.innerHTML = `<div class="no-results"><span class="dog">🐶</span>No results for "<b>${escHTML(query)}</b>"<br><span style="font-size:13px;color:var(--muted)">Try a different keyword</span></div>`;
+    return;
+  }
+  
+  container.innerHTML = results.map(r => `
+    <div class="result-card" onclick="goToSubject(${r.semNum}, '${escHTML(r.sub.code)}')">
+      <div class="result-sem">${r.sem} · ${r.sub.code}</div>
+      <div class="result-name">${r.sub.name}</div>
+      ${r.snippet ? `<div class="result-snippet">${r.snippet}</div>` : ''}
+    </div>`).join("");
+}
+
+function highlight(text, q) {
+  const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return text.replace(new RegExp('(' + escaped + ')', 'gi'), '<mark>$1</mark>');
+}
+
+function extractSnippet(text, q) {
+  const idx = text.toLowerCase().indexOf(q.toLowerCase());
+  if (idx === -1) return text.substring(0, 80) + "…";
+  const start = Math.max(0, idx - 30);
+  const end = Math.min(text.length, idx + q.length + 50);
+  return (start > 0 ? "…" : "") + text.substring(start, end) + (end < text.length ? "…" : "");
+}
+
+function escHTML(s) { return s.replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+function goToSubject(semNum, code) {
+  // Switch to syllabus tab, select semester, open subject
+  switchNav("syllabus");
+  currentSem = semNum;
+  document.querySelectorAll(".sem-pill").forEach(p => p.classList.toggle("active", p.dataset.sem == semNum));
+  renderSubjects(semNum);
+  setTimeout(() => {
+    const cards = document.querySelectorAll(".subject-card");
+    cards.forEach(card => {
+      const codeEl = card.querySelector(".subject-code");
+      if (codeEl && codeEl.textContent.trim() === code.trim()) {
+        if (!card.classList.contains("open")) toggleSubject(card);
+        card.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    });
+  }, 80);
+  // Clear search
+  document.getElementById("searchInput").value = "";
+  document.getElementById("searchClear").classList.remove("show");
+}
+
+// ===== NAVIGATION =====
+function switchNav(nav) {
+  currentNav = nav;
+  document.querySelectorAll(".nav-item").forEach(b => b.classList.toggle("active", b.dataset.nav === nav));
+  
+  const sections = { syllabus: "syllabusSection", search: "searchSection", refs: "refsSection", quick: "quickSection" };
+  Object.entries(sections).forEach(([key, id]) => {
+    const el = document.getElementById(id);
+    el.style.display = key === nav ? "block" : "none";
+    el.classList.toggle("active", key === nav);
+  });
+  
+  if (nav === "refs" && !document.getElementById("refsBySubject").innerHTML) renderRefs();
+  if (nav === "quick" && !document.getElementById("quickGrid").innerHTML) renderQuick();
+  if (nav === "search") {
+    setTimeout(() => document.getElementById("searchInput").focus(), 100);
+  }
+  window.scrollTo(0, 0);
+}
+
+// ===== INIT =====
+document.addEventListener("DOMContentLoaded", () => {
+  renderSubjects(1);
+  
+  // Sem pills
+  document.getElementById("semPills").addEventListener("click", e => {
+    const pill = e.target.closest(".sem-pill");
+    if (!pill) return;
+    document.querySelectorAll(".sem-pill").forEach(p => p.classList.remove("active"));
+    pill.classList.add("active");
+    currentSem = parseInt(pill.dataset.sem);
+    renderSubjects(currentSem);
+  });
+  
+  // Bottom nav
+  document.querySelectorAll(".nav-item").forEach(btn => {
+    btn.addEventListener("click", () => switchNav(btn.dataset.nav));
+  });
+  
+  // Search
+  const searchInput = document.getElementById("searchInput");
+  const searchClear = document.getElementById("searchClear");
+  
+  searchInput.addEventListener("input", e => {
+    const val = e.target.value;
+    searchClear.classList.toggle("show", val.length > 0);
+    
+    if (val.trim() && currentNav !== "search") {
+      switchNav("search");
+    }
+    
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => performSearch(val), 250);
+  });
+  
+  searchInput.addEventListener("focus", () => {
+    if (currentNav !== "search") switchNav("search");
+    if (!searchInput.value.trim()) {
+      document.getElementById("searchResults").innerHTML = `<div class="hint">🐾 Type above to search subjects, units, topics, and references</div>`;
+    }
+  });
+  
+  searchClear.addEventListener("click", () => {
+    searchInput.value = "";
+    searchClear.classList.remove("show");
+    document.getElementById("searchResults").innerHTML = `<div class="hint">🐾 Type above to search subjects, units, topics, and references</div>`;
+    switchNav("syllabus");
+  });
+});
+</script>
+</body>
+</html>
