@@ -3,7 +3,13 @@
   icon: fa-solid fa-link
   tags: [utility]
   url: https://samar1h.github.io/aiasp/projects/bulk-url-opener/
-
+  
+- title: MPharm (RA) Syllabus
+  description: Syllabus viewer of MPharm Regulatory Affairs 
+  icon: fa-solid fa-file-lines
+  tags: []
+  url: https://samar1h.github.io/aiasp/projects/mpharm-ra-syllabus/
+  
 - title: BPharm Syllabus
   description: Outdated Syllabus of BPharmacy
   icon: fa-solid fa-file-lines
