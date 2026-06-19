@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>🐾 M.Pharm Pharmacology — Syllabus</title>
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #181b24;
+    --surface2: #1f2230;
+    --border: #2a2d3a;
+    --accent: #7c6af5;
+    --accent2: #5a4fd4;
+    --accentglow: rgba(124,106,245,0.15);
+    --text: #e6e8f0;
+    --muted: #7a7d90;
+    --tag: #20222e;
+    --good: #3aaf7a;
+    --warn: #f0a830;
+    --radius: 11px;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 15px; line-height: 1.55; -webkit-text-size-adjust: 100%; }
+  body { min-height: 100vh; padding-bottom: 100px; }
+
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 13px 16px 10px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .header-top { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .paw { font-size: 22px; }
+  .app-title { font-size: 17px; font-weight: 700; color: var(--accent); letter-spacing: -0.3px; }
+  .app-sub { font-size: 11px; color: var(--muted); }
+  .search-wrap { position: relative; }
+  .search-wrap input {
+    width: 100%; padding: 9px 12px 9px 36px;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 20px; color: var(--text); font-size: 14px;
+    outline: none; -webkit-appearance: none;
+  }
+  .search-wrap input:focus { border-color: var(--accent); }
+  .search-wrap input::placeholder { color: var(--muted); }
+  .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 14px; pointer-events: none; }
+  .search-clear {
+    position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+    background: var(--muted); color: var(--bg); border: none; border-radius: 50%;
+    width: 18px; height: 18px; font-size: 11px; cursor: pointer;
+    display: none; align-items: center; justify-content: center;
+    font-weight: 700; line-height: 1;
+  }
+  .search-clear.show { display: flex; }
+
+  .sem-pills { display: flex; gap: 8px; flex-wrap: wrap; padding: 12px 16px 10px; background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 89px; z-index: 99; }
+  .sem-pill {
+    flex-shrink: 0; padding: 6px 15px; border-radius: 20px; border: 1px solid var(--border);
+    background: var(--tag); color: var(--muted); font-size: 13px;
+    font-weight: 500; cursor: pointer; transition: all .18s; white-space: nowrap;
+  }
+  .sem-pill.active, .sem-pill:hover { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  .sem-pill.s2.active, .sem-pill.s2:hover { background: #1a7a4a; border-color: #1a7a4a; }
+  .sem-pill.s3.active, .sem-pill.s3:hover { background: #7a4a1a; border-color: #7a4a1a; }
+  .sem-pill.s4.active, .sem-pill.s4:hover { background: #4a2a7a; border-color: #4a2a7a; }
+
+  .section { display: none; padding: 14px 16px; }
+  .section.active { display: block; }
+
+  .subject-list { display: flex; flex-direction: column; gap: 8px; }
+  .subject-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; transition: border-color .18s; }
+  .subject-card:hover { border-color: var(--accent); }
+  .subject-header { padding: 13px 15px; cursor: pointer; display: flex; align-items: flex-start; gap: 10px; -webkit-tap-highlight-color: transparent; user-select: none; }
+  .subject-code { font-size: 11px; font-weight: 700; color: var(--accent); letter-spacing: 0.5px; background: var(--accentglow); padding: 2px 7px; border-radius: 5px; flex-shrink: 0; margin-top: 2px; white-space: nowrap; }
+  .subject-name { font-size: 15px; font-weight: 600; flex: 1; }
+  .subject-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .chevron { margin-left: auto; font-size: 13px; color: var(--muted); transition: transform .22s; flex-shrink: 0; padding-top: 2px; }
+  .subject-card.open .chevron { transform: rotate(180deg); }
+  .subject-body { display: none; padding: 0 15px 15px; border-top: 1px solid var(--border); }
+  .subject-card.open .subject-body { display: block; }
+
+  .meta-row { display: flex; gap: 7px; flex-wrap: wrap; padding: 10px 0 12px; }
+  .meta-badge { font-size: 11px; padding: 3px 9px; border-radius: 5px; background: var(--tag); color: var(--muted); border: 1px solid var(--border); }
+  .meta-badge.marks { color: var(--good); border-color: #1a4a2a; background: #0f2418; }
+
+  .info-block { margin-bottom: 13px; }
+  .info-label { font-size: 11px; font-weight: 700; color: var(--accent); letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 6px; }
+  .info-text { font-size: 13.5px; color: #c0c2cc; line-height: 1.6; }
+  .obj-list { padding-left: 0; list-style: none; }
+  .obj-list li { font-size: 13px; color: #b8bac8; padding: 3px 0 3px 18px; position: relative; }
+  .obj-list li::before { content: "→"; position: absolute; left: 0; color: var(--accent); }
+
+  .units-section { margin-bottom: 12px; }
+  .unit-item { border-left: 2px solid var(--border); padding: 8px 12px; margin-bottom: 7px; border-radius: 0 7px 7px 0; background: var(--surface2); }
+  .unit-item:hover { border-left-color: var(--accent); }
+  .unit-header { display: flex; align-items: center; gap: 8px; cursor: pointer; -webkit-tap-highlight-color: transparent; user-select: none; }
+  .unit-num { font-size: 10px; font-weight: 700; color: var(--accent); letter-spacing: 0.5px; background: var(--accentglow); padding: 2px 6px; border-radius: 4px; flex-shrink: 0; }
+  .unit-title-text { font-size: 13.5px; font-weight: 600; flex: 1; }
+  .unit-hrs { font-size: 11px; color: var(--muted); flex-shrink: 0; }
+  .unit-chevron { font-size: 11px; color: var(--muted); transition: transform .2s; }
+  .unit-item.open .unit-chevron { transform: rotate(180deg); }
+  .unit-body { display: none; font-size: 13px; color: #b0b2c0; line-height: 1.65; margin-top: 8px; }
+  .unit-item.open .unit-body { display: block; }
+
+  .refs-section { margin-top: 8px; }
+  .ref-item { font-size: 12.5px; color: #9a9cb0; padding: 5px 0; border-top: 1px solid var(--border); line-height: 1.5; }
+  .ref-num { color: var(--accent); font-weight: 600; margin-right: 4px; }
+  .website-link { color: #6ab4f5; word-break: break-all; font-size: 12px; }
+
+  .practical-list { list-style: none; margin-top: 8px; }
+  .practical-list li { font-size: 13px; color: #b0b2c0; padding: 5px 0 5px 22px; border-top: 1px solid var(--border); position: relative; }
+  .practical-list li::before { content: attr(data-n); position: absolute; left: 0; color: var(--accent); font-weight: 700; font-size: 11px; }
+
+  .divider { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
+
+  .marks-table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-bottom: 8px; }
+  .marks-table th { background: var(--tag); color: var(--accent); padding: 7px 9px; text-align: left; font-size: 11px; letter-spacing: 0.3px; }
+  .marks-table td { padding: 7px 9px; border-top: 1px solid var(--border); color: var(--text); }
+  .marks-table tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+  .grade-O { color: #f5c842; font-weight: 700; }
+  .grade-A { color: #7fc8f8; }
+  .grade-B { color: #7af09a; }
+  .grade-pass { color: var(--good); }
+  .grade-F { color: #f07a7a; }
+
+  .search-results { display: flex; flex-direction: column; gap: 8px; }
+  .result-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .result-card:active { background: var(--surface2); }
+  .result-sem { font-size: 11px; color: var(--muted); margin-bottom: 3px; }
+  .result-name { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+  .result-snippet { font-size: 12.5px; color: var(--muted); }
+  mark { background: rgba(124,106,245,0.28); color: var(--text); border-radius: 2px; padding: 0 1px; }
+  .no-results { text-align: center; padding: 40px 20px; color: var(--muted); font-size: 15px; }
+  .no-results .dog { font-size: 40px; display: block; margin-bottom: 10px; }
+  .hint { font-size: 12px; color: var(--muted); text-align: center; padding: 8px; }
+
+  .quick-grid { display: flex; flex-direction: column; gap: 10px; }
+  .quick-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 13px 15px; }
+  .quick-card h3 { font-size: 14px; font-weight: 700; color: var(--accent); margin-bottom: 8px; }
+  .quick-card p, .quick-card li { font-size: 13px; color: #c0c2cc; line-height: 1.6; }
+  .quick-card ul { padding-left: 16px; }
+  .quick-card li { margin-bottom: 3px; }
+
+  .announce { background: rgba(124,106,245,0.08); border: 1px solid rgba(124,106,245,0.25); border-radius: 8px; padding: 10px 13px; font-size: 12.5px; color: #a898f8; margin-bottom: 14px; }
+
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
+    background: var(--surface); border-top: 1px solid var(--border);
+    display: flex; padding: 8px 0 env(safe-area-inset-bottom, 8px);
+  }
+  .nav-item {
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+    padding: 4px 0; cursor: pointer; color: var(--muted);
+    transition: color .18s; -webkit-tap-highlight-color: transparent; border: none; background: none;
+  }
+  .nav-item.active { color: var(--accent); }
+  .nav-icon { font-size: 20px; }
+  .nav-label { font-size: 10px; font-weight: 500; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <span class="paw">🐾</span>
+    <div>
+      <div class="app-title">M.Pharm Syllabus</div>
+      <div class="app-sub">Pharmacology (MPL) · PCI 2016-17</div>
+    </div>
+  </div>
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input type="search" id="searchInput" placeholder="Search subjects, units, topics…" autocomplete="off" autocorrect="off" spellcheck="false">
+    <button class="search-clear" id="searchClear">✕</button>
+  </div>
+</div>
+
+<div class="sem-pills" id="semPills">
+  <button class="sem-pill s1 active" data-sem="1">Sem I</button>
+  <button class="sem-pill s2" data-sem="2">Sem II</button>
+  <button class="sem-pill s3" data-sem="3">Sem III</button>
+  <button class="sem-pill s4" data-sem="4">Sem IV</button>
+</div>
+
+<div id="searchSection" class="section" style="display:none; padding-top:14px">
+  <div id="searchResults" class="search-results"></div>
+</div>
+
+<div id="syllabusSection" class="section active">
+  <div id="subjectList" class="subject-list"></div>
+</div>
+
+<div id="refsSection" class="section" style="display:none">
+  <div class="announce">📌 All references from the official PCI M.Pharm (Pharmacology) syllabus 2016-17</div>
+  <div id="refsBySubject"></div>
+</div>
+
+<div id="quickSection" class="section" style="display:none">
+  <div class="quick-grid" id="quickGrid"></div>
+</div>
+
+<div class="bottom-nav">
+  <button class="nav-item active" data-nav="syllabus"><span class="nav-icon">📚</span><span class="nav-label">Syllabus</span></button>
+  <button class="nav-item" data-nav="search"><span class="nav-icon">🔍</span><span class="nav-label">Search</span></button>
+  <button class="nav-item" data-nav="refs"><span class="nav-icon">📎</span><span class="nav-label">Refs</span></button>
+  <button class="nav-item" data-nav="quick"><span class="nav-icon">⚡</span><span class="nav-label">Quick Ref</span></button>
+</div>
+
+<script>
+const SEMESTERS = {
+  1: {
+    label: "Semester I",
+    subjects: [
+      {
+        code: "MPL 101T",
+        name: "Modern Pharmaceutical Analytical Techniques",
+        type: "Theory", credits: "4",
+        marks: { internal: 25, external: 75, total: 100 }, hours: 60,
+        scope: "Deals with various advanced analytical instrumental techniques for identification, characterization and quantification of drugs — NMR, Mass Spectrometry, IR, HPLC, GC, Electrophoresis, Thermal techniques and more.",
+        objectives: [
+          "Understand chemicals and excipients used in analysis",
+          "Analyse various drugs in single and combination dosage forms",
+          "Gain theoretical and practical skills of the instruments"
+        ],
+        units: [
+          {
+            num: "UNIT 1", title: "UV-Vis, IR, Fluorimetry & AAS", hrs: 10,
+            content: "UV-Visible Spectroscopy: Introduction, Theory, Laws, Instrumentation, Choice of solvents and solvent effect, Applications, Difference/Derivative spectroscopy. IR Spectroscopy: Theory, Modes of Molecular vibrations, Sample handling, Instrumentation of Dispersive and Fourier-Transform IR Spectrometer, Factors affecting vibrational frequencies, Applications, Data Interpretation. Spectrofluorimetry: Theory of Fluorescence, Factors affecting fluorescence, Quenchers, Instrumentation and Applications. Flame Emission Spectroscopy and Atomic Absorption Spectroscopy: Principle, Instrumentation, Interferences and Applications."
+          },
+          {
+            num: "UNIT 2", title: "NMR Spectroscopy", hrs: 10,
+            content: "Quantum numbers and their role in NMR, Principle, Instrumentation, Solvent requirement, Relaxation process, NMR signals in various compounds, Chemical shift, Factors influencing chemical shift, Spin-Spin coupling, Coupling constant, Nuclear magnetic double resonance, Brief outline of FT-NMR and 13C NMR. Applications of NMR spectroscopy."
+          },
+          {
+            num: "UNIT 3", title: "Mass Spectroscopy", hrs: 10,
+            content: "Principle, Theory, Instrumentation. Different types of ionization: electron impact, chemical, field, FAB and MALDI, APCI, ESI, APPI. Analyzers: Quadrupole and Time of Flight. Mass fragmentation and its rules, Meta stable ions, Isotopic peaks and Applications of Mass spectroscopy."
+          },
+          {
+            num: "UNIT 4", title: "Chromatography", hrs: 10,
+            content: "Principle, apparatus, instrumentation, chromatographic parameters, factors affecting resolution, isolation of drug from excipients, data interpretation and applications of: TLC, HPTLC, Ion exchange chromatography, Column chromatography, Gas chromatography (GC), HPLC, UHPLC, Affinity chromatography, Gel Chromatography."
+          },
+          {
+            num: "UNIT 5", title: "Electrophoresis & X-ray Crystallography", hrs: 10,
+            content: "Electrophoresis: Principle, Instrumentation, Working conditions, factors affecting separation and applications of Paper electrophoresis, Gel electrophoresis, Capillary electrophoresis, Zone electrophoresis, Moving boundary electrophoresis, Isoelectric focusing. X-ray Crystallography: Production of X-rays, Different X-ray methods, Bragg's law, Rotating crystal technique, X-ray powder technique, Types of crystals and applications."
+          },
+          {
+            num: "UNIT 6", title: "Potentiometry & Thermal Techniques", hrs: 10,
+            content: "Potentiometry: Principle, working, Ion selective Electrodes and Applications. Thermal Techniques: DSC — Principle, thermal transitions, Instrumentation (Heat flux and power-compensation), Modulated DSC, Hyper DSC, experimental parameters (sample preparation, calibration, heating/cooling rates), advantages, disadvantages, pharmaceutical applications. DTA: Principle, instrumentation, applications. TGA: Principle, instrumentation, factors affecting results, pharmaceutical applications."
+          }
+        ],
+        refs: [
+          "Spectrometric Identification of Organic Compounds — Robert M Silverstein, 6th Ed., John Wiley & Sons, 2004",
+          "Principles of Instrumental Analysis — Douglas A Skoog, F. James Holler, Timothy A. Nieman, 5th Ed., Eastern Press, Bangalore, 1998",
+          "Instrumental Methods of Analysis — Willards, 7th Ed., CBS Publishers",
+          "Practical Pharmaceutical Chemistry — Beckett and Stenlake, Vol II, 4th Ed., CBS Publishers, New Delhi, 1997",
+          "Organic Spectroscopy — William Kemp, 3rd Ed., ELBS, 1991",
+          "Quantitative Analysis of Drugs in Pharmaceutical Formulation — P D Sethi, 3rd Ed., CBS Publishers, New Delhi, 1997",
+          "Pharmaceutical Analysis - Modern Methods, Part B — J W Munson, Vol 11, Marcel Dekker Series",
+          "Spectroscopy of Organic Compounds, 2nd Ed. — P.S. Kalsi, Wiley Eastern Ltd., Delhi",
+          "Textbook of Pharmaceutical Analysis — K A Connors, 3rd Ed., John Wiley & Sons, 1982"
+        ]
+      },
+      {
+        code: "MPL 102T",
+        name: "Advanced Pharmacology - I",
+        type: "Theory", credits: "4",
+        marks: { internal: 25, external: 75, total: 100 }, hours: 60,
+        scope: "Strengthens basic knowledge in pharmacology and imparts recent advances in drugs used for treatment of various diseases. Helps understand concepts of drug action and mechanisms involved.",
+        objectives: [
+          "Discuss the pathophysiology and pharmacotherapy of certain diseases",
+          "Explain the mechanism of drug actions at cellular and molecular level",
+          "Understand adverse effects, contraindications and clinical uses of drugs used in treatment of diseases"
+        ],
+        units: [
+          {
+            num: "UNIT 1", title: "General Pharmacology", hrs: 12,
+            content: "Pharmacokinetics: Dynamics of drug absorption, distribution, biotransformation and elimination. Concepts of linear and non-linear compartment models. Significance of protein binding. Pharmacodynamics: Mechanism of drug action and the relationship between drug concentration and effect. Receptors, structural and functional families of receptors, quantitation of drug-receptor interaction and elicited effects."
+          },
+          {
+            num: "UNIT 2", title: "Neurotransmission", hrs: 12,
+            content: "General aspects and steps involved in neurotransmission. Neurohumoral transmission in autonomic nervous system (Detailed study: neurotransmitters Adrenaline and Acetylcholine). Neurohumoral transmission in CNS (Detailed study: Histamine, Serotonin, Dopamine, GABA, Glutamate and Glycine). Non-adrenergic non-cholinergic transmission (NANC). Co-transmission. Autonomic Pharmacology: Parasympathomimetics and lytics, Sympathomimetics and lytics, agents affecting neuromuscular junction."
+          },
+          {
+            num: "UNIT 3", title: "Central Nervous System Pharmacology", hrs: 12,
+            content: "General and local anesthetics. Sedatives and hypnotics, drugs used to treat anxiety. Drugs for Depression, psychosis, mania, epilepsy, neurodegenerative diseases. Narcotic and non-narcotic analgesics."
+          },
+          {
+            num: "UNIT 4", title: "Cardiovascular Pharmacology", hrs: 12,
+            content: "Diuretics, antihypertensives, anti-ischemics, anti-arrhythmics, drugs for heart failure and hyperlipidemia. Hematinics, coagulants, anticoagulants, fibrinolytics and anti-platelet drugs."
+          },
+          {
+            num: "UNIT 5", title: "Autocoid Pharmacology", hrs: 12,
+            content: "Physiological and pathological role of Histamine, Serotonin, Kinins, Prostaglandins, Opioid autocoids. Pharmacology of antihistamines, 5HT antagonists."
+          }
+        ],
+        refs: [
+          "The Pharmacological Basis of Therapeutics — Goodman and Gillman's",
+          "Principles of Pharmacology: The Pathophysiologic Basis of Drug Therapy — David E Golan et al., Wolters Kluwer-Lippincott Williams & Wilkins",
+          "Basic and Clinical Pharmacology — B.G. Katzung",
+          "Handbook of Clinical Pharmacokinetics — Gibaldi and Prescott",
+          "Applied Biopharmaceutics and Pharmacokinetics — Leon Shargel and Andrew B.C. Yu",
+          "Oxford Textbook of Clinical Pharmacology — Graham Smith",
+          "Avery Drug Treatment",
+          "Pharmacology: Pathophysiological Approach — DiPiro",
+          "Pathophysiology for Pharmacists — Green",
+          "Robbins & Cotran Pathologic Basis of Disease, 9th Ed.",
+          "A Complete Textbook of Medical Pharmacology — Dr. S.K Srivastava, APC Avichal Publishing Company",
+          "Essentials of Medical Pharmacology — KD. Tripathi",
+          "Modern Pharmacology with Clinical Applications — Craig Charles R. & Stitzel Robert E., Lippincott Publishers",
+          "Clinical Pharmacokinetics & Pharmacodynamics: Concepts and Applications — Malcolm Rowland and Thomas N. Tozer, Wolters Kluwer, Lippincott Williams & Wilkins",
+          "Applied Biopharmaceutics and Pharmacokinetics, Pharmacodynamics and Drug Metabolism for Industrial Scientists",
+          "Modern Pharmacology — Craig CR. & Stitzel RE, Little Brown & Company"
+        ]
+      },
+      {
+        code: "MPL 103T",
+        name: "Pharmacological & Toxicological Screening Methods - I",
+        type: "Theory", credits: "4",
+        marks: { internal: 25, external: 75, total: 100 }, hours: 60,
+        scope: "Imparts knowledge on preclinical evaluation of drugs and recent experimental techniques in drug discovery and development. Covers maintenance of laboratory animals per guidelines, basic knowledge of various in-vitro and in-vivo preclinical evaluation processes.",
+        objectives: [
+          "Appraise regulations and ethical requirements for usage of experimental animals",
+          "Describe various animals used in drug discovery and GLP in maintenance and handling of experimental animals",
+          "Describe various newer screening methods involved in drug discovery process",
+          "Appreciate and correlate preclinical data to humans"
+        ],
+        units: [
+          {
+            num: "UNIT 1", title: "Laboratory Animals & GLP", hrs: 12,
+            content: "Common laboratory animals: Description, handling and applications of different species and strains. Transgenic animals: Production, maintenance and applications. Anaesthesia and euthanasia of experimental animals. Maintenance and breeding of laboratory animals. CPCSEA guidelines to conduct experiments on animals. Good Laboratory Practice. Bioassay: Principle, scope, limitations and methods."
+          },
+          {
+            num: "UNIT 2", title: "Preclinical Screening — CNS & ANS", hrs: 12,
+            content: "Preclinical screening of new substances for pharmacological activity using in vivo, in vitro, and other possible animal alternative models. General principles of preclinical screening. CNS Pharmacology: Behavioral and muscle coordination, CNS stimulants and depressants, anxiolytics, anti-psychotics, anti-epileptics and nootropics. Drugs for neurodegenerative diseases (Parkinsonism, Alzheimers, multiple sclerosis). Drugs acting on Autonomic Nervous System."
+          },
+          {
+            num: "UNIT 3", title: "Preclinical Screening — Respiratory, Reproductive, Analgesic & GI", hrs: 12,
+            content: "Preclinical screening using in vivo, in vitro, and animal alternative models. Respiratory Pharmacology: Anti-asthmatics, drugs for COPD and anti-allergics. Reproductive Pharmacology: Aphrodisiacs and antifertility agents. Analgesics, anti-inflammatory and antipyretic agents. Gastrointestinal drugs: Anti-ulcer, anti-emetic, anti-diarrheal and laxatives."
+          },
+          {
+            num: "UNIT 4", title: "Preclinical Screening — CVS, Metabolic & Anti-cancer", hrs: 12,
+            content: "Cardiovascular Pharmacology: Antihypertensives, anti-arrhythmics, anti-anginal, anti-atherosclerotic agents and diuretics. Drugs for metabolic disorders: Anti-diabetic, anti-dyslipidemic agents. Anti-cancer agents. Hepatoprotective screening methods."
+          },
+          {
+            num: "UNIT 5", title: "Immunomodulators & Immunoassay", hrs: 12,
+            content: "Immunomodulators, Immunosuppressants and Immunostimulants. General principles of immunoassay: theoretical basis and optimization, heterogeneous and homogenous immunoassay systems. Immunoassay methods evaluation: protocol outline, objectives and preparation. Immunoassay for digoxin and insulin. Limitations of animal experimentation and alternate animal experiments. Extrapolation of in vitro data to preclinical and preclinical to humans."
+          }
+        ],
+        refs: [
+          "Biological Standardization — J.H. Burn, D.J. Finney and I.G. Goodwin",
+          "Screening Methods in Pharmacology — Robert Turner A.",
+          "Evaluation of Drug Activities — Laurence and Bachrach",
+          "Methods in Pharmacology — Arnold Schwartz",
+          "Fundamentals of Experimental Pharmacology — M.N. Ghosh",
+          "Pharmacological Experiment on Intact Preparations — Churchill Livingstone",
+          "Drug Discovery and Evaluation — Vogel H.G.",
+          "Experimental Pharmacology — R.K. Goyal",
+          "Preclinical Evaluation of New Drugs — S.K. Guta",
+          "Handbook of Experimental Pharmacology — S.K. Kulkarni",
+          "Practical Pharmacology and Clinical Pharmacy — S.K. Kulkarni, 3rd Ed.",
+          "Animal Models in Cardiovascular Research, 2nd Ed. — David R. Gross, Kluwer Academic Publishers",
+          "Screening Methods in Pharmacology — Robert A. Turner",
+          "Rodents for Pharmacological Experiments — Dr. Tapan Kumar Chatterjee",
+          "Practical Manual of Experimental and Clinical Pharmacology — Bikash Medhi, Ajay Prakash"
+        ]
+      },
+      {
+        code: "MPL 104T",
+        name: "Cellular and Molecular Pharmacology",
+        type: "Theory", credits: "4",
+        marks: { internal: 25, external: 75, total: 100 }, hours: 60,
+        scope: "Imparts fundamental knowledge on structure and functions of cellular components and helps understand the interaction of these components with drugs, with applications in drug discovery.",
+        objectives: [
+          "Explain the receptor signal transduction processes",
+          "Explain the molecular pathways affected by drugs",
+          "Appreciate the applicability of molecular pharmacology and biomarkers in drug discovery",
+          "Demonstrate molecular biology techniques applicable for pharmacology"
+        ],
+        units: [
+          {
+            num: "UNIT 1", title: "Cell Biology", hrs: 12,
+            content: "Structure and functions of cell and its organelles. Genome organization. Gene expression and its regulation, importance of siRNA and micro RNA, gene mapping and gene sequencing. Cell cycles and its regulation. Cell death — events, regulators, intrinsic and extrinsic pathways of apoptosis. Necrosis and autophagy."
+          },
+          {
+            num: "UNIT 2", title: "Cell Signaling", hrs: 12,
+            content: "Intercellular and intracellular signaling pathways. Classification of receptor family and molecular structure: Ligand-gated ion channels; G-protein coupled receptors, Tyrosine kinase receptors and Nuclear receptors. Secondary messengers: cyclic AMP, cyclic GMP, calcium ion, IP3, NO, and diacylglycerol. Intracellular signaling pathways: cyclic AMP signaling pathway, MAPK signaling, JAK/STAT signaling pathway."
+          },
+          {
+            num: "UNIT 3", title: "Genomic & Proteomic Tools + Recombinant DNA & Gene Therapy", hrs: 12,
+            content: "Principles and applications: DNA electrophoresis, PCR (reverse transcription and real time), Gene sequencing, Micro array technique, SDS-PAGE, ELISA and Western blotting. Recombinant DNA technology: Restriction enzymes, various types of vectors, Applications. Gene therapy: Types of gene transfer techniques, clinical applications and recent advances."
+          },
+          {
+            num: "UNIT 4", title: "Pharmacogenomics & Immunotherapeutics", hrs: 12,
+            content: "Gene mapping and cloning of disease gene. Genetic variation and its role in health/pharmacology. Polymorphisms affecting drug metabolism. Genetic variation in drug transporters. Genetic variation in G-protein coupled receptors. Applications of proteomics: Genomics, proteomics, metabolomics, functionomics, nutrigenomics. Immunotherapeutics: Types, humanisation antibody therapy, Immunotherapeutics in clinical practice."
+          },
+          {
+            num: "UNIT 5", title: "Cell Culture Techniques & Biosimilars", hrs: 12,
+            content: "Basic equipment used in cell culture lab. Cell culture media, various types of cell culture, general procedure for cell cultures: Isolation of cells, subculture, cryopreservation, characterization of cells and their application. Principles and applications of cell viability assays, glucose uptake assay, Calcium influx assays. Principles and applications of flow cytometry. Biosimilars."
+          }
+        ],
+        refs: [
+          "The Cell, A Molecular Approach — Geoffrey M. Cooper",
+          "Pharmacogenomics: The Search for Individualized Therapies — Edited by J. Licinio and M-L. Wong",
+          "Handbook of Cell Signaling, 2nd Ed. — Edited by Ralph A. et al.",
+          "Molecular Pharmacology: From DNA to Drug Discovery — John Dickenson et al.",
+          "Basic Cell Culture Protocols — Cheril D. Helgason and Cindy L. Miller",
+          "Basic Cell Culture (Practical Approach) — J. M. Davis (Editor)",
+          "Animal Cell Culture: A Practical Approach — John R. Masters (Editor)",
+          "Current Protocols in Molecular Biology Vol I–VI — Edited by Frederick M. Ausuvel et al."
+        ]
+      },
+      {
+        code: "MPL 105P",
+        name: "Pharmacological Practical - I",
+        type: "Practical", credits: "6",
+        marks: { internal: 50, external: 100, total: 150 }, hours: 72,
+        scope: "Covers analytical techniques (UV, HPLC, GC, fluorimetry, flame photometry), animal handling and pharmacological experiments, and molecular biology/cell culture practical exercises.",
+        objectives: [],
+        units: [],
+        practicals: [
+          "Analysis of pharmacopoeial compounds and formulations by UV-Vis spectrophotometer",
+          "Simultaneous estimation of multi-component containing formulations by UV spectrophotometry",
+          "Experiments based on HPLC",
+          "Experiments based on Gas Chromatography",
+          "Estimation of riboflavin/quinine sulphate by fluorimetry",
+          "Estimation of sodium/potassium by flame photometry",
+          "Handling of laboratory animals — various routes of drug administration",
+          "Techniques of blood sampling, anaesthesia and euthanasia of experimental animals",
+          "Functional observation battery tests (modified Irwin test)",
+          "Evaluation of CNS stimulant, depressant, anxiogenics and anxiolytic, anticonvulsant activity",
+          "Evaluation of analgesic, anti-inflammatory, local anaesthetic, mydriatic and miotic activity",
+          "Evaluation of diuretic activity",
+          "Evaluation of anti-ulcer activity by pylorus ligation method",
+          "Oral glucose tolerance test",
+          "Isolation and identification of DNA from various sources (Bacteria, Cauliflower, onion, Goat liver)",
+          "Isolation of RNA from yeast",
+          "Estimation of proteins by Bradford/Lowry's in biological samples",
+          "Estimation of RNA/DNA by UV Spectroscopy",
+          "Gene amplification by PCR",
+          "Protein quantification by Western Blotting",
+          "Enzyme-based in-vitro assays (MPO, AChEs, α amylase, α glucosidase)",
+          "Cell viability assays (MTT/Trypan blue/SRB)",
+          "DNA fragmentation assay by agarose gel electrophoresis",
+          "DNA damage study by Comet assay",
+          "Apoptosis determination by fluorescent imaging studies",
+          "Pharmacokinetic studies and data analysis by different routes using softwares",
+          "Enzyme inhibition and induction activity",
+          "Extraction of drug from biological samples — estimation using UV",
+          "Extraction of drug from biological samples — estimation using HPLC"
+        ],
+        refs: [
+          "CPCSEA, OECD, ICH, USFDA, Schedule Y, EPA guidelines",
+          "Fundamentals of Experimental Pharmacology — M.N. Ghosh",
+          "Handbook of Experimental Pharmacology — S.K. Kulkarni",
+          "Drug Discovery and Evaluation — Vogel H.G.",
+          "Spectrometric Identification of Organic Compounds — Robert M Silverstein",
+          "Principles of Instrumental Analysis — Douglas A Skoog, F. James Holler, Timothy A. Nieman",
+          "Vogel's Textbook of Quantitative Chemical Analysis — Jeffery, Basset, Mendham, Denney",
+          "Basic Cell Culture Protocols — Cheril D. Helgason and Cindy L. Miller",
+          "Basic Cell Culture (Practical Approach) — J. M. Davis (Editor)",
+          "Animal Cell Culture: A Practical Approach — John R. Masters (Editor)",
+          "Practical Manual of Experimental and Clinical Pharmacology — Bikash Medhi, Ajay Prakash (Jaypee Brothers)"
+        ]
+      },
+      {
+        code: "Seminar",
+        name: "Seminar / Assignment",
+        type: "Seminar", credits: "—",
+        marks: { internal: 0, external: 0, total: 100 }, hours: 0,
+        scope: "Seminar or assignment presentation as part of Semester I evaluation.",
+        objectives: [], units: [], refs: []
+      }
+    ]
+  },
+  2: {
+    label: "Semester II",
+    subjects: [
+      {
+        code: "MPL 201T",
+        name: "Advanced Pharmacology - II",
+        type: "Theory", credits: "4",
+        marks: { internal: 25, external: 75, total: 100 }, hours: 60,
+        scope: "Strengthens basic knowledge in pharmacology and imparts recent advances in drugs used for treatment of various diseases. Covers endocrine pharmacology, chemotherapy, GIT pharmacology, free radical pharmacology and recent advances.",
+        objectives: [
+          "Explain the mechanism of drug actions at cellular and molecular level",
+          "Discuss the pathophysiology and pharmacotherapy of certain diseases",
+          "Understand adverse effects, contraindications and clinical uses of drugs used in treatment of diseases"
+        ],
+        units: [
+          {
+            num: "UNIT 1", title: "Endocrine Pharmacology", hrs: 12,
+            content: "Molecular and cellular mechanism of action of hormones: growth hormone, prolactin, thyroid, insulin and sex hormones. Anti-thyroid drugs, Oral hypoglycemic agents, Oral contraceptives, Corticosteroids. Drugs affecting calcium regulation."
+          },
+          {
+            num: "UNIT 2", title: "Chemotherapy — Antimicrobials", hrs: 12,
+            content: "Cellular and molecular mechanism of actions and resistance of antimicrobial agents: β-lactams, aminoglycosides, quinolones, Macrolide antibiotics. Antifungal, antiviral, and anti-TB drugs."
+          },
+          {
+            num: "UNIT 3", title: "Chemotherapy — Antiparasitic, Cancer & Immunopharmacology", hrs: 12,
+            content: "Drugs used in Protozoal Infections. Drugs used in the treatment of Helminthiasis. Chemotherapy of cancer. Immunopharmacology: Cellular and biochemical mediators of inflammation and immune response. Allergic or hypersensitivity reactions. Pharmacotherapy of asthma and COPD. Immunosuppressants and Immunostimulants."
+          },
+          {
+            num: "UNIT 4", title: "GIT Pharmacology & Chronopharmacology", hrs: 12,
+            content: "GIT Pharmacology: Antiulcer drugs, Prokinetics, antiemetics, anti-diarrheals and drugs for constipation and irritable bowel syndrome. Chronopharmacology: Biological and circadian rhythms, applications of chronotherapy in cardiovascular disease, diabetes, asthma and peptic ulcer."
+          },
+          {
+            num: "UNIT 5", title: "Free Radical Pharmacology & Recent Advances", hrs: 12,
+            content: "Generation of free radicals. Role of free radicals in etiopathology of diseases (diabetes, neurodegenerative diseases and cancer). Protective activity of antioxidants. Recent Advances in Treatment: Alzheimer's disease, Parkinson's disease, Cancer, Diabetes mellitus."
+          }
+        ],
+        refs: [
+          "The Pharmacological Basis of Therapeutics — Goodman and Gillman's",
+          "Principles of Pharmacology: The Pathophysiologic Basis of Drug Therapy — David E Golan et al.",
+          "Basic and Clinical Pharmacology — B.G. Katzung",
+          "Pharmacology — H.P. Rang and M.M. Dale",
+          "Handbook of Clinical Pharmacokinetics — Gibaldi and Prescott",
+          "Textbook of Therapeutics, Drug and Disease Management — E.T. Herfindal and Gourley",
+          "Applied Biopharmaceutics and Pharmacokinetics — Leon Shargel and Andrew B.C. Yu",
+          "Handbook of Essential Pharmacokinetics, Pharmacodynamics and Drug Metabolism for Industrial Scientists",
+          "Robbins & Cotran Pathologic Basis of Disease, 9th Ed.",
+          "A Complete Textbook of Medical Pharmacology — Dr. S.K Srivastava, APC Avichal Publishing Company",
+          "Essentials of Medical Pharmacology — KD. Tripathi",
+          "Principles of Pharmacology — David E Golan et al., Wolters Kluwer, Lippincott Williams & Wilkins"
+        ]
+      },
+      {
+        code: "MPL 202T",
+        name: "Pharmacological & Toxicological Screening Methods - II",
+        type: "Theory", credits: "4",
+        marks: { internal: 25, external: 75, total: 100 }, hours: 60,
+        scope: "Imparts knowledge on preclinical safety and toxicological evaluation of drugs and new chemical entities. Makes students competent in regulatory toxicological evaluation.",
+        objectives: [
+          "Explain the various types of toxicity studies",
+          "Appreciate the importance of ethical and regulatory requirements for toxicity studies",
+          "Demonstrate practical skills required to conduct preclinical toxicity studies"
+        ],
+        units: [
+          {
+            num: "UNIT 1", title: "Toxicology Basics, Regulatory Guidelines & GLP", hrs: 12,
+            content: "Basic definitions and types of toxicology: general, mechanistic, regulatory and descriptive. Regulatory guidelines for conducting toxicity studies: OECD, ICH, EPA and Schedule Y. OECD principles of Good Laboratory Practice (GLP). History, concept and importance in drug development."
+          },
+          {
+            num: "UNIT 2", title: "Acute, Sub-acute & Chronic Toxicity Studies", hrs: 12,
+            content: "Acute, sub-acute and chronic — oral, dermal and inhalational studies as per OECD guidelines. Acute eye irritation, skin sensitization, dermal irritation & dermal toxicity studies. Test item characterization: importance and methods in regulatory toxicology studies."
+          },
+          {
+            num: "UNIT 3", title: "Reproductive, Genotoxicity & Carcinogenicity", hrs: 12,
+            content: "Reproductive toxicology studies. Male reproductive toxicity studies. Female reproductive studies (Segment I and Segment III). Teratogenicity studies (Segment II). Genotoxicity studies: Ames Test, in vitro and in vivo Micronucleus and Chromosomal aberrations studies. In vivo carcinogenicity studies."
+          },
+          {
+            num: "UNIT 4", title: "IND Enabling Studies & Safety Pharmacology", hrs: 12,
+            content: "IND enabling studies (IND studies): Definition of IND, importance of IND, industry perspective, list of studies needed for IND submission. Safety pharmacology studies: Origin, concepts and importance. Tier 1 — CVS, CNS and respiratory safety pharmacology, HERG assay. Tier 2 — GI, renal and other studies."
+          },
+          {
+            num: "UNIT 5", title: "Toxicokinetics & Alternative Methods", hrs: 12,
+            content: "Toxicokinetics: Toxicokinetic evaluation in preclinical studies, saturation kinetics. Importance and applications of toxicokinetic studies. Alternative methods to animal toxicity testing."
+          }
+        ],
+        refs: [
+          "Handbook on GLP, Quality Practices for Regulated Non-clinical Research and Development — WHO (www.who.int/tdr/publications/documents/glp-handbook.pdf)",
+          "Schedule Y Guideline: Drugs and Cosmetics (Second Amendment) Rules 2005, Ministry of Health and Family Welfare, New Delhi",
+          "Drugs: From Discovery to Approval — Rick Ng",
+          "Animal Models in Toxicology, 3rd Ed. — Lower and Bryan",
+          "OECD Test Guidelines",
+          "Principles of Toxicology — Karen E. Stine, Thomas M. Brown",
+          "Guidance for Industry M3(R2): Nonclinical Safety Studies for the Conduct of Human Clinical Trials — FDA (www.fda.gov/downloads/drugs/guidancecomplianceregulatoryinformation/guidances/ucm073246.pdf)"
+        ]
+      },
+      {
+        code: "MPL 203T",
+        name: "Principles of Drug Discovery",
+        type: "Theory", credits: "4",
+        marks: { internal: 25, external: 75, total: 100 }, hours: 60,
+        scope: "Imparts basic knowledge of drug discovery process, making students competent in drug discovery including target identification, lead discovery, rational drug design, molecular docking, QSAR and prodrug design.",
+        objectives: [
+          "Explain the various stages of drug discovery",
+          "Appreciate the importance of genomics, proteomics and bioinformatics in drug discovery",
+          "Explain various targets for drug discovery",
+          "Explain various lead-seeking methods and lead optimization",
+          "Appreciate the role of computer-aided drug design in drug discovery"
+        ],
+        units: [
+          {
+            num: "UNIT 1", title: "Overview of Drug Discovery & Target Validation", hrs: 12,
+            content: "An overview of modern drug discovery process: Target identification, target validation, lead identification and lead optimization. Economics of drug discovery. Target Discovery and validation: Role of Genomics, Proteomics and Bioinformatics. Role of Nucleic acid microarrays, Protein microarrays, Antisense technologies, siRNAs, antisense oligonucleotides, Zinc finger proteins. Role of transgenic animals in target validation."
+          },
+          {
+            num: "UNIT 2", title: "Lead Identification & Protein Structure", hrs: 12,
+            content: "Lead Identification: Combinatorial chemistry & high-throughput screening, in silico lead discovery techniques, assay development for hit identification. Protein structure: Levels of protein structure, Domains, motifs, and folds. Computational prediction of protein structure: Threading and homology modeling. Applications of NMR and X-ray crystallography in protein structure prediction."
+          },
+          {
+            num: "UNIT 3", title: "Rational Drug Design & Virtual Screening", hrs: 12,
+            content: "Traditional vs rational drug design, Methods followed in traditional drug design, High-throughput screening. Concepts of Rational Drug Design. Rational Drug Design Methods: Structure-based and Pharmacophore-based approaches. Virtual Screening techniques: Drug-likeness screening, Concept of pharmacophore mapping and pharmacophore-based screening."
+          },
+          {
+            num: "UNIT 4", title: "Molecular Docking & QSAR", hrs: 12,
+            content: "Molecular docking: Rigid docking, flexible docking, manual docking; Docking-based screening. De novo drug design. Quantitative Analysis of Structure-Activity Relationship (QSAR): History and development of QSAR, SAR versus QSAR, Physicochemical parameters, Hansch analysis, Free-Wilson analysis and relationship between them."
+          },
+          {
+            num: "UNIT 5", title: "QSAR Statistical Methods & Prodrug Design", hrs: 12,
+            content: "QSAR Statistical methods: Regression analysis, partial least squares analysis (PLS) and other multivariate statistical methods. 3D-QSAR approaches like COMFA and COMSIA. Prodrug design: Basic concept, Prodrugs to improve patient acceptability, Drug solubility, Drug absorption and distribution, site-specific drug delivery and sustained drug action. Rationale and practical considerations of prodrug design."
+          }
+        ],
+        refs: [
+          "Target Discovery and Validation Reviews and Protocols, Vol. 2 — Moulds Sioud, Humana Press Inc., 2007",
+          "In Silico Technologies in Drug Target Identification and Validation — Darryl León, Scott Markel; Taylor and Francis Group, LLC, 2006",
+          "Disease Gene Identification: Methods and Protocols — Johanna K. DiStefano, Springer",
+          "QSAR: Hansch Analysis and Related Approaches — Hugo Kubinyi, Wiley-VCH",
+          "Structure-Based Ligand Design — Klaus Gubernator, Hans-Joachim Böhm, Wiley-VCH",
+          "Rational Drug Design: Novel Methodology and Practical Applications — Abby L. Parrill, M. Rami Reddy, ACS Symposium Series, 1999",
+          "New Drug Development: Design, Methodology and Analysis — J. Rick Turner, John Wiley & Sons"
+        ]
+      },
+      {
+        code: "MPL 204T",
+        name: "Clinical Research and Pharmacovigilance",
+        type: "Theory", credits: "4",
+        marks: { internal: 25, external: 75, total: 100 }, hours: 60,
+        scope: "Provides value addition in clinical research and pharmacovigilance. Teaches conceptualizing, designing, conducting, managing and reporting of clinical trials. Focuses on global pharmacovigilance and developing drug safety data in pre-clinical, clinical phases and post-market surveillance.",
+        objectives: [
+          "Explain the regulatory requirements for conducting clinical trials",
+          "Demonstrate the types of clinical trial designs",
+          "Explain the responsibilities of key players involved in clinical trials",
+          "Execute safety monitoring, reporting and close-out activities",
+          "Explain the principles of Pharmacovigilance",
+          "Detect new adverse drug reactions and their assessment",
+          "Perform ADR reporting systems and communication in Pharmacovigilance"
+        ],
+        units: [
+          {
+            num: "UNIT 1", title: "Regulatory Perspectives of Clinical Trials", hrs: 12,
+            content: "Origin and Principles of ICH-GCP guidelines. Ethical Committee: Institutional Review Board, Ethical Guidelines for Biomedical Research and Human Participant — Schedule Y, ICMR. Informed Consent Process: Structure and content, Ethical principles governing informed consent."
+          },
+          {
+            num: "UNIT 2", title: "Clinical Trials — Types & Design", hrs: 12,
+            content: "Experimental Study: RCT and Non-RCT. Observation Study: Cohort, Case Control, Cross-sectional. Clinical Trial Study Team. Roles and responsibilities of Clinical Trial Personnel: Investigator, Study Coordinator, Sponsor, Contract Research Organization and its management."
+          },
+          {
+            num: "UNIT 3", title: "Clinical Trial Documentation, Monitoring & ADR", hrs: 12,
+            content: "Guidelines to preparation of documents. Preparation of protocol, Investigator Brochure, Case Report Forms, Clinical Study Report. Clinical Trial Monitoring and Safety Monitoring. Adverse Drug Reactions: Definition and types. Detection and reporting methods. Severity and seriousness assessment. Predictability and preventability assessment. Management of ADRs. Terminologies of ADR."
+          },
+          {
+            num: "UNIT 4", title: "Pharmacovigilance — Basics & Establishment", hrs: 12,
+            content: "History and progress of pharmacovigilance. Significance of safety monitoring. Pharmacovigilance in India and international aspects. WHO international drug monitoring programme. WHO and Regulatory terminologies of ADR. Evaluation of medication safety. Establishing pharmacovigilance centres in Hospitals, Industry and National programmes. Roles and responsibilities in Pharmacovigilance."
+          },
+          {
+            num: "UNIT 5", title: "Methods, ADR Reporting & Tools", hrs: 12,
+            content: "International classification of diseases. International Non-proprietary names for drugs. Passive and Active surveillance. Comparative observational studies. Targeted clinical investigations and Vaccine safety surveillance. Spontaneous reporting system and Reporting to regulatory authorities. Guidelines for ADR reporting. Argus, Aris G Pharmacovigilance, VigiFlow. Statistical methods for evaluating medication safety data."
+          },
+          {
+            num: "UNIT 6", title: "Pharmacoepidemiology, Pharmacoeconomics & Safety Pharmacology", hrs: 12,
+            content: "Pharmacoepidemiology: Study of drug use, drug utilization studies, risk-benefit assessment. Pharmacoeconomics: Cost-effectiveness, cost-benefit and cost-utility analyses. Safety Pharmacology: Assessment of potential undesirable pharmacodynamic effects of a substance on physiological functions in relation to exposure in the therapeutic range."
+          }
+        ],
+        refs: [
+          "CDSCO — Good Clinical Practices, Guidelines for Clinical Trials on Pharmaceutical Products in India. Ministry of Health, New Delhi, 2001",
+          "ICH Harmonized Tripartite Guideline — Good Clinical Practice E6, May 1996",
+          "Ethical Guidelines for Biomedical Research on Human Subjects 2000 — ICMR, New Delhi",
+          "Textbook of Clinical Trials — Edited by David Machin, Simon Day and Sylvan Green, John Wiley and Sons, March 2005",
+          "Clinical Data Management — Edited by R.K. Rondels, S.A. Varley, C.F. Webbs, 2nd Ed., Wiley Publications, Jan 2000",
+          "Handbook of Clinical Research — Julia Lloyd and Ann Raven Ed., Churchill Livingstone",
+          "Principles of Clinical Research — Edited by Giovanna di Ignazio, Di Giovanna and Haynes"
+        ]
+      },
+      {
+        code: "MPL 205P",
+        name: "Pharmacological Practical - II",
+        type: "Practical", credits: "6",
+        marks: { internal: 50, external: 100, total: 150 }, hours: 72,
+        scope: "Covers isolated tissue preparations, dose-response curves, in vivo cardiovascular experiments, toxicology studies, clinical trial protocol design, in-silico studies and ADR reporting.",
+        objectives: [],
+        units: [],
+        practicals: [
+          "Record DRC of agonist using suitable isolated tissue preparation",
+          "Study effects of antagonist/potentiating agents on DRC of agonist using suitable isolated tissue",
+          "Determine strength of unknown sample by matching bioassay using suitable tissue preparation",
+          "Determine strength of unknown sample by interpolation bioassay using suitable tissue",
+          "Determine strength of unknown sample by bracketing bioassay using suitable tissue",
+          "Determine strength of unknown sample by multiple point bioassay using suitable tissue",
+          "Estimation of PA2 values of various antagonists using suitable isolated tissue preparations",
+          "Study the effects of various drugs on isolated heart preparations",
+          "Recording of rat BP, heart rate and ECG",
+          "Recording of rat ECG",
+          "Drug absorption studies by everted rat ileum preparation",
+          "Acute oral toxicity studies as per OECD guidelines",
+          "Acute dermal toxicity studies as per OECD guidelines",
+          "Repeated dose toxicity studies: Serum biochemical, haematological, urine analysis, functional observation tests and histological studies",
+          "Drug mutagenicity study using mice bone-marrow chromosomal aberration test",
+          "Protocol design for clinical trial (3 Nos.)",
+          "Design of ADR monitoring protocol",
+          "In-silico docking studies (2 Nos.)",
+          "In-silico pharmacophore based screening",
+          "In-silico QSAR studies",
+          "ADR reporting"
+        ],
+        refs: [
+          "Fundamentals of Experimental Pharmacology — M.N. Ghosh",
+          "Handbook of Experimental Pharmacology — S.K. Kulkarni",
+          "Textbook of In-vitro Practical Pharmacology — Ian Kitchen",
+          "Bioassay Techniques for Drug Development — Atta-ur-Rahman, Iqbal Choudhary and William Thomsen",
+          "Applied Biopharmaceutics and Pharmacokinetics — Leon Shargel and Andrew B.C. Yu",
+          "Handbook of Essential Pharmacokinetics, Pharmacodynamics and Drug Metabolism for Industrial Scientists"
+        ]
+      },
+      {
+        code: "Seminar",
+        name: "Seminar / Assignment",
+        type: "Seminar", credits: "—",
+        marks: { internal: 0, external: 0, total: 100 }, hours: 0,
+        scope: "Seminar or assignment presentation as part of Semester II evaluation.",
+        objectives: [], units: [], refs: []
+      }
+    ]
+  },
+  3: {
+    label: "Semester III",
+    subjects: [
+      {
+        code: "MRM 301T",
+        name: "Research Methodology & Biostatistics",
+        type: "Theory", credits: "4",
+        marks: { internal: 25, external: 75, total: 100 }, hours: 60,
+        scope: "Common subject for all M.Pharm specializations in Semester III. Covers general research methodology, biostatistics, medical research ethics, CPCSEA guidelines for laboratory animals and the Declaration of Helsinki.",
+        objectives: [
+          "Understand research design, study types, controls, randomization and blinding",
+          "Apply biostatistical tests to pharmaceutical/medical research data",
+          "Appreciate ethical principles in medical and biomedical research"
+        ],
+        units: [
+          {
+            num: "UNIT I", title: "General Research Methodology", hrs: 12,
+            content: "Research: objective, requirements, practical difficulties. Review of literature. Study design, types of studies. Strategies to eliminate errors/bias. Controls, randomization, crossover design, placebo, blinding techniques."
+          },
+          {
+            num: "UNIT II", title: "Biostatistics", hrs: 12,
+            content: "Definition, application, sample size, importance and factors influencing sample size, dropouts. Statistical tests of significance, types. Parametric tests: Student's t-test, ANOVA, Correlation coefficient, regression. Non-parametric tests: Wilcoxon rank tests, chi-square test. Null hypothesis, P values, degree of freedom, interpretation of P values."
+          },
+          {
+            num: "UNIT III", title: "Medical Research Ethics", hrs: 12,
+            content: "History, values in medical ethics: Autonomy, beneficence, non-maleficence, double effect. Conflicts between principles. Euthanasia, informed consent, confidentiality. Criticisms of orthodox medical ethics. Ethics committees, cultural concerns, truth telling, conflicts of interest, referral, vendor relationships, sexual relationships, fatality."
+          },
+          {
+            num: "UNIT IV", title: "CPCSEA Guidelines for Laboratory Animal Facility", hrs: 12,
+            content: "Goals, veterinary care, quarantine, surveillance, diagnosis, treatment and control of disease. Personal hygiene, location of animal facilities to laboratories. Anaesthesia, euthanasia, physical facilities, environment, animal husbandry. Record keeping, SOPs, personnel and training, transport of lab animals."
+          },
+          {
+            num: "UNIT V", title: "Declaration of Helsinki", hrs: 12,
+            content: "History, introduction. Basic principles for all medical research. Additional principles for medical research combined with medical care."
+          }
+        ],
+        refs: []
+      },
+      {
+        code: "Journal Club",
+        name: "Journal Club",
+        type: "Internal Assessment", credits: "—",
+        marks: { internal: 25, external: 0, total: 25 }, hours: 0,
+        scope: "Journal club presentations as part of Semester III internal assessment.",
+        objectives: [], units: [], refs: []
+      },
+      {
+        code: "Proposal",
+        name: "Discussion / Presentation (Proposal Presentation)",
+        type: "Internal Assessment", credits: "—",
+        marks: { internal: 50, external: 0, total: 50 }, hours: 0,
+        scope: "Dissertation proposal presentation and discussion as part of Semester III assessment.",
+        objectives: [], units: [], refs: []
+      },
+      {
+        code: "Research",
+        name: "Research Work (Dissertation)",
+        type: "Research", credits: "—",
+        marks: { internal: 0, external: 350, total: 350 }, hours: 0,
+        scope: "All M.Pharm students shall undertake a project under teacher supervision in Semester III–IV and submit a report (4 copies, typed & bound, ≥75 pages). Dissertation evaluation: Objectives 50M, Methodology 150M, Results & Discussions 250M, Conclusions 50M = 500M. Presentation: Work 100M, Communication 50M, Q&A 100M = 250M.",
+        objectives: [], units: [], refs: []
+      }
+    ]
+  },
+  4: {
+    label: "Semester IV",
+    subjects: [
+      {
+        code: "Journal Club",
+        name: "Journal Club",
+        type: "Internal Assessment", credits: "—",
+        marks: { internal: 25, external: 0, total: 25 }, hours: 0,
+        scope: "Journal club presentations as part of Semester IV internal assessment.",
+        objectives: [], units: [], refs: []
+      },
+      {
+        code: "Thesis",
+        name: "Discussion / Presentation (Thesis Presentation)",
+        type: "Internal Assessment", credits: "—",
+        marks: { internal: 75, external: 0, total: 75 }, hours: 0,
+        scope: "Final thesis/dissertation presentation and discussion as part of Semester IV assessment.",
+        objectives: [], units: [], refs: []
+      },
+      {
+        code: "Research",
+        name: "Research Work & Colloquium",
+        type: "Research", credits: "—",
+        marks: { internal: 0, external: 400, total: 400 }, hours: 0,
+        scope: "Final submission of Research Work and Colloquium. Students must have successfully completed all courses of Semesters I, II and III before Semester IV exams. CGPA = (C1×S1 + C2×S2 + C3×S3 + C4×S4) / (C1+C2+C3+C4).",
+        objectives: [], units: [], refs: []
+      }
+    ]
+  }
+};
+
+const ALL_REFS = {};
+Object.entries(SEMESTERS).forEach(([sem, semData]) => {
+  semData.subjects.forEach(sub => {
+    if (sub.refs && sub.refs.length > 0) {
+      ALL_REFS[sub.code + " — " + sub.name] = { sem: semData.label, refs: sub.refs };
+    }
+  });
+});
+
+const QUICK_DATA = [
+  {
+    title: "📊 Marks Scheme — Theory (Sem I & II)",
+    content: `<table class="marks-table"><thead><tr><th>Component</th><th>Marks</th><th>Duration</th></tr></thead><tbody>
+      <tr><td>Continuous Mode (Internal)</td><td>10</td><td>—</td></tr>
+      <tr><td>Sessional Exam (Internal)</td><td>15</td><td>1 Hr</td></tr>
+      <tr><td><b>Internal Total</b></td><td><b>25</b></td><td>—</td></tr>
+      <tr><td>End Semester Exam (External)</td><td>75</td><td>3 Hrs</td></tr>
+      <tr><td><b>Grand Total</b></td><td><b>100</b></td><td>—</td></tr>
+    </tbody></table>`
+  },
+  {
+    title: "🔬 Marks Scheme — Practical",
+    content: `<table class="marks-table"><thead><tr><th>Component</th><th>Marks</th><th>Duration</th></tr></thead><tbody>
+      <tr><td>Continuous Mode (Internal)</td><td>20</td><td>—</td></tr>
+      <tr><td>Sessional Exam (Internal)</td><td>30</td><td>6 Hrs</td></tr>
+      <tr><td><b>Internal Total</b></td><td><b>50</b></td><td>—</td></tr>
+      <tr><td>End Semester Exam (External)</td><td>100</td><td>6 Hrs</td></tr>
+      <tr><td><b>Grand Total</b></td><td><b>150</b></td><td>—</td></tr>
+    </tbody></table>`
+  },
+  {
+    title: "📝 Grading System",
+    content: `<table class="marks-table"><thead><tr><th>%</th><th>Grade</th><th>Points</th><th>Performance</th></tr></thead><tbody>
+      <tr><td>90–100</td><td class="grade-O">O</td><td>10</td><td>Outstanding</td></tr>
+      <tr><td>80–89.99</td><td class="grade-A">A</td><td>9</td><td>Excellent</td></tr>
+      <tr><td>70–79.99</td><td class="grade-B">B</td><td>8</td><td>Good</td></tr>
+      <tr><td>60–69.99</td><td>C</td><td>7</td><td>Fair</td></tr>
+      <tr><td>50–59.99</td><td class="grade-pass">D</td><td>6</td><td>Average</td></tr>
+      <tr><td>&lt;50</td><td class="grade-F">F</td><td>0</td><td>Fail</td></tr>
+    </tbody></table>`
+  },
+  {
+    title: "🎓 Class Declaration & Pass Criteria",
+    content: `<ul>
+      <li><b style="color:#f5c842">First Class with Distinction</b> — CGPA ≥ 7.50</li>
+      <li><b style="color:#7fc8f8">First Class</b> — CGPA 6.00–7.49</li>
+      <b>Second Class</b> — CGPA 5.00–5.99</li>
+    </ul><p style="margin-top:8px;color:var(--muted);font-size:12px">Pass = 50% minimum in each course (internal + external combined)</p>`
+  },
+  {
+    title: "📅 Attendance Requirements",
+    content: `<table class="marks-table"><thead><tr><th>Attendance %</th><th>Theory</th><th>Practical</th></tr></thead><tbody>
+      <tr><td>95–100%</td><td>8</td><td>10</td></tr>
+      <tr><td>90–94%</td><td>6</td><td>7.5</td></tr>
+      <tr><td>85–89%</td><td>4</td><td>5</td></tr>
+      <tr><td>80–84%</td><td>2</td><td>2.5</td></tr>
+      <tr><td class="grade-F">&lt;80%</td><td class="grade-F">0</td><td class="grade-F">0</td></tr>
+    </tbody></table><p style="margin-top:6px;color:var(--muted);font-size:12px">⚠️ Minimum 80% attendance required separately for theory and practical</p>`
+  },
+  {
+    title: "📆 Exam Schedule & ATKT",
+    content: `<table class="marks-table"><thead><tr><th>Semester</th><th>Regular</th><th>Failed</th></tr></thead><tbody>
+      <tr><td>I & III</td><td>Nov/Dec</td><td>May/Jun</td></tr>
+      <tr><td>II & IV</td><td>May/Jun</td><td>Nov/Dec</td></tr>
+    </tbody></table>
+    <p style="margin-top:8px;color:var(--muted);font-size:12px">ATKT: Can carry forward ALL courses of Sem I & II till Sem III. NOT eligible for Sem IV until Sems I, II & III fully cleared.</p>`
+  },
+  {
+    title: "📚 Credit Summary — Pharmacology (MPL)",
+    content: `<table class="marks-table"><thead><tr><th>Semester</th><th>Subjects</th><th>Total Marks</th></tr></thead><tbody>
+      <tr><td>Sem I</td><td>MPAT, Adv Pharma-I, Screening-I, Cell &amp; Mol Pharma, Prac-I, Seminar</td><td>650</td></tr>
+      <tr><td>Sem II</td><td>Adv Pharma-II, Screening-II, Drug Discovery, Clin Res &amp; PV, Prac-II, Seminar</td><td>650</td></tr>
+      <tr><td>Sem III</td><td>Res Methodology, Journal Club, Proposal, Research Work</td><td>525</td></tr>
+      <tr><td>Sem IV</td><td>Journal Club, Thesis Pres., Research &amp; Colloquium</td><td>500</td></tr>
+    </tbody></table>`
+  },
+  {
+    title: "🔬 Dissertation Evaluation",
+    content: `<p style="font-size:12px;color:var(--muted);margin-bottom:7px">Book Evaluation — 500 Marks</p>
+    <table class="marks-table"><thead><tr><th>Criterion</th><th>Marks</th></tr></thead><tbody>
+      <tr><td>Objectives of the work</td><td>50</td></tr>
+      <tr><td>Methodology adopted</td><td>150</td></tr>
+      <tr><td>Results and Discussions</td><td>250</td></tr>
+      <tr><td>Conclusions and Outcomes</td><td>50</td></tr>
+    </tbody></table>
+    <p style="font-size:12px;color:var(--muted);margin:8px 0 7px">Presentation Evaluation — 250 Marks</p>
+    <table class="marks-table"><thead><tr><th>Criterion</th><th>Marks</th></tr></thead><tbody>
+      <tr><td>Presentation of work</td><td>100</td></tr>
+      <tr><td>Communication skills</td><td>50</td></tr>
+      <tr><td>Question and answer skills</td><td>100</td></tr>
+    </tbody></table>`
+  }
+];
+
+// ===== STATE =====
+let currentSem = 1;
+let currentNav = "syllabus";
+let searchTimeout = null;
+
+// ===== BUILD SUBJECT CARD =====
+function buildSubjectCard(sub, idx) {
+  const icon = sub.type === "Practical" ? "🔬" : sub.type === "Seminar" ? "🗣️" : sub.type === "Research" ? "🧪" : sub.type === "Internal Assessment" ? "📋" : "📖";
+  const hasBody = (sub.units && sub.units.length > 0) || (sub.practicals && sub.practicals.length > 0) || sub.scope;
+  return `<div class="subject-card" data-idx="${idx}">
+    <div class="subject-header" onclick="toggleSubject(this.parentElement)">
+      <span class="subject-code">${sub.code}</span>
+      <div style="flex:1">
+        <div class="subject-name">${sub.name}</div>
+        <div class="subject-meta">${icon} ${sub.type} · ${sub.marks.total} marks${sub.hours ? ' · ' + sub.hours + 'h' : ''}</div>
+      </div>
+      ${hasBody ? '<span class="chevron">▾</span>' : ''}
+    </div>
+    ${hasBody ? `<div class="subject-body">${buildBody(sub)}</div>` : ''}
+  </div>`;
+}
+
+function buildBody(sub) {
+  let h = '';
+  h += `<div class="meta-row">
+    <span class="meta-badge">Int: ${sub.marks.internal}M</span>
+    <span class="meta-badge">Ext: ${sub.marks.external}M</span>
+    <span class="meta-badge marks">Total: ${sub.marks.total}M</span>
+    ${sub.hours ? `<span class="meta-badge">${sub.hours} hrs</span>` : ''}
+    ${sub.credits && sub.credits !== '—' ? `<span class="meta-badge">${sub.credits} credits</span>` : ''}
+  </div>`;
+  if (sub.scope) h += `<div class="info-block"><div class="info-label">Scope</div><div class="info-text">${sub.scope}</div></div>`;
+  if (sub.objectives && sub.objectives.length) h += `<div class="info-block"><div class="info-label">Objectives</div><ul class="obj-list">${sub.objectives.map(o=>`<li>${o}</li>`).join('')}</ul></div>`;
+  if (sub.units && sub.units.length) {
+    h += `<div class="info-label">Units</div><div class="units-section">
+      ${sub.units.map((u,i)=>`<div class="unit-item">
+        <div class="unit-header" onclick="toggleUnit(this.parentElement)">
+          <span class="unit-num">${u.num}</span>
+          <span class="unit-title-text">${u.title}</span>
+          ${u.hrs ? `<span class="unit-hrs">${u.hrs}h</span>` : ''}
+          <span class="unit-chevron">▾</span>
+        </div>
+        <div class="unit-body">${u.content}</div>
+      </div>`).join('')}
+    </div>`;
+  }
+  if (sub.practicals && sub.practicals.length) {
+    h += `<div class="info-label" style="margin-top:10px">Practical Exercises</div>
+    <ul class="practical-list">${sub.practicals.map((p,i)=>`<li data-n="${i+1}">${p}</li>`).join('')}</ul>`;
+  }
+  if (sub.refs && sub.refs.length) {
+    h += `<hr class="divider"><div class="refs-section"><div class="info-label">References</div>
+    ${sub.refs.map((r,i)=>`<div class="ref-item"><span class="ref-num">${i+1}.</span>${r}</div>`).join('')}
+    </div>`;
+  }
+  return h;
+}
+
+function toggleSubject(card) { card.classList.toggle('open'); }
+function toggleUnit(item) { item.classList.toggle('open'); }
+
+function renderSubjects(sem) {
+  document.getElementById('subjectList').innerHTML = SEMESTERS[sem].subjects.map((s,i) => buildSubjectCard(s,i)).join('');
+}
+
+function renderRefs() {
+  let h = '';
+  Object.entries(ALL_REFS).forEach(([name, data]) => {
+    h += `<div class="quick-card" style="margin-bottom:10px">
+      <h3 style="font-size:11px;color:var(--muted);margin-bottom:4px">${data.sem}</h3>
+      <h3>${name}</h3>
+      <div style="margin-top:8px">${data.refs.map((r,i)=>`<div class="ref-item"><span class="ref-num">${i+1}.</span>${r}</div>`).join('')}</div>
+    </div>`;
+  });
+  document.getElementById('refsBySubject').innerHTML = h;
+}
+
+function renderQuick() {
+  document.getElementById('quickGrid').innerHTML = QUICK_DATA.map(q=>`<div class="quick-card"><h3>${q.title}</h3><div style="margin-top:8px">${q.content}</div></div>`).join('');
+}
+
+// ===== SEARCH =====
+function escH(s) { return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function snip(text, q) {
+  const i = text.toLowerCase().indexOf(q.toLowerCase());
+  if (i<0) return text.slice(0,80)+'…';
+  const s=Math.max(0,i-30), e=Math.min(text.length,i+q.length+50);
+  return (s>0?'…':'')+text.slice(s,e)+(e<text.length?'…':'');
+}
+function hl(text, q) {
+  return text.replace(new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi'),'<mark>$1</mark>');
+}
+
+function doSearch(query) {
+  const q = query.trim().toLowerCase();
+  const container = document.getElementById('searchResults');
+  if (!q) { container.innerHTML = `<div class="hint">🐾 Type above to search subjects, units, topics, references…</div>`; return; }
+  const results = [];
+  Object.entries(SEMESTERS).forEach(([sem, sd]) => {
+    sd.subjects.forEach(sub => {
+      let score = 0, snippets = [];
+      if (sub.name.toLowerCase().includes(q)) { score+=10; snippets.push(hl(sub.name,q)); }
+      if (sub.code.toLowerCase().includes(q)) score+=8;
+      (sub.units||[]).forEach(u => {
+        if (u.title.toLowerCase().includes(q)) { score+=6; snippets.push(hl(u.num+': '+u.title,q)); }
+        if (u.content.toLowerCase().includes(q)) { score+=4; snippets.push(hl(snip(u.content,q),q)); }
+      });
+      if (sub.scope && sub.scope.toLowerCase().includes(q)) { score+=3; if(!snippets.length) snippets.push(hl(snip(sub.scope,q),q)); }
+      (sub.refs||[]).forEach(r => { if(r.toLowerCase().includes(q)) { score+=2; snippets.push('Ref: '+hl(snip(r,q),q)); } });
+      (sub.practicals||[]).forEach(p => { if(p.toLowerCase().includes(q)) { score+=3; snippets.push(hl(p,q)); } });
+      if (score>0) results.push({sem:sd.label, semNum:parseInt(sem), sub, snippet:snippets[0]||'', score});
+    });
+  });
+  results.sort((a,b)=>b.score-a.score);
+  if (!results.length) { container.innerHTML = `<div class="no-results"><span class="dog">🐶</span>No results for "<b>${escH(query)}</b>"</div>`; return; }
+  container.innerHTML = results.map(r=>`<div class="result-card" onclick="goToSubject(${r.semNum},'${escH(r.sub.code)}')">
+    <div class="result-sem">${r.sem} · ${r.sub.code}</div>
+    <div class="result-name">${r.sub.name}</div>
+    ${r.snippet?`<div class="result-snippet">${r.snippet}</div>`:''}
+  </div>`).join('');
+}
+
+function goToSubject(semNum, code) {
+  switchNav('syllabus');
+  currentSem = semNum;
+  document.querySelectorAll('.sem-pill').forEach(p=>p.classList.toggle('active', p.dataset.sem==semNum));
+  renderSubjects(semNum);
+  setTimeout(()=>{
+    document.querySelectorAll('.subject-card').forEach(card=>{
+      if (card.querySelector('.subject-code') && card.querySelector('.subject-code').textContent.trim()===code.trim()) {
+        if (!card.classList.contains('open')) toggleSubject(card);
+        card.scrollIntoView({behavior:'smooth',block:'start'});
+      }
+    });
+  }, 80);
+  document.getElementById('searchInput').value='';
+  document.getElementById('searchClear').classList.remove('show');
+}
+
+function switchNav(nav) {
+  currentNav = nav;
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active', b.dataset.nav===nav));
+  const map = {syllabus:'syllabusSection', search:'searchSection', refs:'refsSection', quick:'quickSection'};
+  Object.entries(map).forEach(([k,id])=>{ const el=document.getElementById(id); el.style.display=k===nav?'block':'none'; });
+  if (nav==='refs' && !document.getElementById('refsBySubject').innerHTML) renderRefs();
+  if (nav==='quick' && !document.getElementById('quickGrid').innerHTML) renderQuick();
+  if (nav==='search') { setTimeout(()=>document.getElementById('searchInput').focus(),100); }
+  window.scrollTo(0,0);
+}
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded', ()=>{
+  renderSubjects(1);
+  document.getElementById('semPills').addEventListener('click', e=>{
+    const pill = e.target.closest('.sem-pill');
+    if (!pill) return;
+    document.querySelectorAll('.sem-pill').forEach(p=>p.classList.remove('active'));
+    pill.classList.add('active');
+    currentSem = parseInt(pill.dataset.sem);
+    renderSubjects(currentSem);
+  });
+  document.querySelectorAll('.nav-item').forEach(btn=>{
+    btn.addEventListener('click',()=>switchNav(btn.dataset.nav));
+  });
+  const inp = document.getElementById('searchInput');
+  const clr = document.getElementById('searchClear');
+  inp.addEventListener('input', e=>{
+    clr.classList.toggle('show', e.target.value.length>0);
+    if (e.target.value.trim() && currentNav!=='search') switchNav('search');
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(()=>doSearch(e.target.value), 220);
+  });
+  inp.addEventListener('focus', ()=>{
+    if (currentNav!=='search') switchNav('search');
+    if (!inp.value.trim()) document.getElementById('searchResults').innerHTML=`<div class="hint">🐾 Type above to search subjects, units, topics, references…</div>`;
+  });
+  clr.addEventListener('click', ()=>{
+    inp.value=''; clr.classList.remove('show');
+    document.getElementById('searchResults').innerHTML=`<div class="hint">🐾 Type above to search subjects, units, topics, references…</div>`;
+    switchNav('syllabus');
+  });
+});
+</script>
+</body>
+</html>
