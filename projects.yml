@@ -9,7 +9,13 @@
   icon: fa-solid fa-file-lines
   tags: []
   url: https://samar1h.github.io/aiasp/projects/mpharm-ra-syllabus/
-  
+
+- title: MPharm (Pharmacology) Syllabus
+  description: Syllabus viewer of MPharm Regulatory Affairs 
+  icon: fa-solid fa-file-lines
+  tags: []
+  url: https://samar1h.github.io/aiasp/projects/mpharm-pharmacology-syllabus/
+
 - title: BPharm Syllabus
   description: Outdated Syllabus of BPharmacy
   icon: fa-solid fa-file-lines
