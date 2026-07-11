@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>REBOOT // Learn Python</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt-stdlib.js"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        bg: '#0B0F14', panel: '#141C24', panel2: '#1A2733', line: '#26333F',
+        reactor: '#00FF9C', amber: '#FFB800', cyan: '#7DF9FF', ink: '#E8F4F2', dim: '#5D7180'
+      },
+      fontFamily: { display: ['"Space Grotesk"','sans-serif'], mono: ['"JetBrains Mono"','monospace'] },
+      boxShadow: { glow: '0 0 24px -4px rgba(0,255,156,0.35)' }
+    }
+  }
+}
+</script>
+<style>
+  html,body{background:#0B0F14; overscroll-behavior:none; -webkit-tap-highlight-color:transparent;}
+  * { -webkit-user-select:none; user-select:none; }
+  input, .CodeMirror, .allow-select { -webkit-user-select:text; user-select:text; }
+  ::-webkit-scrollbar{display:none;}
+  * { scrollbar-width:none; }
+  .CodeMirror { height:auto; min-height:140px; font-family:'JetBrains Mono',monospace; font-size:14px; border-radius:12px; }
+  .scan { background: repeating-linear-gradient(0deg, rgba(0,255,156,0.025) 0px, rgba(0,255,156,0.025) 1px, transparent 1px, transparent 3px); }
+  @keyframes pulseGlow { 0%,100%{ filter: drop-shadow(0 0 6px rgba(0,255,156,.55)); } 50%{ filter: drop-shadow(0 0 16px rgba(0,255,156,.9)); } }
+  .pulse-glow { animation: pulseGlow 2.4s ease-in-out infinite; }
+  @keyframes floatY { 0%,100%{ transform: translateY(0px);} 50%{ transform: translateY(-6px);} }
+  .float { animation: floatY 3.6s ease-in-out infinite; }
+  .sheet { transition: transform .32s cubic-bezier(.22,1,.36,1); }
+  .fade-in { animation: fadeIn .25s ease-out; }
+  @keyframes fadeIn { from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+  .node-line { stroke-dasharray: 4 4; }
+  @media (prefers-reduced-motion: reduce) {
+    .pulse-glow, .float { animation: none !important; }
+  }
+  .btn-press:active { transform: scale(0.96); }
+  .toast-in { animation: toastIn .3s cubic-bezier(.22,1,.36,1); }
+  @keyframes toastIn { from { opacity:0; transform: translate(-50%, 12px);} to { opacity:1; transform: translate(-50%,0);} }
+  focus-visible, *:focus-visible { outline: 2px solid #00FF9C; outline-offset: 2px; }
+  .CodeMirror *:focus-visible, .CodeMirror:focus-visible, .CodeMirror-focused { outline: none !important; }
+  .CodeMirror-focused.cm-fat-cursor { outline: none !important; }
+</style>
+</head>
+<body class="font-mono text-ink min-h-screen">
+
+<div id="app" class="max-w-md mx-auto min-h-screen relative flex flex-col"></div>
+
+<script>
+/* ============================= DATA ============================= */
+
+const SYSTEMS = [
+  {
+    id: 'power', name: 'POWER CORE', part: 'Reactor', icon: 'core',
+    desc: 'Variables & data types — the energy that runs everything.',
+    lessons: [
+      { type:'info', title:'Variables', body:"A variable stores a value under a name. In Python you just write a name, an equals sign, and a value — no need to declare a type.", code: `energy = 100\nname = "R-7"\nonline = True` },
+      { type:'mcq', q:'Which line correctly creates a variable called `power` set to 75?', options:['power == 75','power = 75','set power = 75','var power = 75'], answer:1, explain:'A single `=` assigns a value. `==` is for comparisons, and Python needs no `var` or `set` keyword.' },
+      { type:'mcq', q:'What is the data type of `True` in Python?', options:['string','integer','boolean','float'], answer:2, explain:'`True` and `False` are boolean values, Python\'s type for yes/no logic.' },
+      { type:'code', prompt:'Create a variable called `power` and set it to 100. Then print it.', starter:'# your code here\n', check:(out,src)=>/power\s*=\s*100/.test(src) && out.trim()==='100', hint:'power = 100\nprint(power)', success:'Reactor variable initialized at 100%.' },
+    ]
+  },
+  {
+    id: 'movement', name: 'LOCOMOTION', part: 'Legs', icon: 'legs',
+    desc: 'Loops — repeating actions without repeating code.',
+    lessons: [
+      { type:'info', title:'For Loops', body:"A `for` loop repeats code for each item in a sequence. `range(5)` produces 5 numbers: 0,1,2,3,4.", code:`for step in range(3):\n    print(step)` },
+      { type:'mcq', q:'How many times does this loop run?\n\nfor i in range(4):\n    print(i)', options:['3','4','5','It runs forever'], answer:1, explain:'`range(4)` produces 4 values: 0, 1, 2, 3 — so the loop body runs 4 times.' },
+      { type:'mcq', q:'What does `range(2, 5)` produce?', options:['2, 3, 4','2, 3, 4, 5','0, 1, 2','5, 4, 3, 2'], answer:0, explain:'`range(start, stop)` counts from start up to, but not including, stop.' },
+      { type:'code', prompt:'Use a for loop to print the numbers 0 through 4 (5 lines of output).', starter:'# your code here\n', check:(out)=>out.trim()==='0\n1\n2\n3\n4', hint:'for i in range(5):\n    print(i)', success:'Legs calibrated — walking cycle online.' },
+    ]
+  },
+  {
+    id: 'arms', name: 'MANIPULATOR ARMS', part: 'Arms', icon: 'arms',
+    desc: 'Functions — reusable blocks of instructions.',
+    lessons: [
+      { type:'info', title:'Functions', body:"A function packages code you can reuse. Define it with `def`, give it a name, then call it later by that name.", code:`def grip():\n    print("Grabbing object")\n\ngrip()` },
+      { type:'mcq', q:'Which keyword starts a function definition in Python?', options:['function','def','func','define'], answer:1, explain:'Python uses the short keyword `def` to define a function.' },
+      { type:'mcq', q:'What does `return` do inside a function?', options:['Prints a value to the screen','Stops the whole program','Sends a value back to whoever called the function','Deletes the function'], answer:2, explain:'`return` hands a result back to the caller so it can be stored or used elsewhere.' },
+      { type:'code', prompt:'Write a function called `lift` that takes a parameter `weight` and prints "Lifting " followed by the weight. Then call lift(10).', starter:'# your code here\n', check:(out,src)=>/def\s+lift/.test(src) && out.trim()==='Lifting 10', hint:'def lift(weight):\n    print("Lifting", weight)\n\nlift(10)', success:'Arms responding — grip strength nominal.' },
+    ]
+  },
+  {
+    id: 'sensors', name: 'SENSOR ARRAY', part: 'Eyes', icon: 'eyes',
+    desc: 'Conditionals — making decisions based on data.',
+    lessons: [
+      { type:'info', title:'If / Else', body:"`if` runs code only when a condition is true. `else` runs when it isn't. `elif` checks another condition in between.", code:`temp = 90\nif temp > 80:\n    print("Overheating")\nelse:\n    print("Normal")` },
+      { type:'mcq', q:'If `battery = 15`, what prints?\n\nif battery < 20:\n    print("LOW")\nelse:\n    print("OK")', options:['OK','LOW','Nothing prints','Error'], answer:1, explain:'15 is less than 20, so the condition is true and "LOW" prints.' },
+      { type:'mcq', q:'Which symbol checks if two values are equal in Python?', options:['=','==','!=','equals'], answer:1, explain:'`==` compares values. A single `=` assigns a value instead.' },
+      { type:'code', prompt:'Create a variable `distance` set to 5. If it\'s less than 10, print "TOO CLOSE", otherwise print "SAFE".', starter:'# your code here\n', check:(out)=>out.trim()==='TOO CLOSE', hint:'distance = 5\nif distance < 10:\n    print("TOO CLOSE")\nelse:\n    print("SAFE")', success:'Sensors calibrated — object detection active.' },
+    ]
+  },
+  {
+    id: 'memory', name: 'MEMORY BANKS', part: 'Chest', icon: 'chest',
+    desc: 'Lists — storing collections of data.',
+    lessons: [
+      { type:'info', title:'Lists', body:"A list holds many values in order, inside square brackets. Access an item using its index — counting starts at 0.", code:`parts = ["arm", "leg", "eye"]\nprint(parts[0])` },
+      { type:'mcq', q:'What does `parts[1]` return if `parts = ["arm","leg","eye"]`?', options:['arm','leg','eye','Error'], answer:1, explain:'Indexing starts at 0, so index 1 is the second item: "leg".' },
+      { type:'mcq', q:'Which function adds an item to the end of a list?', options:['list.add()','list.append()','list.push()','list.insert(0)'], answer:1, explain:'`.append()` adds a new item to the end of a Python list.' },
+      { type:'code', prompt:'Create a list called `tools` with "wrench" and "scanner" in it. Then print the list.', starter:'# your code here\n', check:(out,src)=>/tools\s*=/.test(src) && out.includes('wrench') && out.includes('scanner'), hint:'tools = ["wrench", "scanner"]\nprint(tools)', success:'Memory banks online — inventory tracking enabled.' },
+    ]
+  },
+  {
+    id: 'voice', name: 'VOICE MODULE', part: 'Head', icon: 'head',
+    desc: 'Strings — working with text.',
+    lessons: [
+      { type:'info', title:'String Basics', body:"Strings are text, wrapped in quotes. Use `+` to join strings together, and f-strings to insert variables directly into text.", code:`unit = "R-7"\nprint(f"Hello, I am {unit}")` },
+      { type:'mcq', q:'What does `"boot" + "up"` produce?', options:['"boot up"','"bootup"','Error','"boot" "up"'], answer:1, explain:'`+` joins strings directly with no added space, giving "bootup".' },
+      { type:'mcq', q:'What will this print?\n\nname = "R-7"\nprint(f"Unit {name} online")', options:['Unit {name} online','Unit R-7 online','Error','name'], answer:1, explain:'An f-string replaces `{name}` with the variable\'s actual value.' },
+      { type:'code', prompt:'Create a variable `unit` set to "R-7". Print "Unit R-7 online" using an f-string.', starter:'# your code here\n', check:(out,src)=>/f["\']/.test(src) && out.trim()==='Unit R-7 online', hint:'unit = "R-7"\nprint(f"Unit {unit} online")', success:'Voice module online — speech synthesis ready.' },
+    ]
+  },
+  {
+    id: 'shield', name: 'SHIELD GENERATOR', part: 'Shoulders', icon: 'shoulders',
+    desc: 'While loops — repeating until a condition changes.',
+    lessons: [
+      { type:'info', title:'While Loops', body:"A `while` loop repeats as long as a condition stays true. Make sure something inside the loop eventually makes it false, or it'll run forever.", code:`shield = 3\nwhile shield > 0:\n    print(shield)\n    shield -= 1` },
+      { type:'mcq', q:'What is the risk with a `while` loop if the condition never becomes false?', options:['Nothing, its totally fine','It runs forever (infinite loop)','Python fixes it automatically','It only runs once'], answer:1, explain:'If the condition always stays true, the loop never stops — an infinite loop.' },
+      { type:'mcq', q:'What does `shield -= 1` do?', options:['Sets shield to -1','Subtracts 1 from shield and stores it back','Deletes shield','Compares shield to 1'], answer:1, explain:'`-=` is shorthand for `shield = shield - 1`.' },
+      { type:'code', prompt:'Create `charge = 3`. Use a while loop to print charge and decrease it by 1 each time, until it reaches 0.', starter:'# your code here\n', check:(out)=>out.trim()==='3\n2\n1', hint:'charge = 3\nwhile charge > 0:\n    print(charge)\n    charge -= 1', success:'Shield generator holding steady.' },
+    ]
+  },
+  {
+    id: 'brain', name: 'CENTRAL PROCESSOR', part: 'Core-Brain', icon: 'brain',
+    desc: 'Combining it all — functions with logic and loops.',
+    lessons: [
+      { type:'info', title:'Putting it together', body:"Real programs combine functions, loops and conditionals. A function can contain a loop, and that loop can contain an if statement — building complex behavior from simple pieces.", code:`def scan(items):\n    for item in items:\n        if item == "threat":\n            print("ALERT")\n        else:\n            print("clear")` },
+      { type:'mcq', q:'Can a function contain a for loop inside it?', options:['No, never','Yes, functions can contain any valid code','Only in other languages','Only with special permission'], answer:1, explain:'Functions can contain loops, conditionals, and even other functions.' },
+      { type:'code', prompt:'Write a function `check(n)` that prints "EVEN" if n is divisible by 2, otherwise prints "ODD". Call check(4).', starter:'# your code here\n', check:(out,src)=>/def\s+check/.test(src) && out.trim()==='EVEN', hint:'def check(n):\n    if n % 2 == 0:\n        print("EVEN")\n    else:\n        print("ODD")\n\ncheck(4)', success:'Central processor fully online.' },
+      { type:'code', prompt:'Final test: write a function `power_report(level)` that loops from 1 to level (inclusive) and prints each number. Call power_report(3).', starter:'# your code here\n', check:(out,src)=>/def\s+power_report/.test(src) && out.trim()==='1\n2\n3', hint:'def power_report(level):\n    for i in range(1, level+1):\n        print(i)\n\npower_report(3)', success:'REBOOT COMPLETE. All systems nominal, Commander.' },
+    ]
+  }
+];
+
+/* ============================= STATE ============================= */
+
+const SAVE_KEY = 'reboot_py_save_v1';
+function loadState(){
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if(raw) return JSON.parse(raw);
+  } catch(e){}
+  return { progress: {}, xp: 0, streak: 0, lastPlayed: null, stats: {} };
+}
+function saveState(){ localStorage.setItem(SAVE_KEY, JSON.stringify(state)); }
+let state = loadState();
+if(!state.stats) state.stats = {};
+
+function statKey(sysId, lessonIdx){ return sysId + ':' + lessonIdx; }
+function getStat(sysId, lessonIdx){
+  const k = statKey(sysId, lessonIdx);
+  if(!state.stats[k]) state.stats[k] = { attempts: 0, wrong: 0, hintUsed: false, cleared: false };
+  return state.stats[k];
+}
+function recordAttempt(sysId, lessonIdx, {correct, usedHint, singleShot}={}){
+  const s = getStat(sysId, lessonIdx);
+  s.attempts += 1;
+  if(usedHint) s.hintUsed = true;
+  if(correct){ s.cleared = true; }
+  else {
+    s.wrong += 1;
+    if(singleShot) s.cleared = true; // MCQ: one shot only, still "attempted" even if missed
+  }
+  saveState();
+}
+/* Score for one lesson: 100 if correct first try with no hint, scaled down for retries/hints/wrong MCQ, 0 if never attempted */
+function lessonScore(sysId, lessonIdx){
+  const s = state.stats[statKey(sysId, lessonIdx)];
+  if(!s || !s.cleared) return 0;
+  if(s.wrong > 0 && s.attempts <= 1) return 0; // MCQ answered wrong on its one attempt
+  let score = 100;
+  score -= Math.min(s.wrong, 4) * 15;   // each wrong attempt costs points
+  if(s.hintUsed) score -= 15;
+  return Math.max(score, 10); // cleared always worth something
+}
+
+function sysProgress(sysId){
+  return state.progress[sysId] || 0;
+}
+function isSysUnlocked(idx){
+  if(idx === 0) return true;
+  const prev = SYSTEMS[idx-1];
+  return sysProgress(prev.id) >= prev.lessons.length;
+}
+function isSysComplete(sys){
+  return sysProgress(sys.id) >= sys.lessons.length;
+}
+function totalLessons(){ return SYSTEMS.reduce((a,s)=>a+s.lessons.length,0); }
+function totalDone(){ return SYSTEMS.reduce((a,s)=>a+Math.min(sysProgress(s.id), s.lessons.length),0); }
+
+/* ============================= ICONS (robot parts, inline svg) ============================= */
+
+function partIcon(icon, lit){
+  const c = lit ? '#00FF9C' : '#3A4753';
+  const glow = lit ? 'filter:drop-shadow(0 0 6px rgba(0,255,156,.6))' : '';
+  const map = {
+    core: `<circle cx="12" cy="12" r="6" fill="none" stroke="${c}" stroke-width="2"/><circle cx="12" cy="12" r="2" fill="${c}"/>`,
+    legs: `<path d="M9 3v9l-3 9M15 3v9l3 9" stroke="${c}" stroke-width="2" fill="none" stroke-linecap="round"/>`,
+    arms: `<path d="M12 4v8M12 12l-6 5M12 12l6 5" stroke="${c}" stroke-width="2" fill="none" stroke-linecap="round"/>`,
+    eyes: `<circle cx="8" cy="12" r="2.5" fill="${c}"/><circle cx="16" cy="12" r="2.5" fill="${c}"/>`,
+    chest: `<rect x="6" y="6" width="12" height="12" rx="2" fill="none" stroke="${c}" stroke-width="2"/><path d="M9 10h6M9 14h6" stroke="${c}" stroke-width="1.5"/>`,
+    head: `<rect x="7" y="4" width="10" height="9" rx="3" fill="none" stroke="${c}" stroke-width="2"/><path d="M9 17v3M15 17v3" stroke="${c}" stroke-width="2" stroke-linecap="round"/>`,
+    shoulders: `<path d="M4 14a8 8 0 0 1 16 0" stroke="${c}" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="4" cy="15" r="1.6" fill="${c}"/><circle cx="20" cy="15" r="1.6" fill="${c}"/>`,
+    brain: `<path d="M12 3a5 5 0 0 0-5 5v1a3 3 0 0 0 0 6v1a5 5 0 0 0 10 0v-1a3 3 0 0 0 0-6V8a5 5 0 0 0-5-5z" fill="none" stroke="${c}" stroke-width="1.6"/>`
+  };
+  return `<svg viewBox="0 0 24 24" class="w-6 h-6" style="${glow}">${map[icon]||''}</svg>`;
+}
+
+/* Big robot visual on home screen — parts light up as systems complete */
+function robotSVG(){
+  const lit = id => isSysComplete(SYSTEMS.find(s=>s.id===id)) ;
+  const c = id => lit(id) ? '#00FF9C' : '#26333F';
+  const glow = id => lit(id) ? 'filter:drop-shadow(0 0 8px rgba(0,255,156,.65))' : '';
+  return `
+  <svg viewBox="0 0 200 240" class="w-28 h-32 mx-auto">
+    <!-- head: sits at the very top, y 10-60 -->
+    <g style="${glow('voice')}">
+      <rect x="70" y="10" width="60" height="50" rx="10" fill="none" stroke="${c('voice')}" stroke-width="3"/>
+      <circle cx="88" cy="35" r="4" fill="${c('sensors')}" style="${glow('sensors')}"/>
+      <circle cx="112" cy="35" r="4" fill="${c('sensors')}" style="${glow('sensors')}"/>
+    </g>
+    <!-- neck: short link between head-bottom (60) and chest-top (80) -->
+    <line x1="100" y1="60" x2="100" y2="80" stroke="#26333F" stroke-width="3"/>
+    <!-- shoulders: straight lines from neck-base out to chest top corners, no arcs -->
+    <g style="${glow('shield')}">
+      <line x1="100" y1="72" x2="65" y2="80" stroke="${c('shield')}" stroke-width="3" stroke-linecap="round"/>
+      <line x1="100" y1="72" x2="135" y2="80" stroke="${c('shield')}" stroke-width="3" stroke-linecap="round"/>
+    </g>
+    <!-- chest: starts at shoulder line, y 80-150 -->
+    <g style="${glow('memory')}"><rect x="65" y="80" width="70" height="70" rx="10" fill="none" stroke="${c('memory')}" stroke-width="3"/></g>
+    <!-- core: centered in chest -->
+    <circle cx="100" cy="115" r="16" fill="none" stroke="${c('power')}" stroke-width="3" style="${glow('power')}"/>
+    <circle cx="100" cy="115" r="5" fill="${lit('power')?'#00FF9C':'#26333F'}"/>
+    <!-- arms: attach at chest sides (y~95), hang down past chest bottom -->
+    <g style="${glow('arms')}">
+      <path d="M65 95L35 130L40 155" fill="none" stroke="${c('arms')}" stroke-width="3" stroke-linecap="round"/>
+      <path d="M135 95L165 130L160 155" fill="none" stroke="${c('arms')}" stroke-width="3" stroke-linecap="round"/>
+    </g>
+    <!-- legs: attach at chest bottom (150), extend to feet -->
+    <g style="${glow('movement')}">
+      <path d="M85 150L80 200L75 225" fill="none" stroke="${c('movement')}" stroke-width="3" stroke-linecap="round"/>
+      <path d="M115 150L120 200L125 225" fill="none" stroke="${c('movement')}" stroke-width="3" stroke-linecap="round"/>
+    </g>
+    <!-- brain glow center -->
+    ${lit('brain') ? `<circle cx="100" cy="115" r="26" fill="none" stroke="#00FF9C" stroke-width="1" opacity="0.5"><animate attributeName="r" values="16;28;16" dur="2.4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.6;0;0.6" dur="2.4s" repeatCount="indefinite"/></circle>` : ''}
+  </svg>`;
+}
+
+/* ============================= NAV ============================= */
+
+let currentView = 'home';
+let activeSys = null;
+let activeLessonIdx = 0;
+
+const app = document.getElementById('app');
+
+function go(view, opts={}){
+  currentView = view;
+  if(opts.sys !== undefined) activeSys = opts.sys;
+  if(opts.lessonIdx !== undefined) activeLessonIdx = opts.lessonIdx;
+  render();
+  window.scrollTo(0,0);
+}
+
+/* ============================= RENDER: HOME ============================= */
+
+function renderHome(){
+  const done = totalDone(), total = totalLessons();
+  const pct = Math.round((done/total)*100);
+  app.innerHTML = `
+  <div class="flex-1 flex flex-col fade-in">
+    <div class="px-5 pt-6 pb-3 flex items-center justify-between">
+      <div>
+        <div class="text-[11px] tracking-[0.2em] text-dim">MISSION</div>
+        <div class="font-display font-bold text-lg text-ink -mt-0.5">REBOOT</div>
+      </div>
+      <div class="text-right">
+        <div class="text-[11px] tracking-[0.2em] text-dim">XP</div>
+        <div class="font-display font-bold text-lg text-reactor -mt-0.5">${state.xp}</div>
+      </div>
+    </div>
+
+    <div class="px-5">
+      <div class="rounded-2xl bg-panel border border-line p-4 scan relative overflow-hidden">
+        <div class="float">${robotSVG()}</div>
+        <div class="mt-2 text-center">
+          <div class="text-xs text-dim">UNIT R-7 — ${pct}% RESTORED</div>
+          <div class="h-1.5 rounded-full bg-line mt-2 overflow-hidden">
+            <div class="h-full bg-reactor rounded-full transition-all duration-500" style="width:${pct}%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="px-5 pt-5 pb-2 text-[11px] tracking-[0.2em] text-dim">SHIP SYSTEMS</div>
+    <div class="flex-1 px-5 pb-6 space-y-2.5 overflow-y-auto">
+      ${SYSTEMS.map((sys, i) => {
+        const unlocked = isSysUnlocked(i);
+        const complete = isSysComplete(sys);
+        const prog = sysProgress(sys.id);
+        return `
+        <button data-sys="${i}" class="sys-btn btn-press w-full text-left rounded-xl border ${unlocked ? 'border-line bg-panel active:bg-panel2' : 'border-line/50 bg-panel/40'} p-3.5 flex items-center gap-3 transition-colors" ${unlocked?'':'disabled'}>
+          <div class="w-11 h-11 rounded-lg ${complete?'bg-reactor/10':'bg-panel2'} flex items-center justify-center shrink-0 ${complete?'pulse-glow':''}">
+            ${unlocked ? partIcon(sys.icon, complete) : `<svg viewBox="0 0 24 24" class="w-5 h-5"><path d="M6 10V8a6 6 0 0112 0v2M5 10h14v9a1 1 0 01-1 1H6a1 1 0 01-1-1v-9z" fill="none" stroke="#3A4753" stroke-width="2"/></svg>`}
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="text-sm font-semibold ${unlocked?'text-ink':'text-dim'} truncate">${sys.name}</div>
+            <div class="text-[11px] text-dim truncate">${unlocked ? sys.desc : 'LOCKED — complete previous system'}</div>
+          </div>
+          ${unlocked ? `<div class="text-[11px] text-dim shrink-0">${prog}/${sys.lessons.length}</div>` : ''}
+        </button>`;
+      }).join('')}
+
+      ${SYSTEMS.every(s=>isSysComplete(s)) ? `
+      <button id="terminalBtn" class="btn-press w-full text-left rounded-xl border border-cyan/40 bg-cyan/5 p-3.5 flex items-center gap-3 pulse-glow">
+        <div class="w-11 h-11 rounded-lg bg-cyan/10 flex items-center justify-center shrink-0">
+          <svg viewBox="0 0 24 24" class="w-5 h-5"><path d="M4 5h16v14H4z" fill="none" stroke="#7DF9FF" stroke-width="2" rx="2"/><path d="M7 9l3 3-3 3M13 15h4" stroke="#7DF9FF" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="text-sm font-semibold text-cyan">PYTHON TERMINAL</div>
+          <div class="text-[11px] text-dim">Free-run mode — write and execute anything</div>
+        </div>
+      </button>` : ''}
+
+      <button id="reportBtn" class="btn-press w-full text-left rounded-xl border border-line bg-panel2/60 p-3.5 flex items-center gap-3 mt-1">
+        <div class="w-11 h-11 rounded-lg bg-panel2 flex items-center justify-center shrink-0">
+          <svg viewBox="0 0 24 24" class="w-5 h-5"><path d="M6 3h9l4 4v14H6z" fill="none" stroke="#5D7180" stroke-width="2" stroke-linejoin="round"/><path d="M9 12h6M9 16h6M9 8h2" stroke="#5D7180" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="text-sm font-semibold text-ink">PERFORMANCE REPORT</div>
+          <div class="text-[11px] text-dim">Score breakdown &amp; weak areas</div>
+        </div>
+      </button>
+
+      <button id="resetBtn" class="btn-press w-full text-center rounded-xl border border-line/60 py-3 text-[11px] tracking-wide text-dim mt-2">RESET PROGRESS</button>
+    </div>
+  </div>`;
+
+  app.querySelectorAll('.sys-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const i = parseInt(btn.dataset.sys);
+      const sys = SYSTEMS[i];
+      const nextIdx = Math.min(sysProgress(sys.id), sys.lessons.length-1);
+      go('lesson', { sys: i, lessonIdx: nextIdx });
+    });
+  });
+
+  const termBtn = document.getElementById('terminalBtn');
+  if(termBtn) termBtn.addEventListener('click', ()=>go('terminal'));
+
+  document.getElementById('reportBtn').addEventListener('click', ()=>go('report'));
+  document.getElementById('resetBtn').addEventListener('click', showResetConfirm);
+}
+
+function showResetConfirm(){
+  const el = document.createElement('div');
+  el.className = 'fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-bg/80 backdrop-blur-sm fade-in';
+  el.innerHTML = `
+    <div class="bg-panel border border-line rounded-t-2xl sm:rounded-2xl w-full max-w-md p-5">
+      <div class="text-sm font-semibold text-ink mb-1">Reset all progress?</div>
+      <p class="text-xs text-dim leading-relaxed mb-4">This erases every unlocked system and your XP. Unit R-7 goes back to offline. This can't be undone.</p>
+      <div class="flex gap-2">
+        <button id="cancelReset" class="btn-press flex-1 rounded-xl border border-line py-3 text-xs font-semibold text-ink">CANCEL</button>
+        <button id="confirmReset" class="btn-press flex-1 rounded-xl bg-amber text-bg py-3 text-xs font-bold">RESET</button>
+      </div>
+    </div>`;
+  document.body.appendChild(el);
+  el.querySelector('#cancelReset').addEventListener('click', ()=>el.remove());
+  el.querySelector('#confirmReset').addEventListener('click', ()=>{
+    state = { progress: {}, xp: 0, streak: 0, lastPlayed: null, stats: {} };
+    saveState();
+    el.remove();
+    go('home');
+  });
+}
+
+/* ============================= RENDER: LESSON FLOW ============================= */
+
+function renderLesson(){
+  const sys = SYSTEMS[activeSys];
+  const lesson = sys.lessons[activeLessonIdx];
+  const total = sys.lessons.length;
+
+  app.innerHTML = `
+  <div class="flex-1 flex flex-col fade-in">
+    <div class="px-4 pt-5 pb-3 flex items-center gap-3">
+      <button id="backBtn" class="btn-press w-9 h-9 rounded-lg bg-panel border border-line flex items-center justify-center shrink-0">
+        <svg viewBox="0 0 24 24" class="w-4 h-4"><path d="M15 5l-7 7 7 7" stroke="#E8F4F2" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="flex-1 min-w-0">
+        <div class="text-[10px] tracking-[0.2em] text-dim truncate">${sys.name}</div>
+        <div class="h-1 rounded-full bg-line mt-1.5 overflow-hidden">
+          <div class="h-full bg-reactor rounded-full transition-all duration-300" style="width:${((activeLessonIdx)/total)*100}%"></div>
+        </div>
+      </div>
+      <div class="text-[11px] text-dim shrink-0">${activeLessonIdx+1}/${total}</div>
+    </div>
+    <div id="lessonBody" class="flex-1 px-4 pb-6 overflow-y-auto"></div>
+  </div>`;
+
+  document.getElementById('backBtn').addEventListener('click', ()=>go('home'));
+  const body = document.getElementById('lessonBody');
+
+  if(lesson.type === 'info') renderInfoCard(body, sys, lesson);
+  else if(lesson.type === 'mcq') renderMCQ(body, sys, lesson);
+  else if(lesson.type === 'code') renderCodeChallenge(body, sys, lesson);
+}
+
+function advanceLesson(sys){
+  const key = sys.id;
+  const wasAlreadyComplete = isSysComplete(sys);
+  state.progress[key] = Math.max(sysProgress(key), activeLessonIdx+1);
+  state.xp += 10;
+  state.streak = (state.streak||0)+1;
+  saveState();
+  const wasLast = activeLessonIdx+1 >= sys.lessons.length;
+  const justCompletedSystem = wasLast && !wasAlreadyComplete;
+  const allNowComplete = SYSTEMS.every(s=>isSysComplete(s));
+
+  if(justCompletedSystem){
+    confetti({ particleCount: 90, spread: 75, origin:{y:0.6}, colors:['#00FF9C','#7DF9FF','#FFB800'] });
+  }
+  setTimeout(()=>{
+    if(wasLast){
+      if(justCompletedSystem && allNowComplete){
+        go('home');
+        setTimeout(()=>showRobotCompleteOverlay(), 350);
+      } else if(justCompletedSystem){
+        go('home');
+        setTimeout(()=>showSystemOnlineOverlay(sys), 350);
+      } else {
+        go('home');
+      }
+    }
+    else { go('lesson', { sys: activeSys, lessonIdx: activeLessonIdx+1 }); }
+  }, wasLast ? 1400 : 250);
+}
+
+function showSystemOnlineOverlay(sys){
+  const el = document.createElement('div');
+  el.className = 'fixed inset-0 z-50 flex items-center justify-center bg-bg/90 backdrop-blur-sm fade-in';
+  el.innerHTML = `
+    <div class="text-center px-8">
+      <div class="w-16 h-16 mx-auto rounded-2xl bg-reactor/10 border border-reactor/40 flex items-center justify-center pulse-glow mb-4">
+        ${partIcon(sys.icon, true)}
+      </div>
+      <div class="text-[11px] tracking-[0.3em] text-reactor mb-1">SYSTEM ONLINE</div>
+      <div class="font-display font-bold text-2xl text-ink">${sys.name}</div>
+      <div class="text-xs text-dim mt-2">${sys.part} restored — +${sys.lessons.length*10} XP earned</div>
+      <button id="okBtn" class="btn-press mt-6 rounded-xl bg-reactor text-bg font-bold py-3 px-8 text-sm tracking-wide">CONTINUE</button>
+    </div>`;
+  document.body.appendChild(el);
+  confetti({ particleCount: 60, spread: 60, origin:{y:0.5}, colors:['#00FF9C','#7DF9FF'] });
+  el.querySelector('#okBtn').addEventListener('click', ()=>el.remove());
+}
+
+function showRobotCompleteOverlay(){
+  const el = document.createElement('div');
+  el.className = 'fixed inset-0 z-50 flex items-center justify-center bg-bg/95 backdrop-blur-sm fade-in';
+  el.innerHTML = `
+    <div class="text-center px-8">
+      <div class="pulse-glow">${robotSVG()}</div>
+      <div class="text-[11px] tracking-[0.3em] text-reactor mt-2 mb-1">REBOOT COMPLETE</div>
+      <div class="font-display font-bold text-2xl text-ink mb-2">UNIT R-7 ONLINE</div>
+      <p class="text-xs text-dim leading-relaxed max-w-xs mx-auto">All ship systems restored. The Python Terminal is now unlocked — write and run any code you like.</p>
+      <button id="okBtn" class="btn-press mt-6 rounded-xl bg-reactor text-bg font-bold py-3 px-8 text-sm tracking-wide">AWESOME</button>
+    </div>`;
+  document.body.appendChild(el);
+  const duration = 2000, end = Date.now() + duration;
+  (function frame(){
+    confetti({ particleCount: 3, angle: 60, spread: 55, origin:{x:0}, colors:['#00FF9C','#7DF9FF','#FFB800'] });
+    confetti({ particleCount: 3, angle: 120, spread: 55, origin:{x:1}, colors:['#00FF9C','#7DF9FF','#FFB800'] });
+    if(Date.now() < end) requestAnimationFrame(frame);
+  })();
+  el.querySelector('#okBtn').addEventListener('click', ()=>el.remove());
+}
+
+function renderInfoCard(body, sys, lesson){
+  body.innerHTML = `
+    <div class="rounded-2xl bg-panel border border-line p-5">
+      <div class="text-[11px] tracking-[0.2em] text-cyan mb-1">CONCEPT</div>
+      <div class="font-display font-bold text-xl mb-3">${lesson.title}</div>
+      <p class="text-sm text-ink/90 leading-relaxed mb-4">${lesson.body}</p>
+      <pre class="allow-select bg-bg border border-line rounded-xl p-3.5 text-[13px] text-cyan overflow-x-auto"><code>${escapeHtml(lesson.code)}</code></pre>
+    </div>
+    <button id="continueBtn" class="btn-press w-full mt-4 rounded-xl bg-reactor text-bg font-bold py-3.5 text-sm tracking-wide">CONTINUE</button>
+  `;
+  document.getElementById('continueBtn').addEventListener('click', ()=>advanceLesson(sys));
+}
+
+function renderMCQ(body, sys, lesson){
+  let selected = null, answered = false;
+  body.innerHTML = `
+    <div class="rounded-2xl bg-panel border border-line p-5">
+      <div class="text-[11px] tracking-[0.2em] text-cyan mb-3">DIAGNOSTIC CHECK</div>
+      <pre class="allow-select whitespace-pre-wrap font-mono text-sm text-ink/95 leading-relaxed mb-4">${escapeHtml(lesson.q)}</pre>
+      <div id="opts" class="space-y-2.5"></div>
+      <div id="feedback" class="mt-4 hidden"></div>
+    </div>
+    <button id="continueBtn" class="btn-press w-full mt-4 rounded-xl bg-line text-dim font-bold py-3.5 text-sm tracking-wide" disabled>SELECT AN ANSWER</button>
+  `;
+  const optsEl = body.querySelector('#opts');
+  lesson.options.forEach((opt,i)=>{
+    const b = document.createElement('button');
+    b.className = 'opt-btn btn-press w-full text-left rounded-xl border border-line bg-panel2 px-4 py-3 text-sm transition-colors';
+    b.textContent = opt;
+    b.addEventListener('click', ()=>{
+      if(answered) return;
+      answered = true; selected = i;
+      const correct = i === lesson.answer;
+      [...optsEl.children].forEach((el,j)=>{
+        el.classList.remove('bg-panel2');
+        if(j===lesson.answer) el.className = 'w-full text-left rounded-xl border border-reactor bg-reactor/10 px-4 py-3 text-sm text-reactor font-medium';
+        else if(j===i) el.className = 'w-full text-left rounded-xl border border-amber bg-amber/10 px-4 py-3 text-sm text-amber';
+        else el.className = 'w-full text-left rounded-xl border border-line bg-panel2/40 px-4 py-3 text-sm text-dim';
+      });
+      const fb = body.querySelector('#feedback');
+      fb.classList.remove('hidden');
+      fb.innerHTML = `<div class="rounded-lg border ${correct?'border-reactor/40 bg-reactor/5':'border-amber/40 bg-amber/5'} p-3 text-xs leading-relaxed ${correct?'text-reactor':'text-amber'}">${correct ? 'Correct. ' : 'Not quite. '}${escapeHtml(lesson.explain)}</div>`;
+      recordAttempt(sys.id, activeLessonIdx, { correct, usedHint:false, singleShot:true });
+      const cont = body.querySelector('#continueBtn');
+      cont.disabled = false;
+      cont.className = 'btn-press w-full mt-4 rounded-xl bg-reactor text-bg font-bold py-3.5 text-sm tracking-wide';
+      cont.textContent = 'CONTINUE';
+    });
+    optsEl.appendChild(b);
+  });
+  document.getElementById('continueBtn').addEventListener('click', ()=>{ if(answered) advanceLesson(sys); });
+}
+
+let cmEditor = null;
+
+function renderCodeChallenge(body, sys, lesson){
+  let hintUsed = false;
+  body.innerHTML = `
+    <div class="rounded-2xl bg-panel border border-line p-4">
+      <div class="text-[11px] tracking-[0.2em] text-cyan mb-2">CODE TERMINAL</div>
+      <p class="text-sm text-ink/90 leading-relaxed mb-3">${lesson.prompt}</p>
+      <div id="editorHost" class="rounded-xl overflow-hidden border border-line"></div>
+      <div class="flex gap-2 mt-3">
+        <button id="hintBtn" class="btn-press flex-1 rounded-xl border border-line bg-panel2 text-dim text-xs font-semibold py-2.5">SHOW HINT</button>
+        <button id="runBtn" class="btn-press flex-1 rounded-xl bg-cyan text-bg text-xs font-bold py-2.5">▶ RUN</button>
+      </div>
+      <div id="hintBox" class="hidden mt-3 rounded-lg border border-line bg-bg p-3 text-[13px] text-cyan/90 allow-select"></div>
+      <div id="output" class="mt-3"></div>
+    </div>
+    <button id="continueBtn" class="btn-press w-full mt-4 rounded-xl bg-line text-dim font-bold py-3.5 text-sm tracking-wide" disabled>RUN CODE TO CONTINUE</button>
+  `;
+
+  cmEditor = CodeMirror(document.getElementById('editorHost'), {
+    value: lesson.starter,
+    mode: 'python',
+    theme: 'dracula',
+    lineNumbers: true,
+    indentUnit: 4,
+    viewportMargin: Infinity,
+    extraKeys: {Tab: cm => cm.replaceSelection('    ')}
+  });
+
+  document.getElementById('hintBtn').addEventListener('click', ()=>{
+    hintUsed = true;
+    const box = document.getElementById('hintBox');
+    box.classList.toggle('hidden');
+    box.innerHTML = `<pre class="whitespace-pre-wrap">${escapeHtml(lesson.hint)}</pre>`;
+  });
+
+  document.getElementById('runBtn').addEventListener('click', ()=>runCode(sys, lesson, ()=>hintUsed));
+}
+
+function runCode(sys, lesson, getHintUsed){
+  const src = cmEditor.getValue();
+  const outputEl = document.getElementById('output');
+  let out = '';
+  Sk.configure({
+    output: (t)=> out += t,
+    read: (f)=> {
+      if(Sk.builtinFiles === undefined || Sk.builtinFiles["files"][f] === undefined) throw "File not found: '" + f + "'";
+      return Sk.builtinFiles["files"][f];
+    }
+  });
+  Sk.misceval.asyncToPromise(()=>Sk.importMainWithBody("<stdin>", false, src, true))
+    .then(()=>{
+      const passed = lesson.check(out, src);
+      recordAttempt(sys.id, activeLessonIdx, { correct: passed, usedHint: getHintUsed() });
+      renderRunResult(outputEl, out, passed, sys, lesson);
+    })
+    .catch(err=>{
+      recordAttempt(sys.id, activeLessonIdx, { correct: false, usedHint: getHintUsed() });
+      renderRunResult(outputEl, out, false, sys, lesson, err.toString());
+    });
+}
+
+function renderRunResult(outputEl, out, passed, sys, lesson, errMsg){
+  if(errMsg){
+    outputEl.innerHTML = `
+      <div class="rounded-lg border border-amber/40 bg-amber/5 p-3 text-xs">
+        <div class="text-amber font-semibold mb-1">ERROR</div>
+        <pre class="allow-select whitespace-pre-wrap text-amber/90">${escapeHtml(errMsg)}</pre>
+      </div>`;
+  } else {
+    outputEl.innerHTML = `
+      <div class="rounded-lg border ${passed?'border-reactor/40 bg-reactor/5':'border-line bg-bg'} p-3 text-xs">
+        <div class="${passed?'text-reactor':'text-dim'} font-semibold mb-1">OUTPUT</div>
+        <pre class="allow-select whitespace-pre-wrap ${passed?'text-ink':'text-ink/70'}">${escapeHtml(out) || '(no output)'}</pre>
+        ${passed ? `<div class="mt-2 text-reactor font-semibold">✓ ${escapeHtml(lesson.success)}</div>` : `<div class="mt-2 text-dim">Not quite the expected result yet — try again.</div>`}
+      </div>`;
+  }
+  const cont = document.getElementById('continueBtn');
+  if(passed){
+    cont.disabled = false;
+    cont.className = 'btn-press w-full mt-4 rounded-xl bg-reactor text-bg font-bold py-3.5 text-sm tracking-wide';
+    cont.textContent = 'CONTINUE';
+    cont.onclick = ()=>advanceLesson(sys);
+  }
+}
+
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+/* ============================= RENDER: TERMINAL ============================= */
+
+let termEditor = null;
+
+function renderTerminal(){
+  app.innerHTML = `
+  <div class="flex-1 flex flex-col fade-in">
+    <div class="px-4 pt-5 pb-3 flex items-center gap-3">
+      <button id="backBtn" class="btn-press w-9 h-9 rounded-lg bg-panel border border-line flex items-center justify-center shrink-0">
+        <svg viewBox="0 0 24 24" class="w-4 h-4"><path d="M15 5l-7 7 7 7" stroke="#E8F4F2" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="flex-1 min-w-0">
+        <div class="text-[10px] tracking-[0.2em] text-cyan">FREE RUN</div>
+        <div class="font-display font-bold text-base text-ink -mt-0.5">Python Terminal</div>
+      </div>
+    </div>
+    <div class="flex-1 px-4 pb-6 overflow-y-auto">
+      <div class="rounded-2xl bg-panel border border-line p-4">
+        <p class="text-xs text-dim leading-relaxed mb-3">Write any Python code and run it. This is your sandbox — no checks, no locks.</p>
+        <div id="termEditorHost" class="rounded-xl overflow-hidden border border-line"></div>
+        <button id="termRunBtn" class="btn-press w-full mt-3 rounded-xl bg-cyan text-bg text-xs font-bold py-3">▶ RUN</button>
+        <div id="termOutput" class="mt-3"></div>
+      </div>
+    </div>
+  </div>`;
+
+  document.getElementById('backBtn').addEventListener('click', ()=>go('home'));
+
+  termEditor = CodeMirror(document.getElementById('termEditorHost'), {
+    value: '# write your Python here\nprint("Hello, R-7!")\n',
+    mode: 'python',
+    theme: 'dracula',
+    lineNumbers: true,
+    indentUnit: 4,
+    viewportMargin: Infinity,
+    extraKeys: {Tab: cm => cm.replaceSelection('    ')}
+  });
+
+  document.getElementById('termRunBtn').addEventListener('click', runTerminalCode);
+}
+
+function runTerminalCode(){
+  const src = termEditor.getValue();
+  const outputEl = document.getElementById('termOutput');
+  let out = '';
+  Sk.configure({
+    output: (t)=> out += t,
+    read: (f)=> {
+      if(Sk.builtinFiles === undefined || Sk.builtinFiles["files"][f] === undefined) throw "File not found: '" + f + "'";
+      return Sk.builtinFiles["files"][f];
+    }
+  });
+  outputEl.innerHTML = `<div class="rounded-lg border border-line bg-bg p-3 text-xs text-dim">Running…</div>`;
+  Sk.misceval.asyncToPromise(()=>Sk.importMainWithBody("<stdin>", false, src, true))
+    .then(()=>{
+      outputEl.innerHTML = `
+        <div class="rounded-lg border border-line bg-bg p-3 text-xs">
+          <div class="text-dim font-semibold mb-1">OUTPUT</div>
+          <pre class="allow-select whitespace-pre-wrap text-ink">${escapeHtml(out) || '(no output)'}</pre>
+        </div>`;
+    })
+    .catch(err=>{
+      outputEl.innerHTML = `
+        <div class="rounded-lg border border-amber/40 bg-amber/5 p-3 text-xs">
+          <div class="text-amber font-semibold mb-1">ERROR</div>
+          <pre class="allow-select whitespace-pre-wrap text-amber/90">${escapeHtml(err.toString())}</pre>
+        </div>`;
+    });
+}
+
+/* ============================= RENDER: REPORT ============================= */
+
+function buildReportData(){
+  let totalScore = 0, maxScore = 0, attemptedCount = 0;
+  const perSystem = SYSTEMS.map(sys=>{
+    let sysScore = 0, sysMax = 0, weak = [];
+    sys.lessons.forEach((lesson, idx)=>{
+      const s = state.stats[statKey(sys.id, idx)];
+      sysMax += 100;
+      if(s && s.cleared){
+        attemptedCount++;
+        const sc = lessonScore(sys.id, idx);
+        sysScore += sc;
+        if(sc < 85){
+          weak.push({
+            label: lesson.type === 'mcq' ? lesson.q.split('\n')[0].slice(0,60) : (lesson.type==='code' ? lesson.prompt.slice(0,60) : lesson.title),
+            score: sc, wrong: s.wrong, hintUsed: s.hintUsed, type: lesson.type
+          });
+        }
+      }
+    });
+    totalScore += sysScore; maxScore += sysMax;
+    return { sys, sysScore, sysMax, pct: sysMax ? Math.round((sysScore/sysMax)*100) : 0, weak };
+  });
+  const overallPct = maxScore ? Math.round((totalScore/maxScore)*100) : 0;
+  return { perSystem, overallPct, totalScore, maxScore, attemptedCount, totalLessons: totalLessons() };
+}
+
+function reportShareText(data){
+  let lines = [];
+  lines.push(`REBOOT — Python Progress Report`);
+  lines.push(`Overall score: ${data.overallPct}% (${data.attemptedCount}/${data.totalLessons} lessons attempted)`);
+  lines.push('');
+  data.perSystem.forEach(r=>{
+    lines.push(`${r.sys.name}: ${r.pct}%`);
+    r.weak.forEach(w=>{
+      lines.push(`  - weak spot (${w.score}%): ${w.label}${w.hintUsed?' [used hint]':''}${w.wrong?` [${w.wrong} wrong attempt(s)]`:''}`);
+    });
+  });
+  return lines.join('\n');
+}
+
+function renderReport(){
+  const data = buildReportData();
+  app.innerHTML = `
+  <div class="flex-1 flex flex-col fade-in">
+    <div class="px-4 pt-5 pb-3 flex items-center gap-3">
+      <button id="backBtn" class="btn-press w-9 h-9 rounded-lg bg-panel border border-line flex items-center justify-center shrink-0">
+        <svg viewBox="0 0 24 24" class="w-4 h-4"><path d="M15 5l-7 7 7 7" stroke="#E8F4F2" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="flex-1 min-w-0">
+        <div class="text-[10px] tracking-[0.2em] text-dim">DIAGNOSTICS</div>
+        <div class="font-display font-bold text-base text-ink -mt-0.5">Performance Report</div>
+      </div>
+    </div>
+
+    <div class="flex-1 px-4 pb-6 overflow-y-auto">
+      <div class="rounded-2xl bg-panel border border-line p-5 text-center">
+        <div class="text-[11px] tracking-[0.2em] text-dim mb-1">OVERALL SCORE</div>
+        <div class="font-display font-bold text-4xl ${data.overallPct>=80?'text-reactor':data.overallPct>=50?'text-amber':'text-ink'}">${data.overallPct}%</div>
+        <div class="text-xs text-dim mt-1">${data.attemptedCount}/${data.totalLessons} lessons attempted</div>
+      </div>
+
+      <div class="mt-4 space-y-3">
+        ${data.perSystem.map(r=>`
+          <div class="rounded-xl bg-panel border border-line p-4">
+            <div class="flex items-center justify-between mb-2">
+              <div class="text-sm font-semibold text-ink">${r.sys.name}</div>
+              <div class="text-sm font-bold ${r.pct>=80?'text-reactor':r.pct>=50?'text-amber':'text-dim'}">${r.pct}%</div>
+            </div>
+            <div class="h-1.5 rounded-full bg-line overflow-hidden mb-2">
+              <div class="h-full rounded-full ${r.pct>=80?'bg-reactor':r.pct>=50?'bg-amber':'bg-dim'}" style="width:${r.pct}%"></div>
+            </div>
+            ${r.weak.length ? r.weak.map(w=>`
+              <div class="text-[11px] text-dim mt-1.5 pl-2 border-l-2 border-amber/40">
+                <span class="allow-select">${escapeHtml(w.label)}</span>
+                <span class="text-amber">— ${w.score}%${w.wrong?`, ${w.wrong} wrong attempt${w.wrong>1?'s':''}`:''}${w.hintUsed?', used hint':''}</span>
+              </div>
+            `).join('') : `<div class="text-[11px] text-dim/70 mt-1">No weak spots recorded.</div>`}
+          </div>
+        `).join('')}
+      </div>
+
+      <button id="shareBtn" class="btn-press w-full mt-5 rounded-xl bg-reactor text-bg font-bold py-3.5 text-sm tracking-wide">SHARE REPORT</button>
+      <button id="copyBtn" class="btn-press w-full mt-2 rounded-xl border border-line text-ink font-semibold py-3 text-xs">COPY AS TEXT</button>
+    </div>
+  </div>`;
+
+  document.getElementById('backBtn').addEventListener('click', ()=>go('home'));
+
+  document.getElementById('shareBtn').addEventListener('click', async ()=>{
+    const text = reportShareText(data);
+    if(navigator.share){
+      try { await navigator.share({ title: 'REBOOT — Python Progress Report', text }); }
+      catch(e){ /* user cancelled share, ignore */ }
+    } else {
+      try {
+        await navigator.clipboard.writeText(text);
+        flashToast('Copied to clipboard — no share sheet on this browser.');
+      } catch(e){ flashToast('Could not share or copy automatically.'); }
+    }
+  });
+
+  document.getElementById('copyBtn').addEventListener('click', async ()=>{
+    const text = reportShareText(data);
+    try {
+      await navigator.clipboard.writeText(text);
+      flashToast('Report copied to clipboard.');
+    } catch(e){ flashToast('Could not copy — clipboard access denied.'); }
+  });
+}
+
+function flashToast(msg){
+  const el = document.createElement('div');
+  el.className = 'fixed bottom-6 left-1/2 toast-in z-50 bg-panel2 border border-line rounded-xl px-4 py-2.5 text-xs text-ink shadow-glow';
+  el.style.transform = 'translateX(-50%)';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(), 2400);
+}
+
+/* ============================= MAIN RENDER ============================= */
+
+function render(){
+  if(currentView === 'home') renderHome();
+  else if(currentView === 'lesson') renderLesson();
+  else if(currentView === 'terminal') renderTerminal();
+  else if(currentView === 'report') renderReport();
+}
+
+render();
+</script>
+</body>
+</html>
