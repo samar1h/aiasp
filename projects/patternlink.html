@@ -661,17 +661,71 @@
   // --- Drawing interaction (pointer-based, works for touch + mouse) ---
   let drawing = false;
 
-  function nodeAtPoint(clientX, clientY){
-    const el = document.elementFromPoint(clientX, clientY);
-    if(!el) return null;
-    const nodeDiv = el.closest('.node');
-    if(!nodeDiv) return null;
-    return parseInt(nodeDiv.dataset.idx, 10);
+  // Finds the nearest node to a raw pointer coordinate, within a capture radius.
+  // Using nearest-node math (instead of elementFromPoint) means fast diagonal
+  // or off-axis swipes still register the correct dot, since the finger rarely
+  // lands exactly on a small circle.
+  function nearestNode(clientX, clientY){
+    const rect = gridHolder.getBoundingClientRect();
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
+    if(x < 0 || y < 0 || x > rect.width || y > rect.height) return null;
+
+    const cell = rect.width / N; // square grid, so width basis works for both axes
+    const captureRadius = cell * 0.42; // slightly under half a cell so adjacent nodes don't overlap capture zones
+
+    let closestIdx = null;
+    let closestDist = Infinity;
+    for(let i=0;i<nodePositions.length;i++){
+      const p = nodePositions[i];
+      const px = p.x * rect.width;
+      const py = p.y * rect.height;
+      const dist = Math.hypot(px - x, py - y);
+      if(dist < closestDist){
+        closestDist = dist;
+        closestIdx = i+1;
+      }
+    }
+    if(closestDist > captureRadius) return null;
+    return closestIdx;
+  }
+
+  // If the line from the last selected node to the new node passes near an
+  // unselected node in between (e.g. 7 -> 3 passing through 5), select that
+  // node first, matching standard lock-pattern behavior.
+  function nodesBetween(fromIdx, toIdx){
+    const a = nodePositions[fromIdx-1];
+    const b = nodePositions[toIdx-1];
+    const between = [];
+    for(let i=1;i<=nodePositions.length;i++){
+      if(i === fromIdx || i === toIdx) continue;
+      if(path.includes(i)) continue;
+      const p = nodePositions[i-1];
+      // check collinearity: cross product ~0 and within the segment's bounding box
+      const cross = (b.x-a.x)*(p.y-a.y) - (b.y-a.y)*(p.x-a.x);
+      const gridStep = 1/N;
+      if(Math.abs(cross) > gridStep * 0.12) continue;
+      const dot = (p.x-a.x)*(b.x-a.x) + (p.y-a.y)*(b.y-a.y);
+      const lenSq = (b.x-a.x)**2 + (b.y-a.y)**2;
+      const t = dot/lenSq;
+      if(t <= 0.02 || t >= 0.98) continue;
+      between.push({idx:i, t});
+    }
+    between.sort((x,y)=> x.t - y.t);
+    return between.map(b=>b.idx);
   }
 
   function tryAddNode(idx){
     if(idx == null) return;
     if(path.includes(idx)) return;
+    if(path.length > 0){
+      const lastIdx = path[path.length-1];
+      const passThrough = nodesBetween(lastIdx, idx);
+      passThrough.forEach(pIdx=>{
+        path.push(pIdx);
+        nodeEl(pIdx).classList.add('active');
+      });
+    }
     path.push(idx);
     nodeEl(idx).classList.add('active');
     redrawLines(path);
@@ -682,7 +736,7 @@
     if(viewMode) return;
     drawing = true;
     const pt = e.touches ? e.touches[0] : e;
-    const idx = nodeAtPoint(pt.clientX, pt.clientY);
+    const idx = nearestNode(pt.clientX, pt.clientY);
     if(idx){
       clearPattern();
       tryAddNode(idx);
@@ -693,7 +747,7 @@
   function pointerMove(e){
     if(!drawing || viewMode) return;
     const pt = e.touches ? e.touches[0] : e;
-    const idx = nodeAtPoint(pt.clientX, pt.clientY);
+    const idx = nearestNode(pt.clientX, pt.clientY);
     if(idx) tryAddNode(idx);
     e.preventDefault();
   }
