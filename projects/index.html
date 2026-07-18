@@ -81,15 +81,6 @@
   <h2>Recent transactions</h2>
   <div id="txList" class="muted">No transactions yet.</div>
 
-  <div id="adminBox" class="hidden">
-    <h2 style="border:none;margin-top:0;">Admin: mint money</h2>
-    <label for="mintUsername">Username to credit</label>
-    <input id="mintUsername" type="text" placeholder="username">
-    <label for="mintAmount">Amount to mint (₹)</label>
-    <input id="mintAmount" type="number" min="1" step="1">
-    <button id="mintBtn" class="secondary">Mint</button>
-  </div>
-
   <button id="logoutBtn" class="secondary" style="margin-top:32px;">Sign out</button>
 </div>
 
@@ -127,7 +118,6 @@ const mintBtn = document.getElementById('mintBtn');
 const statusMsg = document.getElementById('statusMsg');
 const errorMsg = document.getElementById('errorMsg');
 const successMsg = document.getElementById('successMsg');
-const adminBox = document.getElementById('adminBox');
 
 let currentUid = null;
 let unsubUserDoc = null;
@@ -154,7 +144,6 @@ function showSuccess(text) {
 function setButtonsDisabled(disabled) {
   loginBtn.disabled = disabled;
   sendBtn.disabled = disabled;
-  mintBtn.disabled = disabled;
 }
 
 // ---------- username generation ----------
@@ -239,14 +228,6 @@ onAuthStateChanged(auth, async (user) => {
       });
     }
 
-    // Check admin status
-    try {
-      const adminSnap = await getDoc(doc(db, 'admins', user.uid));
-      adminBox.classList.toggle('hidden', !adminSnap.exists());
-    } catch (e) {
-      adminBox.classList.add('hidden');
-    }
-
     hideStatus();
     appScreen.classList.remove('hidden');
     document.getElementById('myEmail').textContent = user.email;
@@ -282,14 +263,9 @@ onAuthStateChanged(auth, async (user) => {
         const t = d.data();
         const div = document.createElement('div');
         div.className = 'row';
-        let label;
-        if (t.type === 'mint') {
-          label = `Minted to ${t.toUsername}`;
-        } else if (t.from === user.uid) {
-          label = `Sent to ${t.toUsername}`;
-        } else {
-          label = `Received from ${t.fromUsername || 'admin'}`;
-        }
+        let label = (t.from === user.uid)
+          ? `Sent to ${t.toUsername}`
+          : `Received from ${t.fromUsername}`;
         div.innerHTML = `<span>${label}</span><span>₹${t.amount}</span>`;
         txList.appendChild(div);
       });
@@ -375,55 +351,7 @@ sendBtn.addEventListener('click', async () => {
   }
 });
 
-// ---------- admin: mint money ----------
-mintBtn.addEventListener('click', async () => {
-  const username = document.getElementById('mintUsername').value.trim();
-  const amount = Number(document.getElementById('mintAmount').value);
 
-  if (!username) { showError('Enter a username to credit.'); return; }
-  if (!amount || amount <= 0 || !Number.isFinite(amount)) { showError('Enter a valid amount.'); return; }
-
-  setButtonsDisabled(true);
-  showStatus('Minting…');
-
-  try {
-    const usernameSnap = await getDoc(doc(db, 'usernames', username));
-    if (!usernameSnap.exists()) {
-      throw new Error(`No user found with username "${username}".`);
-    }
-    const toUid = usernameSnap.data().uid;
-    const toRef = doc(db, 'users', toUid);
-
-    let toUsernameForLog;
-    await runTransaction(db, async (transaction) => {
-      const toSnap = await transaction.get(toRef);
-      if (!toSnap.exists()) throw new Error('Account not found.');
-      const toData = toSnap.data();
-      toUsernameForLog = toData.username;
-      transaction.update(toRef, { balance: toData.balance + amount });
-    });
-
-    await addDoc(collection(db, 'transactions'), {
-      type: 'mint',
-      from: currentUid,
-      to: toUid,
-      toUsername: toUsernameForLog,
-      amount: amount,
-      participants: [currentUid, toUid],
-      createdAt: serverTimestamp()
-    });
-
-    document.getElementById('mintUsername').value = '';
-    document.getElementById('mintAmount').value = '';
-    hideStatus();
-    showSuccess(`Minted ₹${amount} to ${username}.`);
-  } catch (err) {
-    hideStatus();
-    showError(err.message || String(err));
-  } finally {
-    setButtonsDisabled(false);
-  }
-});
 </script>
 </body>
 </html>
