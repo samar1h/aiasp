@@ -1,0 +1,1410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<title>Scanline — Image & PDF to Text</title>
+
+<!-- PDF.js for PDF rendering -->
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+<!-- Tesseract.js for OCR -->
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
+<style>
+  @font-face {
+    font-family: 'JBM';
+    src: local('JetBrains Mono');
+  }
+  :root{
+    --ink:#0F1210;
+    --ink-2:#171C19;
+    --ink-3:#222925;
+    --paper:#F7F5F0;
+    --paper-dim:#E7E4DC;
+    --scan:#4ADE80;
+    --scan-dim:#245B3A;
+    --amber:#E8A94A;
+    --red:#E85D5D;
+    --line:rgba(247,245,240,0.09);
+    --text-hi:#F7F5F0;
+    --text-mid:#9CA79F;
+    --text-low:#5C6862;
+    --radius:14px;
+    --safe-b: env(safe-area-inset-bottom, 0px);
+    --safe-t: env(safe-area-inset-top, 0px);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{
+    margin:0; padding:0; height:100%;
+    background:var(--ink);
+    color:var(--text-hi);
+    font-family:-apple-system,BlinkMacSystemFont,'Inter',system-ui,sans-serif;
+    overscroll-behavior-y:none;
+  }
+  body{ display:flex; flex-direction:column; height:100dvh; overflow:hidden; }
+  ::selection{ background:var(--scan-dim); color:#fff; }
+
+  /* ---------- Header ---------- */
+  header{
+    flex:0 0 auto;
+    padding: calc(14px + var(--safe-t)) 18px 12px;
+    display:flex; align-items:center; justify-content:space-between;
+    border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg, var(--ink) 60%, transparent);
+  }
+  .brand{ display:flex; align-items:center; gap:10px; }
+  .brand-mark{
+    width:30px; height:30px; border-radius:8px;
+    background:var(--scan);
+    position:relative; overflow:hidden;
+    flex:0 0 auto;
+  }
+  .brand-mark::after{
+    content:''; position:absolute; left:0; right:0; height:2px;
+    background:var(--ink); top:50%;
+    box-shadow:0 -7px 0 rgba(15,18,16,.35), 0 7px 0 rgba(15,18,16,.35);
+  }
+  .brand-name{
+    font-family:'JBM','SF Mono',monospace;
+    font-weight:700; font-size:15px; letter-spacing:0.02em;
+  }
+  .brand-name span{ color:var(--scan); }
+  .header-status{
+    font-family:'JBM',monospace; font-size:10.5px; color:var(--text-low);
+    letter-spacing:0.06em; text-transform:uppercase;
+  }
+
+  /* ---------- Main scroll area ---------- */
+  main{
+    flex:1 1 auto; overflow-y:auto; -webkit-overflow-scrolling:touch;
+    display:flex; flex-direction:column;
+  }
+
+  /* ---------- Empty / Upload state ---------- */
+  .upload-stage{
+    flex:1; display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    padding:24px 20px 40px; text-align:center; gap:22px;
+    min-height:100%;
+  }
+  .drop-zone{
+    width:100%; max-width:420px;
+    border:1.5px dashed var(--text-low);
+    border-radius:20px;
+    padding:38px 22px;
+    display:flex; flex-direction:column; align-items:center; gap:14px;
+    transition:border-color .2s ease, background .2s ease;
+    position:relative;
+  }
+  .drop-zone.drag-over{
+    border-color:var(--scan);
+    background:rgba(74,222,128,0.06);
+  }
+  .drop-icon{
+    width:58px; height:58px; border-radius:16px;
+    background:var(--ink-3);
+    display:flex; align-items:center; justify-content:center;
+    color:var(--scan);
+  }
+  .drop-title{ font-size:17px; font-weight:650; letter-spacing:-0.01em; }
+  .drop-sub{ font-size:13.5px; color:var(--text-mid); line-height:1.5; max-width:280px; }
+  .drop-formats{
+    font-family:'JBM',monospace; font-size:10.5px; color:var(--text-low);
+    letter-spacing:0.05em; text-transform:uppercase; margin-top:2px;
+  }
+
+  .action-row{ display:flex; gap:10px; width:100%; max-width:420px; }
+  .btn{
+    flex:1; padding:14px 16px; border-radius:12px; border:none;
+    font-size:14.5px; font-weight:650; font-family:inherit;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    cursor:pointer; -webkit-user-select:none; user-select:none;
+    transition:transform .12s ease, opacity .12s ease, background .15s ease;
+  }
+  .btn:active{ transform:scale(0.96); }
+  .btn-primary{ background:var(--scan); color:#08150E; }
+  .btn-secondary{ background:var(--ink-3); color:var(--text-hi); border:1px solid var(--line); }
+  .btn:disabled{ opacity:0.4; pointer-events:none; }
+  .btn svg{ width:17px; height:17px; flex:0 0 auto; }
+
+  #file-input, #camera-input{ display:none; }
+
+  .example-hint{
+    font-size:12.5px; color:var(--text-low); max-width:300px; line-height:1.5;
+  }
+
+  /* ---------- Preview / working stage ---------- */
+  .work-stage{ display:none; flex-direction:column; flex:1; min-height:100%; }
+  .work-stage.active{ display:flex; }
+
+  .preview-wrap{
+    flex:0 0 auto;
+    padding:14px 16px 8px;
+    display:flex; gap:10px; overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+  }
+  .preview-wrap::-webkit-scrollbar{ display:none; }
+  .thumb{
+    position:relative; flex:0 0 auto;
+    width:64px; height:80px; border-radius:10px; overflow:hidden;
+    border:1.5px solid var(--line);
+    background:var(--ink-3);
+  }
+  .thumb.active{ border-color:var(--scan); }
+  .thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .thumb .page-badge{
+    position:absolute; bottom:3px; right:3px;
+    background:rgba(0,0,0,0.6); color:#fff; font-family:'JBM',monospace;
+    font-size:8.5px; padding:1px 4px; border-radius:4px;
+  }
+  .thumb .thumb-status{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    background:rgba(15,18,16,0.55);
+  }
+  .add-more-thumb{
+    flex:0 0 auto; width:64px; height:80px; border-radius:10px;
+    border:1.5px dashed var(--text-low);
+    display:flex; align-items:center; justify-content:center;
+    color:var(--text-mid); background:transparent; cursor:pointer;
+  }
+
+  /* Scanning progress card */
+  .scan-progress{
+    margin:8px 16px 14px; padding:16px; border-radius:16px;
+    background:var(--ink-2); border:1px solid var(--line);
+    display:none;
+  }
+  .scan-progress.active{ display:block; }
+  .scan-progress-top{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; }
+  .scan-progress-label{ font-size:13px; font-weight:600; }
+  .scan-progress-pct{ font-family:'JBM',monospace; font-size:12px; color:var(--scan); }
+  .scan-bar-track{
+    height:6px; border-radius:6px; background:var(--ink-3); overflow:hidden;
+    position:relative;
+  }
+  .scan-bar-fill{
+    height:100%; width:0%; border-radius:6px;
+    background:linear-gradient(90deg, var(--scan-dim), var(--scan));
+    transition:width .25s ease;
+    position:relative;
+  }
+  .scan-bar-fill::after{
+    content:''; position:absolute; top:0; right:0; bottom:0; width:24px;
+    background:linear-gradient(90deg, transparent, rgba(255,255,255,0.5));
+    animation:scanGlow 1.1s ease-in-out infinite;
+  }
+  @keyframes scanGlow{ 0%,100%{ opacity:0.3; } 50%{ opacity:1; } }
+  .scan-progress-sub{ margin-top:8px; font-size:11.5px; color:var(--text-low); font-family:'JBM',monospace; }
+
+  /* Result toolbar */
+  .result-toolbar{
+    flex:0 0 auto;
+    display:flex; align-items:center; gap:8px;
+    padding:6px 16px 12px;
+    border-bottom:1px solid var(--line);
+  }
+  .search-box{
+    flex:1; display:flex; align-items:center; gap:8px;
+    background:var(--ink-3); border-radius:11px; padding:10px 12px;
+    border:1px solid transparent;
+  }
+  .search-box:focus-within{ border-color:var(--scan-dim); }
+  .search-box svg{ width:16px; height:16px; color:var(--text-mid); flex:0 0 auto; }
+  .search-box input{
+    flex:1; background:none; border:none; outline:none; color:var(--text-hi);
+    font-size:14.5px; font-family:inherit; min-width:0;
+  }
+  .search-box input::placeholder{ color:var(--text-low); }
+  .search-count{
+    font-family:'JBM',monospace; font-size:11px; color:var(--text-low);
+    flex:0 0 auto; padding-right:2px;
+  }
+  .search-nav{ display:flex; gap:2px; flex:0 0 auto; }
+  .search-nav button{
+    width:30px; height:30px; border-radius:8px; border:none;
+    background:var(--ink-3); color:var(--text-mid);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .search-nav button svg{ width:15px; height:15px; }
+
+  .icon-btn{
+    width:38px; height:38px; border-radius:10px; border:none;
+    background:var(--ink-3); color:var(--text-hi);
+    display:flex; align-items:center; justify-content:center; flex:0 0 auto;
+    cursor:pointer;
+  }
+  .icon-btn:active{ transform:scale(0.92); }
+  .icon-btn svg{ width:17px; height:17px; }
+
+  /* Text output pane */
+  .text-pane-wrap{ flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:16px 16px calc(16px + var(--safe-b)); }
+  .page-block{ margin-bottom:22px; }
+  .page-block-label{
+    font-family:'JBM',monospace; font-size:10.5px; color:var(--text-low);
+    text-transform:uppercase; letter-spacing:0.08em; margin-bottom:8px;
+    display:flex; align-items:center; gap:8px;
+  }
+  .page-block-label::after{ content:''; flex:1; height:1px; background:var(--line); }
+  .text-pane{
+    font-family:'JBM','SF Mono',ui-monospace,monospace;
+    font-size:14.5px; line-height:1.7; color:var(--paper);
+    background:var(--ink-2);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:16px;
+    white-space:pre-wrap; word-wrap:break-word;
+    -webkit-user-select:text; user-select:text;
+  }
+  .text-pane mark{
+    background:var(--scan); color:#08150E; border-radius:3px; padding:0 1px;
+  }
+  .text-pane mark.current-match{ background:var(--amber); }
+  .empty-page-note{ color:var(--text-low); font-style:italic; font-size:13px; }
+  .conf-tag{
+    display:inline-flex; align-items:center; gap:4px;
+    font-family:'JBM',monospace; font-size:9.5px; padding:2px 6px;
+    border-radius:5px; margin-left:auto; font-weight:600; letter-spacing:0.02em;
+  }
+  .conf-hi{ background:rgba(74,222,128,0.15); color:var(--scan); }
+  .conf-mid{ background:rgba(232,169,74,0.15); color:var(--amber); }
+  .conf-lo{ background:rgba(232,93,93,0.15); color:var(--red); }
+
+  /* Bottom action bar (thumb reach) */
+  .bottom-bar{
+    flex:0 0 auto;
+    display:none;
+    gap:8px;
+    padding:10px 14px calc(10px + var(--safe-b));
+    border-top:1px solid var(--line);
+    background:var(--ink);
+  }
+  .bottom-bar.active{ display:flex; }
+  .bottom-bar .btn{ font-size:13.5px; padding:12px 10px; }
+
+  /* Toast */
+  .toast{
+    position:fixed; left:50%; bottom:calc(96px + var(--safe-b));
+    transform:translateX(-50%) translateY(20px);
+    background:var(--text-hi); color:var(--ink);
+    padding:10px 18px; border-radius:100px; font-size:13px; font-weight:600;
+    opacity:0; pointer-events:none; transition:all .25s ease;
+    z-index:200; white-space:nowrap; box-shadow:0 8px 24px rgba(0,0,0,0.3);
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  /* Error banner */
+  .error-banner{
+    margin:0 16px 12px; padding:12px 14px; border-radius:12px;
+    background:rgba(232,93,93,0.1); border:1px solid rgba(232,93,93,0.3);
+    color:#F0A0A0; font-size:13px; display:none; align-items:flex-start; gap:8px;
+  }
+  .error-banner.show{ display:flex; }
+  .error-banner svg{ width:16px; height:16px; flex:0 0 auto; margin-top:1px; color:var(--red); }
+
+  /* Language picker sheet */
+  .sheet-backdrop{
+    position:fixed; inset:0; background:rgba(0,0,0,0.5);
+    opacity:0; pointer-events:none; transition:opacity .2s ease; z-index:90;
+  }
+  .sheet-backdrop.show{ opacity:1; pointer-events:auto; }
+  .sheet{
+    position:fixed; left:0; right:0; bottom:0; z-index:91;
+    background:var(--ink-2); border-radius:20px 20px 0 0;
+    border-top:1px solid var(--line);
+    padding:8px 18px calc(20px + var(--safe-b));
+    transform:translateY(100%); transition:transform .25s cubic-bezier(.32,.72,0,1);
+    max-height:70vh; overflow-y:auto;
+  }
+  .sheet.show{ transform:translateY(0); }
+  .sheet-handle{ width:36px; height:4px; background:var(--text-low); border-radius:4px; margin:8px auto 14px; }
+  .sheet-title{ font-size:15px; font-weight:650; margin-bottom:12px; }
+  .lang-option{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:13px 4px; border-bottom:1px solid var(--line);
+    font-size:14.5px; cursor:pointer;
+  }
+  .lang-option:last-child{ border-bottom:none; }
+  .lang-option .check{ color:var(--scan); opacity:0; }
+  .lang-option.selected .check{ opacity:1; }
+
+  /* Scan settings sheet */
+  .settings-section{ margin-bottom:20px; }
+  .settings-section:last-child{ margin-bottom:4px; }
+  .settings-row{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:4px 0 2px;
+  }
+  .settings-row-text{ flex:1; padding-right:12px; }
+  .settings-row-title{ font-size:14.5px; font-weight:600; }
+  .settings-row-sub{ font-size:12px; color:var(--text-mid); margin-top:2px; line-height:1.4; }
+  .toggle{
+    position:relative; width:46px; height:27px; border-radius:100px;
+    background:var(--ink-3); border:1px solid var(--line); flex:0 0 auto;
+    cursor:pointer; transition:background .18s ease;
+  }
+  .toggle.on{ background:var(--scan-dim); border-color:var(--scan); }
+  .toggle::after{
+    content:''; position:absolute; top:2px; left:2px; width:21px; height:21px;
+    border-radius:50%; background:var(--text-hi);
+    transition:transform .18s cubic-bezier(.34,1.56,.64,1);
+  }
+  .toggle.on::after{ transform:translateX(19px); background:var(--scan); }
+  .chip-row{ display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+  .chip{
+    padding:9px 14px; border-radius:10px; background:var(--ink-3);
+    border:1px solid var(--line); font-size:13px; font-weight:600;
+    color:var(--text-mid); cursor:pointer; transition:all .15s ease;
+  }
+  .chip.selected{ background:var(--scan-dim); border-color:var(--scan); color:var(--scan); }
+
+  /* Spinner */
+  .spinner{
+    width:16px; height:16px; border-radius:50%;
+    border:2px solid rgba(255,255,255,0.2); border-top-color:var(--scan);
+    animation:spin .7s linear infinite;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  @media (prefers-reduced-motion: reduce){
+    .scan-bar-fill::after{ animation:none; }
+    .spinner{ animation:spin 1.4s linear infinite; }
+  }
+
+  /* Small screens fine-tune */
+  @media (max-width:360px){
+    .drop-zone{ padding:28px 16px; }
+    .brand-name{ font-size:13.5px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="brand-mark"></div>
+    <div class="brand-name">Scan<span>line</span></div>
+  </div>
+  <div class="header-status" id="header-status">ready</div>
+</header>
+
+<main>
+  <!-- Upload / empty state -->
+  <div class="upload-stage" id="upload-stage">
+    <div class="drop-zone" id="drop-zone">
+      <div class="drop-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 8l5-5 5 5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+      </div>
+      <div class="drop-title">Add an image or PDF</div>
+      <div class="drop-sub">Extract clean, searchable, copyable text in seconds — right on your device.</div>
+      <div class="drop-formats">JPG · PNG · WEBP · HEIC · PDF</div>
+    </div>
+
+    <div class="action-row">
+      <button class="btn btn-primary" id="btn-camera">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        Camera
+      </button>
+      <button class="btn btn-secondary" id="btn-upload">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+        Choose file
+      </button>
+    </div>
+    <div class="example-hint">Tip: good lighting and a flat, uncropped page give the most accurate results. Multi-page PDFs are scanned page by page.</div>
+
+    <div class="error-banner" id="error-banner">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+      <span id="error-text"></span>
+    </div>
+  </div>
+
+  <!-- Working / results stage -->
+  <div class="work-stage" id="work-stage">
+    <div class="preview-wrap" id="preview-wrap"></div>
+
+    <div class="scan-progress" id="scan-progress">
+      <div class="scan-progress-top">
+        <div class="scan-progress-label" id="progress-label">Preparing…</div>
+        <div class="scan-progress-pct" id="progress-pct">0%</div>
+      </div>
+      <div class="scan-bar-track"><div class="scan-bar-fill" id="progress-fill"></div></div>
+      <div class="scan-progress-sub" id="progress-sub">Everything runs locally in your browser.</div>
+    </div>
+
+    <div class="error-banner" id="error-banner-2">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+      <span id="error-text-2"></span>
+    </div>
+
+    <div class="result-toolbar" id="result-toolbar" style="display:none;">
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" id="search-input" placeholder="Search extracted text…" autocomplete="off" autocorrect="off" spellcheck="false">
+        <div class="search-count" id="search-count"></div>
+      </div>
+      <div class="search-nav">
+        <button id="search-prev" aria-label="Previous match"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 15l-6-6-6 6"/></svg></button>
+        <button id="search-next" aria-label="Next match"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
+      </div>
+      <button class="icon-btn" id="btn-lang" aria-label="Language">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20z"/></svg>
+      </button>
+      <button class="icon-btn" id="btn-scan-settings" aria-label="Scan quality settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+    </div>
+
+    <div class="text-pane-wrap" id="text-pane-wrap"></div>
+
+    <div class="bottom-bar" id="bottom-bar">
+      <button class="btn btn-secondary" id="btn-new">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        New
+      </button>
+      <button class="btn btn-secondary" id="btn-download">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+        Save .txt
+      </button>
+      <button class="btn btn-primary" id="btn-copy">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Copy all
+      </button>
+    </div>
+  </div>
+</main>
+
+<input type="file" id="file-input" accept="image/*,application/pdf" multiple>
+<input type="file" id="camera-input" accept="image/*" capture="environment">
+
+<div class="toast" id="toast"></div>
+
+<div class="sheet-backdrop" id="sheet-backdrop"></div>
+<div class="sheet" id="lang-sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-title">OCR language</div>
+  <div id="lang-list"></div>
+</div>
+
+<div class="sheet" id="settings-sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-title">Scan quality</div>
+
+  <div class="settings-section">
+    <div class="settings-row">
+      <div class="settings-row-text">
+        <div class="settings-row-title">Enhance before reading</div>
+        <div class="settings-row-sub">Straightens, sharpens contrast, and cleans up lighting on photos before OCR. Recommended for phone photos.</div>
+      </div>
+      <div class="toggle" id="toggle-enhance" role="switch" aria-label="Enhance before reading"></div>
+    </div>
+  </div>
+
+  <div class="settings-section">
+    <div class="settings-row-title">Document type</div>
+    <div class="settings-row-sub">Helps the engine know how text is laid out on the page.</div>
+    <div class="chip-row" id="doctype-chips">
+      <div class="chip" data-type="auto">Auto-detect</div>
+      <div class="chip" data-type="block">Paragraph / page</div>
+      <div class="chip" data-type="sparse">Sign / label / receipt</div>
+      <div class="chip" data-type="line">Single line</div>
+    </div>
+  </div>
+
+  <button class="btn btn-primary" id="btn-rescan" style="width:100%; margin-top:6px;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+    Re-scan with these settings
+  </button>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  // ---------- Config ----------
+  const LANGS = [
+    { code:'eng', name:'English' },
+    { code:'spa', name:'Spanish' },
+    { code:'fra', name:'French' },
+    { code:'deu', name:'German' },
+    { code:'ita', name:'Italian' },
+    { code:'por', name:'Portuguese' },
+    { code:'nld', name:'Dutch' },
+    { code:'rus', name:'Russian' },
+    { code:'chi_sim', name:'Chinese (Simplified)' },
+    { code:'jpn', name:'Japanese' },
+    { code:'kor', name:'Korean' },
+    { code:'ara', name:'Arabic' },
+    { code:'hin', name:'Hindi' },
+  ];
+  let currentLang = 'eng';
+  try{ currentLang = localStorage.getItem('scanline_lang') || 'eng'; }catch(e){ /* storage unavailable, fall back to default */ }
+
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+
+  // ---------- State ----------
+  let pages = [];        // { thumbUrl, canvas, text, confidence, status }
+  let activeThumb = 0;
+  let worker = null;
+  let searchMatches = [];
+  let searchIndex = -1;
+  let processing = false;
+  let enhanceEnabled = true;
+  try{ enhanceEnabled = localStorage.getItem('scanline_enhance') !== 'off'; }catch(e){ /* default stays on */ }
+
+  // ---------- Elements ----------
+  const $ = (id) => document.getElementById(id);
+  const uploadStage = $('upload-stage');
+  const workStage = $('work-stage');
+  const dropZone = $('drop-zone');
+  const fileInput = $('file-input');
+  const cameraInput = $('camera-input');
+  const btnUpload = $('btn-upload');
+  const btnCamera = $('btn-camera');
+  const previewWrap = $('preview-wrap');
+  const scanProgress = $('scan-progress');
+  const progressFill = $('progress-fill');
+  const progressPct = $('progress-pct');
+  const progressLabel = $('progress-label');
+  const progressSub = $('progress-sub');
+  const resultToolbar = $('result-toolbar');
+  const textPaneWrap = $('text-pane-wrap');
+  const bottomBar = $('bottom-bar');
+  const headerStatus = $('header-status');
+  const errorBanner = $('error-banner');
+  const errorText = $('error-text');
+  const errorBanner2 = $('error-banner-2');
+  const errorText2 = $('error-text-2');
+  const toast = $('toast');
+  const searchInput = $('search-input');
+  const searchCount = $('search-count');
+  const searchPrev = $('search-prev');
+  const searchNext = $('search-next');
+  const btnLang = $('btn-lang');
+  const sheetBackdrop = $('sheet-backdrop');
+  const langSheet = $('lang-sheet');
+  const langList = $('lang-list');
+  const btnScanSettings = $('btn-scan-settings');
+  const settingsSheet = $('settings-sheet');
+  const toggleEnhance = $('toggle-enhance');
+  const doctypeChips = $('doctype-chips');
+  const btnRescan = $('btn-rescan');
+
+  // ---------- Helpers ----------
+  function showToast(msg){
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(()=> toast.classList.remove('show'), 1800);
+  }
+  function showError(msg, stage){
+    if(stage === 'work'){
+      errorText2.textContent = msg;
+      errorBanner2.classList.add('show');
+    } else {
+      errorText.textContent = msg;
+      errorBanner.classList.add('show');
+    }
+  }
+  function clearErrors(){
+    errorBanner.classList.remove('show');
+    errorBanner2.classList.remove('show');
+  }
+  function setStatus(text){ headerStatus.textContent = text; }
+  function escapeHtml(str){
+    return str.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  async function getWorker(){
+    if(worker && worker.__lang === currentLang) return worker;
+    if(worker){ try{ await worker.terminate(); }catch(e){} worker = null; }
+    setStatus('loading model…');
+    worker = await Tesseract.createWorker(currentLang, 1, {
+      logger: (m) => {
+        if(m.status && typeof m.progress === 'number'){
+          onWorkerProgress(m.status, m.progress);
+        }
+      }
+    });
+    worker.__lang = currentLang;
+    // Force the LSTM neural-net engine only (OEM 1) — more accurate than the
+    // legacy engine or the "both" default, at a small speed cost we can afford client-side.
+    await worker.setParameters({
+      tessedit_ocr_engine_mode: '1'
+    });
+    return worker;
+  }
+
+  // Page segmentation mode depends on what kind of document this is.
+  // Tesseract's default (auto) often mis-segments dense paragraphs or single-line
+  // captures, so we expose a simple content-type choice and translate it to a PSM value.
+  const PSM_MAP = {
+    auto: '3',        // Fully automatic page segmentation (default, good general-purpose)
+    block: '6',       // Assume a single uniform block of text (dense paragraphs, book pages)
+    sparse: '11',     // Sparse text — find as much text as possible in no particular order (signs, labels, receipts)
+    line: '7'         // Treat the image as a single text line
+  };
+  let currentDocType = 'auto';
+  try{ currentDocType = localStorage.getItem('scanline_doctype') || 'auto'; }catch(e){ /* fall back to default */ }
+
+  let progressCallback = null;
+  function onWorkerProgress(status, progress){
+    if(progressCallback) progressCallback(status, progress);
+  }
+
+  // ---------- Image preprocessing pipeline ----------
+  // Goal: turn a phone photo (uneven light, slight tilt, low contrast, noise)
+  // into something much closer to what Tesseract was trained on: high-contrast,
+  // deskewed, binarized text on a clean background. Each stage is independently
+  // cheap and skippable if it fails — we never let preprocessing crash a scan;
+  // worst case we fall back to the original image.
+
+  function imageToCanvas(source){
+    const canvas = document.createElement('canvas');
+    const w = source.naturalWidth || source.width;
+    const h = source.naturalHeight || source.height;
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(source, 0, 0, w, h);
+    return canvas;
+  }
+
+  // Upscale small images — Tesseract's LSTM models are trained on roughly
+  // 300dpi-equivalent text; anything much smaller loses stroke detail.
+  function ensureMinResolution(canvas, minLongEdge = 1600){
+    const longEdge = Math.max(canvas.width, canvas.height);
+    if(longEdge >= minLongEdge) return canvas;
+    const scale = minLongEdge / longEdge;
+    const out = document.createElement('canvas');
+    out.width = Math.round(canvas.width * scale);
+    out.height = Math.round(canvas.height * scale);
+    const ctx = out.getContext('2d');
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(canvas, 0, 0, out.width, out.height);
+    return out;
+  }
+
+  // Grayscale using luminance-weighted channels (matches how the eye/OCR "sees" contrast
+  // better than a flat average of R+G+B).
+  function toGrayscale(canvas){
+    const ctx = canvas.getContext('2d');
+    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const d = imgData.data;
+    for(let i=0; i<d.length; i+=4){
+      const gray = 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2];
+      d[i] = d[i+1] = d[i+2] = gray;
+    }
+    ctx.putImageData(imgData, 0, 0);
+    return imgData;
+  }
+
+  // Detect whether this looks like light text on a dark background (a screenshot,
+  // dark-mode UI, presentation slide, etc.) rather than the usual dark text on paper.
+  // We check the average luminance of a downsampled grayscale copy: photos of paper
+  // documents are reliably light-dominant; dark-mode screens are dark-dominant.
+  function isDarkBackground(canvas){
+    const sampleSize = 100;
+    const sample = document.createElement('canvas');
+    sample.width = sampleSize;
+    sample.height = sampleSize;
+    const ctx = sample.getContext('2d');
+    ctx.drawImage(canvas, 0, 0, sampleSize, sampleSize);
+    const d = ctx.getImageData(0, 0, sampleSize, sampleSize).data;
+    let sum = 0;
+    for(let i=0; i<d.length; i+=4){
+      sum += 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2];
+    }
+    const avg = sum / (d.length/4);
+    return avg < 115; // below mid-gray on average = dark-dominant image
+  }
+
+  // Stretch the histogram so the darkest pixels become black and lightest become white.
+  // This alone fixes a huge share of "washed out" or shadowed phone photos.
+  function stretchContrast(imgData){
+    const d = imgData.data;
+    let min = 255, max = 0;
+    for(let i=0; i<d.length; i+=4){
+      const v = d[i];
+      if(v < min) min = v;
+      if(v > max) max = v;
+    }
+    const range = max - min;
+    if(range < 10) return imgData; // already flat/binary, don't amplify noise
+    const scale = 255 / range;
+    for(let i=0; i<d.length; i+=4){
+      const v = (d[i] - min) * scale;
+      d[i] = d[i+1] = d[i+2] = v < 0 ? 0 : (v > 255 ? 255 : v);
+    }
+    return imgData;
+  }
+
+  // Adaptive (local-window) binarization, a simplified Sauvola-style threshold.
+  // Unlike a single global threshold, this handles a page with a shadow across
+  // half of it — very common in handheld phone photos of documents.
+  // `invert`: when true, treats pixels *below* the local mean as foreground text
+  // instead of above — required for light-text-on-dark content, otherwise the
+  // output is inverted nonsense (this was the screenshot bug).
+  function adaptiveBinarize(imgData, width, height, invert){
+    const d = imgData.data;
+    const gray = new Uint8ClampedArray(width * height);
+    for(let i=0, p=0; i<d.length; i+=4, p++) gray[p] = d[i];
+
+    // Integral image for O(1) windowed mean/variance lookups
+    const integral = new Float64Array((width+1) * (height+1));
+    const integralSq = new Float64Array((width+1) * (height+1));
+    for(let y=0; y<height; y++){
+      let rowSum = 0, rowSumSq = 0;
+      for(let x=0; x<width; x++){
+        const v = gray[y*width + x];
+        rowSum += v;
+        rowSumSq += v*v;
+        const idx = (y+1)*(width+1) + (x+1);
+        integral[idx] = integral[idx - (width+1)] + rowSum;
+        integralSq[idx] = integralSq[idx - (width+1)] + rowSumSq;
+      }
+    }
+
+    const windowSize = Math.max(15, Math.round(Math.min(width, height) * 0.02) | 1);
+    const half = windowSize >> 1;
+    const k = 0.34; // Sauvola sensitivity constant, tuned for document text
+    const R = 128;
+
+    function windowStats(cx, cy){
+      const x0 = Math.max(0, cx-half), x1 = Math.min(width-1, cx+half);
+      const y0 = Math.max(0, cy-half), y1 = Math.min(height-1, cy+half);
+      const area = (x1-x0+1) * (y1-y0+1);
+      const A = y0*(width+1)+x0, B = y0*(width+1)+(x1+1), C = (y1+1)*(width+1)+x0, D = (y1+1)*(width+1)+(x1+1);
+      const sum = integral[D] - integral[B] - integral[C] + integral[A];
+      const sumSq = integralSq[D] - integralSq[B] - integralSq[C] + integralSq[A];
+      const mean = sum / area;
+      const variance = Math.max(0, sumSq/area - mean*mean);
+      const std = Math.sqrt(variance);
+      return { mean, std };
+    }
+
+    for(let y=0; y<height; y++){
+      for(let x=0; x<width; x++){
+        const { mean, std } = windowStats(x, y);
+        const threshold = mean * (1 + k * ((std / R) - 1));
+        const p = y*width + x;
+        const isForeground = invert ? (gray[p] < threshold) : (gray[p] > threshold);
+        // Foreground always renders black-on-white for Tesseract, regardless of
+        // whether the source was dark-on-light or light-on-dark originally.
+        const val = isForeground ? 255 : 0;
+        const di = p*4;
+        d[di] = d[di+1] = d[di+2] = val;
+      }
+    }
+    return imgData;
+  }
+
+  // Estimate and correct skew by testing small rotation angles and picking the one
+  // that maximizes "peakiness" of horizontal text-row projections — rotated-correct
+  // text produces sharp alternating light/dark bands; skewed text produces a smear.
+  function estimateSkewAngle(canvas){
+    const ctx = canvas.getContext('2d');
+    // Downscale for speed — skew estimation doesn't need full resolution.
+    const sampleW = Math.min(400, canvas.width);
+    const sampleH = Math.round(canvas.height * (sampleW / canvas.width));
+    const sample = document.createElement('canvas');
+    sample.width = sampleW;
+    sample.height = sampleH;
+    const sctx = sample.getContext('2d');
+    sctx.drawImage(canvas, 0, 0, sampleW, sampleH);
+    const imgData = sctx.getImageData(0, 0, sampleW, sampleH);
+    const d = imgData.data;
+    const gray = new Float32Array(sampleW * sampleH);
+    for(let i=0, p=0; i<d.length; i+=4, p++) gray[p] = d[i];
+
+    let bestAngle = 0, bestScore = -Infinity;
+    for(let angleDeg = -5; angleDeg <= 5; angleDeg += 0.5){
+      const rad = angleDeg * Math.PI / 180;
+      const cos = Math.cos(rad), sin = Math.sin(rad);
+      const rowSums = new Float32Array(sampleH);
+      for(let y=0; y<sampleH; y++){
+        let sum = 0, count = 0;
+        for(let x=0; x<sampleW; x+=2){
+          const srcX = Math.round((x - sampleW/2) * cos - (y - sampleH/2) * sin + sampleW/2);
+          const srcY = Math.round((x - sampleW/2) * sin + (y - sampleH/2) * cos + sampleH/2);
+          if(srcX >= 0 && srcX < sampleW && srcY >= 0 && srcY < sampleH){
+            sum += gray[srcY*sampleW + srcX];
+            count++;
+          }
+        }
+        rowSums[y] = count ? sum/count : 0;
+      }
+      // Score = variance of row sums (sharper alternating bands = higher variance = better alignment)
+      let mean = 0;
+      for(let y=0; y<sampleH; y++) mean += rowSums[y];
+      mean /= sampleH;
+      let variance = 0;
+      for(let y=0; y<sampleH; y++) variance += (rowSums[y]-mean)*(rowSums[y]-mean);
+      variance /= sampleH;
+      if(variance > bestScore){ bestScore = variance; bestAngle = angleDeg; }
+    }
+    return bestAngle;
+  }
+
+  function rotateCanvas(canvas, angleDeg, fillColor){
+    if(Math.abs(angleDeg) < 0.3) return canvas; // not worth the resample cost/risk
+    const rad = angleDeg * Math.PI / 180;
+    const w = canvas.width, h = canvas.height;
+    const cos = Math.abs(Math.cos(rad)), sin = Math.abs(Math.sin(rad));
+    const newW = Math.round(w*cos + h*sin);
+    const newH = Math.round(w*sin + h*cos);
+    const out = document.createElement('canvas');
+    out.width = newW;
+    out.height = newH;
+    const ctx = out.getContext('2d');
+    ctx.fillStyle = fillColor || '#fff';
+    ctx.fillRect(0, 0, newW, newH);
+    ctx.translate(newW/2, newH/2);
+    ctx.rotate(rad);
+    ctx.drawImage(canvas, -w/2, -h/2);
+    return out;
+  }
+
+  // Screenshots and other digitally-rendered content (UI captures, slides, PDFs
+  // rendered to canvas) are always perfectly axis-aligned — running deskew on them
+  // only measures noise and risks blurring crisp text for zero benefit. We detect
+  // this by looking for large runs of near-identical pixels along scan rows, which
+  // camera photos of paper almost never have (paper has continuous lighting gradients
+  // and sensor noise; rendered UI has flat color fills and hard edges).
+  function looksLikeScreenshot(canvas){
+    const w = Math.min(200, canvas.width);
+    const h = Math.min(200, canvas.height);
+    const sample = document.createElement('canvas');
+    sample.width = w;
+    sample.height = h;
+    const ctx = sample.getContext('2d');
+    ctx.drawImage(canvas, 0, 0, w, h);
+    const d = ctx.getImageData(0, 0, w, h).data;
+    let flatRuns = 0, totalRuns = 0;
+    for(let y=0; y<h; y++){
+      let runLen = 1;
+      for(let x=1; x<w; x++){
+        const i = (y*w+x)*4, prev = (y*w+x-1)*4;
+        const diff = Math.abs(d[i]-d[prev]) + Math.abs(d[i+1]-d[prev+1]) + Math.abs(d[i+2]-d[prev+2]);
+        if(diff < 4){ runLen++; }
+        else{ if(runLen >= 8) flatRuns++; totalRuns++; runLen = 1; }
+      }
+    }
+    return totalRuns > 0 && (flatRuns / totalRuns) > 0.12;
+  }
+
+  // Full pipeline. Returns { canvas, usedEnhancement } — if any stage throws,
+  // we log it and return the best canvas we had so far rather than failing the scan.
+  function preprocessForOCR(source, enhance){
+    let canvas = imageToCanvas(source);
+    if(!enhance) return { canvas, usedEnhancement: false };
+
+    let dark = false, screenshot = false;
+    try{ dark = isDarkBackground(canvas); }catch(e){ console.warn('dark-mode detection skipped', e); }
+    try{ screenshot = looksLikeScreenshot(canvas); }catch(e){ console.warn('screenshot detection skipped', e); }
+
+    try{ canvas = ensureMinResolution(canvas); }catch(e){ console.warn('upscale skipped', e); }
+
+    if(!screenshot){
+      try{
+        const angle = estimateSkewAngle(canvas);
+        canvas = rotateCanvas(canvas, angle, dark ? '#000' : '#fff');
+      }catch(e){ console.warn('deskew skipped', e); }
+    }
+
+    try{
+      let imgData = toGrayscale(canvas);
+      imgData = stretchContrast(imgData);
+      if(screenshot){
+        // Rendered UI is already crisp and high-contrast — a hard local threshold
+        // tends to fragment anti-aliased font edges into speckle. A simple global
+        // invert-if-needed (so text ends up dark-on-light for Tesseract) is safer here.
+        if(dark) invertImageData(imgData);
+      } else {
+        imgData = adaptiveBinarize(imgData, canvas.width, canvas.height, dark);
+      }
+      canvas.getContext('2d').putImageData(imgData, 0, 0);
+    }catch(e){ console.warn('binarization skipped, using grayscale/original', e); }
+
+    return { canvas, usedEnhancement: true };
+  }
+
+  function invertImageData(imgData){
+    const d = imgData.data;
+    for(let i=0; i<d.length; i+=4){
+      d[i] = 255 - d[i];
+      d[i+1] = 255 - d[i+1];
+      d[i+2] = 255 - d[i+2];
+    }
+    return imgData;
+  }
+
+
+  function resetAll(){
+    pages = [];
+    activeThumb = 0;
+    searchMatches = [];
+    searchIndex = -1;
+    processing = false;
+    previewWrap.innerHTML = '';
+    textPaneWrap.innerHTML = '';
+    resultToolbar.style.display = 'none';
+    bottomBar.classList.remove('active');
+    scanProgress.classList.remove('active');
+    searchInput.value = '';
+    clearErrors();
+    workStage.classList.remove('active');
+    uploadStage.style.display = 'flex';
+    setStatus('ready');
+    fileInput.value = '';
+    cameraInput.value = '';
+  }
+
+  async function handleFiles(fileList){
+    const files = Array.from(fileList || []);
+    if(!files.length) return;
+    clearErrors();
+
+    const valid = files.filter(f => f.type.startsWith('image/') || f.type === 'application/pdf');
+    if(!valid.length){
+      showError('That file type isn\u2019t supported. Please choose an image or a PDF.', 'upload');
+      return;
+    }
+
+    uploadStage.style.display = 'none';
+    workStage.classList.add('active');
+    setStatus('loading…');
+
+    for(const file of valid){
+      try{
+        if(file.type === 'application/pdf'){
+          await loadPdf(file);
+        } else {
+          await loadImage(file);
+        }
+      }catch(err){
+        console.error(err);
+        showError('Couldn\u2019t read "' + file.name + '". It may be corrupted or an unsupported format.', 'work');
+      }
+    }
+
+    if(pages.length === 0){
+      resetAll();
+      return;
+    }
+
+    renderThumbs();
+    processQueue();
+  }
+
+  async function loadImage(file){
+    const url = URL.createObjectURL(file);
+    await new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        pages.push({
+          thumbUrl: url,
+          sourceImg: img,
+          text: '',
+          confidence: null,
+          status: 'queued',
+          label: file.name.replace(/\.[^.]+$/, '') || 'Image'
+        });
+        resolve();
+      };
+      img.onerror = () => reject(new Error('bad image'));
+      img.src = url;
+    });
+  }
+
+  async function loadPdf(file){
+    const buf = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+    const baseName = file.name.replace(/\.pdf$/i, '');
+    for(let i=1; i<=pdf.numPages; i++){
+      const page = await pdf.getPage(i);
+      const scale = 2.2; // upscale for OCR accuracy
+      const viewport = page.getViewport({ scale });
+      const canvas = document.createElement('canvas');
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      const ctx = canvas.getContext('2d');
+      await page.render({ canvasContext: ctx, viewport }).promise;
+      const thumbUrl = canvas.toDataURL('image/jpeg', 0.7);
+      pages.push({
+        thumbUrl,
+        sourceCanvas: canvas,
+        text: '',
+        confidence: null,
+        status: 'queued',
+        label: pdf.numPages > 1 ? (baseName + ' — p.' + i) : baseName
+      });
+    }
+  }
+
+  // ---------- Rendering thumbnails ----------
+  function renderThumbs(){
+    previewWrap.innerHTML = '';
+    pages.forEach((p, i) => {
+      const div = document.createElement('div');
+      div.className = 'thumb' + (i === activeThumb ? ' active' : '');
+      div.dataset.index = i;
+      div.innerHTML = `
+        <img src="${p.thumbUrl}" alt="Page ${i+1}">
+        <div class="page-badge">${i+1}/${pages.length}</div>
+        ${p.status !== 'done' ? `<div class="thumb-status" data-status></div>` : ''}
+      `;
+      div.addEventListener('click', () => {
+        activeThumb = i;
+        document.querySelectorAll('.thumb').forEach(t => t.classList.remove('active'));
+        div.classList.add('active');
+        const target = document.getElementById('page-block-' + i);
+        if(target) target.scrollIntoView({ behavior:'smooth', block:'start' });
+      });
+      previewWrap.appendChild(div);
+    });
+    updateThumbStatuses();
+  }
+
+  function updateThumbStatuses(){
+    document.querySelectorAll('.thumb').forEach((el, i) => {
+      const p = pages[i];
+      const statusEl = el.querySelector('[data-status]');
+      if(!p || p.status === 'done'){
+        if(statusEl) statusEl.remove();
+        return;
+      }
+      if(statusEl){
+        statusEl.innerHTML = p.status === 'processing'
+          ? '<div class="spinner"></div>'
+          : '';
+      }
+    });
+  }
+
+  // ---------- OCR queue ----------
+  async function processQueue(){
+    if(processing) return;
+    processing = true;
+    scanProgress.classList.add('active');
+
+    progressCallback = (status, progress) => {
+      const pct = Math.round(progress * 100);
+      progressPct.textContent = pct + '%';
+      progressFill.style.width = pct + '%';
+      const labelMap = {
+        'loading tesseract core': 'Loading engine…',
+        'initializing tesseract': 'Initializing…',
+        'loading language traineddata': 'Loading language data…',
+        'initializing api': 'Preparing…',
+        'recognizing text': 'Reading text…'
+      };
+      progressLabel.textContent = labelMap[status] || (status ? status : 'Working…');
+    };
+
+    try{
+      const w = await getWorker();
+      await w.setParameters({ tessedit_pageseg_mode: PSM_MAP[currentDocType] || PSM_MAP.auto });
+
+      for(let i=0; i<pages.length; i++){
+        const p = pages[i];
+        if(p.status === 'done') continue;
+        p.status = 'processing';
+        updateThumbStatuses();
+        progressLabel.textContent = `Reading page ${i+1} of ${pages.length}…`;
+        progressSub.textContent = pages.length > 1 ? `${i+1} of ${pages.length} pages` : 'Everything runs locally in your browser.';
+
+        const rawSource = p.sourceCanvas || p.sourceImg;
+        let ocrSource = rawSource;
+        try{
+          const { canvas, usedEnhancement } = preprocessForOCR(rawSource, enhanceEnabled);
+          ocrSource = canvas;
+          p.enhancedPreview = usedEnhancement ? canvas.toDataURL('image/jpeg', 0.72) : null;
+        }catch(preErr){
+          console.warn('Preprocessing failed, using original image', preErr);
+          ocrSource = rawSource;
+        }
+
+        try{
+          const { data } = await w.recognize(ocrSource);
+          p.text = (data.text || '').replace(/\u0000/g,'').trim();
+          p.confidence = typeof data.confidence === 'number' ? data.confidence : null;
+        }catch(ocrErr){
+          console.error(ocrErr);
+          p.text = '';
+          p.confidence = 0;
+          p.error = true;
+        }
+        p.status = 'done';
+        updateThumbStatuses();
+        renderTextPane();
+      }
+
+      progressLabel.textContent = 'Done';
+      progressPct.textContent = '100%';
+      progressFill.style.width = '100%';
+      setStatus('done');
+      setTimeout(() => scanProgress.classList.remove('active'), 700);
+      resultToolbar.style.display = 'flex';
+      bottomBar.classList.add('active');
+
+      const anyText = pages.some(p => p.text && p.text.length > 0);
+      if(!anyText){
+        showError('No readable text was found. Try a clearer photo with better lighting and less blur.', 'work');
+      }
+    }catch(err){
+      console.error(err);
+      showError('The OCR engine failed to load. Check your connection and try again.', 'work');
+      progressLabel.textContent = 'Failed';
+    }finally{
+      processing = false;
+      progressCallback = null;
+    }
+  }
+
+  function confidenceTag(conf){
+    if(conf === null || conf === undefined) return '';
+    let cls = 'conf-lo', label = 'low confidence';
+    if(conf >= 85){ cls = 'conf-hi'; label = 'high confidence'; }
+    else if(conf >= 65){ cls = 'conf-mid'; label = 'medium confidence'; }
+    return `<span class="conf-tag ${cls}">${Math.round(conf)}% ${label}</span>`;
+  }
+
+  function renderTextPane(){
+    const query = searchInput.value.trim();
+    textPaneWrap.innerHTML = '';
+    pages.forEach((p, i) => {
+      const block = document.createElement('div');
+      block.className = 'page-block';
+      block.id = 'page-block-' + i;
+      const label = document.createElement('div');
+      label.className = 'page-block-label';
+      label.innerHTML = `${escapeHtml(p.label || ('Page ' + (i+1)))}${p.status === 'done' ? confidenceTag(p.confidence) : ''}`;
+      block.appendChild(label);
+
+      const textDiv = document.createElement('div');
+      textDiv.className = 'text-pane';
+      if(p.status !== 'done'){
+        textDiv.innerHTML = '<span class="empty-page-note">Reading…</span>';
+      } else if(!p.text){
+        textDiv.innerHTML = '<span class="empty-page-note">No text detected on this page.</span>';
+      } else {
+        textDiv.innerHTML = highlightText(p.text, query);
+      }
+      block.appendChild(textDiv);
+      textPaneWrap.appendChild(block);
+    });
+    if(query) runSearch(false);
+  }
+
+  function highlightText(text, query){
+    const escaped = escapeHtml(text);
+    if(!query) return escaped;
+    try{
+      const safeQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const re = new RegExp('(' + safeQuery + ')', 'gi');
+      return escaped.replace(re, '<mark>$1</mark>');
+    }catch(e){
+      return escaped;
+    }
+  }
+
+  // ---------- Search ----------
+  function runSearch(scroll = true){
+    renderTextPaneKeepQuery();
+    const marks = Array.from(textPaneWrap.querySelectorAll('mark'));
+    searchMatches = marks;
+    if(!searchInput.value.trim()){
+      searchCount.textContent = '';
+      searchIndex = -1;
+      return;
+    }
+    searchCount.textContent = marks.length ? `${searchIndex >= 0 ? searchIndex+1 : 1}/${marks.length}` : '0/0';
+    if(marks.length && scroll){
+      searchIndex = 0;
+      focusMatch();
+    }
+  }
+
+  function renderTextPaneKeepQuery(){
+    const query = searchInput.value.trim();
+    document.querySelectorAll('.text-pane').forEach((el, i) => {
+      const p = pages[i];
+      if(!p || p.status !== 'done' || !p.text) return;
+      el.innerHTML = highlightText(p.text, query);
+    });
+  }
+
+  function focusMatch(){
+    searchMatches.forEach(m => m.classList.remove('current-match'));
+    if(searchIndex < 0 || searchIndex >= searchMatches.length) return;
+    const m = searchMatches[searchIndex];
+    m.classList.add('current-match');
+    m.scrollIntoView({ behavior:'smooth', block:'center' });
+    searchCount.textContent = `${searchIndex+1}/${searchMatches.length}`;
+  }
+
+  let searchDebounce = null;
+  searchInput.addEventListener('input', () => {
+    clearTimeout(searchDebounce);
+    searchDebounce = setTimeout(() => runSearch(true), 180);
+  });
+  searchNext.addEventListener('click', () => {
+    if(!searchMatches.length) return;
+    searchIndex = (searchIndex + 1) % searchMatches.length;
+    focusMatch();
+  });
+  searchPrev.addEventListener('click', () => {
+    if(!searchMatches.length) return;
+    searchIndex = (searchIndex - 1 + searchMatches.length) % searchMatches.length;
+    focusMatch();
+  });
+  searchInput.addEventListener('keydown', (e) => {
+    if(e.key === 'Enter'){
+      e.preventDefault();
+      if(searchMatches.length){
+        searchIndex = (searchIndex + 1) % searchMatches.length;
+        focusMatch();
+      }
+    }
+  });
+
+  // ---------- Copy / download ----------
+  function fullText(){
+    return pages.map(p => {
+      const header = pages.length > 1 ? `--- ${p.label} ---\n` : '';
+      return header + (p.text || '(no text detected)');
+    }).join('\n\n');
+  }
+
+  $('btn-copy').addEventListener('click', async () => {
+    const text = fullText();
+    try{
+      await navigator.clipboard.writeText(text);
+      showToast('Copied to clipboard');
+    }catch(e){
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try{ document.execCommand('copy'); showToast('Copied to clipboard'); }
+      catch(e2){ showToast('Copy failed — select text manually'); }
+      document.body.removeChild(ta);
+    }
+  });
+
+  $('btn-download').addEventListener('click', () => {
+    const text = fullText();
+    const blob = new Blob([text], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'scanline-text.txt';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    showToast('Saved scanline-text.txt');
+  });
+
+  $('btn-new').addEventListener('click', resetAll);
+
+  // ---------- Upload triggers ----------
+  btnUpload.addEventListener('click', () => fileInput.click());
+  btnCamera.addEventListener('click', () => cameraInput.click());
+  fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+  cameraInput.addEventListener('change', (e) => handleFiles(e.target.files));
+
+  dropZone.addEventListener('click', () => fileInput.click());
+  ['dragenter','dragover'].forEach(evt => {
+    dropZone.addEventListener(evt, (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+  });
+  ['dragleave','drop'].forEach(evt => {
+    dropZone.addEventListener(evt, (e) => { e.preventDefault(); dropZone.classList.remove('drag-over'); });
+  });
+  dropZone.addEventListener('drop', (e) => {
+    if(e.dataTransfer && e.dataTransfer.files) handleFiles(e.dataTransfer.files);
+  });
+  document.addEventListener('dragover', (e) => e.preventDefault());
+  document.addEventListener('drop', (e) => { if(e.target !== dropZone) e.preventDefault(); });
+
+  // Paste support
+  document.addEventListener('paste', (e) => {
+    if(!e.clipboardData) return;
+    const files = Array.from(e.clipboardData.files || []);
+    if(files.length) handleFiles(files);
+  });
+
+  // ---------- Sheets (language + scan settings share one backdrop) ----------
+  let activeSheet = null;
+  function openSheet(sheetEl){
+    if(activeSheet && activeSheet !== sheetEl) activeSheet.classList.remove('show');
+    activeSheet = sheetEl;
+    sheetBackdrop.classList.add('show');
+    sheetEl.classList.add('show');
+  }
+  function closeSheet(){
+    if(activeSheet) activeSheet.classList.remove('show');
+    sheetBackdrop.classList.remove('show');
+    activeSheet = null;
+  }
+  sheetBackdrop.addEventListener('click', closeSheet);
+
+  // ---------- Language sheet ----------
+  function renderLangList(){
+    langList.innerHTML = '';
+    LANGS.forEach(l => {
+      const div = document.createElement('div');
+      div.className = 'lang-option' + (l.code === currentLang ? ' selected' : '');
+      div.innerHTML = `<span>${l.name}</span><span class="check">✓</span>`;
+      div.addEventListener('click', () => {
+        currentLang = l.code;
+        try{ localStorage.setItem('scanline_lang', l.code); }catch(e){ /* storage unavailable, preference just won't persist */ }
+        renderLangList();
+        closeSheet();
+        showToast('Language set to ' + l.name + ' — will apply on next scan');
+      });
+      langList.appendChild(div);
+    });
+  }
+  btnLang.addEventListener('click', () => { renderLangList(); openSheet(langSheet); });
+
+  // ---------- Scan settings sheet ----------
+  function renderScanSettings(){
+    toggleEnhance.classList.toggle('on', enhanceEnabled);
+    toggleEnhance.setAttribute('aria-checked', String(enhanceEnabled));
+    Array.from(doctypeChips.children).forEach(chip => {
+      chip.classList.toggle('selected', chip.dataset.type === currentDocType);
+    });
+  }
+  toggleEnhance.addEventListener('click', () => {
+    enhanceEnabled = !enhanceEnabled;
+    try{ localStorage.setItem('scanline_enhance', enhanceEnabled ? 'on' : 'off'); }catch(e){ /* won't persist, fine */ }
+    renderScanSettings();
+  });
+  doctypeChips.addEventListener('click', (e) => {
+    const chip = e.target.closest('.chip');
+    if(!chip) return;
+    currentDocType = chip.dataset.type;
+    try{ localStorage.setItem('scanline_doctype', currentDocType); }catch(e){ /* won't persist, fine */ }
+    renderScanSettings();
+  });
+  btnScanSettings.addEventListener('click', () => { renderScanSettings(); openSheet(settingsSheet); });
+  btnRescan.addEventListener('click', () => {
+    closeSheet();
+    if(!pages.length) return;
+    pages.forEach(p => { p.status = 'queued'; p.text = ''; p.confidence = null; });
+    updateThumbStatuses();
+    renderTextPane();
+    processQueue();
+    showToast('Re-scanning with updated settings…');
+  });
+
+  // ---------- Init ----------
+  resetAll();
+})();
+</script>
+</body>
+</html>
