@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<title>ROLL — Die Simulator</title>
+<meta name="theme-color" content="#0a0a0d" />
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --accent: #d97757;
+    --accent-dim: #d9775733;
+    --accent-glow: #d9775766;
+    --bg-0: #08080a;
+    --bg-1: #0f0f13;
+    --bg-2: #17171d;
+    --line: #242430;
+    --text-hi: #f2f1ee;
+    --text-lo: #8a8a94;
+  }
+  [data-theme="light"]{
+    --bg-0: #f3f1ec;
+    --bg-1: #ffffff;
+    --bg-2: #eae7e0;
+    --line: #ddd9d0;
+    --text-hi: #17171a;
+    --text-lo: #6b6b70;
+    --accent-glow: #d9775744;
+  }
+
+  *{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body{
+    margin:0; padding:0; height:100%; overflow:hidden;
+    background: var(--bg-0);
+    color: var(--text-hi);
+    font-family: 'Chakra Petch', sans-serif;
+    overscroll-behavior: none;
+    touch-action: manipulation;
+  }
+  .font-mono{ font-family: 'JetBrains Mono', monospace; }
+
+  #bg-canvas{ position:fixed; inset:0; z-index:0; }
+
+  .noise::before{
+    content:""; position:fixed; inset:0; pointer-events:none; z-index:1; opacity:.035; mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .grid-overlay{
+    position:fixed; inset:0; z-index:1; pointer-events:none;
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: 44px 44px;
+    opacity: .18;
+    mask-image: radial-gradient(circle at 50% 42%, black 0%, transparent 65%);
+  }
+
+  .app{ position:relative; z-index:2; height:100dvh; display:flex; flex-direction:column; }
+
+  /* top bar */
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding: max(18px, env(safe-area-inset-top)) 20px 10px 20px;
+  }
+  .brand{ display:flex; align-items:center; gap:9px; }
+  .brand-dot{ width:9px; height:9px; border-radius:2px; background:var(--accent); box-shadow:0 0 12px var(--accent-glow); transform:rotate(45deg); }
+  .brand-text{ font-size:13px; letter-spacing:.28em; font-weight:600; color:var(--text-lo); }
+  .brand-text b{ color:var(--text-hi); }
+
+  .status-pill{
+    font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:.12em;
+    color:var(--text-lo); border:1px solid var(--line); border-radius:20px; padding:5px 10px 5px 8px;
+    display:flex; align-items:center; gap:6px; opacity:0; transform:translateY(-4px);
+    transition:opacity .25s ease, transform .25s ease;
+  }
+  .status-pill.show{ opacity:1; transform:translateY(0); }
+  .status-pill .pip{ width:6px; height:6px; border-radius:50%; background:var(--accent); box-shadow:0 0 8px var(--accent-glow); animation:pulse 1.4s ease-in-out infinite; }
+  @keyframes pulse{ 0%,100%{opacity:1} 50%{opacity:.35} }
+
+  /* stage */
+  .stage{ flex:1; position:relative; display:flex; align-items:center; justify-content:center; min-height:0; }
+  #dice-canvas{ width:100%; height:100%; touch-action:none; }
+
+  .tap-hint{
+    position:absolute; bottom:14%; left:0; right:0; text-align:center;
+    font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:.2em; color:var(--text-lo);
+    pointer-events:none; text-transform:uppercase;
+    animation: floaty 2.6s ease-in-out infinite;
+  }
+  @keyframes floaty{ 0%,100%{ transform:translateY(0); opacity:.55 } 50%{ transform:translateY(-5px); opacity:1 } }
+
+  /* result readout */
+  .readout{
+    position:absolute; top:10px; left:0; right:0; text-align:center; pointer-events:none;
+  }
+  .readout .val{
+    font-family:'JetBrains Mono', monospace; font-weight:800; font-size:min(15vw, 64px); line-height:1;
+    color:var(--text-hi); letter-spacing:-.02em;
+    text-shadow: 0 0 40px var(--accent-glow);
+    transition: filter .15s ease;
+  }
+  .readout .lbl{ font-size:10px; letter-spacing:.3em; color:var(--text-lo); margin-top:2px; text-transform:uppercase; }
+
+  /* history strip */
+  .history{
+    display:flex; gap:7px; justify-content:center; padding: 6px 20px calc(20px + env(safe-area-inset-bottom)) 20px;
+    overflow-x:auto; scrollbar-width:none;
+  }
+  .history::-webkit-scrollbar{ display:none; }
+  .history-chip{
+    flex:0 0 auto; width:30px; height:30px; border-radius:8px; border:1px solid var(--line);
+    background:var(--bg-1); display:flex; align-items:center; justify-content:center;
+    font-family:'JetBrains Mono', monospace; font-size:13px; font-weight:600; color:var(--text-lo);
+    opacity:0; transform:scale(.6); animation: chip-in .3s cubic-bezier(.2,1.4,.4,1) forwards;
+  }
+  .history-chip.latest{ border-color:var(--accent); color:var(--accent); box-shadow:0 0 14px var(--accent-glow); }
+  @keyframes chip-in{ to{ opacity:1; transform:scale(1); } }
+
+  /* rigged indicator (subtle, only visible if user knows) */
+  .rig-indicator{
+    position:absolute; top:12px; right:16px; z-index:3;
+    width:7px; height:7px; border-radius:50%; background:var(--accent);
+    box-shadow:0 0 10px var(--accent-glow); opacity:0; transition:opacity .3s ease;
+  }
+  .rig-indicator.active{ opacity:1; animation:pulse 1.2s ease-in-out infinite; }
+
+  /* ========== SECRET MENU ========== */
+  .veil{
+    position:fixed; inset:0; z-index:40; background:rgba(0,0,0,.6); backdrop-filter: blur(6px);
+    opacity:0; pointer-events:none; transition:opacity .35s ease;
+  }
+  .veil.open{ opacity:1; pointer-events:all; }
+
+  .panel{
+    position:fixed; z-index:41; left:0; right:0; bottom:0; top:6%;
+    background:var(--bg-1); border-top:1px solid var(--line);
+    border-radius:22px 22px 0 0;
+    transform:translateY(100%); transition:transform .38s cubic-bezier(.17,.9,.32,1.1);
+    display:flex; flex-direction:column; overflow:hidden;
+    box-shadow: 0 -20px 60px rgba(0,0,0,.5);
+  }
+  .panel.open{ transform:translateY(0); }
+
+  .panel-handle{ width:38px; height:4px; border-radius:3px; background:var(--line); margin:10px auto 0; flex:0 0 auto; }
+
+  .panel-head{
+    display:flex; align-items:center; justify-content:space-between; padding:14px 20px 10px;
+    flex:0 0 auto; border-bottom:1px solid var(--line);
+  }
+  .panel-title{ font-size:11px; letter-spacing:.3em; text-transform:uppercase; color:var(--accent); font-weight:700; }
+  .panel-close{
+    width:30px; height:30px; border-radius:8px; border:1px solid var(--line); color:var(--text-lo);
+    display:flex; align-items:center; justify-content:center; font-size:16px; background:var(--bg-2);
+  }
+
+  .panel-tabs{ display:flex; gap:4px; padding:10px 16px 0; flex:0 0 auto; overflow-x:auto; scrollbar-width:none; }
+  .panel-tabs::-webkit-scrollbar{ display:none; }
+  .tab-btn{
+    font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:.1em; text-transform:uppercase;
+    padding:8px 12px; border-radius:9px 9px 0 0; color:var(--text-lo); white-space:nowrap; border:1px solid transparent;
+    border-bottom:none; flex:0 0 auto;
+  }
+  .tab-btn.active{ color:var(--accent); background:var(--bg-2); border-color:var(--line); }
+
+  .panel-body{ flex:1; overflow-y:auto; padding:18px 20px calc(30px + env(safe-area-inset-bottom)); }
+  .tab-pane{ display:none; }
+  .tab-pane.active{ display:block; animation: fadein .25s ease; }
+  @keyframes fadein{ from{ opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+
+  .section-lbl{
+    font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:.2em; text-transform:uppercase;
+    color:var(--text-lo); margin:22px 0 10px;
+  }
+  .section-lbl:first-child{ margin-top:0; }
+
+  .row{ display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid var(--line); }
+  .row:last-child{ border-bottom:none; }
+  .row-lbl{ font-size:14px; color:var(--text-hi); }
+  .row-sub{ font-size:11px; color:var(--text-lo); margin-top:2px; }
+
+  .toggle{ width:46px; height:26px; border-radius:20px; background:var(--bg-2); border:1px solid var(--line); position:relative; flex:0 0 auto; transition:background .2s; }
+  .toggle.on{ background:var(--accent); border-color:var(--accent); }
+  .toggle-knob{ position:absolute; top:2px; left:2px; width:20px; height:20px; border-radius:50%; background:#fff; transition:transform .2s cubic-bezier(.3,1.4,.4,1); box-shadow:0 1px 3px rgba(0,0,0,.4); }
+  .toggle.on .toggle-knob{ transform:translateX(20px); }
+
+  .seg{ display:flex; background:var(--bg-2); border:1px solid var(--line); border-radius:10px; padding:3px; gap:3px; }
+  .seg-btn{ flex:1; text-align:center; font-size:12px; padding:7px 0; border-radius:7px; color:var(--text-lo); font-weight:600; }
+  .seg-btn.active{ background:var(--accent); color:#fff; }
+
+  .color-dot{ width:26px; height:26px; border-radius:50%; border:2px solid transparent; flex:0 0 auto; }
+  .color-dot.active{ border-color:var(--text-hi); box-shadow:0 0 0 2px var(--bg-1); }
+  .color-row{ display:flex; gap:10px; flex-wrap:wrap; padding:12px 0; }
+
+  .slider-wrap{ padding:14px 0; }
+  .slider-top{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px; }
+  .slider-val{ font-family:'JetBrains Mono', monospace; color:var(--accent); font-weight:700; font-size:13px; }
+  input[type=range]{
+    -webkit-appearance:none; width:100%; height:4px; border-radius:2px; background:var(--bg-2); outline:none;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none; width:20px; height:20px; border-radius:50%; background:var(--accent);
+    box-shadow:0 0 10px var(--accent-glow); cursor:pointer; border:3px solid var(--bg-1);
+  }
+
+  .prob-bar-track{ height:8px; border-radius:4px; background:var(--bg-2); overflow:hidden; margin-top:6px; }
+  .prob-bar-fill{ height:100%; background:linear-gradient(90deg, var(--accent), #f0a080); transition:width .2s ease; }
+
+  .btn-primary{
+    background:var(--accent); color:#fff; font-weight:700; font-size:13px; letter-spacing:.05em;
+    padding:12px 0; border-radius:11px; width:100%; text-align:center; box-shadow:0 6px 20px var(--accent-glow);
+  }
+  .btn-ghost{
+    background:var(--bg-2); border:1px solid var(--line); color:var(--text-hi); font-weight:600; font-size:13px;
+    padding:12px 0; border-radius:11px; width:100%; text-align:center;
+  }
+  .btn-danger{ color:#e8654f; }
+
+  .queue-list{ display:flex; flex-direction:column; gap:8px; margin-top:10px; max-height:260px; overflow-y:auto; }
+  .queue-item{
+    display:flex; align-items:center; gap:10px; background:var(--bg-2); border:1px solid var(--line);
+    border-radius:10px; padding:8px 10px; animation: chip-in .2s ease forwards;
+  }
+  .queue-idx{ font-family:'JetBrains Mono', monospace; font-size:10px; color:var(--text-lo); width:22px; flex:0 0 auto; }
+  .queue-face{
+    width:34px; height:34px; border-radius:8px; background:var(--bg-1); border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center; font-family:'JetBrains Mono', monospace; font-weight:700;
+    color:var(--accent); flex:0 0 auto;
+  }
+  .queue-face.random{ color:var(--text-lo); font-size:10px; letter-spacing:.05em; }
+  .queue-remove{ margin-left:auto; color:var(--text-lo); font-size:18px; width:26px; height:26px; display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
+  .queue-empty{ text-align:center; color:var(--text-lo); font-size:12px; padding:30px 0; font-family:'JetBrains Mono', monospace; }
+
+  .add-row{ display:flex; gap:8px; margin-top:14px; }
+  .face-pick{
+    display:grid; grid-template-columns:repeat(6,1fr); gap:6px; margin-top:10px;
+  }
+  .face-pick button{
+    aspect-ratio:1; border-radius:9px; background:var(--bg-2); border:1px solid var(--line);
+    font-family:'JetBrains Mono', monospace; font-weight:700; color:var(--text-hi); font-size:15px;
+  }
+  .face-pick button.sel{ background:var(--accent); color:#fff; border-color:var(--accent); }
+
+  .mode-card{
+    background:var(--bg-2); border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin-bottom:10px;
+  }
+  .mode-card.sel{ border-color:var(--accent); box-shadow:0 0 0 1px var(--accent) inset; }
+  .mode-card-top{ display:flex; align-items:center; justify-content:between; gap:8px; }
+  .mode-title{ font-weight:600; font-size:13px; }
+  .mode-desc{ font-size:11px; color:var(--text-lo); margin-top:3px; }
+
+  ::-webkit-scrollbar{ width:5px; }
+  ::-webkit-scrollbar-thumb{ background:var(--line); border-radius:3px; }
+
+  .toast{
+    position:fixed; bottom:calc(24px + env(safe-area-inset-bottom)); left:50%; z-index:50;
+    transform:translate(-50%, 20px); background:var(--bg-2); border:1px solid var(--line); color:var(--text-hi);
+    padding:10px 16px; border-radius:10px; font-size:12px; font-family:'JetBrains Mono', monospace;
+    opacity:0; transition:opacity .25s ease, transform .25s ease; pointer-events:none; white-space:nowrap;
+  }
+  .toast.show{ opacity:1; transform:translate(-50%, 0); }
+
+  .long-press-ring{
+    position:absolute; inset:0; margin:auto; width:0; height:0; pointer-events:none;
+  }
+</style>
+</head>
+<body data-theme="dark" class="noise">
+
+<canvas id="bg-canvas"></canvas>
+<div class="grid-overlay"></div>
+
+<div class="app">
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-dot"></div>
+      <div class="brand-text"><b>ROLL</b> / D6</div>
+    </div>
+    <div class="status-pill font-mono" id="statusPill"><span class="pip"></span><span id="statusText">RIGGED</span></div>
+  </div>
+
+  <div class="stage" id="stage">
+    <div class="rig-indicator" id="rigIndicator"></div>
+    <canvas id="dice-canvas"></canvas>
+    <div class="readout" id="readout" style="opacity:0">
+      <div class="val" id="valDisplay">6</div>
+      <div class="lbl">tap anywhere to roll</div>
+    </div>
+    <div class="tap-hint" id="tapHint">◆ TAP TO ROLL ◆</div>
+  </div>
+
+  <div class="history font-mono" id="history"></div>
+</div>
+
+<!-- SECRET SETTINGS PANEL -->
+<div class="veil" id="veil"></div>
+<div class="panel" id="panel">
+  <div class="panel-handle"></div>
+  <div class="panel-head">
+    <div class="panel-title">◆ Control Room</div>
+    <div class="panel-close" id="panelClose">✕</div>
+  </div>
+  <div class="panel-tabs" id="panelTabs">
+    <div class="tab-btn active" data-tab="appearance">Appearance</div>
+    <div class="tab-btn" data-tab="odds">Odds</div>
+    <div class="tab-btn" data-tab="sequence">Sequence</div>
+    <div class="tab-btn" data-tab="player">Player Mode</div>
+    <div class="tab-btn" data-tab="volume">Volume Trigger</div>
+  </div>
+
+  <div class="panel-body">
+
+    <!-- APPEARANCE -->
+    <div class="tab-pane active" data-pane="appearance">
+      <div class="section-lbl">Theme</div>
+      <div class="seg">
+        <div class="seg-btn active" data-theme-opt="dark">Dark</div>
+        <div class="seg-btn" data-theme-opt="light">Light</div>
+      </div>
+
+      <div class="section-lbl">Accent Color</div>
+      <div class="color-row" id="colorRow"></div>
+
+      <div class="section-lbl">Die Font</div>
+      <div class="seg" id="fontSeg">
+        <div class="seg-btn active" data-font="mono">Mono</div>
+        <div class="seg-btn" data-font="sans">Sans</div>
+      </div>
+
+      <div class="section-lbl">Feedback</div>
+      <div class="row">
+        <div><div class="row-lbl">Sound effects</div><div class="row-sub">Roll, tick &amp; land sounds</div></div>
+        <div class="toggle on" id="toggleSound"><div class="toggle-knob"></div></div>
+      </div>
+      <div class="row">
+        <div><div class="row-lbl">Haptics</div><div class="row-sub">Vibration on landing (if supported)</div></div>
+        <div class="toggle on" id="toggleHaptics"><div class="toggle-knob"></div></div>
+      </div>
+      <div class="row">
+        <div><div class="row-lbl">Show rig indicator</div><div class="row-sub">Small dot when rigging is active</div></div>
+        <div class="toggle on" id="toggleRigDot"><div class="toggle-knob"></div></div>
+      </div>
+    </div>
+
+    <!-- ODDS -->
+    <div class="tab-pane" data-pane="odds">
+      <div class="section-lbl">Weighted Probability</div>
+      <div class="row">
+        <div><div class="row-lbl">Enable weighting</div><div class="row-sub">Override default 1/6 odds per face</div></div>
+        <div class="toggle" id="toggleWeight"><div class="toggle-knob"></div></div>
+      </div>
+
+      <div id="weightSliders" style="opacity:.35; pointer-events:none;">
+        <!-- generated -->
+      </div>
+      <div class="row-sub" id="weightSum" style="margin-top:10px; text-align:right;"></div>
+      <button class="btn-ghost" id="resetWeights" style="margin-top:12px;">Reset to equal (1/6 each)</button>
+    </div>
+
+    <!-- SEQUENCE -->
+    <div class="tab-pane" data-pane="sequence">
+      <div class="section-lbl">Manual Buffer Queue</div>
+      <div class="row-sub" style="margin-bottom:6px;">Next rolls will consume this queue in order, top to bottom. Add "Random" entries to fall back to normal/weighted odds for that turn.</div>
+
+      <div class="face-pick" id="facePick"></div>
+      <div class="add-row">
+        <button class="btn-primary" id="addQueueFace" style="flex:1">Add selected face</button>
+      </div>
+      <div class="add-row">
+        <button class="btn-ghost" id="addQueueRandom" style="flex:1">Add "Random" entry</button>
+      </div>
+
+      <div class="section-lbl" style="margin-top:24px;">Queue (<span id="queueCount">0</span>)</div>
+      <div class="queue-list" id="queueList"></div>
+      <button class="btn-ghost btn-danger" id="clearQueue" style="margin-top:14px;">Clear entire queue</button>
+    </div>
+
+    <!-- PLAYER MODE -->
+    <div class="tab-pane" data-pane="player">
+      <div class="section-lbl">Turn-Based Targeting</div>
+      <div class="row">
+        <div><div class="row-lbl">Enable player mode</div><div class="row-sub">Boost your odds only on your turn</div></div>
+        <div class="toggle" id="togglePlayerMode"><div class="toggle-knob"></div></div>
+      </div>
+
+      <div id="playerModeBody" style="opacity:.35; pointer-events:none;">
+        <div class="slider-wrap">
+          <div class="slider-top"><span class="row-lbl">Total players</span><span class="slider-val" id="totalPlayersVal">4</span></div>
+          <input type="range" id="totalPlayers" min="2" max="10" value="4" step="1">
+        </div>
+        <div class="slider-wrap">
+          <div class="slider-top"><span class="row-lbl">Your seat position</span><span class="slider-val" id="mySeatVal">1</span></div>
+          <input type="range" id="mySeat" min="1" max="10" value="1" step="1">
+        </div>
+        <div class="section-lbl">Target face on your turn</div>
+        <div class="face-pick" id="playerFacePick"></div>
+        <div class="slider-wrap">
+          <div class="slider-top"><span class="row-lbl">Boost strength</span><span class="slider-val" id="boostStrengthVal">60%</span></div>
+          <input type="range" id="boostStrength" min="10" max="95" value="60" step="5">
+          <div class="row-sub" style="margin-top:6px;">Chance your target face lands on your turn. Remaining probability splits across other faces.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VOLUME TRIGGER -->
+    <div class="tab-pane" data-pane="volume">
+      <div class="section-lbl">Volume-Based Profiles</div>
+      <div class="row-sub" style="margin-bottom:10px;">Since browsers can't read your device's system volume, drag this virtual slider to simulate it live — think of it as a discreet in-app dial instead of the physical buttons.</div>
+
+      <div class="row">
+        <div><div class="row-lbl">Enable volume profiles</div><div class="row-sub">Switch odds based on the dial below</div></div>
+        <div class="toggle" id="toggleVolumeMode"><div class="toggle-knob"></div></div>
+      </div>
+
+      <div id="volumeModeBody" style="opacity:.35; pointer-events:none;">
+        <div class="slider-wrap">
+          <div class="slider-top"><span class="row-lbl">Virtual volume dial</span><span class="slider-val" id="volDialVal">50%</span></div>
+          <input type="range" id="volDial" min="0" max="100" value="50" step="1">
+        </div>
+
+        <div class="section-lbl">Profiles</div>
+        <div class="mode-card" id="profLow">
+          <div class="mode-card-top"><span class="mode-title">0–49% · Normal</span></div>
+          <div class="mode-desc">Uses standard or your weighted odds, no boost.</div>
+        </div>
+        <div class="mode-card" id="profMid">
+          <div class="mode-card-top"><span class="mode-title">50–99% · Lean</span></div>
+          <div class="mode-desc">Boosts a chosen face moderately.</div>
+          <div class="face-pick" id="midFacePick" style="margin-top:10px;"></div>
+        </div>
+        <div class="mode-card" id="profHigh">
+          <div class="mode-card-top"><span class="mode-title">100% · Locked</span></div>
+          <div class="mode-desc">Heavily favors a chosen face (~70%).</div>
+          <div class="face-pick" id="highFacePick" style="margin-top:10px;"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast font-mono" id="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
