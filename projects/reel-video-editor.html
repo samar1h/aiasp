@@ -1,0 +1,1243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>Reel &mdash; Video Toolkit</title>
+<script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
+<style>
+:root{
+  --ink:#0e1210;
+  --paper:#eeece4;
+  --paper-dim:#e2e0d6;
+  --steel:#4b5a56;
+  --steel-dim:#8a948f;
+  --line:#c9c6ba;
+  --amber:#c76a1f;
+  --amber-deep:#9c521a;
+  --green:#3f6b4f;
+  --red:#a23b2e;
+  --mono: 'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
+  --sans: 'IBM Plex Sans', -apple-system, sans-serif;
+  --radius: 3px;
+}
+@font-face{
+  font-family:'IBM Plex Sans';
+  src:local('IBM Plex Sans');
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--sans);
+  font-size:16px;
+  line-height:1.4;
+  min-height:100vh;
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 28px 28px;
+  background-position: -1px -1px;
+  padding-bottom: 48px;
+}
+::selection{background:var(--amber);color:var(--paper);}
+
+.wrap{max-width:640px;margin:0 auto;padding:0 14px;}
+
+header.top{
+  border-bottom:2px solid var(--ink);
+  padding:18px 14px 14px;
+  background:var(--paper);
+  position:sticky;top:0;z-index:40;
+}
+header.top .inner{max-width:640px;margin:0 auto;display:flex;align-items:baseline;justify-content:space-between;gap:10px;}
+.logo{
+  font-family:var(--mono);
+  font-weight:700;
+  font-size:22px;
+  letter-spacing:-0.02em;
+  display:flex;align-items:baseline;gap:8px;
+}
+.logo .dot{color:var(--amber);}
+.logo small{
+  font-family:var(--sans);
+  font-weight:400;
+  font-size:11px;
+  letter-spacing:0.14em;
+  text-transform:uppercase;
+  color:var(--steel);
+}
+.engine-pill{
+  font-family:var(--mono);
+  font-size:10px;
+  letter-spacing:0.06em;
+  text-transform:uppercase;
+  padding:4px 8px;
+  border:1px solid var(--ink);
+  border-radius:20px;
+  display:flex;align-items:center;gap:5px;
+  white-space:nowrap;
+}
+.engine-pill .led{width:7px;height:7px;border-radius:50%;background:var(--steel-dim);flex:none;}
+.engine-pill.ready .led{background:var(--green);}
+.engine-pill.loading .led{background:var(--amber);animation:pulse 1s infinite;}
+.engine-pill.error .led{background:var(--red);}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.25;}}
+
+main{max-width:640px;margin:0 auto;padding:18px 14px 0;}
+
+.dropzone{
+  border:2px dashed var(--ink);
+  border-radius:var(--radius);
+  padding:34px 18px;
+  text-align:center;
+  background:var(--paper-dim);
+  position:relative;
+  transition:border-color .15s, background .15s;
+}
+.dropzone.drag{border-color:var(--amber);background:#f2e2cf;}
+.dropzone input[type=file]{
+  position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;
+}
+.dropzone .icon{font-family:var(--mono);font-size:34px;line-height:1;margin-bottom:10px;color:var(--steel);}
+.dropzone h2{margin:0 0 6px;font-size:18px;font-weight:700;}
+.dropzone p{margin:0;color:var(--steel);font-size:13px;}
+.dropzone .browse{
+  display:inline-block;margin-top:14px;font-family:var(--mono);font-size:12px;
+  text-transform:uppercase;letter-spacing:.06em;padding:8px 16px;
+  border:1.5px solid var(--ink);border-radius:var(--radius);background:var(--ink);color:var(--paper);
+}
+
+.filecard{
+  border:1.5px solid var(--ink);border-radius:var(--radius);
+  background:#fff;padding:12px 14px;display:flex;gap:12px;align-items:center;
+  margin-bottom:14px;
+}
+.filecard .thumb{
+  width:52px;height:52px;flex:none;border:1px solid var(--line);border-radius:2px;
+  background:var(--paper-dim);display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:10px;color:var(--steel);overflow:hidden;
+}
+.filecard .thumb img,.filecard .thumb video{width:100%;height:100%;object-fit:cover;}
+.filecard .meta{flex:1;min-width:0;}
+.filecard .name{font-weight:600;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.filecard .sub{font-family:var(--mono);font-size:11px;color:var(--steel);margin-top:2px;}
+.filecard .swap{
+  font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.04em;
+  border:1px solid var(--ink);border-radius:var(--radius);background:none;padding:7px 10px;
+  color:var(--ink);flex:none;cursor:pointer;
+}
+
+.risk-banner{
+  border:1.5px solid var(--amber-deep);background:#f5e6d3;color:var(--amber-deep);
+  border-radius:var(--radius);padding:10px 12px;font-size:12.5px;margin-bottom:14px;
+  display:flex;gap:8px;
+}
+.risk-banner b{font-family:var(--mono);}
+
+.tabs{display:flex;gap:0;overflow-x:auto;margin-bottom:16px;border-bottom:2px solid var(--ink);scrollbar-width:none;}
+.tabs::-webkit-scrollbar{display:none;}
+.tab{
+  font-family:var(--mono);font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;
+  padding:10px 13px;white-space:nowrap;cursor:pointer;color:var(--steel);
+  border-bottom:3px solid transparent;margin-bottom:-2px;user-select:none;
+}
+.tab.active{color:var(--ink);border-bottom-color:var(--amber);font-weight:700;}
+.tab[disabled]{opacity:.35;pointer-events:none;}
+
+.panel{display:none;}
+.panel.active{display:block;animation:fade .18s ease;}
+@keyframes fade{from{opacity:0;transform:translateY(3px);}to{opacity:1;transform:none;}}
+
+.card{
+  border:1.5px solid var(--ink);border-radius:var(--radius);background:#fff;
+  padding:16px;margin-bottom:16px;
+}
+.card h3{margin:0 0 4px;font-size:15px;}
+.card .desc{color:var(--steel);font-size:12.5px;margin:0 0 14px;}
+
+.field{margin-bottom:14px;}
+.field:last-child{margin-bottom:0;}
+.field label{
+  display:block;font-family:var(--mono);font-size:11px;text-transform:uppercase;
+  letter-spacing:.05em;color:var(--steel);margin-bottom:6px;
+}
+select, input[type=number], input[type=text]{
+  width:100%;padding:11px 12px;border:1.5px solid var(--ink);border-radius:var(--radius);
+  background:#fff;font-family:var(--sans);font-size:15px;color:var(--ink);
+  -webkit-appearance:none;appearance:none;
+}
+select{
+  background-image:linear-gradient(45deg, transparent 50%, var(--ink) 50%), linear-gradient(135deg, var(--ink) 50%, transparent 50%);
+  background-position: calc(100% - 20px) center, calc(100% - 15px) center;
+  background-size:5px 5px, 5px 5px;background-repeat:no-repeat;
+}
+input[type=range]{width:100%;accent-color:var(--amber);height:32px;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.chiprow{display:flex;gap:8px;flex-wrap:wrap;}
+.chip{
+  font-family:var(--mono);font-size:12px;padding:8px 13px;border:1.5px solid var(--ink);
+  border-radius:20px;cursor:pointer;user-select:none;background:#fff;
+}
+.chip.active{background:var(--ink);color:var(--paper);}
+
+.advtoggle{
+  font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.05em;
+  color:var(--steel);cursor:pointer;display:flex;align-items:center;gap:6px;margin-top:2px;
+  user-select:none;
+}
+.advtoggle .car{transition:transform .15s;font-size:10px;}
+.advtoggle.open .car{transform:rotate(90deg);}
+.advbox{display:none;padding-top:14px;margin-top:14px;border-top:1px dashed var(--line);}
+.advbox.open{display:block;}
+
+.estimate{
+  font-family:var(--mono);font-size:11.5px;color:var(--steel);margin-top:10px;
+  display:flex;justify-content:space-between;
+}
+.estimate b{color:var(--ink);}
+
+.btn-primary{
+  width:100%;padding:15px;border:none;border-radius:var(--radius);
+  background:var(--ink);color:var(--paper);font-family:var(--mono);font-size:13px;
+  text-transform:uppercase;letter-spacing:.06em;font-weight:700;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.btn-primary:disabled{background:var(--steel-dim);color:var(--paper);cursor:not-allowed;}
+.btn-primary:active:not(:disabled){transform:translateY(1px);}
+
+.clip-list{display:flex;flex-direction:column;gap:8px;margin-bottom:12px;}
+.clip-row{
+  display:flex;align-items:center;gap:10px;border:1.5px solid var(--ink);border-radius:var(--radius);
+  padding:9px 11px;background:#fff;
+}
+.clip-row .idx{font-family:var(--mono);font-size:11px;color:var(--steel);width:16px;}
+.clip-row .cname{flex:1;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.clip-row .cbtn{
+  background:none;border:1px solid var(--line);border-radius:2px;width:26px;height:26px;
+  font-family:var(--mono);color:var(--steel);cursor:pointer;flex:none;
+}
+.addclip{
+  width:100%;padding:11px;border:1.5px dashed var(--ink);border-radius:var(--radius);
+  background:none;font-family:var(--mono);font-size:12px;text-transform:uppercase;
+  letter-spacing:.05em;color:var(--steel);cursor:pointer;position:relative;
+}
+.addclip input{position:absolute;inset:0;opacity:0;cursor:pointer;}
+
+.progress-overlay{
+  border:1.5px solid var(--ink);border-radius:var(--radius);background:#fff;
+  padding:16px;margin-bottom:16px;
+}
+.progress-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;}
+.progress-head .stage{font-family:var(--mono);font-size:12.5px;font-weight:700;}
+.progress-head .pct{font-family:var(--mono);font-size:12.5px;color:var(--steel);}
+.progress-track{height:10px;border:1px solid var(--ink);border-radius:6px;overflow:hidden;background:var(--paper-dim);}
+.progress-fill{height:100%;background:repeating-linear-gradient(135deg,var(--amber),var(--amber) 8px,var(--amber-deep) 8px,var(--amber-deep) 16px);width:0%;transition:width .25s ease;}
+
+.result{
+  border:1.5px solid var(--green);border-radius:var(--radius);background:#e9f1ea;
+  padding:16px;margin-bottom:16px;
+}
+.result.err{border-color:var(--red);background:#f6e6e2;}
+.result h3{margin:0 0 4px;font-size:14.5px;}
+.result .rmeta{font-family:var(--mono);font-size:11.5px;color:var(--steel);margin-bottom:12px;}
+.result video, .result img{width:100%;border-radius:2px;border:1px solid var(--line);margin-bottom:12px;display:block;}
+.result-actions{display:flex;gap:8px;}
+.result-actions a, .result-actions button{
+  flex:1;text-align:center;padding:11px;border-radius:var(--radius);font-family:var(--mono);
+  font-size:12px;text-transform:uppercase;letter-spacing:.05em;text-decoration:none;cursor:pointer;
+}
+.result-actions a{background:var(--ink);color:var(--paper);border:1.5px solid var(--ink);}
+.result-actions button{background:none;color:var(--ink);border:1.5px solid var(--ink);}
+
+.err-box{font-size:13px;line-height:1.5;}
+.err-box .human{margin-bottom:10px;}
+.err-box .code{
+  font-family:var(--mono);font-size:11px;background:#fff;border:1px solid var(--line);
+  padding:8px;border-radius:2px;color:var(--steel);max-height:120px;overflow:auto;white-space:pre-wrap;
+}
+
+.logbar{
+  border:1.5px solid var(--ink);border-radius:var(--radius);background:var(--ink);color:#c9cdb8;
+  margin-top:22px;overflow:hidden;
+}
+.logbar-head{
+  display:flex;align-items:center;justify-content:space-between;padding:10px 12px;
+  font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;
+  cursor:pointer;user-select:none;
+}
+.logbar-head .lt{display:flex;align-items:center;gap:8px;color:#c9cdb8;}
+.logbar-controls{display:flex;align-items:center;gap:8px;}
+.leveltoggle{
+  font-family:var(--mono);font-size:10px;padding:4px 8px;border:1px solid #4b5a4a;border-radius:12px;
+  color:#c9cdb8;background:none;cursor:pointer;
+}
+.leveltoggle.on{background:var(--amber);border-color:var(--amber);color:#1a1a12;}
+.logbar-body{max-height:0;overflow:hidden;transition:max-height .2s ease;}
+.logbar-body.open{max-height:260px;overflow-y:auto;}
+.logline{
+  font-family:var(--mono);font-size:11px;padding:5px 12px;border-top:1px solid #23291f;
+  display:flex;gap:8px;white-space:pre-wrap;word-break:break-word;
+}
+.logline .lvl{flex:none;font-weight:700;width:42px;}
+.logline.debug{color:#6d7568;}
+.logline.info{color:#c9cdb8;}
+.logline.warn{color:#d9a84e;}
+.logline.error{color:#e08872;}
+.logactions{display:flex;gap:8px;padding:8px 12px;border-top:1px solid #23291f;}
+.logactions button{
+  flex:1;font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;
+  background:none;border:1px solid #4b5a4a;color:#c9cdb8;padding:7px;border-radius:2px;cursor:pointer;
+}
+
+footer.note{text-align:center;font-family:var(--mono);font-size:10.5px;color:var(--steel-dim);padding:26px 14px 8px;}
+
+@media (min-width:600px){
+  .row2{grid-template-columns:1fr 1fr 1fr;}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="inner">
+    <div class="logo">reel<span class="dot">.</span><small>local video toolkit</small></div>
+    <div class="engine-pill loading" id="enginePill"><span class="led"></span><span id="engineLabel">boot</span></div>
+  </div>
+</header>
+
+<main>
+
+  <div id="fileStage">
+    <div class="dropzone" id="dropzone">
+      <input type="file" id="fileInput" accept="video/*,audio/*">
+      <div class="icon">&#9633;</div>
+      <h2>Drop a video</h2>
+      <p>or tap to browse &mdash; processed entirely on this device</p>
+      <span class="browse">Choose file</span>
+    </div>
+  </div>
+
+  <div id="riskBanner"></div>
+
+  <div id="workArea" style="display:none;">
+    <div class="filecard" id="fileCard"></div>
+
+    <div class="tabs" id="tabs">
+      <div class="tab active" data-tab="convert">Convert</div>
+      <div class="tab" data-tab="audio">Extract audio</div>
+      <div class="tab" data-tab="trim">Trim</div>
+      <div class="tab" data-tab="compress">Compress</div>
+      <div class="tab" data-tab="concat">Join clips</div>
+      <div class="tab" data-tab="frame">Grab frame</div>
+      <div class="tab" data-tab="mute">Mute</div>
+    </div>
+
+    <div class="panel active" id="panel-convert">
+      <div class="card">
+        <h3>Convert format</h3>
+        <p class="desc">Change the container and codec. GIF export re-encodes to a palette-optimized animation.</p>
+        <div class="field">
+          <label>Output format</label>
+          <div class="chiprow" id="convertFormats">
+            <div class="chip active" data-val="mp4">MP4</div>
+            <div class="chip" data-val="webm">WebM</div>
+            <div class="chip" data-val="mov">MOV</div>
+            <div class="chip" data-val="mkv">MKV</div>
+            <div class="chip" data-val="avi">AVI</div>
+            <div class="chip" data-val="gif">GIF</div>
+          </div>
+        </div>
+        <div class="advtoggle" id="advToggle-convert"><span class="car">&#9656;</span> Advanced options</div>
+        <div class="advbox" id="advBox-convert">
+          <div class="field">
+            <label>Quality (CRF, lower = better)</label>
+            <input type="range" id="convertCrf" min="18" max="35" value="23">
+          </div>
+        </div>
+        <div class="estimate" id="convertEstimate"></div>
+      </div>
+      <button class="btn-primary" id="runConvert">Convert file</button>
+    </div>
+
+    <div class="panel" id="panel-audio">
+      <div class="card">
+        <h3>Extract audio</h3>
+        <p class="desc">Pull just the soundtrack out of your video.</p>
+        <div class="field">
+          <label>Output format</label>
+          <div class="chiprow" id="audioFormats">
+            <div class="chip active" data-val="mp3">MP3</div>
+            <div class="chip" data-val="aac">AAC</div>
+            <div class="chip" data-val="wav">WAV</div>
+            <div class="chip" data-val="ogg">OGG</div>
+          </div>
+        </div>
+        <div class="advtoggle" id="advToggle-audio"><span class="car">&#9656;</span> Advanced options</div>
+        <div class="advbox" id="advBox-audio">
+          <div class="field">
+            <label>Bitrate</label>
+            <select id="audioBitrate">
+              <option value="128k">128 kbps &mdash; standard</option>
+              <option value="192k" selected>192 kbps &mdash; good</option>
+              <option value="320k">320 kbps &mdash; high</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <button class="btn-primary" id="runAudio">Extract audio</button>
+    </div>
+
+    <div class="panel" id="panel-trim">
+      <div class="card">
+        <h3>Trim clip</h3>
+        <p class="desc">Cut to a start and end point. Uses a fast copy when possible, otherwise re-encodes.</p>
+        <div class="row2">
+          <div class="field">
+            <label>Start (seconds)</label>
+            <input type="number" id="trimStart" min="0" step="0.1" value="0">
+          </div>
+          <div class="field">
+            <label>End (seconds)</label>
+            <input type="number" id="trimEnd" min="0" step="0.1" value="10">
+          </div>
+        </div>
+        <div class="advtoggle" id="advToggle-trim"><span class="car">&#9656;</span> Advanced options</div>
+        <div class="advbox" id="advBox-trim">
+          <label style="display:flex;align-items:center;gap:8px;font-family:var(--sans);font-size:13px;">
+            <input type="checkbox" id="trimForceReencode" style="width:auto;">
+            Force re-encode (fixes glitchy cuts, slower)
+          </label>
+        </div>
+      </div>
+      <button class="btn-primary" id="runTrim">Trim clip</button>
+    </div>
+
+    <div class="panel" id="panel-compress">
+      <div class="card">
+        <h3>Compress / resize</h3>
+        <p class="desc">Shrink file size by lowering resolution and/or quality.</p>
+        <div class="field">
+          <label>Resolution</label>
+          <div class="chiprow" id="compressRes">
+            <div class="chip" data-val="original">Original</div>
+            <div class="chip active" data-val="720">720p</div>
+            <div class="chip" data-val="480">480p</div>
+            <div class="chip" data-val="360">360p</div>
+          </div>
+        </div>
+        <div class="field">
+          <label>Quality (CRF &mdash; lower = larger, better)</label>
+          <input type="range" id="compressCrf" min="20" max="40" value="28">
+        </div>
+        <div class="advtoggle" id="advToggle-compress"><span class="car">&#9656;</span> Advanced options</div>
+        <div class="advbox" id="advBox-compress">
+          <div class="field">
+            <label>Target audio bitrate</label>
+            <select id="compressAudioBitrate">
+              <option value="96k">96 kbps</option>
+              <option value="128k" selected>128 kbps</option>
+              <option value="192k">192 kbps</option>
+            </select>
+          </div>
+        </div>
+        <div class="estimate" id="compressEstimate"></div>
+      </div>
+      <button class="btn-primary" id="runCompress">Compress video</button>
+    </div>
+
+    <div class="panel" id="panel-concat">
+      <div class="card">
+        <h3>Join clips</h3>
+        <p class="desc">Combine two or more clips, in order, into one file. Works best when clips share the same format.</p>
+        <div class="clip-list" id="concatList"></div>
+        <button class="addclip" id="addClipBtn">
+          + Add another clip
+          <input type="file" id="addClipInput" accept="video/*" multiple>
+        </button>
+      </div>
+      <button class="btn-primary" id="runConcat">Join clips</button>
+    </div>
+
+    <div class="panel" id="panel-frame">
+      <div class="card">
+        <h3>Grab a frame</h3>
+        <p class="desc">Export a single still frame as an image.</p>
+        <div class="field">
+          <label>Timestamp (seconds)</label>
+          <input type="number" id="frameTime" min="0" step="0.1" value="1">
+        </div>
+        <div class="field">
+          <label>Image format</label>
+          <div class="chiprow" id="frameFormats">
+            <div class="chip active" data-val="png">PNG</div>
+            <div class="chip" data-val="jpg">JPG</div>
+          </div>
+        </div>
+      </div>
+      <button class="btn-primary" id="runFrame">Grab frame</button>
+    </div>
+
+    <div class="panel" id="panel-mute">
+      <div class="card">
+        <h3>Mute video</h3>
+        <p class="desc">Strip the audio track entirely, keeping the video stream untouched. Fast &mdash; no re-encode.</p>
+      </div>
+      <button class="btn-primary" id="runMute">Remove audio</button>
+    </div>
+
+    <div id="progressStage"></div>
+    <div id="resultStage"></div>
+  </div>
+
+  <div class="logbar">
+    <div class="logbar-head" id="logHead">
+      <div class="lt"><span>&#9670;</span> Log</div>
+      <div class="logbar-controls">
+        <button class="leveltoggle" id="debugToggle">Debug</button>
+        <span id="logChevron">&#9656;</span>
+      </div>
+    </div>
+    <div class="logbar-body" id="logBody">
+      <div id="logLines"></div>
+      <div class="logactions">
+        <button id="copyLogsBtn">Copy logs</button>
+        <button id="clearLogsBtn">Clear</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="note">All processing happens locally in your browser. Nothing is uploaded.</footer>
+</main>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============================== LOGGER ============================== */
+  const Logger = (function(){
+    const LEVELS = ["DEBUG","INFO","WARN","ERROR"];
+    let debugMode = false;
+    let lines = [];
+    const linesEl = document.getElementById('logLines');
+    const bodyEl = document.getElementById('logBody');
+
+    function render(entry){
+      if(entry.level === "DEBUG" && !debugMode) return;
+      const row = document.createElement('div');
+      row.className = 'logline ' + entry.level.toLowerCase();
+      const t = new Date(entry.time).toLocaleTimeString([], {hour12:false});
+      row.innerHTML = '<span class="lvl">'+entry.level+'</span><span>['+t+'] '+escapeHtml(entry.msg)+'</span>';
+      linesEl.appendChild(row);
+      bodyEl.scrollTop = bodyEl.scrollHeight;
+    }
+
+    function escapeHtml(s){
+      return String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+    }
+
+    function log(level, msg){
+      const entry = {level, msg, time: Date.now()};
+      lines.push(entry);
+      if(lines.length > 2000) lines.shift();
+      render(entry);
+    }
+
+    function setDebug(on){
+      debugMode = on;
+      linesEl.innerHTML = '';
+      lines.forEach(render);
+    }
+
+    function allText(){
+      return lines.map(e => {
+        const t = new Date(e.time).toISOString();
+        return '['+t+'] '+e.level+': '+e.msg;
+      }).join('\n');
+    }
+
+    function clear(){
+      lines = [];
+      linesEl.innerHTML = '';
+    }
+
+    return {
+      debug:(m)=>log("DEBUG", m),
+      info:(m)=>log("INFO", m),
+      warn:(m)=>log("WARN", m),
+      error:(m)=>log("ERROR", m),
+      setDebug, allText, clear,
+      isDebug:()=>debugMode
+    };
+  })();
+
+  const logHead = document.getElementById('logHead');
+  const logBody = document.getElementById('logBody');
+  const logChevron = document.getElementById('logChevron');
+  logHead.addEventListener('click', (e) => {
+    if(e.target.id === 'debugToggle') return;
+    logBody.classList.toggle('open');
+    logChevron.textContent = logBody.classList.contains('open') ? '\u25BE' : '\u25B8';
+  });
+  const debugToggle = document.getElementById('debugToggle');
+  debugToggle.addEventListener('click', () => {
+    const on = !Logger.isDebug();
+    Logger.setDebug(on);
+    debugToggle.classList.toggle('on', on);
+    debugToggle.textContent = on ? 'Debug: on' : 'Debug';
+  });
+  document.getElementById('copyLogsBtn').addEventListener('click', async () => {
+    const text = Logger.allText() || '(no log entries yet)';
+    try{
+      await navigator.clipboard.writeText(text);
+      const btn = document.getElementById('copyLogsBtn');
+      const old = btn.textContent;
+      btn.textContent = 'Copied';
+      setTimeout(()=>btn.textContent = old, 1200);
+    }catch(e){
+      Logger.warn('Clipboard unavailable, showing logs in a prompt instead.');
+      window.prompt('Copy logs:', text);
+    }
+  });
+  document.getElementById('clearLogsBtn').addEventListener('click', () => Logger.clear());
+
+  /* ============================== STATE ============================== */
+  const State = {
+    ffmpeg: null,
+    engineReady: false,
+    engineLoading: false,
+    mainFile: null,
+    mainFileName: null,
+    mainFileSize: 0,
+    mainFileURL: null,
+    concatFiles: [],
+    busy: false,
+    activeTab: 'convert',
+    currentOutputURL: null,
+  };
+
+  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const DESKTOP_RISK_BYTES = 1.5 * 1024 * 1024 * 1024;
+  const MOBILE_RISK_BYTES = 350 * 1024 * 1024;
+
+  function fmtBytes(bytes){
+    if(bytes < 1024) return bytes + ' B';
+    const units = ['KB','MB','GB'];
+    let val = bytes / 1024, i = 0;
+    while(val >= 1024 && i < units.length - 1){ val /= 1024; i++; }
+    return val.toFixed(val < 10 ? 2 : 1) + ' ' + units[i];
+  }
+
+  function extOf(name){
+    const m = /\.([a-zA-Z0-9]+)$/.exec(name || '');
+    return m ? m[1].toLowerCase() : '';
+  }
+
+  function baseName(name){
+    return (name || 'output').replace(/\.[^/.]+$/, '');
+  }
+
+  /* ============================== ENGINE ============================== */
+  const enginePill = document.getElementById('enginePill');
+  const engineLabel = document.getElementById('engineLabel');
+
+  function setEnginePill(state, label){
+    enginePill.className = 'engine-pill ' + state;
+    engineLabel.textContent = label;
+  }
+
+  async function ensureEngine(){
+    if(State.engineReady) return State.ffmpeg;
+    if(State.engineLoading){
+      return new Promise((resolve, reject) => {
+        const check = setInterval(() => {
+          if(State.engineReady){ clearInterval(check); resolve(State.ffmpeg); }
+          if(!State.engineLoading && !State.engineReady){ clearInterval(check); reject(new Error('Engine failed to load')); }
+        }, 150);
+      });
+    }
+    State.engineLoading = true;
+    setEnginePill('loading', 'loading engine');
+    Logger.info('Loading ffmpeg engine (single-threaded core)...');
+    try{
+      const { createFFmpeg } = FFmpeg;
+      const ffmpeg = createFFmpeg({
+        log: false,
+        mainName: 'main',
+        corePath: 'https://unpkg.com/@ffmpeg/core-st@0.11.1/dist/ffmpeg-core.js',
+        logger: ({type, message}) => {
+          if(type === 'fferr' || type === 'ffout'){
+            Logger.debug(message);
+          }
+        },
+        progress: ({ratio}) => {
+          if(currentProgressHandler) currentProgressHandler(ratio);
+        }
+      });
+      await ffmpeg.load();
+      State.ffmpeg = ffmpeg;
+      State.engineReady = true;
+      State.engineLoading = false;
+      setEnginePill('ready', 'ready');
+      Logger.info('Engine ready.');
+      return ffmpeg;
+    }catch(err){
+      State.engineLoading = false;
+      State.engineReady = false;
+      setEnginePill('error', 'load failed');
+      Logger.error('Engine failed to load: ' + describeError(err));
+      throw err;
+    }
+  }
+
+  let currentProgressHandler = null;
+
+  function describeError(err){
+    if(!err) return 'Unknown error';
+    if(typeof err === 'string') return err;
+    return err.message || String(err);
+  }
+
+  function isOOMError(err){
+    const msg = describeError(err).toLowerCase();
+    return msg.includes('memory') || msg.includes('allocation') || msg.includes('out of bounds') || msg.includes('abort');
+  }
+
+  /* ============================== FILE INTAKE ============================== */
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('fileInput');
+  const fileStage = document.getElementById('fileStage');
+  const workArea = document.getElementById('workArea');
+  const fileCard = document.getElementById('fileCard');
+  const riskBanner = document.getElementById('riskBanner');
+
+  ['dragenter','dragover'].forEach(ev => dropzone.addEventListener(ev, (e) => {
+    e.preventDefault(); dropzone.classList.add('drag');
+  }));
+  ['dragleave','drop'].forEach(ev => dropzone.addEventListener(ev, (e) => {
+    e.preventDefault(); dropzone.classList.remove('drag');
+  }));
+  dropzone.addEventListener('drop', (e) => {
+    const f = e.dataTransfer.files[0];
+    if(f) loadMainFile(f);
+  });
+  fileInput.addEventListener('change', (e) => {
+    const f = e.target.files[0];
+    if(f) loadMainFile(f);
+  });
+
+  function riskCheck(bytes){
+    const limit = isMobile ? MOBILE_RISK_BYTES : DESKTOP_RISK_BYTES;
+    if(bytes > limit){
+      riskBanner.innerHTML = '<div class="risk-banner"><span>&#9888;</span><div>'+
+        '<b>Large file warning.</b> This file is '+fmtBytes(bytes)+'. Files this size can exceed the '+
+        'browser\'s available memory and cause processing to fail, especially on '+(isMobile?'mobile':'desktop')+
+        '. You can still try &mdash; just know it may not complete.</div></div>';
+    } else {
+      riskBanner.innerHTML = '';
+    }
+  }
+
+  function loadMainFile(file){
+    if(State.mainFileURL) URL.revokeObjectURL(State.mainFileURL);
+    State.mainFile = file;
+    State.mainFileName = file.name;
+    State.mainFileSize = file.size;
+    State.mainFileURL = URL.createObjectURL(file);
+    Logger.info('Loaded file: ' + file.name + ' (' + fmtBytes(file.size) + ')');
+    riskCheck(file.size);
+    renderFileCard();
+    fileStage.style.display = 'none';
+    workArea.style.display = 'block';
+    clearResult();
+    updateEstimates();
+
+    State.concatFiles = [file];
+    renderConcatList();
+  }
+
+  function renderFileCard(){
+    const isVideo = (State.mainFile.type || '').startsWith('video') || ['mp4','mov','mkv','avi','webm'].includes(extOf(State.mainFileName));
+    fileCard.innerHTML = `
+      <div class="thumb">${isVideo ? `<video src="${State.mainFileURL}" muted></video>` : `<span>${extOf(State.mainFileName).toUpperCase()}</span>`}</div>
+      <div class="meta">
+        <div class="name">${escapeAttr(State.mainFileName)}</div>
+        <div class="sub">${fmtBytes(State.mainFileSize)} &middot; ${extOf(State.mainFileName).toUpperCase()}</div>
+      </div>
+      <button class="swap" id="swapFileBtn">Change</button>
+    `;
+    document.getElementById('swapFileBtn').addEventListener('click', () => {
+      fileStage.style.display = 'block';
+      workArea.style.display = 'none';
+      riskBanner.innerHTML = '';
+      fileInput.value = '';
+    });
+  }
+
+  function escapeAttr(s){
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  /* ============================== TABS ============================== */
+  const tabs = document.querySelectorAll('.tab');
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      if(State.busy) return;
+      tabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+      State.activeTab = tab.dataset.tab;
+      clearResult();
+    });
+  });
+
+  function setTabsDisabled(disabled){
+    tabs.forEach(t => t.toggleAttribute('disabled', disabled));
+    document.querySelectorAll('.btn-primary').forEach(b => b.disabled = disabled);
+    document.querySelectorAll('.swap').forEach(b => b.disabled = disabled);
+  }
+
+  /* ============================== CHIPS / ADV TOGGLES ============================== */
+  document.querySelectorAll('.chiprow').forEach(row => {
+    row.addEventListener('click', (e) => {
+      const chip = e.target.closest('.chip');
+      if(!chip) return;
+      row.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      updateEstimates();
+    });
+  });
+
+  document.querySelectorAll('.advtoggle').forEach(t => {
+    t.addEventListener('click', () => {
+      t.classList.toggle('open');
+      const key = t.id.replace('advToggle-', '');
+      document.getElementById('advBox-' + key).classList.toggle('open');
+    });
+  });
+
+  function activeChip(rowId){
+    const row = document.getElementById(rowId);
+    const el = row.querySelector('.chip.active');
+    return el ? el.dataset.val : null;
+  }
+
+  ['convertCrf','compressCrf'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.addEventListener('input', updateEstimates);
+  });
+  document.getElementById('compressRes')?.addEventListener('click', updateEstimates);
+
+  function updateEstimates(){
+    if(!State.mainFileSize) return;
+    const size = State.mainFileSize;
+    const convertFmt = activeChip('convertFormats');
+    const convertEl = document.getElementById('convertEstimate');
+    if(convertEl){
+      let note = 'Container change; size stays roughly similar.';
+      if(convertFmt === 'gif') note = 'GIF output is often larger than source video for long clips.';
+      convertEl.innerHTML = `<span>Source: <b>${fmtBytes(size)}</b></span><span>${note}</span>`;
+    }
+    const compressEl = document.getElementById('compressEstimate');
+    if(compressEl){
+      const res = activeChip('compressRes');
+      const crf = parseInt(document.getElementById('compressCrf').value, 10);
+      let factor = 1;
+      if(res === '720') factor *= 0.55;
+      if(res === '480') factor *= 0.3;
+      if(res === '360') factor *= 0.18;
+      factor *= Math.pow(1.08, 28 - crf);
+      factor = Math.max(0.05, Math.min(1.3, factor));
+      const est = size * factor;
+      compressEl.innerHTML = `<span>Source: <b>${fmtBytes(size)}</b></span><span>Estimated: <b>~${fmtBytes(est)}</b></span>`;
+    }
+  }
+
+  /* ============================== CONCAT LIST ============================== */
+  const concatListEl = document.getElementById('concatList');
+  function renderConcatList(){
+    concatListEl.innerHTML = '';
+    State.concatFiles.forEach((f, i) => {
+      const row = document.createElement('div');
+      row.className = 'clip-row';
+      row.innerHTML = `
+        <span class="idx">${i+1}.</span>
+        <span class="cname">${escapeAttr(f.name)}</span>
+        ${State.concatFiles.length > 1 ? `<button class="cbtn" data-i="${i}">&times;</button>` : ''}
+      `;
+      concatListEl.appendChild(row);
+    });
+    concatListEl.querySelectorAll('.cbtn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        State.concatFiles.splice(parseInt(btn.dataset.i, 10), 1);
+        renderConcatList();
+      });
+    });
+  }
+  document.getElementById('addClipInput').addEventListener('change', (e) => {
+    Array.from(e.target.files).forEach(f => State.concatFiles.push(f));
+    renderConcatList();
+    e.target.value = '';
+  });
+
+  /* ============================== PROGRESS / RESULT UI ============================== */
+  const progressStage = document.getElementById('progressStage');
+  const resultStage = document.getElementById('resultStage');
+
+  function showProgress(stageLabel){
+    progressStage.innerHTML = `
+      <div class="progress-overlay">
+        <div class="progress-head"><span class="stage">${escapeAttr(stageLabel)}</span><span class="pct" id="progPct">0%</span></div>
+        <div class="progress-track"><div class="progress-fill" id="progFill"></div></div>
+      </div>
+    `;
+  }
+
+  function updateProgress(ratio){
+    const pct = Math.max(0, Math.min(100, Math.round(ratio * 100)));
+    const fill = document.getElementById('progFill');
+    const pctEl = document.getElementById('progPct');
+    if(fill) fill.style.width = pct + '%';
+    if(pctEl) pctEl.textContent = pct + '%';
+  }
+
+  function clearProgress(){
+    progressStage.innerHTML = '';
+  }
+
+  function clearResult(){
+    if(State.currentOutputURL){
+      URL.revokeObjectURL(State.currentOutputURL);
+      State.currentOutputURL = null;
+    }
+    resultStage.innerHTML = '';
+  }
+
+  function showResult({blob, filename, kind}){
+    clearResult();
+    const url = URL.createObjectURL(blob);
+    State.currentOutputURL = url;
+    let preview = '';
+    if(kind === 'video') preview = `<video src="${url}" controls playsinline></video>`;
+    if(kind === 'image') preview = `<img src="${url}" alt="Extracted frame">`;
+    resultStage.innerHTML = `
+      <div class="result">
+        <h3>Done &mdash; output ready</h3>
+        <div class="rmeta">${escapeAttr(filename)} &middot; ${fmtBytes(blob.size)}</div>
+        ${preview}
+        <div class="result-actions">
+          <a href="${url}" download="${escapeAttr(filename)}">Download</a>
+          <button id="dismissResult">Dismiss</button>
+        </div>
+      </div>
+    `;
+    document.getElementById('dismissResult').addEventListener('click', clearResult);
+    Logger.info('Done, output ready: ' + filename + ' (' + fmtBytes(blob.size) + ')');
+  }
+
+  function showErrorResult(err, context){
+    clearResult();
+    const human = isOOMError(err)
+      ? 'The browser ran out of memory while processing this file. Try a smaller file, a lower resolution, or close other tabs and try again.'
+      : 'Something went wrong during "' + context + '". You can try again, or switch on Debug logging above for the full technical output.';
+    const detail = escapeAttr(describeError(err));
+    resultStage.innerHTML = `
+      <div class="result err">
+        <h3>Operation failed</h3>
+        <div class="err-box">
+          <div class="human">${human}</div>
+          <div class="code">${detail}</div>
+        </div>
+      </div>
+    `;
+    Logger.error('[' + context + '] ' + describeError(err));
+  }
+
+  /* ============================== FFMPEG HELPERS ============================== */
+  function readFileAsUint8Array(file){
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(new Uint8Array(reader.result));
+      reader.onerror = () => reject(new Error('Could not read the selected file.'));
+      reader.readAsArrayBuffer(file);
+    });
+  }
+
+  async function withOperation(stageLabel, context, fn){
+    if(State.busy) return;
+    State.busy = true;
+    setTabsDisabled(true);
+    clearResult();
+    showProgress(stageLabel);
+    currentProgressHandler = updateProgress;
+    Logger.info(stageLabel + '...');
+    const tempFiles = [];
+    try{
+      const ffmpeg = await ensureEngine();
+      await fn(ffmpeg, tempFiles);
+    }catch(err){
+      showErrorResult(err, context);
+    }finally{
+      for(const f of tempFiles){
+        try{ State.ffmpeg.FS('unlink', f); }catch(e){ /* already gone */ }
+      }
+      currentProgressHandler = null;
+      clearProgress();
+      State.busy = false;
+      setTabsDisabled(false);
+    }
+  }
+
+  const MIME = {
+    mp4:'video/mp4', webm:'video/webm', mov:'video/quicktime', mkv:'video/x-matroska',
+    avi:'video/x-msvideo', gif:'image/gif',
+    mp3:'audio/mpeg', aac:'audio/aac', wav:'audio/wav', ogg:'audio/ogg',
+    png:'image/png', jpg:'image/jpeg'
+  };
+
+  /* ---- Convert ---- */
+  document.getElementById('runConvert').addEventListener('click', () => {
+    const fmt = activeChip('convertFormats');
+    const crf = document.getElementById('convertCrf').value;
+    const inName = 'in.' + extOf(State.mainFileName || 'input.mp4');
+    const outName = 'out.' + fmt;
+
+    withOperation('Converting to ' + fmt.toUpperCase(), 'Convert', async (ffmpeg, temp) => {
+      const data = await readFileAsUint8Array(State.mainFile);
+      ffmpeg.FS('writeFile', inName, data);
+      temp.push(inName);
+
+      let args;
+      if(fmt === 'gif'){
+        args = ['-i', inName, '-vf', 'fps=12,scale=480:-1:flags=lanczos', outName];
+      } else if(fmt === 'webm'){
+        args = ['-i', inName, '-c:v', 'libvpx', '-crf', crf, '-b:v', '0', '-c:a', 'libvorbis', outName];
+      } else if(fmt === 'mkv'){
+        args = ['-i', inName, '-c:v', 'libx264', '-crf', crf, '-c:a', 'aac', outName];
+      } else if(fmt === 'avi'){
+        args = ['-i', inName, '-c:v', 'mpeg4', '-q:v', '5', '-c:a', 'libmp3lame', outName];
+      } else {
+        args = ['-i', inName, '-c:v', 'libx264', '-crf', crf, '-preset', 'veryfast', '-c:a', 'aac', outName];
+      }
+      Logger.debug('ffmpeg ' + args.join(' '));
+      await ffmpeg.run(...args);
+      temp.push(outName);
+
+      const out = ffmpeg.FS('readFile', outName);
+      const blob = new Blob([out.buffer], {type: MIME[fmt] || 'application/octet-stream'});
+      showResult({blob, filename: baseName(State.mainFileName) + '.' + fmt, kind: fmt === 'gif' ? 'image' : 'video'});
+    });
+  });
+
+  /* ---- Extract audio ---- */
+  document.getElementById('runAudio').addEventListener('click', () => {
+    const fmt = activeChip('audioFormats');
+    const bitrate = document.getElementById('audioBitrate').value;
+    const inName = 'in.' + extOf(State.mainFileName || 'input.mp4');
+    const outName = 'out.' + fmt;
+
+    withOperation('Extracting audio', 'Extract audio', async (ffmpeg, temp) => {
+      const data = await readFileAsUint8Array(State.mainFile);
+      ffmpeg.FS('writeFile', inName, data);
+      temp.push(inName);
+
+      let args;
+      if(fmt === 'wav'){
+        args = ['-i', inName, '-vn', '-c:a', 'pcm_s16le', outName];
+      } else if(fmt === 'aac'){
+        args = ['-i', inName, '-vn', '-c:a', 'aac', '-b:a', bitrate, outName];
+      } else if(fmt === 'ogg'){
+        args = ['-i', inName, '-vn', '-c:a', 'libvorbis', '-b:a', bitrate, outName];
+      } else {
+        args = ['-i', inName, '-vn', '-c:a', 'libmp3lame', '-b:a', bitrate, outName];
+      }
+      Logger.debug('ffmpeg ' + args.join(' '));
+      await ffmpeg.run(...args);
+      temp.push(outName);
+
+      const out = ffmpeg.FS('readFile', outName);
+      const blob = new Blob([out.buffer], {type: MIME[fmt] || 'audio/mpeg'});
+      showResult({blob, filename: baseName(State.mainFileName) + '.' + fmt, kind: 'audio'});
+    });
+  });
+
+  /* ---- Trim ---- */
+  document.getElementById('runTrim').addEventListener('click', () => {
+    const start = parseFloat(document.getElementById('trimStart').value) || 0;
+    const end = parseFloat(document.getElementById('trimEnd').value) || 0;
+    const forceReencode = document.getElementById('trimForceReencode').checked;
+    if(end <= start){
+      showErrorResult(new Error('End time must be after start time.'), 'Trim');
+      return;
+    }
+    const ext = extOf(State.mainFileName || 'input.mp4') || 'mp4';
+    const inName = 'in.' + ext;
+    const outName = 'out.' + ext;
+    const duration = (end - start).toFixed(3);
+
+    withOperation('Trimming clip', 'Trim', async (ffmpeg, temp) => {
+      const data = await readFileAsUint8Array(State.mainFile);
+      ffmpeg.FS('writeFile', inName, data);
+      temp.push(inName);
+
+      let args;
+      if(!forceReencode){
+        args = ['-ss', String(start), '-i', inName, '-t', duration, '-c', 'copy', '-avoid_negative_ts', 'make_zero', outName];
+      } else {
+        args = ['-ss', String(start), '-i', inName, '-t', duration, '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '23', '-c:a', 'aac', outName];
+      }
+      Logger.debug('ffmpeg ' + args.join(' '));
+      try{
+        await ffmpeg.run(...args);
+      }catch(err){
+        if(!forceReencode){
+          Logger.warn('Stream copy trim failed, retrying with re-encode.');
+          try{ ffmpeg.FS('unlink', outName); }catch(e){}
+          const fallback = ['-ss', String(start), '-i', inName, '-t', duration, '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '23', '-c:a', 'aac', outName];
+          Logger.debug('ffmpeg ' + fallback.join(' '));
+          await ffmpeg.run(...fallback);
+        } else {
+          throw err;
+        }
+      }
+      temp.push(outName);
+
+      const out = ffmpeg.FS('readFile', outName);
+      const blob = new Blob([out.buffer], {type: MIME[ext] || 'video/mp4'});
+      showResult({blob, filename: baseName(State.mainFileName) + '_trim.' + ext, kind: 'video'});
+    });
+  });
+
+  /* ---- Compress ---- */
+  document.getElementById('runCompress').addEventListener('click', () => {
+    const res = activeChip('compressRes');
+    const crf = document.getElementById('compressCrf').value;
+    const audioBitrate = document.getElementById('compressAudioBitrate').value;
+    const ext = extOf(State.mainFileName || 'input.mp4') || 'mp4';
+    const inName = 'in.' + ext;
+    const outName = 'out.' + ext;
+
+    withOperation('Compressing video', 'Compress', async (ffmpeg, temp) => {
+      const data = await readFileAsUint8Array(State.mainFile);
+      ffmpeg.FS('writeFile', inName, data);
+      temp.push(inName);
+
+      const args = ['-i', inName, '-c:v', 'libx264', '-crf', crf, '-preset', 'veryfast'];
+      if(res !== 'original'){
+        args.push('-vf', 'scale=-2:' + res);
+      }
+      args.push('-c:a', 'aac', '-b:a', audioBitrate, outName);
+
+      Logger.debug('ffmpeg ' + args.join(' '));
+      await ffmpeg.run(...args);
+      temp.push(outName);
+
+      const out = ffmpeg.FS('readFile', outName);
+      const blob = new Blob([out.buffer], {type: MIME[ext] || 'video/mp4'});
+      showResult({blob, filename: baseName(State.mainFileName) + '_compressed.' + ext, kind: 'video'});
+    });
+  });
+
+  /* ---- Concat ---- */
+  document.getElementById('runConcat').addEventListener('click', () => {
+    if(State.concatFiles.length < 2){
+      showErrorResult(new Error('Add at least two clips to join.'), 'Join clips');
+      return;
+    }
+    const ext = extOf(State.concatFiles[0].name) || 'mp4';
+    const outName = 'joined.' + ext;
+
+    withOperation('Joining ' + State.concatFiles.length + ' clips', 'Join clips', async (ffmpeg, temp) => {
+      const names = [];
+      for(let i = 0; i < State.concatFiles.length; i++){
+        const f = State.concatFiles[i];
+        const name = 'clip' + i + '.' + (extOf(f.name) || ext);
+        const data = await readFileAsUint8Array(f);
+        ffmpeg.FS('writeFile', name, data);
+        names.push(name);
+        temp.push(name);
+      }
+      const listContent = names.map(n => "file '" + n + "'").join('\n');
+      ffmpeg.FS('writeFile', 'list.txt', new TextEncoder().encode(listContent));
+      temp.push('list.txt');
+
+      const args = ['-f', 'concat', '-safe', '0', '-i', 'list.txt', '-c', 'copy', outName];
+      Logger.debug('ffmpeg ' + args.join(' '));
+      try{
+        await ffmpeg.run(...args);
+      }catch(err){
+        Logger.warn('Stream copy join failed (likely mismatched codecs), retrying with re-encode.');
+        try{ ffmpeg.FS('unlink', outName); }catch(e){}
+        const fallback = ['-f', 'concat', '-safe', '0', '-i', 'list.txt', '-c:v', 'libx264', '-crf', '23', '-preset', 'veryfast', '-c:a', 'aac', outName];
+        Logger.debug('ffmpeg ' + fallback.join(' '));
+        await ffmpeg.run(...fallback);
+      }
+      temp.push(outName);
+
+      const out = ffmpeg.FS('readFile', outName);
+      const blob = new Blob([out.buffer], {type: MIME[ext] || 'video/mp4'});
+      showResult({blob, filename: 'joined.' + ext, kind: 'video'});
+    });
+  });
+
+  /* ---- Grab frame ---- */
+  document.getElementById('runFrame').addEventListener('click', () => {
+    const time = parseFloat(document.getElementById('frameTime').value) || 0;
+    const fmt = activeChip('frameFormats');
+    const inExt = extOf(State.mainFileName || 'input.mp4') || 'mp4';
+    const inName = 'in.' + inExt;
+    const outName = 'frame.' + fmt;
+
+    withOperation('Grabbing frame', 'Grab frame', async (ffmpeg, temp) => {
+      const data = await readFileAsUint8Array(State.mainFile);
+      ffmpeg.FS('writeFile', inName, data);
+      temp.push(inName);
+
+      const args = ['-ss', String(time), '-i', inName, '-frames:v', '1', outName];
+      Logger.debug('ffmpeg ' + args.join(' '));
+      await ffmpeg.run(...args);
+      temp.push(outName);
+
+      const out = ffmpeg.FS('readFile', outName);
+      const blob = new Blob([out.buffer], {type: MIME[fmt] || 'image/png'});
+      showResult({blob, filename: baseName(State.mainFileName) + '_frame.' + fmt, kind: 'image'});
+    });
+  });
+
+  /* ---- Mute ---- */
+  document.getElementById('runMute').addEventListener('click', () => {
+    const ext = extOf(State.mainFileName || 'input.mp4') || 'mp4';
+    const inName = 'in.' + ext;
+    const outName = 'out.' + ext;
+
+    withOperation('Removing audio track', 'Mute', async (ffmpeg, temp) => {
+      const data = await readFileAsUint8Array(State.mainFile);
+      ffmpeg.FS('writeFile', inName, data);
+      temp.push(inName);
+
+      const args = ['-i', inName, '-c', 'copy', '-an', outName];
+      Logger.debug('ffmpeg ' + args.join(' '));
+      await ffmpeg.run(...args);
+      temp.push(outName);
+
+      const out = ffmpeg.FS('readFile', outName);
+      const blob = new Blob([out.buffer], {type: MIME[ext] || 'video/mp4'});
+      showResult({blob, filename: baseName(State.mainFileName) + '_muted.' + ext, kind: 'video'});
+    });
+  });
+
+  /* ============================== BOOT ============================== */
+  window.addEventListener('unhandledrejection', (e) => {
+    Logger.error('Unhandled: ' + describeError(e.reason));
+  });
+
+  ensureEngine().catch(() => {
+    Logger.warn('Engine will retry loading automatically on your first action.');
+  });
+
+})();
+</script>
+</body>
+</html>
