@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Crop</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<style>
+:root{--bg:#0f1115;--surface:#171a21;--surface2:#1f232c;--line:#2a2f3a;--accent:#7c5cff;--accent2:#00e5c7;--text:#eef0f4;--sub:#8b93a3;--danger:#ff5470;--radius:18px}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
+html,body{height:100%;margin:0;overscroll-behavior:none}
+body{background:var(--bg);color:var(--text);font-family:'Roboto',system-ui,-apple-system,"Segoe UI",sans-serif;display:flex;flex-direction:column;height:100dvh;overflow:hidden}
+#topbar{display:flex;align-items:center;justify-content:space-between;padding:calc(env(safe-area-inset-top) + 10px) 8px 10px;background:var(--surface);flex-shrink:0;z-index:20}
+.iconbtn{width:44px;height:44px;border:none;background:transparent;color:var(--text);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:19px;transition:background .15s}
+.iconbtn:active{background:rgba(255,255,255,.12)}
+.iconbtn:disabled{opacity:.3}
+#title{font-size:16px;font-weight:500;letter-spacing:.2px}
+#doneBtn{background:var(--accent);color:#fff;border:none;padding:9px 20px;border-radius:100px;font-weight:600;font-size:14px;display:flex;align-items:center;gap:6px}
+#doneBtn:active{transform:scale(.96)}
+#doneBtn:disabled{opacity:.35}
+#stage{flex:1;position:relative;min-height:0;background:#000;display:flex;align-items:center;justify-content:center;overflow:hidden}
+#dropZone{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;z-index:5;padding:24px;text-align:center}
+#dropZone i{font-size:56px;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+#dropZone h2{margin:0;font-size:19px;font-weight:600}
+#dropZone p{margin:0;color:var(--sub);font-size:13.5px;max-width:260px;line-height:1.5}
+#pickBtn{margin-top:10px;background:var(--surface2);border:1px solid var(--line);color:var(--text);padding:14px 28px;border-radius:100px;font-size:15px;font-weight:600;display:flex;align-items:center;gap:10px}
+#pickBtn:active{background:var(--line)}
+#imgWrap{max-width:100%;max-height:100%;display:none}
+#imgWrap img{display:block;max-width:100%}
+#toast{position:absolute;top:12px;left:50%;transform:translateX(-50%) translateY(-140%);background:var(--surface2);border:1px solid var(--line);color:var(--text);padding:10px 18px;border-radius:100px;font-size:13px;font-weight:500;z-index:50;transition:transform .25s cubic-bezier(.2,.9,.3,1.3);display:flex;align-items:center;gap:8px;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+#toast.show{transform:translateX(-50%) translateY(0)}
+#toast i{color:var(--accent2)}
+#panels{flex-shrink:0;background:var(--surface);z-index:20;padding-bottom:env(safe-area-inset-bottom)}
+#aspectRow{display:flex;gap:8px;overflow-x:auto;padding:12px 12px 4px;scrollbar-width:none}
+#aspectRow::-webkit-scrollbar{display:none}
+.chip{flex-shrink:0;padding:9px 16px;border-radius:100px;background:var(--surface2);border:1px solid var(--line);color:var(--sub);font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.chip.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.chip:active{transform:scale(.95)}
+#sliderRow{padding:6px 20px 2px;display:none;align-items:center;gap:14px}
+#sliderRow.show{display:flex}
+#sliderRow i{color:var(--sub);width:18px;text-align:center}
+#sliderRow input[type=range]{flex:1;-webkit-appearance:none;height:4px;background:var(--line);border-radius:4px;outline:none}
+#sliderRow input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--accent);border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4)}
+#sliderVal{width:44px;text-align:right;font-size:12.5px;color:var(--sub);font-variant-numeric:tabular-nums}
+#toolRow{display:flex;padding:8px 4px 10px;justify-content:space-around;align-items:flex-start;border-top:1px solid var(--line);margin-top:8px}
+.tool{background:none;border:none;color:var(--sub);display:flex;flex-direction:column;align-items:center;gap:5px;font-size:10.5px;padding:6px 4px;flex:1;min-width:0}
+.tool i{font-size:19px}
+.tool span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.tool:active i{transform:scale(.85)}
+.tool.active{color:var(--accent2)}
+#sheetOverlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:60;opacity:0;pointer-events:none;transition:opacity .2s}
+#sheetOverlay.show{opacity:1;pointer-events:auto}
+#sheet{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-radius:22px 22px 0 0;z-index:61;transform:translateY(100%);transition:transform .28s cubic-bezier(.2,.9,.25,1);padding:8px 18px calc(env(safe-area-inset-bottom) + 18px);max-height:70vh;overflow-y:auto}
+#sheet.show{transform:translateY(0)}
+#sheetHandle{width:36px;height:4px;background:var(--line);border-radius:4px;margin:8px auto 14px}
+#sheet h3{margin:0 0 14px;font-size:15px;font-weight:600}
+.sheetOpt{display:flex;align-items:center;justify-content:space-between;padding:14px 4px;border-bottom:1px solid var(--line);font-size:14.5px}
+.sheetOpt:last-child{border-bottom:none}
+.sheetOpt i{width:22px;color:var(--sub);margin-right:12px}
+.sheetActions{display:flex;gap:12px;margin-top:6px}
+.sheetActions button{flex:1;background:var(--surface2);border:1px solid var(--line);color:var(--text);padding:14px;border-radius:14px;font-weight:600;font-size:14px;display:flex;align-items:center;justify-content:center;gap:8px}
+.sheetActions button.primary{background:var(--accent);border-color:var(--accent)}
+.sheetActions button:active{transform:scale(.97)}
+#formatRow{display:flex;gap:8px;margin-bottom:14px}
+#qualityWrap{margin-bottom:6px}
+#qualityWrap.hide{display:none}
+#fileInput{display:none}
+.hidden{display:none!important}
+.cropper-view-box,.cropper-face{border-radius:0}
+.cropper-line,.cropper-point{background-color:var(--accent2)}
+.cropper-modal{opacity:.6}
+</style>
+</head>
+<body>
+
+<input type="file" id="fileInput" accept="image/*">
+
+<div id="topbar">
+  <button class="iconbtn" id="backBtn"><i class="fa-solid fa-xmark"></i></button>
+  <div id="title">New crop</div>
+  <button id="doneBtn" disabled><i class="fa-solid fa-check"></i>Done</button>
+</div>
+
+<div id="stage">
+  <div id="dropZone">
+    <i class="fa-regular fa-image"></i>
+    <h2>Crop an image</h2>
+    <p>Pick a photo from your device, then trim, rotate, and flip it exactly how you want.</p>
+    <button id="pickBtn"><i class="fa-solid fa-plus"></i>Choose image</button>
+  </div>
+  <div id="imgWrap"><img id="workImg" alt=""></div>
+  <div id="toast"><i class="fa-solid fa-circle-check"></i><span id="toastText"></span></div>
+</div>
+
+<div id="panels" class="hidden">
+  <div id="aspectRow">
+    <button class="chip active" data-ratio="NaN"><i class="fa-solid fa-arrows-left-right-to-line" style="transform:rotate(45deg)"></i>Free</button>
+    <button class="chip" data-ratio="1"><i class="fa-regular fa-square"></i>1:1</button>
+    <button class="chip" data-ratio="0.8"><i class="fa-solid fa-mobile"></i>4:5</button>
+    <button class="chip" data-ratio="1.7778"><i class="fa-solid fa-tv"></i>16:9</button>
+    <button class="chip" data-ratio="0.5625"><i class="fa-solid fa-mobile-screen"></i>9:16</button>
+    <button class="chip" data-ratio="1.3333"><i class="fa-solid fa-image"></i>4:3</button>
+    <button class="chip" data-ratio="0.75"><i class="fa-solid fa-image"></i>3:4</button>
+    <button class="chip" data-ratio="1.5"><i class="fa-solid fa-camera"></i>3:2</button>
+  </div>
+
+  <div id="sliderRow">
+    <i class="fa-solid fa-rotate"></i>
+    <input type="range" id="fineRotate" min="-45" max="45" value="0" step="1">
+    <span id="sliderVal">0°</span>
+  </div>
+
+  <div id="toolRow">
+    <button class="tool" id="tRotateFine"><i class="fa-solid fa-slash"></i><span>Straighten</span></button>
+    <button class="tool" id="tRotateL"><i class="fa-solid fa-rotate-left"></i><span>Rotate</span></button>
+    <button class="tool" id="tRotateR"><i class="fa-solid fa-rotate-right"></i><span>Rotate</span></button>
+    <button class="tool" id="tFlipH"><i class="fa-solid fa-left-right"></i><span>Flip H</span></button>
+    <button class="tool" id="tFlipV"><i class="fa-solid fa-up-down"></i><span>Flip V</span></button>
+    <button class="tool" id="tReset"><i class="fa-solid fa-arrow-rotate-left"></i><span>Reset</span></button>
+    <button class="tool" id="tGrid"><i class="fa-solid fa-border-none"></i><span>Grid</span></button>
+    <button class="tool" id="tNewImg"><i class="fa-solid fa-image"></i><span>New</span></button>
+  </div>
+</div>
+
+<div id="sheetOverlay"></div>
+<div id="sheet">
+  <div id="sheetHandle"></div>
+  <h3>Export your crop</h3>
+  <div id="formatRow">
+    <button class="chip active" data-fmt="image/png" style="flex:1;justify-content:center">PNG</button>
+    <button class="chip" data-fmt="image/jpeg" style="flex:1;justify-content:center">JPEG</button>
+    <button class="chip" data-fmt="image/webp" style="flex:1;justify-content:center">WEBP</button>
+  </div>
+  <div id="qualityWrap" class="hide">
+    <div id="sliderRow" class="show" style="padding:2px 4px 14px">
+      <i class="fa-solid fa-sliders"></i>
+      <input type="range" id="qualitySlider" min="10" max="100" value="92" step="1">
+      <span id="qualityVal">92%</span>
+    </div>
+  </div>
+  <div class="sheetOpt"><span><i class="fa-solid fa-ruler-combined"></i>Output size</span><span id="dimText" style="color:var(--sub)">—</span></div>
+  <div class="sheetActions" style="margin-top:16px">
+    <button id="shareBtn"><i class="fa-solid fa-share-nodes"></i>Share</button>
+    <button id="copyBtn"><i class="fa-solid fa-copy"></i>Copy</button>
+  </div>
+  <div class="sheetActions" style="margin-top:12px">
+    <button id="downloadBtn" class="primary"><i class="fa-solid fa-download"></i>Save to device</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
+<script>
+const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);
+const fileInput=$('#fileInput'),dropZone=$('#dropZone'),imgWrap=$('#imgWrap'),workImg=$('#workImg'),panels=$('#panels'),doneBtn=$('#doneBtn'),toast=$('#toast'),toastText=$('#toastText');
+let cropper=null,gridOn=true,resultCanvas=null,resultBlob=null,resultURL=null;
+
+function showToast(msg,icon='fa-circle-check'){toastText.textContent=msg;toast.querySelector('i').className='fa-solid '+icon;toast.classList.add('show');clearTimeout(showToast._t);showToast._t=setTimeout(()=>toast.classList.remove('show'),2200);}
+
+$('#pickBtn').addEventListener('click',()=>fileInput.click());
+$('#tNewImg').addEventListener('click',()=>fileInput.click());
+fileInput.addEventListener('change',e=>{const f=e.target.files[0];if(f)loadFile(f);});
+
+function loadFile(file){
+  if(!file.type.startsWith('image/')){showToast('Not an image file','fa-triangle-exclamation');return;}
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    workImg.src=ev.target.result;
+    dropZone.style.display='none';imgWrap.style.display='flex';imgWrap.style.width='100%';imgWrap.style.height='100%';imgWrap.style.alignItems='center';imgWrap.style.justifyContent='center';
+    panels.classList.remove('hidden');doneBtn.disabled=false;$('#title').textContent=file.name.length>22?file.name.slice(0,19)+'…':file.name;
+    if(cropper)cropper.destroy();
+    workImg.onload=()=>{
+      cropper=new Cropper(workImg,{viewMode:1,dragMode:'move',autoCropArea:0.9,background:false,responsive:true,checkOrientation:true,guides:true,center:true,highlight:false,cropBoxMovable:true,cropBoxResizable:true,toggleDragModeOnDblclick:false,ready(){updateDims();}, crop(){updateDims();}});
+    };
+  };
+  reader.readAsDataURL(file);
+}
+
+function updateDims(){
+  if(!cropper)return;
+  const d=cropper.getData(true);
+  $('#dimText').textContent=Math.round(d.width)+' × '+Math.round(d.height)+' px';
+}
+
+$$('.chip[data-ratio]').forEach(chip=>chip.addEventListener('click',()=>{
+  $$('.chip[data-ratio]').forEach(c=>c.classList.remove('active'));chip.classList.add('active');
+  const r=parseFloat(chip.dataset.ratio);cropper.setAspectRatio(isNaN(r)?NaN:r);
+}));
+
+$('#tRotateL').addEventListener('click',()=>cropper.rotate(-90));
+$('#tRotateR').addEventListener('click',()=>cropper.rotate(90));
+let flipX=1,flipY=1;
+$('#tFlipH').addEventListener('click',e=>{flipX*=-1;cropper.scaleX(flipX);e.currentTarget.classList.toggle('active',flipX===-1);});
+$('#tFlipV').addEventListener('click',e=>{flipY*=-1;cropper.scaleY(flipY);e.currentTarget.classList.toggle('active',flipY===-1);});
+$('#tReset').addEventListener('click',()=>{cropper.reset();flipX=1;flipY=1;$('#tFlipH').classList.remove('active');$('#tFlipV').classList.remove('active');$('#fineRotate').value=0;$('#sliderVal').textContent='0°';$('#sliderRow').classList.remove('show');$('#tRotateFine').classList.remove('active');});
+$('#tGrid').addEventListener('click',e=>{gridOn=!gridOn;e.currentTarget.classList.toggle('active',gridOn);$$('.cropper-dashed').forEach(el=>el.style.display=gridOn?'block':'none');});
+$('#tRotateFine').addEventListener('click',e=>{const on=$('#sliderRow').classList.toggle('show');e.currentTarget.classList.toggle('active',on);});
+$('#fineRotate').addEventListener('input',e=>{const v=e.target.value;$('#sliderVal').textContent=v+'°';cropper.rotateTo(Number(v)+ (cropper._baseRotate||0));});
+
+$('#backBtn').addEventListener('click',()=>{
+  if(cropper){cropper.destroy();cropper=null;}
+  imgWrap.style.display='none';dropZone.style.display='flex';panels.classList.add('hidden');doneBtn.disabled=true;$('#title').textContent='New crop';fileInput.value='';
+});
+
+const sheetOverlay=$('#sheetOverlay'),sheet=$('#sheet');
+function openSheet(){
+  resultCanvas=cropper.getCroppedCanvas({imageSmoothingQuality:'high'});
+  $('#dimText').textContent=resultCanvas.width+' × '+resultCanvas.height+' px';
+  sheetOverlay.classList.add('show');sheet.classList.add('show');
+}
+function closeSheet(){sheetOverlay.classList.remove('show');sheet.classList.remove('show');}
+doneBtn.addEventListener('click',openSheet);
+sheetOverlay.addEventListener('click',closeSheet);
+
+let currentFmt='image/png';
+$$('.chip[data-fmt]').forEach(chip=>chip.addEventListener('click',()=>{
+  $$('.chip[data-fmt]').forEach(c=>c.classList.remove('active'));chip.classList.add('active');
+  currentFmt=chip.dataset.fmt;$('#qualityWrap').classList.toggle('hide',currentFmt==='image/png');
+}));
+$('#qualitySlider').addEventListener('input',e=>{$('#qualityVal').textContent=e.target.value+'%';});
+
+function getBlob(cb){
+  const q=Number($('#qualitySlider').value)/100;
+  resultCanvas.toBlob(cb,currentFmt,currentFmt==='image/png'?undefined:q);
+}
+function extFor(fmt){return fmt==='image/png'?'png':fmt==='image/jpeg'?'jpg':'webp';}
+
+$('#downloadBtn').addEventListener('click',()=>{
+  getBlob(blob=>{
+    const url=URL.createObjectURL(blob);const a=document.createElement('a');
+    a.href=url;a.download='crop-'+Date.now()+'.'+extFor(currentFmt);document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),4000);
+    showToast('Saved to device');
+  });
+});
+
+$('#shareBtn').addEventListener('click',()=>{
+  getBlob(async blob=>{
+    const file=new File([blob],'crop.'+extFor(currentFmt),{type:currentFmt});
+    if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
+      try{await navigator.share({files:[file],title:'Cropped image'});}catch(e){}
+    }else{
+      showToast('Sharing not supported here','fa-triangle-exclamation');
+    }
+  });
+});
+
+$('#copyBtn').addEventListener('click',()=>{
+  resultCanvas.toBlob(async blob=>{
+    try{
+      await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);
+      showToast('Copied to clipboard');
+    }catch(e){showToast('Copy not supported here','fa-triangle-exclamation');}
+  },'image/png');
+});
+
+['dragover','drop'].forEach(evt=>document.addEventListener(evt,e=>e.preventDefault()));
+document.addEventListener('drop',e=>{const f=e.dataTransfer.files[0];if(f)loadFile(f);});
+</script>
+</body>
+</html>
