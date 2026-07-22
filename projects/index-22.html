@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>Voicebox · Piper TTS</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script type="importmap">{"imports":{"onnxruntime-web":"https://esm.sh/onnxruntime-web@1.18.0","@mintplex-labs/piper-tts-web":"https://esm.sh/@mintplex-labs/piper-tts-web@1.0.4"}}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#231F1C;--paper:#FAF6F0;--card:#FFFFFF;--clay:#C96442;--clay-dark:#AD5236;--clay-light:#F3E4DA;--line:#E8DDD1;--muted:#8A8078;--good:#3F8A5B;--bad:#C0442E;--info:#4C7EA8}
+*{-webkit-tap-highlight-color:transparent;scrollbar-width:none}
+*::-webkit-scrollbar{display:none}
+body{background:var(--paper);color:var(--ink);font-family:'Manrope',system-ui,sans-serif;overscroll-behavior-y:contain}
+.mono{font-family:'JetBrains Mono',monospace}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px}
+.btn-press{transition:transform .08s ease}
+.btn-press:active{transform:scale(.96)}
+.tab-active{background:var(--clay);color:white}
+.tab-inactive{color:var(--muted)}
+.chip{border:1px solid var(--line);background:var(--card)}
+.chip-active{border-color:var(--clay) !important;background:var(--clay-light) !important;color:var(--clay-dark) !important}
+input[type=range]{-webkit-appearance:none;background:transparent}
+input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:99px;background:var(--line)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;margin-top:-7px;height:20px;width:20px;border-radius:99px;background:var(--clay);box-shadow:0 2px 6px rgba(201,100,66,.5)}
+.sheet-enter{animation:sheetUp .28s cubic-bezier(.2,.8,.2,1)}
+@keyframes sheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.fade-in{animation:fadeIn .25s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.spin{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.bar{animation:bar 1.1s ease-in-out infinite}
+@keyframes bar{0%,100%{height:20%}50%{height:100%}}
+.toast-in{animation:toastIn .3s cubic-bezier(.2,.8,.2,1)}
+@keyframes toastIn{from{opacity:0;transform:translate(-50%,12px)}to{opacity:1;transform:translate(-50%,0)}}
+@keyframes indet{0%{left:-33%}100%{left:100%}}
+::selection{background:var(--clay-light)}
+</style>
+</head>
+<body class="min-h-screen">
+<div id="app" class="max-w-md mx-auto min-h-screen flex flex-col pb-28"></div>
+
+<script type="module">
+import * as tts from '@mintplex-labs/piper-tts-web';
+
+const MODEL_TIMEOUT_MS=90000;
+function inferTimeoutFor(text){
+  const words=(text.trim().match(/\S+/g)||[]).length;
+  return Math.max(45000,Math.min(180000,words*450+30000));
+}
+
+function withTimeout(promise,ms,label){
+  let timer;
+  const timeout=new Promise((_,reject)=>{
+    timer=setTimeout(()=>reject(new Error(`TIMEOUT:${label}`)),ms);
+  });
+  return Promise.race([promise,timeout]).finally(()=>clearTimeout(timer));
+}
+
+const state={
+  text:localStorage.getItem('vb_text')||"Type or paste anything here, then tap play. Piper renders it fully on your device.",
+  voiceId:localStorage.getItem('vb_voice')||'en_US-hfc_female-medium',
+  speed:parseFloat(localStorage.getItem('vb_speed')||'1'),
+  history:JSON.parse(localStorage.getItem('vb_history')||'[]'),
+  favorites:new Set(JSON.parse(localStorage.getItem('vb_favs')||'[]')),
+  catalog:[],
+  catalogLoaded:false,
+  catalogError:null,
+  langFilter:'all',
+  voiceQuery:'',
+  stored:new Set(),
+  tab:'speak',
+  busy:false,
+  busyLabel:'',
+  busyStage:null,
+  progress:0,
+  progressLabel:'',
+  currentAudio:null,
+  playingId:null,
+  error:null,
+  toast:null,
+  sheet:null,
+  wav:null,
+  lastGenText:'',
+  lastGenAt:null
+};
+
+function save(){
+  localStorage.setItem('vb_text',state.text);
+  localStorage.setItem('vb_voice',state.voiceId);
+  localStorage.setItem('vb_speed',String(state.speed));
+  localStorage.setItem('vb_history',JSON.stringify(state.history.slice(0,30)));
+  localStorage.setItem('vb_favs',JSON.stringify([...state.favorites]));
+}
+
+function showToast(msg,kind='info'){
+  state.toast={msg,kind,id:Date.now()};
+  render();
+  clearTimeout(window.__toastT);
+  window.__toastT=setTimeout(()=>{state.toast=null;render();},3400);
+}
+
+const LANG_NAMES={en_US:'English (US)',en_GB:'English (UK)',de_DE:'Deutsch',fr_FR:'Français',es_ES:'Español (España)',es_MX:'Español (México)',es_AR:'Español (Argentina)',it_IT:'Italiano',pt_BR:'Português (Brasil)',pt_PT:'Português (Portugal)',nl_NL:'Nederlands',nl_BE:'Nederlands (België)',pl_PL:'Polski',ru_RU:'Русский',uk_UA:'Українська',tr_TR:'Türkçe',ar_JO:'العربية',zh_CN:'中文',ja_JP:'日本語',ko_KR:'한국어',vi_VN:'Tiếng Việt',hi_IN:'हिन्दी',sv_SE:'Svenska',da_DK:'Dansk',fi_FI:'Suomi',no_NO:'Norsk',nb_NO:'Norsk (Bokmål)',cs_CZ:'Čeština',sk_SK:'Slovenčina',ro_RO:'Română',hu_HU:'Magyar',el_GR:'Ελληνικά',he_IL:'עברית',fa_IR:'فارسی',ca_ES:'Català',is_IS:'Íslenska',ka_GE:'ქართული',kk_KZ:'Қазақша',lb_LU:'Lëtzebuergesch',lv_LV:'Latviešu',ne_NP:'नेपाली',sr_RS:'Српски',sl_SI:'Slovenščina',sw_CD:'Kiswahili',cy_GB:'Cymraeg'};
+
+function langLabel(code){return LANG_NAMES[code]||code;}
+
+function voiceMeta(id){
+  const hit=state.catalog.find(v=>v.id===id);
+  if(hit)return hit;
+  const parts=id.split('-');
+  const lang=parts[0]||'';
+  return {id,name:parts[1]||id,lang,langLabel:langLabel(lang),quality:parts[2]||''};
+}
+
+function titleCase(s){return (s||'').replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase());}
+
+async function loadCatalog(){
+  try{
+    const raw=await withTimeout(tts.voices(),20000,'catalog');
+    const arr=Array.isArray(raw)?raw:Object.values(raw||{});
+    const list=arr.map(v=>{
+      const id=v.key||v.id;
+      const langCode=(v.language&&v.language.code)||(id.split('-')[0])||'';
+      const nativeName=v.language&&(v.language.name_native||v.language.name_english);
+      return {
+        id,
+        name:titleCase((v.name||id.split('-')[1]||id)),
+        lang:langCode,
+        langLabel:nativeName?`${nativeName}${v.language.country_english?' ('+v.language.country_english+')':''}`:langLabel(langCode),
+        quality:v.quality||'',
+        desc:`${titleCase(v.quality||'')} quality${v.num_speakers>1?` · ${v.num_speakers} speakers`:''}`
+      };
+    }).sort((a,b)=>a.langLabel.localeCompare(b.langLabel)||a.name.localeCompare(b.name));
+    if(!list.length)throw new Error('EMPTY_CATALOG');
+    state.catalog=list;
+    state.catalogLoaded=true;
+    if(!list.find(v=>v.id===state.voiceId)){
+      state.voiceId=list.find(v=>v.id.startsWith('en_US'))?.id||list[0].id;
+    }
+  }catch(e){
+    console.error(e);
+    state.catalogError=e.message==='TIMEOUT:catalog'?'Voice list took too long to load.':'Could not load the full voice list from the network. Showing English only.';
+    state.catalog=[
+      {id:'en_US-hfc_female-medium',name:'Hfc Female',lang:'en_US',langLabel:'English (US)',quality:'medium',desc:'Fallback voice (offline list)'},
+      {id:'en_US-lessac-medium',name:'Lessac',lang:'en_US',langLabel:'English (US)',quality:'medium',desc:'Fallback voice (offline list)'},
+      {id:'en_GB-alan-medium',name:'Alan',lang:'en_GB',langLabel:'English (UK)',quality:'medium',desc:'Fallback voice (offline list)'}
+    ];
+    state.catalogLoaded=true;
+  }
+  render();
+}
+
+async function refreshStored(){
+  try{
+    const list=await withTimeout(tts.stored(),8000,'stored');
+    state.stored=new Set(list);
+  }catch(e){
+    state.stored=new Set();
+  }
+  render();
+}
+
+function Header(){
+  return `
+  <div class="sticky top-0 z-20 backdrop-blur-md bg-[var(--paper)]/90 border-b border-[var(--line)]">
+    <div class="px-5 pt-5 pb-3 flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:var(--clay)">
+          <i data-lucide="audio-lines" class="w-5 h-5 text-white"></i>
+        </div>
+        <div>
+          <div class="font-extrabold text-[17px] leading-none tracking-tight">Voicebox</div>
+          <div class="text-[11px] text-[var(--muted)] mono mt-0.5">Piper · on-device · ${state.catalog.length||'…'} voices</div>
+        </div>
+      </div>
+      <button data-act="open-storage" class="w-9 h-9 rounded-full card flex items-center justify-center btn-press">
+        <i data-lucide="database" class="w-4 h-4" style="color:var(--muted)"></i>
+      </button>
+    </div>
+  </div>`;
+}
+
+function Tabs(){
+  const tabs=[['speak','mic','Speak'],['history','history','History']];
+  return `
+  <div class="px-5 pt-4">
+    <div class="card p-1 flex gap-1">
+      ${tabs.map(([id,icon,label])=>`
+        <button data-act="tab" data-tab="${id}" class="flex-1 py-2.5 rounded-2xl text-sm font-bold flex items-center justify-center gap-1.5 btn-press ${state.tab===id?'tab-active':'tab-inactive'}">
+          <i data-lucide="${icon}" class="w-4 h-4"></i>${label}
+        </button>`).join('')}
+    </div>
+  </div>`;
+}
+
+function ErrorBanner(){
+  if(!state.error)return '';
+  return `
+  <div class="mx-5 mt-4 fade-in">
+    <div class="rounded-2xl border p-3.5 flex gap-3 items-start" style="background:#FDF0ED;border-color:#F0C4B8">
+      <i data-lucide="alert-triangle" class="w-4 h-4 shrink-0 mt-0.5" style="color:var(--bad)"></i>
+      <div class="flex-1 min-w-0">
+        <div class="text-[13px] font-bold" style="color:var(--bad)">Couldn't finish that</div>
+        <div class="text-[12.5px] mt-0.5 leading-snug" style="color:#8A3A2C">${state.error}</div>
+        <button data-act="retry" class="mt-2 text-[12px] font-bold underline" style="color:var(--bad)">Try again</button>
+      </div>
+      <button data-act="dismiss-error" class="shrink-0 w-6 h-6 rounded-full flex items-center justify-center btn-press" style="background:#F0C4B8">
+        <i data-lucide="x" class="w-3.5 h-3.5" style="color:var(--bad)"></i>
+      </button>
+    </div>
+  </div>`;
+}
+
+function ProgressCard(){
+  if(!state.busy)return '';
+  const pct=Math.round(state.progress*100);
+  const known=state.progress>0;
+  return `
+  <div class="mx-5 mt-4 fade-in">
+    <div class="card p-4">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style="background:var(--clay-light)">
+          <i data-lucide="loader-2" class="w-4 h-4 spin" style="color:var(--clay)"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="text-[13px] font-bold">${state.busyLabel}</div>
+          <div class="text-[11.5px] text-[var(--muted)] mono mt-0.5 truncate">${state.progressLabel||'Working…'}</div>
+        </div>
+        ${known?`<div class="text-[13px] font-extrabold mono shrink-0" style="color:var(--clay)">${pct}%</div>`:''}
+      </div>
+      ${known?`
+      <div class="mt-3 h-1.5 rounded-full bg-[var(--line)] overflow-hidden">
+        <div class="h-full rounded-full" style="width:${pct}%;background:var(--clay);transition:width .25s linear"></div>
+      </div>`:`
+      <div class="mt-3 h-1.5 rounded-full bg-[var(--line)] overflow-hidden relative">
+        <div class="absolute inset-y-0 w-1/3 rounded-full" style="background:var(--clay);animation:indet 1.1s ease-in-out infinite"></div>
+      </div>`}
+      <button data-act="cancel-busy" class="mt-3 text-[12px] font-bold" style="color:var(--muted)">Cancel</button>
+    </div>
+  </div>`;
+}
+
+function VoicePicker(){
+  const v=voiceMeta(state.voiceId);
+  const isStored=state.stored.has(state.voiceId);
+  const isFav=state.favorites.has(state.voiceId);
+  return `
+  <div class="mx-5 mt-4">
+    <button data-act="open-voices" class="w-full card p-4 flex items-center gap-3 btn-press text-left">
+      <div class="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0" style="background:var(--clay-light)">
+        <i data-lucide="user-round" class="w-5 h-5" style="color:var(--clay)"></i>
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-1.5">
+          <div class="text-[14.5px] font-bold truncate">${escapeHtml(v.name)}</div>
+          ${isFav?`<i data-lucide="star" class="w-3.5 h-3.5" style="color:var(--clay);fill:var(--clay)"></i>`:''}
+          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md shrink-0" style="background:${isStored?'#E4F1E8':'var(--clay-light)'};color:${isStored?'var(--good)':'var(--clay-dark)'}">${isStored?'READY':'DOWNLOAD'}</span>
+        </div>
+        <div class="text-[12px] text-[var(--muted)] truncate mt-0.5">${escapeHtml(v.langLabel)} · ${escapeHtml(v.desc||'')}</div>
+      </div>
+      <i data-lucide="chevron-right" class="w-4 h-4 shrink-0" style="color:var(--muted)"></i>
+    </button>
+  </div>`;
+}
+
+function SpeedControl(){
+  return `
+  <div class="mx-5 mt-3">
+    <div class="card p-4">
+      <div class="flex items-center justify-between mb-1">
+        <div class="text-[13px] font-bold flex items-center gap-1.5"><i data-lucide="gauge" class="w-3.5 h-3.5" style="color:var(--muted)"></i>Speed</div>
+        <div class="flex items-center gap-2">
+          <button data-act="speed-reset" class="text-[11px] font-bold px-2 py-0.5 rounded-md" style="background:var(--clay-light);color:var(--clay-dark)">Reset</button>
+          <div class="text-[13px] font-extrabold mono" style="color:var(--clay)">${state.speed.toFixed(2)}×</div>
+        </div>
+      </div>
+      <input type="range" min="0.5" max="2" step="0.05" value="${state.speed}" data-act="speed" class="w-full mt-1">
+      <div class="flex justify-between text-[10px] text-[var(--muted)] mono mt-1"><span>0.5×</span><span>1.0×</span><span>2.0×</span></div>
+    </div>
+  </div>`;
+}
+
+function countWords(s){return (s.trim().match(/\S+/g)||[]).length;}
+
+function TextArea(){
+  const len=state.text.length;
+  const limit=5000;
+  const over=len>limit;
+  const words=countWords(state.text);
+  const estSec=Math.max(1,Math.round((words/155)*60));
+  const mm=Math.floor(estSec/60),ss=String(estSec%60).padStart(2,'0');
+  return `
+  <div class="mx-5 mt-3">
+    <div class="card p-4">
+      <textarea data-act="text-input" rows="7" placeholder="Type or paste text to convert…" class="w-full resize-none outline-none text-[14.5px] leading-relaxed bg-transparent placeholder:text-[var(--muted)]">${escapeHtml(state.text)}</textarea>
+      <div class="flex items-center justify-between mt-2 pt-2 border-t border-[var(--line)]">
+        <div class="flex items-center gap-2">
+          <button data-act="clear-text" class="text-[12px] font-bold text-[var(--muted)] flex items-center gap-1 btn-press"><i data-lucide="eraser" class="w-3.5 h-3.5"></i>Clear</button>
+          <button data-act="paste-text" class="text-[12px] font-bold text-[var(--muted)] flex items-center gap-1 btn-press"><i data-lucide="clipboard-paste" class="w-3.5 h-3.5"></i>Paste</button>
+        </div>
+        <div class="flex items-center gap-2 text-[11px] text-[var(--muted)] mono">
+          <span>~${mm}:${ss}</span>
+          <span class="${over?'font-bold':''}" style="color:${over?'var(--bad)':'var(--muted)'}">${len}/${limit}</span>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function PlayerBar(){
+  const hasAudio=!!state.wav;
+  const stale=hasAudio&&state.lastGenText!==state.text.trim();
+  return `
+  <div class="fixed bottom-0 left-0 right-0 z-30">
+    <div class="max-w-md mx-auto px-5 pb-5 pt-3">
+      <div class="card p-3 shadow-lg" style="box-shadow:0 -8px 30px rgba(35,31,28,.08)">
+        <div class="flex items-center gap-3">
+          <button data-act="speak" ${state.busy?'disabled':''} class="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 btn-press disabled:opacity-50" style="background:var(--clay)">
+            <i data-lucide="${state.busy?'loader-2':'play'}" class="w-6 h-6 text-white ${state.busy?'spin':''}"></i>
+          </button>
+          <div class="flex-1 min-w-0">
+            ${hasAudio?`
+            <div class="flex items-center gap-2">
+              <div class="flex items-end gap-0.5 h-4">
+                ${[0,.15,.3,.1,.25].map(d=>`<div class="w-1 rounded-full bar" style="background:var(--clay);animation-delay:${d}s"></div>`).join('')}
+              </div>
+              <span class="text-[12.5px] font-bold">${stale?'Text changed — tap to regenerate':'Ready to play'}</span>
+            </div>
+            <div class="text-[11px] text-[var(--muted)] mono mt-0.5">${escapeHtml(voiceMeta(state.voiceId).name)} · ${state.speed.toFixed(2)}×</div>`
+            :`<div class="text-[13px] font-bold text-[var(--muted)]">Tap to synthesize speech</div>
+              <div class="text-[11px] text-[var(--muted)] mono mt-0.5">${escapeHtml(voiceMeta(state.voiceId).name)} selected</div>`}
+          </div>
+          ${hasAudio?`
+          <button data-act="replay-current" class="w-11 h-11 rounded-xl card flex items-center justify-center shrink-0 btn-press">
+            <i data-lucide="rotate-ccw" class="w-4 h-4" style="color:var(--clay)"></i>
+          </button>
+          <button data-act="download" class="w-11 h-11 rounded-xl card flex items-center justify-center shrink-0 btn-press">
+            <i data-lucide="download" class="w-4.5 h-4.5" style="color:var(--clay)"></i>
+          </button>`:''}
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function HistoryList(){
+  if(state.history.length===0){
+    return `
+    <div class="mx-5 mt-10 flex flex-col items-center text-center px-6">
+      <div class="w-14 h-14 rounded-2xl flex items-center justify-center mb-3" style="background:var(--clay-light)">
+        <i data-lucide="history" class="w-6 h-6" style="color:var(--clay)"></i>
+      </div>
+      <div class="font-bold text-[15px]">Nothing generated yet</div>
+      <div class="text-[13px] text-[var(--muted)] mt-1 leading-snug">Clips you generate on the Speak tab will show up here for quick replay and download.</div>
+    </div>`;
+  }
+  return `
+  <div class="mx-5 mt-4 flex items-center justify-between">
+    <div class="text-[12px] font-bold text-[var(--muted)]">${state.history.length} clip${state.history.length===1?'':'s'}</div>
+    <button data-act="clear-history" class="text-[12px] font-bold" style="color:var(--bad)">Clear all</button>
+  </div>
+  <div class="mx-5 mt-2 space-y-2.5">
+    ${state.history.map(h=>`
+    <div class="card p-3.5 flex items-center gap-3">
+      <button data-act="replay" data-id="${h.id}" class="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 btn-press" style="background:var(--clay-light)">
+        <i data-lucide="${state.playingId===h.id?'pause':'play'}" class="w-4.5 h-4.5" style="color:var(--clay)"></i>
+      </button>
+      <div class="flex-1 min-w-0">
+        <div class="text-[13.5px] font-semibold truncate">${escapeHtml(h.snippet)}</div>
+        <div class="text-[11px] text-[var(--muted)] mono mt-0.5">${escapeHtml(voiceMeta(h.voiceId).name)} · ${h.speed.toFixed(2)}× · ${h.time}</div>
+      </div>
+      <button data-act="dl-history" data-id="${h.id}" class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 btn-press">
+        <i data-lucide="download" class="w-4 h-4" style="color:var(--muted)"></i>
+      </button>
+      <button data-act="del-history" data-id="${h.id}" class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 btn-press">
+        <i data-lucide="trash-2" class="w-4 h-4" style="color:var(--bad)"></i>
+      </button>
+    </div>`).join('')}
+  </div>`;
+}
+
+function VoiceSheet(){
+  if(state.sheet!=='voices')return '';
+  const langs=['all',...new Set(state.catalog.map(v=>v.lang))].sort((a,b)=>a==='all'?-1:b==='all'?1:langLabel(a).localeCompare(langLabel(b)));
+  const q=state.voiceQuery.trim().toLowerCase();
+  let list=state.catalog.filter(v=>state.langFilter==='all'||v.lang===state.langFilter);
+  if(q)list=list.filter(v=>v.name.toLowerCase().includes(q)||v.langLabel.toLowerCase().includes(q)||v.id.toLowerCase().includes(q));
+  list=[...list].sort((a,b)=>{
+    const fa=state.favorites.has(a.id)?0:1,fb=state.favorites.has(b.id)?0:1;
+    return fa-fb||a.langLabel.localeCompare(b.langLabel)||a.name.localeCompare(b.name);
+  });
+  return `
+  <div class="fixed inset-0 z-40 flex items-end" data-act="sheet-backdrop">
+    <div class="absolute inset-0 bg-black/40"></div>
+    <div class="relative w-full max-w-md mx-auto sheet-enter">
+      <div class="bg-[var(--paper)] rounded-t-3xl max-h-[85vh] flex flex-col" data-stop>
+        <div class="px-5 pt-4 pb-3 flex items-center justify-between border-b border-[var(--line)]">
+          <div class="font-extrabold text-[16px]">Choose a voice</div>
+          <button data-act="close-sheet" class="w-8 h-8 rounded-full card flex items-center justify-center btn-press"><i data-lucide="x" class="w-4 h-4"></i></button>
+        </div>
+        <div class="px-5 pt-3">
+          <div class="card flex items-center gap-2 px-3 py-2.5">
+            <i data-lucide="search" class="w-4 h-4" style="color:var(--muted)"></i>
+            <input data-act="voice-search" value="${escapeHtml(state.voiceQuery)}" placeholder="Search voices or languages…" class="flex-1 outline-none text-[13.5px] bg-transparent">
+          </div>
+        </div>
+        <div class="px-5 pt-3 pb-1 flex gap-1.5 overflow-x-auto">
+          ${langs.slice(0,40).map(l=>`
+            <button data-act="filter-lang" data-lang="${l}" class="shrink-0 chip ${state.langFilter===l?'chip-active':''} px-3 py-1.5 rounded-full text-[12px] font-bold btn-press">${l==='all'?'All':langLabel(l)}</button>
+          `).join('')}
+        </div>
+        ${!state.catalogLoaded?`
+        <div class="px-5 py-8 flex items-center justify-center gap-2 text-[13px] text-[var(--muted)]"><i data-lucide="loader-2" class="w-4 h-4 spin"></i>Loading voice catalog…</div>`
+        :list.length===0?`
+        <div class="px-5 py-8 text-center text-[13px] text-[var(--muted)]">No voices match "${escapeHtml(state.voiceQuery)}".</div>`
+        :`
+        <div class="overflow-y-auto px-5 py-3 space-y-2">
+          ${list.map(v=>{
+            const active=v.id===state.voiceId;
+            const stored=state.stored.has(v.id);
+            const fav=state.favorites.has(v.id);
+            return `
+            <div class="w-full p-3.5 rounded-2xl flex items-center gap-3 ${active?'':'card'}" style="${active?'background:var(--clay-light);border:1.5px solid var(--clay)':''}">
+              <button data-act="pick-voice" data-id="${v.id}" class="flex items-center gap-3 flex-1 min-w-0 text-left btn-press">
+                <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style="background:${active?'var(--clay)':'var(--clay-light)'}">
+                  <i data-lucide="user-round" class="w-4.5 h-4.5" style="color:${active?'white':'var(--clay)'}"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-1.5">
+                    <div class="text-[14px] font-bold truncate">${escapeHtml(v.name)}</div>
+                    ${stored?`<i data-lucide="check-circle-2" class="w-3.5 h-3.5 shrink-0" style="color:var(--good)"></i>`:''}
+                  </div>
+                  <div class="text-[11.5px] text-[var(--muted)] mt-0.5 truncate">${escapeHtml(v.langLabel)} · ${escapeHtml(v.desc||'')}</div>
+                </div>
+              </button>
+              <button data-act="toggle-fav" data-id="${v.id}" class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 btn-press">
+                <i data-lucide="star" class="w-4 h-4" style="color:${fav?'var(--clay)':'var(--muted)'};${fav?'fill:var(--clay)':''}"></i>
+              </button>
+            </div>`;
+          }).join('')}
+        </div>`}
+        ${state.catalogError?`
+        <div class="mx-5 mb-3 p-3 rounded-xl text-[12px]" style="background:#FDF0ED;color:var(--bad)">${escapeHtml(state.catalogError)} <button data-act="retry-catalog" class="underline font-bold">Retry</button></div>`:''}
+      </div>
+    </div>
+  </div>`;
+}
+
+function StorageSheet(){
+  if(state.sheet!=='storage')return '';
+  const list=[...state.stored];
+  return `
+  <div class="fixed inset-0 z-40 flex items-end" data-act="sheet-backdrop">
+    <div class="absolute inset-0 bg-black/40"></div>
+    <div class="relative w-full max-w-md mx-auto sheet-enter">
+      <div class="bg-[var(--paper)] rounded-t-3xl max-h-[80vh] flex flex-col" data-stop>
+        <div class="px-5 pt-4 pb-3 flex items-center justify-between border-b border-[var(--line)]">
+          <div class="font-extrabold text-[16px]">Downloaded models</div>
+          <button data-act="close-sheet" class="w-8 h-8 rounded-full card flex items-center justify-center btn-press"><i data-lucide="x" class="w-4 h-4"></i></button>
+        </div>
+        <div class="overflow-y-auto px-5 py-3 space-y-2">
+          ${list.length===0?`
+          <div class="text-center py-8 text-[13px] text-[var(--muted)]">No voice models cached yet. Pick a voice and speak once to download it.</div>`
+          :list.map(id=>{
+            const v=voiceMeta(id);
+            return `
+            <div class="card p-3.5 flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style="background:var(--clay-light)">
+                <i data-lucide="hard-drive-download" class="w-4.5 h-4.5" style="color:var(--clay)"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="text-[14px] font-bold">${escapeHtml(v.name)}</div>
+                <div class="text-[11.5px] text-[var(--muted)] mt-0.5">${escapeHtml(v.langLabel)}</div>
+              </div>
+              <button data-act="remove-model" data-id="${id}" class="px-3 py-1.5 rounded-lg text-[12px] font-bold btn-press" style="background:#FDF0ED;color:var(--bad)">Remove</button>
+            </div>`;
+          }).join('')}
+        </div>
+        <div class="px-5 py-4 border-t border-[var(--line)] space-y-2">
+          <div class="text-[11.5px] text-[var(--muted)] leading-snug px-1">Models are cached in this browser's private storage so replays and future sessions don't re-download them.</div>
+          ${list.length>0?`
+          <button data-act="flush-all" class="w-full py-3 rounded-2xl text-[13.5px] font-bold btn-press" style="background:#FDF0ED;color:var(--bad)">Clear all cached models</button>`:''}
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function Toast(){
+  if(!state.toast)return '';
+  const colors={info:{bg:'var(--info)',ic:'info'},error:{bg:'var(--bad)',ic:'alert-circle'},success:{bg:'var(--good)',ic:'check-circle-2'}};
+  const c=colors[state.toast.kind]||colors.info;
+  return `
+  <div class="fixed bottom-28 left-1/2 z-50 toast-in max-w-[88%]">
+    <div class="px-4 py-3 rounded-2xl flex items-center gap-2 shadow-lg" style="background:${c.bg}">
+      <i data-lucide="${c.ic}" class="w-4 h-4 text-white shrink-0"></i>
+      <span class="text-[13px] font-semibold text-white">${escapeHtml(state.toast.msg)}</span>
+    </div>
+  </div>`;
+}
+
+function escapeHtml(s){return (s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+
+function render(){
+  const app=document.getElementById('app');
+  const activeEl=document.activeElement;
+  const wasTextArea=activeEl&&activeEl.dataset&&activeEl.dataset.act==='text-input';
+  const wasSearch=activeEl&&activeEl.dataset&&activeEl.dataset.act==='voice-search';
+  const selStart=wasTextArea?activeEl.selectionStart:null;
+  const selEnd=wasTextArea?activeEl.selectionEnd:null;
+  app.innerHTML=`
+    ${Header()}
+    ${Tabs()}
+    ${ErrorBanner()}
+    ${ProgressCard()}
+    ${state.tab==='speak'?`${VoicePicker()}${SpeedControl()}${TextArea()}`:HistoryList()}
+    ${VoiceSheet()}
+    ${StorageSheet()}
+    ${Toast()}
+  `;
+  if(state.tab==='speak')app.insertAdjacentHTML('beforeend',PlayerBar());
+  window.lucide.createIcons();
+  if(wasTextArea){
+    const ta=document.querySelector('[data-act="text-input"]');
+    if(ta){ta.focus();ta.setSelectionRange(selStart,selEnd);}
+  }
+  if(wasSearch){
+    const s=document.querySelector('[data-act="voice-search"]');
+    if(s){s.focus();s.setSelectionRange(s.value.length,s.value.length);}
+  }
+}
+
+function throttledRender(){
+  if(window.__renderPending)return;
+  window.__renderPending=true;
+  requestAnimationFrame(()=>{window.__renderPending=false;render();});
+}
+
+async function ensureModel(voiceId){
+  if(state.stored.has(voiceId))return;
+  state.busy=true;
+  state.busyStage='download';
+  state.busyLabel='Downloading voice model';
+  state.progress=0;
+  state.progressLabel='Connecting…';
+  render();
+  await withTimeout(
+    tts.download(voiceId,(p)=>{
+      if(p&&p.total){
+        state.progress=p.loaded/p.total;
+        state.progressLabel=`${(p.loaded/1e6).toFixed(1)} MB / ${(p.total/1e6).toFixed(1)} MB`;
+      }else{
+        state.progressLabel='Fetching model files…';
+      }
+      throttledRender();
+    }),
+    MODEL_TIMEOUT_MS,
+    'download'
+  );
+  await refreshStored();
+}
+
+async function speak(){
+  if(state.busy)return;
+  const text=state.text.trim();
+  if(!text){showToast('Enter some text first.','error');return;}
+  if(text.length>5000){showToast('Text is over the 5000 character limit.','error');return;}
+  state.error=null;
+  try{
+    await ensureModel(state.voiceId);
+    state.busyStage='infer';
+    state.busyLabel='Synthesizing speech';
+    state.progress=0;
+    state.progressLabel=`Running Piper inference on ${countWords(text)} words…`;
+    render();
+    const wav=await withTimeout(tts.predict({text,voiceId:state.voiceId}),inferTimeoutFor(text),'infer');
+    state.wav=wav;
+    state.lastGenText=text;
+    state.lastGenAt=Date.now();
+    const url=URL.createObjectURL(wav);
+    if(state.currentAudio){state.currentAudio.pause();}
+    const audio=new Audio(url);
+    audio.playbackRate=state.speed;
+    state.currentAudio=audio;
+    audio.play().catch(()=>{showToast('Playback blocked by browser. Tap play again.','error');});
+    const entry={id:Date.now(),snippet:text.slice(0,80)+(text.length>80?'…':''),voiceId:state.voiceId,speed:state.speed,time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),blobUrl:url};
+    state.history.unshift(entry);
+    if(state.history.length>30)state.history.pop();
+    save();
+    showToast('Speech generated.','success');
+  }catch(e){
+    console.error(e);
+    state.error=humanizeError(e);
+  }finally{
+    state.busy=false;
+    state.busyStage=null;
+    state.progress=0;
+    state.progressLabel='';
+    render();
+  }
+}
+
+function humanizeError(e){
+  const msg=(e&&(e.message||e.toString()))||'Unknown error';
+  if(msg==='TIMEOUT:download')return 'The voice model took too long to download. Check your connection and try again — large models can take a minute on slower networks.';
+  if(msg==='TIMEOUT:infer')return "Speech generation took too long and was stopped. This can happen if this browser can't run multi-threaded WebAssembly here — try Chrome or Edge, or shorten the text and retry.";
+  if(/network|fetch|failed to fetch/i.test(msg))return 'Network problem while downloading the voice model. Check your connection and try again.';
+  if(/opfs|storage|quota/i.test(msg))return 'Browser storage is full or unavailable. Clear cached models from the database icon and retry.';
+  if(/onnx|wasm|memory/i.test(msg))return 'The speech engine failed to initialize in this browser. Try Chrome or Edge on Android.';
+  return `Something went wrong: ${msg}`;
+}
+
+function downloadWav(wav,name){
+  const url=URL.createObjectURL(wav);
+  const a=document.createElement('a');
+  a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),4000);
+}
+
+document.addEventListener('click',async(e)=>{
+  const t=e.target.closest('[data-act]');
+  if(!t)return;
+  const act=t.dataset.act;
+  if(act==='sheet-backdrop'&&!e.target.closest('[data-stop]')){state.sheet=null;render();return;}
+  if(act==='tab'){state.tab=t.dataset.tab;render();return;}
+  if(act==='open-voices'){state.sheet='voices';render();return;}
+  if(act==='open-storage'){state.sheet='storage';render();return;}
+  if(act==='close-sheet'){state.sheet=null;render();return;}
+  if(act==='pick-voice'){state.voiceId=t.dataset.id;save();state.sheet=null;state.wav=null;render();return;}
+  if(act==='toggle-fav'){
+    const id=t.dataset.id;
+    if(state.favorites.has(id))state.favorites.delete(id);else state.favorites.add(id);
+    save();render();return;
+  }
+  if(act==='filter-lang'){state.langFilter=t.dataset.lang;render();return;}
+  if(act==='retry-catalog'){state.catalogError=null;state.catalogLoaded=false;render();await loadCatalog();return;}
+  if(act==='dismiss-error'){state.error=null;render();return;}
+  if(act==='retry'){state.error=null;render();speak();return;}
+  if(act==='cancel-busy'){
+    showToast('Generation may finish in the background, but the app will stop waiting.','info');
+    state.busy=false;state.progress=0;state.progressLabel='';render();
+    return;
+  }
+  if(act==='clear-text'){state.text='';save();render();return;}
+  if(act==='paste-text'){
+    try{
+      const clip=await navigator.clipboard.readText();
+      if(clip){state.text=clip;save();render();showToast('Pasted from clipboard.','success');}
+      else showToast('Clipboard is empty.','error');
+    }catch(err){showToast('Clipboard access was blocked. Paste manually into the box.','error');}
+    return;
+  }
+  if(act==='speed-reset'){state.speed=1;save();render();return;}
+  if(act==='speak'){speak();return;}
+  if(act==='replay-current'){
+    if(!state.currentAudio){showToast('Generate audio first.','error');return;}
+    state.currentAudio.currentTime=0;
+    state.currentAudio.playbackRate=state.speed;
+    state.currentAudio.play().catch(()=>showToast('Playback blocked. Tap again.','error'));
+    return;
+  }
+  if(act==='download'){
+    if(!state.wav){showToast('Generate audio first.','error');return;}
+    downloadWav(state.wav,`voicebox-${Date.now()}.wav`);
+    showToast('Download started.','success');
+    return;
+  }
+  if(act==='replay'){
+    const h=state.history.find(x=>x.id==t.dataset.id);
+    if(!h)return;
+    if(state.currentAudio){state.currentAudio.pause();}
+    const audio=new Audio(h.blobUrl);
+    audio.playbackRate=h.speed||1;
+    state.currentAudio=audio;
+    state.playingId=h.id;
+    audio.onended=()=>{state.playingId=null;render();};
+    audio.play().catch(()=>{showToast('This clip expired after reload. Regenerate it from Speak.','error');state.playingId=null;render();});
+    render();
+    return;
+  }
+  if(act==='dl-history'){
+    const h=state.history.find(x=>x.id==t.dataset.id);
+    if(!h)return;
+    try{
+      const a=document.createElement('a');a.href=h.blobUrl;a.download=`voicebox-${h.id}.wav`;document.body.appendChild(a);a.click();a.remove();
+      showToast('Download started.','success');
+    }catch(err){showToast('This clip expired after reload. Regenerate it from Speak.','error');}
+    return;
+  }
+  if(act==='del-history'){
+    state.history=state.history.filter(x=>x.id!=t.dataset.id);
+    save();render();return;
+  }
+  if(act==='clear-history'){
+    state.history=[];save();render();return;
+  }
+  if(act==='remove-model'){
+    try{
+      await withTimeout(tts.remove(t.dataset.id),10000,'remove');
+      await refreshStored();
+      showToast('Model removed.','success');
+    }catch(err){showToast('Could not remove that model.','error');}
+    render();
+    return;
+  }
+  if(act==='flush-all'){
+    try{
+      await withTimeout(tts.flush(),15000,'flush');
+      await refreshStored();
+      showToast('All cached models cleared.','success');
+    }catch(err){showToast('Could not clear models.','error');}
+    return;
+  }
+});
+
+document.addEventListener('input',(e)=>{
+  if(e.target.dataset.act==='text-input'){state.text=e.target.value;save();throttledRender();}
+  if(e.target.dataset.act==='speed'){state.speed=parseFloat(e.target.value);save();throttledRender();}
+  if(e.target.dataset.act==='voice-search'){state.voiceQuery=e.target.value;throttledRender();}
+});
+
+document.addEventListener('keydown',(e)=>{
+  if((e.metaKey||e.ctrlKey)&&e.key==='Enter'&&state.tab==='speak'){e.preventDefault();speak();}
+});
+
+(async function init(){
+  if(!('WebAssembly'in window)){
+    state.error='This browser does not support WebAssembly, which Piper requires to run.';
+    render();
+    return;
+  }
+  if(window.isSecureContext===false){
+    state.error='This page needs to run over HTTPS (or localhost) for the speech engine to work.';
+    render();
+    return;
+  }
+  render();
+  loadCatalog();
+  refreshStored();
+})();
+</script>
+</body>
+</html>
