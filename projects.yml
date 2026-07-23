@@ -227,9 +227,9 @@
   url: https://samar1h.github.io/aiasp/projects/crop-img/
 
 - title: Datasheet
-  description: Upload Excel, Word, images, and more, then search across all their content using OCR and other extraction techniques—like your own personal RAG system.
+  description: Upload Excel files to get a quick summary.
   icon: fa-solid fa-database
-  tags: [ocr-search]
+  tags: [utility]
   url: https://samar1h.github.io/aiasp/projects/datasheet/
 
 - title: FF Toolkit
@@ -241,7 +241,7 @@
 - title: Scanline OCR
   description: Upload any image or PDF and quickly search through its text using OCR.
   icon: fa-solid fa-magnifying-glass
-  tags: [ocr-search]
+  tags: [utility]
   url: https://samar1h.github.io/aiasp/projects/scanline-ocr/
 
 - title: Patternlink
