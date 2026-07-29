@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>URLKit — URL extraction and analysis tool</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/psl@1.9.0/dist/psl.min.js"></script>
+<style>
+@font-face{font-family:'JBM';src:local('JetBrains Mono');}
+:root{
+  --bg:#0f0e0d;
+  --surface:#171513;
+  --surface2:#1e1b18;
+  --border:#2c2825;
+  --clay:#d97757;
+  --clay-dim:#b45f43;
+  --text:#f2ede6;
+  --text-dim:#a89e93;
+  --text-faint:#6b635b;
+  --ok:#7fb069;
+  --warn:#e0b04a;
+}
+*{-webkit-tap-highlight-color:transparent;}
+html,body{background:var(--bg);color:var(--text);overscroll-behavior-y:none;}
+body{font-family:'Inter',ui-sans-serif,system-ui,-apple-system,sans-serif;}
+.mono{font-family:'JetBrains Mono',ui-monospace,'SF Mono',Menlo,Consolas,monospace;}
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px;}
+.safe-b{padding-bottom:env(safe-area-inset-bottom);}
+.safe-t{padding-top:env(safe-area-inset-top);}
+textarea:focus,input:focus,button:focus-visible{outline:2px solid var(--clay);outline-offset:1px;}
+.tap{transition:transform .1s ease, background-color .15s ease, opacity .15s ease, border-color .15s ease;}
+.tap:active{transform:scale(.96);}
+.card{background:var(--surface);border:1px solid var(--border);}
+.chip{background:var(--surface2);border:1px solid var(--border);}
+.sheet-enter{animation:sheetUp .22s cubic-bezier(.16,1,.3,1);}
+@keyframes sheetUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
+.fade-in{animation:fadeIn .18s ease both;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+.row-in{animation:rowIn .25s cubic-bezier(.16,1,.3,1) both;}
+@keyframes rowIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+.spin{animation:spin 1s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.pulse-dot{animation:pulseDot 1.6s ease-in-out infinite;}
+@keyframes pulseDot{0%,100%{opacity:.4;}50%{opacity:1;}}
+.scrollbar-none::-webkit-scrollbar{display:none;}
+.scrollbar-none{scrollbar-width:none;}
+.toast-in{animation:toastIn .25s cubic-bezier(.16,1,.3,1);}
+@keyframes toastIn{from{opacity:0;transform:translate(-50%,10px);}to{opacity:1;transform:translate(-50%,0);}}
+.highlight-url{background:rgba(217,119,87,.22);border-radius:3px;padding:0 1px;}
+.drag-active{border-color:var(--clay) !important;background:rgba(217,119,87,.06) !important;}
+.skeleton{background:linear-gradient(90deg,var(--surface2) 25%,var(--border) 37%,var(--surface2) 63%);background-size:400% 100%;animation:sk 1.4s ease infinite;}
+@keyframes sk{0%{background-position:100% 50%;}100%{background-position:0 50%;}}
+input[type=checkbox].chk{appearance:none;width:18px;height:18px;border:1.5px solid var(--text-faint);border-radius:5px;display:grid;place-content:center;background:transparent;flex-shrink:0;}
+input[type=checkbox].chk:checked{background:var(--clay);border-color:var(--clay);}
+input[type=checkbox].chk:checked::after{content:'';width:5px;height:9px;border:solid #17130f;border-width:0 2px 2px 0;transform:rotate(45deg) translate(-1px,-1px);}
+</style>
+</head>
+<body class="min-h-screen safe-t">
+
+<div id="app" class="max-w-2xl mx-auto min-h-screen flex flex-col">
+
+  <header class="sticky top-0 z-30 backdrop-blur-md bg-[#0f0e0d]/85 border-b border-[var(--border)] px-4 pt-3 pb-3">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-lg bg-[var(--clay)] flex items-center justify-center flex-shrink-0">
+          <i data-lucide="link-2" class="w-4 h-4 text-[#17130f]" stroke-width="2.5"></i>
+        </div>
+        <div>
+          <h1 class="text-[15px] font-semibold leading-none tracking-tight">URLKit</h1>
+          <p class="text-[10px] text-[var(--text-faint)] leading-none mt-1">Find and manage URLs in any text</p>
+        </div>
+      </div>
+      <button id="clearAllBtn" class="tap chip rounded-full px-3 py-1.5 text-[11px] text-[var(--text-dim)] flex items-center gap-1 hidden">
+        <i data-lucide="rotate-ccw" class="w-3 h-3"></i> reset
+      </button>
+    </div>
+  </header>
+
+  <main class="flex-1 px-4 pt-4 pb-28 flex flex-col gap-4">
+
+    <section id="inputSection" class="card rounded-2xl p-3 fade-in">
+      <div class="flex items-center justify-between mb-2 px-1">
+        <span class="text-[11px] uppercase tracking-wider text-[var(--text-faint)] font-medium">Source text</span>
+        <span id="charCount" class="text-[11px] mono text-[var(--text-faint)]">0 chars</span>
+      </div>
+      <textarea id="inputText" rows="7" placeholder="Paste text, logs, markdown, HTML, JSON — anything with links in it..." class="w-full bg-transparent resize-none text-[13.5px] leading-relaxed placeholder:text-[var(--text-faint)] px-1 py-1 mono"></textarea>
+      <div id="dropZone" class="mt-2 border border-dashed border-[var(--border)] rounded-xl px-3 py-2.5 flex items-center justify-between gap-2 tap">
+        <div class="flex items-center gap-2 min-w-0">
+          <i data-lucide="file-up" class="w-4 h-4 text-[var(--text-faint)] flex-shrink-0"></i>
+          <span id="dropLabel" class="text-[12px] text-[var(--text-dim)] truncate">Drop a .txt/.md/.log/.csv/.json file, or tap to browse</span>
+        </div>
+        <input type="file" id="fileInput" accept=".txt,.md,.log,.csv,.json,.html,.htm,.js,.ts,.css,.xml,.yaml,.yml" class="hidden">
+        <i data-lucide="chevron-right" class="w-4 h-4 text-[var(--text-faint)] flex-shrink-0"></i>
+      </div>
+      <div class="flex items-center gap-2 mt-3">
+        <button id="extractBtn" class="tap flex-1 bg-[var(--clay)] hover:bg-[var(--clay-dim)] text-[#17130f] font-semibold text-[13.5px] rounded-xl py-2.5 flex items-center justify-center gap-1.5">
+          <i data-lucide="zap" class="w-4 h-4" stroke-width="2.5"></i> Extract URLs
+        </button>
+        <button id="pasteBtn" class="tap chip rounded-xl px-3.5 py-2.5 flex items-center justify-center">
+          <i data-lucide="clipboard-paste" class="w-4 h-4 text-[var(--text-dim)]"></i>
+        </button>
+      </div>
+    </section>
+
+    <section id="statsSection" class="hidden fade-in">
+      <div class="grid grid-cols-4 gap-2">
+        <div class="card rounded-xl px-2.5 py-2.5 flex flex-col items-center justify-center text-center">
+          <span id="statTotal" class="text-lg font-bold leading-none mono">0</span>
+          <span class="text-[9.5px] text-[var(--text-faint)] mt-1 uppercase tracking-wide">found</span>
+        </div>
+        <div class="card rounded-xl px-2.5 py-2.5 flex flex-col items-center justify-center text-center">
+          <span id="statUnique" class="text-lg font-bold leading-none mono text-[var(--clay)]">0</span>
+          <span class="text-[9.5px] text-[var(--text-faint)] mt-1 uppercase tracking-wide">unique</span>
+        </div>
+        <div class="card rounded-xl px-2.5 py-2.5 flex flex-col items-center justify-center text-center">
+          <span id="statDomains" class="text-lg font-bold leading-none mono">0</span>
+          <span class="text-[9.5px] text-[var(--text-faint)] mt-1 uppercase tracking-wide">domains</span>
+        </div>
+        <div class="card rounded-xl px-2.5 py-2.5 flex flex-col items-center justify-center text-center">
+          <span id="statDupes" class="text-lg font-bold leading-none mono text-[var(--warn)]">0</span>
+          <span class="text-[9.5px] text-[var(--text-faint)] mt-1 uppercase tracking-wide">dupes</span>
+        </div>
+      </div>
+
+      <button id="domainToggle" class="tap w-full card rounded-xl mt-2 px-3 py-2.5 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i data-lucide="bar-chart-horizontal" class="w-3.5 h-3.5 text-[var(--text-dim)]"></i>
+          <span class="text-[12px] text-[var(--text-dim)]">Domain breakdown</span>
+        </div>
+        <i data-lucide="chevron-down" id="domainChevron" class="w-4 h-4 text-[var(--text-faint)] transition-transform"></i>
+      </button>
+      <div id="domainList" class="hidden mt-1.5 card rounded-xl p-2.5 flex flex-col gap-1.5 max-h-56 overflow-y-auto scrollbar-none"></div>
+    </section>
+
+    <section id="toolbarSection" class="hidden fade-in flex flex-col gap-2">
+      <div class="flex items-center gap-2 overflow-x-auto scrollbar-none -mx-4 px-4 pb-0.5">
+        <button data-filter="all" class="filter-chip tap chip rounded-full px-3 py-1.5 text-[11.5px] whitespace-nowrap flex-shrink-0 border-[var(--clay)] text-[var(--clay)]">All</button>
+        <button data-filter="https" class="filter-chip tap chip rounded-full px-3 py-1.5 text-[11.5px] whitespace-nowrap flex-shrink-0 text-[var(--text-dim)]">HTTPS only</button>
+        <button data-filter="media" class="filter-chip tap chip rounded-full px-3 py-1.5 text-[11.5px] whitespace-nowrap flex-shrink-0 text-[var(--text-dim)]">Media</button>
+        <button data-filter="dupes" class="filter-chip tap chip rounded-full px-3 py-1.5 text-[11.5px] whitespace-nowrap flex-shrink-0 text-[var(--text-dim)]">Duplicates</button>
+      </div>
+
+      <div class="relative">
+        <i data-lucide="search" class="w-3.5 h-3.5 text-[var(--text-faint)] absolute left-3 top-1/2 -translate-y-1/2"></i>
+        <input id="searchBox" type="text" placeholder="Filter by domain, path, keyword..." class="w-full card rounded-xl pl-9 pr-8 py-2.5 text-[13px] bg-[var(--surface)] placeholder:text-[var(--text-faint)]">
+        <button id="searchClear" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-faint)]"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+      </div>
+
+      <div class="flex items-center justify-between px-0.5">
+        <label class="flex items-center gap-2 text-[12px] text-[var(--text-dim)]">
+          <input type="checkbox" id="selectAllChk" class="chk">
+          <span id="selectAllLabel">Select all</span>
+        </label>
+        <div class="flex items-center gap-3">
+          <button id="sortBtn" class="tap flex items-center gap-1 text-[11.5px] text-[var(--text-dim)]">
+            <i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i>
+            <span id="sortLabel">Order found</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section id="listSection" class="flex flex-col gap-1.5"></section>
+
+    <section id="emptyState" class="fade-in flex-1 flex flex-col items-center justify-center py-16 text-center gap-3">
+      <div class="w-14 h-14 rounded-2xl card flex items-center justify-center">
+        <i data-lucide="scan-search" class="w-6 h-6 text-[var(--text-faint)]"></i>
+      </div>
+      <div>
+        <p class="text-[13.5px] text-[var(--text-dim)] font-medium">Nothing extracted yet</p>
+        <p class="text-[12px] text-[var(--text-faint)] mt-0.5 max-w-[240px]">Paste text above or drop a file, then tap Extract</p>
+      </div>
+    </section>
+
+    <section id="noResults" class="hidden fade-in flex flex-col items-center justify-center py-16 text-center gap-3">
+      <div class="w-14 h-14 rounded-2xl card flex items-center justify-center">
+        <i data-lucide="search-x" class="w-6 h-6 text-[var(--text-faint)]"></i>
+      </div>
+      <div>
+        <p class="text-[13.5px] text-[var(--text-dim)] font-medium">No matches</p>
+        <p class="text-[12px] text-[var(--text-faint)] mt-0.5">Try a different filter or search term</p>
+      </div>
+    </section>
+
+  </main>
+
+  <div id="actionBar" class="hidden fixed bottom-0 left-0 right-0 z-40 safe-b">
+    <div class="max-w-2xl mx-auto px-4 pb-3">
+      <div class="card rounded-2xl shadow-2xl shadow-black/50 p-2 flex items-center gap-1.5">
+        <span id="selectionCount" class="text-[11.5px] mono text-[var(--text-dim)] px-2 flex-shrink-0">0 selected</span>
+        <div class="flex-1"></div>
+        <button id="openAllBtn" class="tap w-9 h-9 rounded-xl chip flex items-center justify-center flex-shrink-0" title="Open selected">
+          <i data-lucide="external-link" class="w-4 h-4 text-[var(--text-dim)]"></i>
+        </button>
+        <button id="copyAllBtn" class="tap w-9 h-9 rounded-xl chip flex items-center justify-center flex-shrink-0" title="Copy selected">
+          <i data-lucide="copy" class="w-4 h-4 text-[var(--text-dim)]"></i>
+        </button>
+        <button id="exportBtn" class="tap bg-[var(--clay)] rounded-xl px-4 h-9 flex items-center justify-center gap-1.5 flex-shrink-0">
+          <i data-lucide="download" class="w-4 h-4 text-[#17130f]" stroke-width="2.5"></i>
+          <span class="text-[12.5px] font-semibold text-[#17130f]">Export</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="exportSheet" class="hidden fixed inset-0 z-50">
+  <div id="exportBackdrop" class="absolute inset-0 bg-black/60"></div>
+  <div class="sheet-enter absolute bottom-0 left-0 right-0 card rounded-t-3xl p-4 pb-6 safe-b max-w-2xl mx-auto">
+    <div class="w-10 h-1 rounded-full bg-[var(--border)] mx-auto mb-4"></div>
+    <h3 class="text-[14px] font-semibold mb-3 px-1">Export format</h3>
+    <div class="grid grid-cols-2 gap-2">
+      <button data-format="txt" class="export-opt tap chip rounded-xl p-3 flex flex-col items-start gap-1.5">
+        <i data-lucide="file-text" class="w-4 h-4 text-[var(--clay)]"></i>
+        <span class="text-[12.5px] font-medium">Plain text</span>
+        <span class="text-[10.5px] text-[var(--text-faint)]">One URL per line</span>
+      </button>
+      <button data-format="csv" class="export-opt tap chip rounded-xl p-3 flex flex-col items-start gap-1.5">
+        <i data-lucide="table" class="w-4 h-4 text-[var(--clay)]"></i>
+        <span class="text-[12.5px] font-medium">CSV</span>
+        <span class="text-[10.5px] text-[var(--text-faint)]">URL, domain, path</span>
+      </button>
+      <button data-format="json" class="export-opt tap chip rounded-xl p-3 flex flex-col items-start gap-1.5">
+        <i data-lucide="braces" class="w-4 h-4 text-[var(--clay)]"></i>
+        <span class="text-[12.5px] font-medium">JSON</span>
+        <span class="text-[10.5px] text-[var(--text-faint)]">Structured array</span>
+      </button>
+      <button data-format="md" class="export-opt tap chip rounded-xl p-3 flex flex-col items-start gap-1.5">
+        <i data-lucide="hash" class="w-4 h-4 text-[var(--clay)]"></i>
+        <span class="text-[12.5px] font-medium">Markdown</span>
+        <span class="text-[10.5px] text-[var(--text-faint)]">Linked list</span>
+      </button>
+      <button data-format="html" class="export-opt tap chip rounded-xl p-3 flex flex-col items-start gap-1.5">
+        <i data-lucide="code" class="w-4 h-4 text-[var(--clay)]"></i>
+        <span class="text-[12.5px] font-medium">HTML</span>
+        <span class="text-[10.5px] text-[var(--text-faint)]">Anchor tags</span>
+      </button>
+      <button data-format="curl" class="export-opt tap chip rounded-xl p-3 flex flex-col items-start gap-1.5">
+        <i data-lucide="terminal" class="w-4 h-4 text-[var(--clay)]"></i>
+        <span class="text-[12.5px] font-medium">cURL</span>
+        <span class="text-[10.5px] text-[var(--text-faint)]">Shell commands</span>
+      </button>
+    </div>
+    <button id="exportCancel" class="tap w-full text-center text-[12.5px] text-[var(--text-faint)] mt-4 py-1">Cancel</button>
+  </div>
+</div>
+
+<div id="urlSheet" class="hidden fixed inset-0 z-50">
+  <div id="urlBackdrop" class="absolute inset-0 bg-black/60"></div>
+  <div class="sheet-enter absolute bottom-0 left-0 right-0 card rounded-t-3xl p-4 pb-6 safe-b max-w-2xl mx-auto">
+    <div class="w-10 h-1 rounded-full bg-[var(--border)] mx-auto mb-4"></div>
+    <p id="sheetUrl" class="mono text-[12.5px] break-all text-[var(--text)] card bg-[var(--surface2)] rounded-xl p-3 mb-4 max-h-24 overflow-y-auto scrollbar-none"></p>
+    <div class="grid grid-cols-4 gap-2">
+      <button id="sheetOpen" class="tap chip rounded-xl py-3 flex flex-col items-center gap-1.5">
+        <i data-lucide="external-link" class="w-4 h-4 text-[var(--text-dim)]"></i>
+        <span class="text-[10.5px] text-[var(--text-dim)]">Open</span>
+      </button>
+      <button id="sheetCopy" class="tap chip rounded-xl py-3 flex flex-col items-center gap-1.5">
+        <i data-lucide="copy" class="w-4 h-4 text-[var(--text-dim)]"></i>
+        <span class="text-[10.5px] text-[var(--text-dim)]">Copy</span>
+      </button>
+      <button id="sheetShare" class="tap chip rounded-xl py-3 flex flex-col items-center gap-1.5">
+        <i data-lucide="share-2" class="w-4 h-4 text-[var(--text-dim)]"></i>
+        <span class="text-[10.5px] text-[var(--text-dim)]">Share</span>
+      </button>
+      <button id="sheetRemove" class="tap chip rounded-xl py-3 flex flex-col items-center gap-1.5">
+        <i data-lucide="trash-2" class="w-4 h-4 text-red-400"></i>
+        <span class="text-[10.5px] text-red-400">Remove</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="hidden fixed bottom-24 left-1/2 z-[60] card rounded-full px-4 py-2 text-[12px] flex items-center gap-2"></div>
+
+<script>
+(function(){
+'use strict';
+
+const state={
+  raw:[],
+  filtered:[],
+  filter:'all',
+  search:'',
+  sortMode:'order',
+  selected:new Set(),
+  activeUrl:null
+};
+
+window.addEventListener('error',e=>{
+  console.error('Runtime error:',e.error||e.message);
+  const t=document.getElementById('toast');
+  if(!t) return;
+  t.textContent='Something went wrong: '+(e.message||'unknown error');
+  t.classList.remove('hidden');
+  t.classList.add('toast-in');
+  setTimeout(()=>{ if(t) t.classList.add('hidden'); },3500);
+});
+
+const el=id=>document.getElementById(id);
+const inputText=el('inputText');
+const charCount=el('charCount');
+const fileInput=el('fileInput');
+const dropZone=el('dropZone');
+const dropLabel=el('dropLabel');
+const extractBtn=el('extractBtn');
+const pasteBtn=el('pasteBtn');
+const clearAllBtn=el('clearAllBtn');
+const statsSection=el('statsSection');
+const toolbarSection=el('toolbarSection');
+const listSection=el('listSection');
+const emptyState=el('emptyState');
+const noResults=el('noResults');
+const actionBar=el('actionBar');
+const domainToggle=el('domainToggle');
+const domainList=el('domainList');
+const domainChevron=el('domainChevron');
+const searchBox=el('searchBox');
+const searchClear=el('searchClear');
+const selectAllChk=el('selectAllChk');
+const selectAllLabel=el('selectAllLabel');
+const selectionCount=el('selectionCount');
+const sortBtn=el('sortBtn');
+const sortLabel=el('sortLabel');
+const toast=el('toast');
+const exportSheet=el('exportSheet');
+const urlSheet=el('urlSheet');
+
+const URL_REGEX=/\b((?:https?|ftp):\/\/[^\s<>"'\[\]{}|\\^`]+)|([@\w.]?)(www\.[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)+(?:\/[^\s<>"'\[\]{}|\\^`]*)?)/gi;
+const TRAILING_PUNCT=/[).,;:!?'"\]>]+$/;
+const MEDIA_EXT=/\.(jpg|jpeg|png|gif|webp|svg|mp4|mp3|wav|mov|avi|mkv|pdf|zip|rar|7z|gz|tar)(\?|#|$)/i;
+
+function icons(){ if(window.lucide && lucide.createIcons) lucide.createIcons(); }
+icons();
+
+function showToast(msg,type){
+  toast.innerHTML='';
+  const dot=document.createElement('i');
+  dot.setAttribute('data-lucide', type==='error'?'alert-circle':'check-circle-2');
+  dot.className='w-3.5 h-3.5 '+(type==='error'?'text-red-400':'text-[var(--ok)]');
+  const span=document.createElement('span');
+  span.textContent=msg;
+  toast.appendChild(dot);
+  toast.appendChild(span);
+  toast.classList.remove('hidden');
+  toast.classList.add('toast-in');
+  lucide.createIcons();
+  clearTimeout(showToast._t);
+  showToast._t=setTimeout(()=>toast.classList.add('hidden'),2200);
+}
+
+function cleanMatch(raw){
+  let u=raw.trim();
+  const m=u.match(TRAILING_PUNCT);
+  if(m){
+    let cut=m[0];
+    while(cut.length){
+      if(cut.endsWith(')')){
+        const open=(u.match(/\(/g)||[]).length;
+        const close=(u.match(/\)/g)||[]).length;
+        if(close<=open) break;
+      }
+      u=u.slice(0,u.length-1);
+      cut=cut.slice(0,-1);
+    }
+  }
+  if(!/^[a-z]+:\/\//i.test(u)) u='https://'+u;
+  return u;
+}
+
+function safeParse(u){
+  try{ return new URL(u); }catch(e){ return null; }
+}
+
+function extractDomain(parsed){
+  const host=parsed.hostname.toLowerCase();
+  try{
+    if(window.psl && psl.parse){
+      const p=psl.parse(host);
+      return p.domain||host;
+    }
+  }catch(e){}
+  return host;
+}
+
+function extractUrls(text){
+  const found=[];
+  const seen=new Map();
+  let match;
+  URL_REGEX.lastIndex=0;
+  while((match=URL_REGEX.exec(text))!==null){
+    let rawCandidate=null;
+    if(match[1]){
+      rawCandidate=match[1];
+    }else if(match[3] && !match[2]){
+      rawCandidate=match[3];
+    }
+    if(!rawCandidate) continue;
+    const cleaned=cleanMatch(rawCandidate);
+    const parsed=safeParse(cleaned);
+    if(!parsed) continue;
+    if(!parsed.hostname||!parsed.hostname.includes('.')) continue;
+    const key=cleaned;
+    if(seen.has(key)){
+      seen.get(key).count++;
+      continue;
+    }
+    const entry={
+      url:cleaned,
+      domain:extractDomain(parsed),
+      host:parsed.hostname,
+      protocol:parsed.protocol.replace(':',''),
+      path:parsed.pathname+parsed.search,
+      isMedia:MEDIA_EXT.test(parsed.pathname),
+      count:1,
+      order:found.length
+    };
+    seen.set(key,entry);
+    found.push(entry);
+  }
+  return found;
+}
+
+function runExtraction(text){
+  if(!text || !text.trim()){
+    showToast('Nothing to extract — paste some text first','error');
+    return;
+  }
+  extractBtn.classList.add('opacity-60');
+  const spinIcon=extractBtn.querySelector('svg,i');
+  if(spinIcon) spinIcon.classList.add('spin');
+  setTimeout(()=>{
+    try{
+      const results=extractUrls(text);
+      state.raw=results;
+      state.selected=new Set();
+      state.search='';
+      searchBox.value='';
+      searchClear.classList.add('hidden');
+      state.filter='all';
+      document.querySelectorAll('.filter-chip').forEach(c=>{
+        c.classList.remove('border-[var(--clay)]','text-[var(--clay)]');
+        c.classList.add('text-[var(--text-dim)]');
+      });
+      const allChip=document.querySelector('.filter-chip[data-filter="all"]');
+      if(allChip) allChip.classList.add('border-[var(--clay)]','text-[var(--clay)]');
+      render();
+      if(results.length===0){
+        showToast('No URLs found in that text','error');
+      }else{
+        showToast(`Extracted ${results.length} URL${results.length===1?'':'s'}`);
+      }
+    }catch(err){
+      showToast('Extraction failed — check console','error');
+      console.error(err);
+    }finally{
+      extractBtn.classList.remove('opacity-60');
+      if(spinIcon) spinIcon.classList.remove('spin');
+    }
+  },10);
+}
+
+function getUniqueMap(){
+  return state.raw;
+}
+
+function computeStats(){
+  const list=state.raw;
+  const total=list.reduce((s,u)=>s+u.count,0);
+  const unique=list.length;
+  const domains=new Map();
+  list.forEach(u=>{
+    domains.set(u.domain,(domains.get(u.domain)||0)+u.count);
+  });
+  const dupes=total-unique;
+  el('statTotal').textContent=total;
+  el('statUnique').textContent=unique;
+  el('statDomains').textContent=domains.size;
+  el('statDupes').textContent=dupes;
+  return {domains};
+}
+
+function renderDomainList(domains){
+  const sorted=[...domains.entries()].sort((a,b)=>b[1]-a[1]);
+  const max=sorted.length?sorted[0][1]:1;
+  domainList.innerHTML='';
+  sorted.forEach(([domain,count])=>{
+    const pct=Math.max(6,Math.round((count/max)*100));
+    const row=document.createElement('div');
+    row.className='flex items-center gap-2';
+    row.innerHTML=`
+      <span class="text-[11.5px] mono text-[var(--text-dim)] w-28 truncate flex-shrink-0">${escapeHtml(domain)}</span>
+      <div class="flex-1 h-1.5 rounded-full bg-[var(--border)] overflow-hidden">
+        <div class="h-full rounded-full bg-[var(--clay)]" style="width:${pct}%"></div>
+      </div>
+      <span class="text-[11px] mono text-[var(--text-faint)] w-6 text-right flex-shrink-0">${count}</span>
+    `;
+    domainList.appendChild(row);
+  });
+}
+
+function escapeHtml(s){
+  const d=document.createElement('div');
+  d.textContent=s;
+  return d.innerHTML;
+}
+
+function applyFilterSort(){
+  let list=[...state.raw];
+  const q=state.search.trim().toLowerCase();
+  if(q){
+    list=list.filter(u=>u.url.toLowerCase().includes(q)||u.domain.toLowerCase().includes(q));
+  }
+  if(state.filter==='https'){
+    list=list.filter(u=>u.protocol==='https');
+  }else if(state.filter==='media'){
+    list=list.filter(u=>u.isMedia);
+  }else if(state.filter==='dupes'){
+    list=list.filter(u=>u.count>1);
+  }
+  if(state.sortMode==='order'){
+    list.sort((a,b)=>a.order-b.order);
+  }else if(state.sortMode==='alpha'){
+    list.sort((a,b)=>a.url.localeCompare(b.url));
+  }else if(state.sortMode==='domain'){
+    list.sort((a,b)=>a.domain.localeCompare(b.domain)||a.url.localeCompare(b.url));
+  }else if(state.sortMode==='count'){
+    list.sort((a,b)=>b.count-a.count);
+  }
+  state.filtered=list;
+}
+
+function render(){
+  const hasData=state.raw.length>0;
+  statsSection.classList.toggle('hidden',!hasData);
+  toolbarSection.classList.toggle('hidden',!hasData);
+  clearAllBtn.classList.toggle('hidden',!hasData);
+  emptyState.classList.toggle('hidden',hasData);
+
+  if(!hasData){
+    listSection.innerHTML='';
+    noResults.classList.add('hidden');
+    actionBar.classList.add('hidden');
+    return;
+  }
+
+  const {domains}=computeStats();
+  renderDomainList(domains);
+  applyFilterSort();
+  renderList();
+  updateActionBar();
+}
+
+function renderList(){
+  const list=state.filtered;
+  listSection.innerHTML='';
+  noResults.classList.toggle('hidden',list.length>0);
+  if(list.length===0) return;
+
+  const frag=document.createDocumentFragment();
+  list.forEach((item,i)=>{
+    const row=document.createElement('div');
+    row.className='card rounded-xl p-2.5 flex items-center gap-2.5 row-in';
+    row.style.animationDelay=(Math.min(i,20)*12)+'ms';
+    const checked=state.selected.has(item.url);
+    row.innerHTML=`
+      <input type="checkbox" class="chk url-chk flex-shrink-0" data-url="${escapeHtml(item.url)}" ${checked?'checked':''}>
+      <div class="min-w-0 flex-1 url-open-target" data-url="${escapeHtml(item.url)}">
+        <div class="flex items-center gap-1.5 mb-0.5">
+          <i data-lucide="${item.protocol==='https'?'lock':(item.protocol==='http'?'lock-open':'link')}" class="w-3 h-3 ${item.protocol==='https'?'text-[var(--ok)]':'text-[var(--text-faint)]'} flex-shrink-0"></i>
+          <span class="text-[11px] mono text-[var(--text-dim)] truncate">${escapeHtml(item.domain)}</span>
+          ${item.count>1?`<span class="text-[9.5px] mono chip rounded-full px-1.5 py-0.5 text-[var(--warn)] flex-shrink-0">&times;${item.count}</span>`:''}
+          ${item.isMedia?`<i data-lucide="paperclip" class="w-3 h-3 text-[var(--text-faint)] flex-shrink-0"></i>`:''}
+        </div>
+        <p class="text-[12.5px] mono truncate text-[var(--text)]">${escapeHtml(item.url)}</p>
+      </div>
+      <button class="row-menu-btn tap w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" data-url="${escapeHtml(item.url)}">
+        <i data-lucide="more-vertical" class="w-4 h-4 text-[var(--text-faint)]"></i>
+      </button>
+    `;
+    frag.appendChild(row);
+  });
+  listSection.appendChild(frag);
+  icons();
+}
+
+function updateActionBar(){
+  const count=state.selected.size;
+  actionBar.classList.toggle('hidden',count===0);
+  selectionCount.textContent=`${count} selected`;
+  const allVisible=state.filtered.length>0 && state.filtered.every(u=>state.selected.has(u.url));
+  selectAllChk.checked=allVisible;
+  selectAllLabel.textContent=allVisible?'Deselect all':'Select all';
+}
+
+inputText.addEventListener('input',()=>{
+  charCount.textContent=inputText.value.length.toLocaleString()+' chars';
+});
+
+extractBtn.addEventListener('click',()=>runExtraction(inputText.value));
+
+pasteBtn.addEventListener('click',async()=>{
+  try{
+    const text=await navigator.clipboard.readText();
+    inputText.value=text;
+    charCount.textContent=text.length.toLocaleString()+' chars';
+    showToast('Pasted from clipboard');
+  }catch(e){
+    showToast('Clipboard access denied — paste manually','error');
+  }
+});
+
+clearAllBtn.addEventListener('click',()=>{
+  inputText.value='';
+  charCount.textContent='0 chars';
+  state.raw=[];
+  state.selected=new Set();
+  render();
+  showToast('Cleared');
+});
+
+dropZone.addEventListener('click',()=>fileInput.click());
+
+function readFile(file){
+  if(!file) return;
+  const validExt=/\.(txt|md|log|csv|json|html|htm|js|ts|css|xml|yaml|yml)$/i;
+  if(!validExt.test(file.name) && !file.type.startsWith('text/')){
+    showToast('Unsupported file type','error');
+    return;
+  }
+  const reader=new FileReader();
+  reader.onload=e=>{
+    inputText.value=e.target.result;
+    charCount.textContent=inputText.value.length.toLocaleString()+' chars';
+    dropLabel.textContent=file.name;
+    showToast(`Loaded ${file.name}`);
+  };
+  reader.onerror=()=>showToast('Failed to read file','error');
+  reader.readAsText(file);
+}
+
+fileInput.addEventListener('change',e=>readFile(e.target.files[0]));
+
+['dragenter','dragover'].forEach(evt=>{
+  dropZone.addEventListener(evt,e=>{
+    e.preventDefault();
+    dropZone.classList.add('drag-active');
+  });
+});
+['dragleave','drop'].forEach(evt=>{
+  dropZone.addEventListener(evt,e=>{
+    e.preventDefault();
+    dropZone.classList.remove('drag-active');
+  });
+});
+dropZone.addEventListener('drop',e=>{
+  const file=e.dataTransfer.files[0];
+  readFile(file);
+});
+
+domainToggle.addEventListener('click',()=>{
+  const hidden=domainList.classList.toggle('hidden');
+  domainChevron.style.transform=hidden?'rotate(0deg)':'rotate(180deg)';
+});
+
+document.querySelectorAll('.filter-chip').forEach(chip=>{
+  chip.addEventListener('click',()=>{
+    document.querySelectorAll('.filter-chip').forEach(c=>{
+      c.classList.remove('border-[var(--clay)]','text-[var(--clay)]');
+      c.classList.add('text-[var(--text-dim)]');
+    });
+    chip.classList.add('border-[var(--clay)]','text-[var(--clay)]');
+    chip.classList.remove('text-[var(--text-dim)]');
+    state.filter=chip.dataset.filter;
+    applyFilterSort();
+    renderList();
+    updateActionBar();
+  });
+});
+
+let searchDebounce;
+searchBox.addEventListener('input',()=>{
+  clearTimeout(searchDebounce);
+  searchClear.classList.toggle('hidden',!searchBox.value);
+  searchDebounce=setTimeout(()=>{
+    state.search=searchBox.value;
+    applyFilterSort();
+    renderList();
+    updateActionBar();
+  },120);
+});
+searchClear.addEventListener('click',()=>{
+  searchBox.value='';
+  state.search='';
+  searchClear.classList.add('hidden');
+  applyFilterSort();
+  renderList();
+  updateActionBar();
+});
+
+const sortModes=['order','alpha','domain','count'];
+const sortLabels={order:'Order found',alpha:'A → Z',domain:'By domain',count:'Most duped'};
+sortBtn.addEventListener('click',()=>{
+  const idx=sortModes.indexOf(state.sortMode);
+  state.sortMode=sortModes[(idx+1)%sortModes.length];
+  sortLabel.textContent=sortLabels[state.sortMode];
+  applyFilterSort();
+  renderList();
+});
+
+selectAllChk.addEventListener('change',()=>{
+  if(selectAllChk.checked){
+    state.filtered.forEach(u=>state.selected.add(u.url));
+  }else{
+    state.filtered.forEach(u=>state.selected.delete(u.url));
+  }
+  renderList();
+  updateActionBar();
+});
+
+listSection.addEventListener('click',e=>{
+  const chk=e.target.closest('.url-chk');
+  if(chk){
+    if(chk.checked) state.selected.add(chk.dataset.url);
+    else state.selected.delete(chk.dataset.url);
+    updateActionBar();
+    return;
+  }
+  const menuBtn=e.target.closest('.row-menu-btn');
+  if(menuBtn){
+    openUrlSheet(menuBtn.dataset.url);
+    return;
+  }
+  const target=e.target.closest('.url-open-target');
+  if(target){
+    openUrlSheet(target.dataset.url);
+  }
+});
+
+function openUrlSheet(url){
+  state.activeUrl=url;
+  el('sheetUrl').textContent=url;
+  urlSheet.classList.remove('hidden');
+}
+function closeUrlSheet(){
+  urlSheet.classList.add('hidden');
+  state.activeUrl=null;
+}
+el('urlBackdrop').addEventListener('click',closeUrlSheet);
+el('sheetOpen').addEventListener('click',()=>{
+  if(state.activeUrl) window.open(state.activeUrl,'_blank','noopener,noreferrer');
+  closeUrlSheet();
+});
+el('sheetCopy').addEventListener('click',async()=>{
+  if(state.activeUrl){
+    await copyToClipboard(state.activeUrl);
+    showToast('Copied to clipboard');
+  }
+  closeUrlSheet();
+});
+el('sheetShare').addEventListener('click',async()=>{
+  if(!state.activeUrl) return;
+  if(navigator.share){
+    try{ await navigator.share({url:state.activeUrl}); }catch(e){}
+  }else{
+    await copyToClipboard(state.activeUrl);
+    showToast('Share unsupported — copied instead');
+  }
+  closeUrlSheet();
+});
+el('sheetRemove').addEventListener('click',()=>{
+  if(state.activeUrl){
+    state.raw=state.raw.filter(u=>u.url!==state.activeUrl);
+    state.selected.delete(state.activeUrl);
+    render();
+    showToast('Removed');
+  }
+  closeUrlSheet();
+});
+
+async function copyToClipboard(text){
+  try{
+    await navigator.clipboard.writeText(text);
+    return true;
+  }catch(e){
+    try{
+      const ta=document.createElement('textarea');
+      ta.value=text;
+      ta.style.position='fixed';
+      ta.style.opacity='0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      return true;
+    }catch(e2){
+      showToast('Copy failed','error');
+      return false;
+    }
+  }
+}
+
+el('openAllBtn').addEventListener('click',()=>{
+  const urls=[...state.selected];
+  if(urls.length===0) return;
+  if(urls.length>10){
+    showToast(`Opening ${urls.length} tabs — allow popups if blocked`);
+  }
+  urls.forEach((u,i)=>{
+    setTimeout(()=>window.open(u,'_blank','noopener,noreferrer'),i*60);
+  });
+});
+
+el('copyAllBtn').addEventListener('click',async()=>{
+  const urls=[...state.selected];
+  if(urls.length===0) return;
+  const ok=await copyToClipboard(urls.join('\n'));
+  if(ok) showToast(`Copied ${urls.length} URL${urls.length===1?'':'s'}`);
+});
+
+el('exportBtn').addEventListener('click',()=>{
+  exportSheet.classList.remove('hidden');
+});
+el('exportBackdrop').addEventListener('click',()=>exportSheet.classList.add('hidden'));
+el('exportCancel').addEventListener('click',()=>exportSheet.classList.add('hidden'));
+
+function buildExport(format,items){
+  if(format==='txt') return items.map(i=>i.url).join('\n');
+  if(format==='csv'){
+    const header='url,domain,protocol,path,occurrences';
+    const rows=items.map(i=>[i.url,i.domain,i.protocol,i.path,i.count].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(','));
+    return [header,...rows].join('\n');
+  }
+  if(format==='json') return JSON.stringify(items.map(i=>({url:i.url,domain:i.domain,protocol:i.protocol,path:i.path,occurrences:i.count})),null,2);
+  if(format==='md') return items.map(i=>`- [${i.url}](${i.url})`).join('\n');
+  if(format==='html') return items.map(i=>`<a href="${i.url}">${i.url}</a>`).join('\n');
+  if(format==='curl') return items.map(i=>`curl -sSL "${i.url}"`).join('\n');
+  return '';
+}
+const mimeMap={txt:'text/plain',csv:'text/csv',json:'application/json',md:'text/markdown',html:'text/html',curl:'text/x-shellscript'};
+const extMap={txt:'txt',csv:'csv',json:'json',md:'md',html:'html',curl:'sh'};
+
+document.querySelectorAll('.export-opt').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const format=btn.dataset.format;
+    const items=state.selected.size>0 ? state.raw.filter(u=>state.selected.has(u.url)) : state.raw;
+    if(items.length===0){
+      showToast('No URLs to export','error');
+      exportSheet.classList.add('hidden');
+      return;
+    }
+    try{
+      const content=buildExport(format,items);
+      const blob=new Blob([content],{type:mimeMap[format]+';charset=utf-8'});
+      const link=document.createElement('a');
+      link.href=URL.createObjectURL(blob);
+      link.download=`urlkit-export-${Date.now()}.${extMap[format]}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
+      showToast(`Exported ${items.length} URL${items.length===1?'':'s'} as ${format.toUpperCase()}`);
+    }catch(err){
+      showToast('Export failed','error');
+      console.error(err);
+    }
+    exportSheet.classList.add('hidden');
+  });
+});
+
+inputText.addEventListener('keydown',e=>{
+  if((e.metaKey||e.ctrlKey)&&e.key==='Enter'){
+    e.preventDefault();
+    runExtraction(inputText.value);
+  }
+});
+
+render();
+})();
+</script>
+</body>
+</html>
