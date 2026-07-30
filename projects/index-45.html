@@ -1,0 +1,1382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Redactly — Secure Redaction Tool</title>
+<link rel="icon" href="data:,">
+<script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+:root{
+  --clay:#D97757; --clay-dark:#C1633F; --clay-light:#F0A98A;
+  --ink:#2E2A26; --ink-soft:#5B564F; --paper:#FAF7F2; --paper-alt:#F1ECE3;
+  --card:#FFFFFF; --line:#E5DED2; --danger:#C4432E; --safe:#4E7C5C;
+  --shadow:0 1px 2px rgba(46,42,38,.06),0 8px 24px -8px rgba(46,42,38,.12);
+  --radius:18px; --radius-sm:12px;
+  --vh:1vh;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;height:100%;overscroll-behavior:none}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  background:var(--paper); color:var(--ink);
+  height:calc(var(--vh,1vh)*100); width:100vw; overflow:hidden;
+  display:flex; flex-direction:column; position:fixed; inset:0;
+  -webkit-user-select:none; user-select:none;
+}
+input,textarea{-webkit-user-select:text;user-select:text}
+button{font-family:inherit;-webkit-user-select:none;user-select:none}
+
+.hidden{display:none!important}
+.icon{width:20px;height:20px;flex-shrink:0}
+.icon-sm{width:16px;height:16px;flex-shrink:0}
+
+/* ===== LANDING / UPLOAD ===== */
+#screen-upload{
+  flex:1; display:flex; flex-direction:column; padding:0;
+  background:
+    radial-gradient(circle at 15% -10%, rgba(217,119,87,.16), transparent 55%),
+    radial-gradient(circle at 100% 0%, rgba(217,119,87,.10), transparent 45%),
+    var(--paper);
+  overflow-y:auto; -webkit-overflow-scrolling:touch;
+}
+.upload-header{padding:max(20px,env(safe-area-inset-top)) 22px 6px}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-mark{
+  width:38px;height:38px;border-radius:11px;
+  background:linear-gradient(145deg,var(--clay-light),var(--clay));
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:var(--shadow);
+}
+.brand-mark svg{color:#fff;width:20px;height:20px}
+.brand-name{font-size:19px;font-weight:700;letter-spacing:-.01em}
+.brand-sub{font-size:12.5px;color:var(--ink-soft);margin-top:1px}
+
+.upload-hero{padding:26px 22px 10px}
+.upload-hero h1{
+  font-size:26px;line-height:1.18;margin:0 0 8px;letter-spacing:-.02em;font-weight:700;
+}
+.upload-hero p{margin:0;color:var(--ink-soft);font-size:14.5px;line-height:1.5;max-width:32ch}
+
+.drop-zone{
+  margin:18px 22px 8px; padding:34px 20px;
+  border:2px dashed #D8C6B6; border-radius:var(--radius);
+  background:rgba(255,255,255,.55); text-align:center;
+  display:flex; flex-direction:column; align-items:center; gap:12px;
+  transition:border-color .15s, background .15s, transform .1s;
+}
+.drop-zone.drag{border-color:var(--clay); background:rgba(217,119,87,.08); transform:scale(.99)}
+.drop-zone .dz-icon{
+  width:56px;height:56px;border-radius:50%;
+  background:var(--paper-alt); display:flex;align-items:center;justify-content:center;
+  color:var(--clay-dark);
+}
+.drop-zone .dz-icon svg{width:26px;height:26px}
+.drop-zone h3{margin:0;font-size:15.5px;font-weight:650}
+.drop-zone .dz-sub{font-size:12.5px;color:var(--ink-soft)}
+
+.upload-btn{
+  margin:6px 22px 0; padding:15px 20px; border:none; border-radius:14px;
+  background:var(--clay); color:#fff; font-size:15.5px; font-weight:650;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  box-shadow:0 6px 18px -6px rgba(193,99,63,.55);
+  active:scale(.98);
+}
+.upload-btn:active{transform:scale(.97)}
+.upload-secondary{
+  margin:10px 22px 0; padding:14px 20px; border:1.5px solid var(--line); border-radius:14px;
+  background:var(--card); color:var(--ink); font-size:14.5px; font-weight:600;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+}
+.upload-secondary:active{transform:scale(.97); background:var(--paper-alt)}
+
+.trust-row{
+  display:flex; gap:8px; margin:20px 22px 8px; flex-wrap:wrap;
+}
+.trust-chip{
+  display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--ink-soft);
+  background:rgba(255,255,255,.6); border:1px solid var(--line); border-radius:100px;
+  padding:6px 11px;
+}
+.trust-chip svg{width:13px;height:13px;color:var(--safe)}
+
+.feature-list{margin:18px 22px 28px; display:flex; flex-direction:column; gap:10px}
+.feature-row{display:flex; gap:12px; align-items:flex-start; padding:12px; background:var(--card); border-radius:14px; border:1px solid var(--line)}
+.feature-row .f-icon{
+  width:34px;height:34px;border-radius:10px; flex-shrink:0;
+  background:var(--paper-alt); display:flex;align-items:center;justify-content:center;color:var(--clay-dark);
+}
+.feature-row .f-icon svg{width:17px;height:17px}
+.feature-row .f-title{font-size:13.5px;font-weight:650;margin-bottom:1px}
+.feature-row .f-sub{font-size:12px;color:var(--ink-soft);line-height:1.4}
+
+#file-input{display:none}
+
+/* ===== TOAST ===== */
+#toast-wrap{
+  position:fixed; left:0; right:0; bottom:max(18px,env(safe-area-inset-bottom));
+  display:flex; flex-direction:column; align-items:center; gap:8px; z-index:9999;
+  pointer-events:none; padding:0 16px;
+}
+.toast{
+  pointer-events:auto; max-width:440px; width:100%;
+  background:var(--ink); color:#fff; padding:12px 14px; border-radius:14px;
+  font-size:13.5px; display:flex; align-items:flex-start; gap:10px;
+  box-shadow:0 10px 30px -8px rgba(0,0,0,.4);
+  animation:toast-in .22s cubic-bezier(.2,.9,.3,1);
+}
+.toast.err{background:var(--danger)}
+.toast.ok{background:var(--safe)}
+.toast svg{width:17px;height:17px;flex-shrink:0;margin-top:1px}
+.toast .t-msg{flex:1;line-height:1.4}
+.toast .t-detail{font-size:11.5px;opacity:.8;margin-top:2px;font-family:ui-monospace,monospace;word-break:break-all}
+@keyframes toast-in{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:none}}
+
+/* ===== EDITOR SCREEN ===== */
+#screen-editor{flex:1; display:none; flex-direction:column; min-height:0; background:var(--paper-alt)}
+#screen-editor.active{display:flex}
+
+.editor-topbar{
+  display:flex; align-items:center; gap:8px;
+  padding:max(12px,env(safe-area-inset-top)) 12px 10px;
+  background:var(--card); border-bottom:1px solid var(--line);
+  flex-shrink:0; z-index:20;
+}
+.icon-btn{
+  width:38px;height:38px;border-radius:11px;border:none;background:transparent;
+  display:flex;align-items:center;justify-content:center;color:var(--ink);
+  flex-shrink:0;
+}
+.icon-btn:active{background:var(--paper-alt)}
+.icon-btn.accent{color:var(--clay-dark)}
+.icon-btn[disabled]{opacity:.35}
+.topbar-title{flex:1;min-width:0}
+.topbar-title .tt-name{font-size:13.5px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar-title .tt-sub{font-size:11px;color:var(--ink-soft)}
+.pill-btn{
+  padding:8px 14px;border-radius:100px;border:none;background:var(--clay);color:#fff;
+  font-size:13px;font-weight:650;display:flex;align-items:center;gap:6px;flex-shrink:0;
+}
+.pill-btn:active{transform:scale(.96)}
+.pill-btn[disabled]{opacity:.4}
+.pill-btn.ghost{background:var(--paper-alt);color:var(--ink)}
+
+/* canvas viewport */
+#canvas-wrap{
+  flex:1; position:relative; overflow:hidden; background:#DCD3C4;
+  touch-action:none;
+}
+#canvas-scroll{
+  position:absolute; inset:0; overflow:auto; -webkit-overflow-scrolling:touch;
+}
+#canvas-pad{
+  position:relative; min-width:100%; min-height:100%;
+}
+#canvas-stage{
+  position:absolute; top:20px; left:50%;
+  transform-origin:top center;
+  box-shadow:0 4px 24px rgba(0,0,0,.18);
+  background:#fff;
+}
+#page-canvas{display:block; touch-action:none}
+#draw-canvas{position:absolute; inset:0; touch-action:none}
+#page-canvas, #draw-canvas{ -webkit-user-select:none; user-select:none }
+
+.page-nav-float{
+  position:absolute; bottom:14px; left:50%; transform:translateX(-50%);
+  background:rgba(46,42,38,.85); backdrop-filter:blur(8px); color:#fff;
+  border-radius:100px; padding:7px 8px; display:flex; align-items:center; gap:2px;
+  z-index:15; box-shadow:0 6px 20px rgba(0,0,0,.25);
+}
+.page-nav-float button{width:30px;height:30px;border:none;background:transparent;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.page-nav-float button:active{background:rgba(255,255,255,.15)}
+.page-nav-float button[disabled]{opacity:.3}
+.page-nav-float .pn-label{font-size:12.5px;padding:0 8px;font-weight:600;min-width:52px;text-align:center}
+
+.zoom-hint{
+  position:absolute; top:10px; right:10px; z-index:15;
+  background:rgba(46,42,38,.75); color:#fff; font-size:11px; padding:5px 9px; border-radius:100px;
+  display:flex;align-items:center;gap:4px; pointer-events:none; opacity:0; transition:opacity .2s;
+}
+.zoom-hint.show{opacity:1}
+
+/* Tool dock (mobile-first bottom sheet style) */
+#tool-dock{
+  flex-shrink:0; background:var(--card); border-top:1px solid var(--line);
+  padding:10px 10px max(10px,env(safe-area-inset-bottom));
+  z-index:20;
+}
+.tool-row{display:flex; gap:8px; overflow-x:auto; padding:2px 2px 8px; -webkit-overflow-scrolling:touch; scrollbar-width:none}
+.tool-row::-webkit-scrollbar{display:none}
+.tool-chip{
+  flex-shrink:0; display:flex; flex-direction:column; align-items:center; gap:5px;
+  padding:9px 14px; border-radius:14px; border:1.5px solid transparent; background:var(--paper-alt);
+  color:var(--ink-soft); min-width:64px;
+}
+.tool-chip.active{background:rgba(217,119,87,.13); border-color:var(--clay); color:var(--clay-dark)}
+.tool-chip svg{width:19px;height:19px}
+.tool-chip span{font-size:10.5px;font-weight:650;white-space:nowrap}
+.tool-chip:active{transform:scale(.95)}
+
+.subtool-row{display:flex; align-items:center; gap:10px; padding:0 4px}
+.swatch-row{display:flex;gap:6px;align-items:center;flex:1;overflow-x:auto; -webkit-overflow-scrolling:touch;scrollbar-width:none}
+.swatch-row::-webkit-scrollbar{display:none}
+.swatch{width:26px;height:26px;border-radius:50%;border:2px solid rgba(0,0,0,.08); flex-shrink:0; position:relative}
+.swatch.active::after{content:'';position:absolute;inset:-4px;border:2px solid var(--clay);border-radius:50%}
+.brush-size{display:flex;align-items:center;gap:8px; flex-shrink:0}
+.brush-size input[type=range]{width:74px; accent-color:var(--clay)}
+
+.hint-strip{
+  font-size:11.5px; color:var(--ink-soft); padding:0 6px 8px; display:flex; align-items:center; gap:6px;
+}
+.hint-strip svg{width:13px;height:13px;flex-shrink:0;color:var(--clay-dark)}
+
+/* Options sheet */
+.sheet-backdrop{
+  position:fixed; inset:0; background:rgba(46,42,38,.4); z-index:50; opacity:0; pointer-events:none;
+  transition:opacity .2s;
+}
+.sheet-backdrop.show{opacity:1; pointer-events:auto}
+.sheet{
+  position:fixed; left:0; right:0; bottom:0; background:var(--card); z-index:51;
+  border-radius:22px 22px 0 0; transform:translateY(100%); transition:transform .28s cubic-bezier(.2,.9,.25,1);
+  max-height:88vh; display:flex; flex-direction:column; box-shadow:0 -10px 40px rgba(0,0,0,.2);
+}
+.sheet.show{transform:translateY(0)}
+.sheet-handle{width:36px;height:4px;background:var(--line);border-radius:100px;margin:10px auto 4px}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;padding:10px 18px 14px;border-bottom:1px solid var(--line)}
+.sheet-head h3{margin:0;font-size:16px;font-weight:700}
+.sheet-body{overflow-y:auto; padding:16px 18px max(20px,env(safe-area-inset-bottom)); -webkit-overflow-scrolling:touch}
+
+.opt-group{margin-bottom:20px}
+.opt-group:last-child{margin-bottom:4px}
+.opt-label{font-size:11.5px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+.opt-row{
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding:13px 14px; background:var(--paper-alt); border-radius:14px; margin-bottom:8px;
+}
+.opt-row.locked{opacity:.6}
+.opt-text{flex:1; min-width:0}
+.opt-title{font-size:14px;font-weight:650; display:flex; align-items:center; gap:6px}
+.opt-title .tag{font-size:9.5px;font-weight:700;background:var(--safe);color:#fff;padding:2px 6px;border-radius:5px;letter-spacing:.03em}
+.opt-desc{font-size:12px;color:var(--ink-soft);margin-top:2px;line-height:1.4}
+
+.switch{position:relative;width:46px;height:27px;flex-shrink:0}
+.switch input{opacity:0;width:100%;height:100%;position:absolute;margin:0;cursor:pointer;z-index:2}
+.switch .track{position:absolute;inset:0;background:#D3C9BA;border-radius:100px;transition:.2s}
+.switch .thumb{position:absolute;top:2.5px;left:2.5px;width:22px;height:22px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.switch input:checked ~ .track{background:var(--clay)}
+.switch input:checked ~ .thumb{transform:translateX(19px)}
+.switch input:disabled ~ .track{opacity:.5}
+
+.opt-actions{display:flex;gap:10px;margin-top:6px}
+.opt-actions button{flex:1}
+
+/* Export sheet specific */
+.export-summary{background:var(--paper-alt); border-radius:14px; padding:14px; margin-bottom:16px}
+.export-summary .es-row{display:flex; justify-content:space-between; font-size:13px; padding:5px 0}
+.export-summary .es-row span:first-child{color:var(--ink-soft)}
+.export-summary .es-row b{font-weight:650}
+
+/* Loading overlay */
+#loading-overlay{
+  position:fixed; inset:0; background:rgba(250,247,242,.92); z-index:100;
+  display:none; flex-direction:column; align-items:center; justify-content:center; gap:16px;
+  backdrop-filter:blur(4px);
+}
+#loading-overlay.show{display:flex}
+.spinner{
+  width:44px;height:44px;border-radius:50%;border:3.5px solid var(--paper-alt); border-top-color:var(--clay);
+  animation:spin .75s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-size:14px;font-weight:600;color:var(--ink)}
+.loading-sub{font-size:12px;color:var(--ink-soft)}
+
+/* Result screen */
+#screen-result{flex:1; display:none; flex-direction:column; background:var(--paper)}
+#screen-result.active{display:flex}
+.result-top{padding:max(20px,env(safe-area-inset-top)) 20px 12px; display:flex; align-items:center; gap:12px}
+.result-body{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; text-align:center; gap:6px}
+.result-badge{
+  width:76px;height:76px;border-radius:50%;background:rgba(78,124,92,.13);
+  display:flex;align-items:center;justify-content:center;color:var(--safe); margin-bottom:10px;
+}
+.result-badge svg{width:38px;height:38px}
+.result-body h2{margin:0;font-size:20px;font-weight:750}
+.result-body p{margin:4px 0 0;font-size:13.5px;color:var(--ink-soft); max-width:30ch}
+.result-checks{display:flex;flex-direction:column;gap:8px;margin-top:20px; width:100%; max-width:340px}
+.rc-row{display:flex;align-items:center;gap:10px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:10px 13px; font-size:13px; text-align:left}
+.rc-row svg{width:16px;height:16px;color:var(--safe);flex-shrink:0}
+.result-actions{padding:16px 20px max(20px,env(safe-area-inset-bottom)); display:flex; flex-direction:column; gap:10px}
+
+.marker{
+  position:absolute; border:1.5px dashed var(--clay); background:rgba(217,119,87,.14);
+  cursor:move;
+}
+.marker.selected{border-color:var(--danger); background:rgba(196,67,46,.14)}
+.marker .m-del{
+  position:absolute; top:-11px; right:-11px; width:22px;height:22px;border-radius:50%;
+  background:var(--danger); color:#fff; display:flex;align-items:center;justify-content:center;
+  box-shadow:0 2px 6px rgba(0,0,0,.3);
+}
+.marker .m-del svg{width:12px;height:12px}
+.marker .m-handle{position:absolute; width:16px;height:16px; background:#fff; border:2px solid var(--danger); border-radius:50%}
+.marker .m-handle.br{bottom:-8px;right:-8px;cursor:nwse-resize}
+</style>
+</head>
+<body>
+
+<div id="screen-upload">
+  <div class="upload-header">
+    <div class="brand">
+      <div class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 6v6c0 5 4 9 9 10 5-1 9-5 9-10V6z"/><path d="M9 12l2 2 4-4"/></svg></div>
+      <div>
+        <div class="brand-name">Redactly</div>
+        <div class="brand-sub">On-device redaction, zero uploads</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="upload-hero">
+    <h1>Black out what shouldn't be seen.</h1>
+    <p>Draw over sensitive text or images in a PDF or photo, then flatten it into a file nothing can recover.</p>
+  </div>
+
+  <div class="drop-zone" id="drop-zone">
+    <div class="dz-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.9A5 5 0 0 1 6 5.3 6 6 0 0 1 17.7 7a4.5 4.5 0 0 1 1.3 8.8"/><path d="M12 12v9"/><path d="m8 16 4-4 4 4"/></svg></div>
+    <h3>Tap to choose a file</h3>
+    <div class="dz-sub">or drag a PDF / image in here</div>
+  </div>
+  <input type="file" id="file-input" accept="application/pdf,image/png,image/jpeg,image/webp,image/heic">
+
+  <button class="upload-btn" id="pick-btn"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.9A5 5 0 0 1 6 5.3 6 6 0 0 1 17.7 7a4.5 4.5 0 0 1 1.3 8.8"/><path d="M12 12v9"/><path d="m8 16 4-4 4 4"/></svg>Upload PDF or image</button>
+  <button class="upload-secondary" id="camera-btn"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3.5"/></svg>Take a photo</button>
+
+  <div class="trust-row">
+    <div class="trust-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Runs fully in your browser</div>
+    <div class="trust-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Nothing leaves your device</div>
+  </div>
+
+  <div class="feature-list">
+    <div class="feature-row">
+      <div class="f-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 12h8M8 8h5M8 16h4"/></svg></div>
+      <div><div class="f-title">Real flattening</div><div class="f-sub">Redacted areas are burned into the pixels, not just drawn on top.</div></div>
+    </div>
+    <div class="feature-row">
+      <div class="f-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8V6a5 5 0 0 0-10 0v2"/><rect x="4" y="8" width="16" height="13" rx="2"/></svg></div>
+      <div><div class="f-title">Text layer stripped</div><div class="f-sub">Removes the hidden, selectable text underneath so it can't be copied out.</div></div>
+    </div>
+    <div class="feature-row">
+      <div class="f-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
+      <div><div class="f-title">Metadata wiped</div><div class="f-sub">Author, title, and other document properties are cleared on export.</div></div>
+    </div>
+  </div>
+</div>
+
+<div id="screen-editor">
+  <div class="editor-topbar">
+    <button class="icon-btn" id="btn-back"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
+    <div class="topbar-title">
+      <div class="tt-name" id="doc-name">document.pdf</div>
+      <div class="tt-sub" id="doc-meta">Page 1 of 1</div>
+    </div>
+    <button class="icon-btn" id="btn-undo" disabled><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M3 13a9 9 0 1 0 3-7"/></svg></button>
+    <button class="icon-btn" id="btn-redo" disabled><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 7v6h-6"/><path d="M21 13a9 9 0 1 1-3-7"/></svg></button>
+    <button class="pill-btn" id="btn-export"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Done</button>
+  </div>
+
+  <div id="canvas-wrap">
+    <div id="canvas-scroll">
+      <div id="canvas-pad">
+      <div id="canvas-stage">
+        <canvas id="page-canvas"></canvas>
+        <canvas id="draw-canvas"></canvas>
+      </div>
+      </div>
+    </div>
+    <div class="zoom-hint" id="zoom-hint">100%</div>
+    <div class="page-nav-float hidden" id="page-nav">
+      <button id="pn-prev"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
+      <div class="pn-label" id="pn-label">1 / 1</div>
+      <button id="pn-next"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button>
+    </div>
+  </div>
+
+  <div id="tool-dock">
+    <div class="tool-row" id="tool-row">
+      <button class="tool-chip active" data-tool="box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/></svg><span>Box</span></button>
+      <button class="tool-chip" data-tool="brush"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.06 11.9l8.07-8.06a2.85 2.85 0 1 1 4.03 4.03l-8.06 8.08"/><path d="M7.07 14.94c-1.66 0-3 1.35-3 3.02 0 1.33-2.5 1.52-2 2.02 1.08 1.1 2.49 2.02 4 2.02 2.2 0 4-1.8 4-4.04a3.01 3.01 0 0 0-3-3.02z"/></svg><span>Brush</span></button>
+      <button class="tool-chip" data-tool="pixelate"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg><span>Pixelate</span></button>
+      <button class="tool-chip" data-tool="text"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg><span>Label</span></button>
+      <button class="tool-chip" data-tool="move"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg><span>Pan/Zoom</span></button>
+      <button class="tool-chip" data-tool="erase"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20H9l-6-6a2 2 0 0 1 0-2.8l8-8a2 2 0 0 1 2.8 0l6 6a2 2 0 0 1 0 2.8L14 18"/></svg><span>Eraser</span></button>
+    </div>
+    <div class="subtool-row" id="subtool-row">
+      <div class="swatch-row" id="swatch-row">
+        <div class="swatch active" data-color="#1a1a1a" style="background:#1a1a1a"></div>
+        <div class="swatch" data-color="#2E2A26" style="background:#2E2A26"></div>
+        <div class="swatch" data-color="#D97757" style="background:#D97757"></div>
+        <div class="swatch" data-color="#4E7C5C" style="background:#4E7C5C"></div>
+        <div class="swatch" data-color="#C4432E" style="background:#C4432E"></div>
+        <div class="swatch" data-color="#FFFFFF" style="background:#FFFFFF"></div>
+      </div>
+      <div class="brush-size">
+        <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/></svg>
+        <input type="range" id="brush-size" min="8" max="80" value="26">
+      </div>
+    </div>
+    <div class="hint-strip" id="hint-strip">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+      <span>Drag to draw a box. Pinch anywhere to zoom.</span>
+    </div>
+  </div>
+</div>
+
+<div id="screen-result">
+  <div class="result-top"><button class="icon-btn" id="btn-result-back"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button></div>
+  <div class="result-body">
+    <div class="result-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 6v6c0 5 4 9 9 10 5-1 9-5 9-10V6z"/><path d="M9 12l2 2 4-4"/></svg></div>
+    <h2>Redaction complete</h2>
+    <p id="result-sub">Your file has been flattened and is ready to save.</p>
+    <div class="result-checks" id="result-checks"></div>
+  </div>
+  <div class="result-actions">
+    <button class="upload-btn" id="btn-download"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13m0 0 4-4m-4 4-4-4"/><path d="M4 20h16"/></svg>Save file</button>
+    <button class="upload-secondary" id="btn-another">Redact another file</button>
+  </div>
+</div>
+
+<div class="sheet-backdrop" id="export-backdrop"></div>
+<div class="sheet" id="export-sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head"><h3>Export options</h3><button class="icon-btn" id="export-close"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+  <div class="sheet-body">
+    <div class="opt-group">
+      <div class="opt-label">Security</div>
+      <div class="opt-row" id="row-flatten">
+        <div class="opt-text">
+          <div class="opt-title">Flatten redactions <span class="tag">Recommended</span></div>
+          <div class="opt-desc">Merges black-out marks permanently into the page image. Without this, marks could theoretically be moved or deleted.</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="opt-flatten" checked><span class="track"></span><span class="thumb"></span></label>
+      </div>
+      <div class="opt-row" id="row-ocr">
+        <div class="opt-text">
+          <div class="opt-title">Strip hidden text layer <span class="tag">Recommended</span></div>
+          <div class="opt-desc">Removes selectable/searchable text under redacted areas so covered content can't be copy-pasted out.</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="opt-ocr" checked><span class="track"></span><span class="thumb"></span></label>
+      </div>
+      <div class="opt-row" id="row-metadata">
+        <div class="opt-text">
+          <div class="opt-title">Clear document metadata</div>
+          <div class="opt-desc">Wipes author, title, subject, and producer fields from the file.</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="opt-metadata" checked><span class="track"></span><span class="thumb"></span></label>
+      </div>
+    </div>
+    <div class="opt-group">
+      <div class="opt-label">Output</div>
+      <div class="opt-row">
+        <div class="opt-text">
+          <div class="opt-title">Format</div>
+          <div class="opt-desc" id="format-desc">Choose how the redacted file is saved.</div>
+        </div>
+      </div>
+      <div class="swatch-row" style="gap:8px;padding:2px 0 4px" id="format-row"></div>
+      <div class="opt-row" id="row-quality">
+        <div class="opt-text">
+          <div class="opt-title">Image quality</div>
+          <div class="opt-desc">Higher quality keeps text sharp but increases file size.</div>
+        </div>
+      </div>
+      <div class="swatch-row" style="gap:8px;padding:2px 0 4px" id="quality-row"></div>
+    </div>
+    <div class="export-summary" id="export-summary"></div>
+    <div class="opt-actions">
+      <button class="upload-secondary" id="export-cancel">Cancel</button>
+      <button class="upload-btn" id="export-confirm"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Export</button>
+    </div>
+  </div>
+</div>
+
+<div id="loading-overlay">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loading-text">Processing…</div>
+  <div class="loading-sub" id="loading-sub">This stays on your device</div>
+</div>
+
+<div id="toast-wrap"></div>
+
+<script>
+(function(){
+'use strict';
+
+if(typeof pdfjsLib === 'undefined' || typeof PDFLib === 'undefined'){
+  document.body.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;padding:32px;text-align:center;font-family:-apple-system,sans-serif;gap:10px;background:#FAF7F2;color:#2E2A26"><div style="font-size:17px;font-weight:700">Couldn\'t load required libraries</div><p style="font-size:14px;color:#5B564F;max-width:34ch;line-height:1.5">This app needs pdf.js and pdf-lib from unpkg.com and cdnjs.cloudflare.com. Check your connection or network/ad-blocker settings and reload.</p></div>';
+  throw new Error('Required CDN libraries (pdfjsLib / PDFLib) failed to load');
+}
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+function setVH(){document.documentElement.style.setProperty('--vh', (window.innerHeight*0.01)+'px');}
+setVH(); window.addEventListener('resize', setVH); window.addEventListener('orientationchange', setVH);
+
+const $ = (s,r)=> (r||document).querySelector(s);
+const $$ = (s,r)=> Array.from((r||document).querySelectorAll(s));
+
+function toast(msg, type, detail){
+  const wrap = $('#toast-wrap');
+  const el = document.createElement('div');
+  el.className = 'toast' + (type ? ' '+type : '');
+  const iconPath = type==='err'
+    ? '<circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/>'
+    : type==='ok'
+    ? '<path d="M20 6 9 17l-5-5"/>'
+    : '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>';
+  el.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">'+iconPath+'</svg><div class="t-msg">'+msg+(detail?'<div class="t-detail"></div>':'')+'</div>';
+  if(detail) el.querySelector('.t-detail').textContent = detail;
+  wrap.appendChild(el);
+  setTimeout(()=>{ el.style.transition='opacity .25s, transform .25s'; el.style.opacity='0'; el.style.transform='translateY(8px)'; setTimeout(()=>el.remove(),260); }, type==='err'?4600:2800);
+}
+
+function showLoading(text, sub){
+  $('#loading-text').textContent = text || 'Processing…';
+  $('#loading-sub').textContent = sub || 'This stays on your device';
+  $('#loading-overlay').classList.add('show');
+}
+function hideLoading(){ $('#loading-overlay').classList.remove('show'); }
+
+window.addEventListener('error', function(e){
+  hideLoading();
+  toast('Something went wrong. You can keep working; this file wasn\'t corrupted.', 'err', (e.message||'Unknown error').slice(0,180));
+});
+window.addEventListener('unhandledrejection', function(e){
+  hideLoading();
+  const m = (e.reason && (e.reason.message||String(e.reason))) || 'Unknown error';
+  toast('An operation failed to complete.', 'err', m.slice(0,180));
+});
+
+const state = {
+  fileType: null,
+  fileName: 'document',
+  pdfDoc: null,
+  pageCount: 1,
+  currentPage: 1,
+  pageViewports: {},
+  imageEl: null,
+  scale: 1,
+  minScale: 0.3,
+  maxScale: 6,
+  tool: 'box',
+  color: '#1a1a1a',
+  brushSize: 26,
+  pixelSize: 18,
+  marks: {},
+  undoStack: [],
+  redoStack: [],
+  drawing: false,
+  dragStart: null,
+  activeMarker: null,
+  panning: false,
+  lastPan: null,
+  pinch: null,
+  originalBytes: null,
+  exportResult: null,
+};
+
+function marksForPage(p){ if(!state.marks[p]) state.marks[p]=[]; return state.marks[p]; }
+
+function pushHistory(){
+  state.undoStack.push(JSON.stringify(state.marks));
+  if(state.undoStack.length>60) state.undoStack.shift();
+  state.redoStack = [];
+  updateUndoRedoButtons();
+}
+function updateUndoRedoButtons(){
+  $('#btn-undo').disabled = state.undoStack.length===0;
+  $('#btn-redo').disabled = state.redoStack.length===0;
+}
+
+/* ===================== FILE INTAKE ===================== */
+const fileInput = $('#file-input');
+$('#pick-btn').addEventListener('click', ()=> fileInput.click());
+$('#drop-zone').addEventListener('click', ()=> fileInput.click());
+$('#camera-btn').addEventListener('click', ()=>{
+  fileInput.setAttribute('capture','environment');
+  fileInput.click();
+});
+fileInput.addEventListener('change', e=>{
+  const f = e.target.files && e.target.files[0];
+  fileInput.removeAttribute('capture');
+  if(f) loadFile(f);
+  fileInput.value = '';
+});
+
+const dz = $('#drop-zone');
+['dragover','dragenter'].forEach(ev=> dz.addEventListener(ev, e=>{ e.preventDefault(); dz.classList.add('drag'); }));
+['dragleave','dragend','drop'].forEach(ev=> dz.addEventListener(ev, e=>{ e.preventDefault(); dz.classList.remove('drag'); }));
+dz.addEventListener('drop', e=>{
+  const f = e.dataTransfer.files && e.dataTransfer.files[0];
+  if(f) loadFile(f);
+});
+
+async function loadFile(file){
+  try{
+    const MAX = 120 * 1024 * 1024;
+    if(file.size > MAX){
+      toast('That file is larger than 120MB — try a smaller one so your device can handle it smoothly.', 'err');
+      return;
+    }
+    showLoading('Opening file…', 'Reading and rendering the first page');
+    resetState();
+    state.fileName = file.name || 'document';
+
+    if(file.type === 'application/pdf' || /\.pdf$/i.test(file.name||'')){
+      state.fileType = 'pdf';
+      const buf = await file.arrayBuffer();
+      state.originalBytes = buf.slice(0);
+      const loadingTask = pdfjsLib.getDocument({ data: buf });
+      const pdf = await loadingTask.promise;
+      state.pdfDoc = pdf;
+      state.pageCount = pdf.numPages;
+      state.currentPage = 1;
+      await renderPdfPage(1);
+    } else if(/^image\//.test(file.type) || /\.(png|jpe?g|webp|heic)$/i.test(file.name||'')){
+      state.fileType = 'image';
+      const url = await new Promise((res,rej)=>{
+        const r = new FileReader();
+        r.onload = ()=>res(r.result);
+        r.onerror = ()=>rej(new Error('Could not read image data'));
+        r.readAsDataURL(file);
+      });
+      const img = new Image();
+      await new Promise((res,rej)=>{
+        img.onload = res;
+        img.onerror = ()=>rej(new Error('Your browser could not decode this image. HEIC photos in particular often aren\'t supported — try converting to JPEG or PNG first.'));
+        img.src = url;
+      });
+      state.imageEl = img;
+      state.pageCount = 1;
+      state.currentPage = 1;
+      renderImagePage();
+    } else {
+      hideLoading();
+      toast('Unsupported file type. Please upload a PDF, PNG, JPEG, or WEBP.', 'err', 'type: '+(file.type||'unknown'));
+      return;
+    }
+
+    enterEditor();
+    hideLoading();
+  } catch(err){
+    hideLoading();
+    toast('Couldn\'t open that file. It may be corrupted, password-protected, or an unsupported format.', 'err', err.message);
+  }
+}
+
+function resetState(){
+  state.pdfDoc=null; state.pageCount=1; state.currentPage=1; state.pageViewports={};
+  state.imageEl=null; state.scale=1; state.marks={}; state.undoStack=[]; state.redoStack=[];
+  state.originalBytes=null; state.exportResult=null;
+  updateUndoRedoButtons();
+}
+
+/* ===================== RENDERING ===================== */
+const pageCanvas = $('#page-canvas');
+const drawCanvas = $('#draw-canvas');
+const stage = $('#canvas-stage');
+const canvasPad = $('#canvas-pad');
+const scrollWrap = $('#canvas-scroll');
+const pctx = pageCanvas.getContext('2d');
+const dctx = drawCanvas.getContext('2d');
+
+async function renderPdfPage(n){
+  const page = await state.pdfDoc.getPage(n);
+  const baseViewport = page.getViewport({ scale: 1 });
+  const targetWidth = Math.min(scrollWrap.clientWidth * 2.2 || 1400, 2000);
+  const fitScale = targetWidth / baseViewport.width;
+  const viewport = page.getViewport({ scale: fitScale });
+  state.pageViewports[n] = viewport;
+
+  pageCanvas.width = viewport.width;
+  pageCanvas.height = viewport.height;
+  drawCanvas.width = viewport.width;
+  drawCanvas.height = viewport.height;
+  stage.style.width = viewport.width+'px';
+  stage.style.height = viewport.height+'px';
+
+  await page.render({ canvasContext: pctx, viewport }).promise;
+  redrawMarks();
+  fitToScreen();
+  updateTopbar();
+}
+
+function renderImagePage(){
+  const img = state.imageEl;
+  const targetWidth = Math.min(scrollWrap.clientWidth * 2.2 || 1400, 2200);
+  const fitScale = Math.min(targetWidth / img.naturalWidth, 3);
+  const w = Math.round(img.naturalWidth * fitScale);
+  const h = Math.round(img.naturalHeight * fitScale);
+
+  pageCanvas.width = w; pageCanvas.height = h;
+  drawCanvas.width = w; drawCanvas.height = h;
+  stage.style.width = w+'px'; stage.style.height = h+'px';
+  pctx.drawImage(img, 0, 0, w, h);
+  redrawMarks();
+  fitToScreen();
+  updateTopbar();
+}
+
+function redrawMarks(){
+  dctx.clearRect(0,0,drawCanvas.width, drawCanvas.height);
+  const marks = marksForPage(state.currentPage);
+  marks.forEach(m=> paintMark(dctx, m, false));
+}
+
+function paintMark(ctx, m, preview){
+  ctx.save();
+  if(m.type === 'box'){
+    ctx.fillStyle = m.color;
+    ctx.fillRect(m.x, m.y, m.w, m.h);
+  } else if(m.type === 'brush'){
+    ctx.strokeStyle = m.color;
+    ctx.lineWidth = m.size;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    m.points.forEach((p,i)=>{ i===0 ? ctx.moveTo(p.x,p.y) : ctx.lineTo(p.x,p.y); });
+    ctx.stroke();
+  } else if(m.type === 'pixelate'){
+    drawPixelation(ctx, m);
+  } else if(m.type === 'text'){
+    ctx.fillStyle = m.color;
+    ctx.fillRect(m.x, m.y, m.w, m.h);
+    ctx.fillStyle = '#fff';
+    const fs = Math.max(11, Math.min(m.h*0.6, 22));
+    ctx.font = '650 '+fs+'px -apple-system,sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(m.label||'REDACTED', m.x+m.w/2, m.y+m.h/2);
+  }
+  ctx.restore();
+}
+
+function drawPixelation(ctx, m){
+  const size = state.pixelSize;
+  const x = Math.max(0, Math.round(m.x)), y = Math.max(0, Math.round(m.y));
+  const w = Math.round(m.w), h = Math.round(m.h);
+  if(w<=0||h<=0) return;
+  try{
+    const src = pctx.getImageData(x, y, w, h);
+    const tmp = document.createElement('canvas');
+    tmp.width = w; tmp.height = h;
+    tmp.getContext('2d').putImageData(src, 0, 0);
+    const sw = Math.max(1, Math.floor(w/size));
+    const sh = Math.max(1, Math.floor(h/size));
+    const small = document.createElement('canvas');
+    small.width = sw; small.height = sh;
+    const sctx = small.getContext('2d');
+    sctx.imageSmoothingEnabled = true;
+    sctx.drawImage(tmp, 0, 0, sw, sh);
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(small, 0, 0, sw, sh, x, y, w, h);
+    ctx.imageSmoothingEnabled = true;
+  } catch(err){
+    ctx.fillStyle = 'rgba(60,60,60,0.85)';
+    ctx.fillRect(x,y,w,h);
+  }
+}
+
+function fitToScreen(){
+  const availW = scrollWrap.clientWidth - 24;
+  const w = parseFloat(stage.style.width);
+  state.scale = Math.min(1, availW / w);
+  if(state.scale < state.minScale) state.scale = state.minScale;
+  applyScale();
+  requestAnimationFrame(()=>{
+    scrollWrap.scrollLeft = Math.max(0, (canvasPad.scrollWidth - scrollWrap.clientWidth)/2);
+    scrollWrap.scrollTop = 0;
+  });
+}
+
+function applyScale(){
+  stage.style.transform = 'translateX(-50%) scale('+state.scale+')';
+  const stageW = parseFloat(stage.style.width) || stage.offsetWidth;
+  const stageH = parseFloat(stage.style.height) || stage.offsetHeight;
+  const scaledW = stageW * state.scale;
+  const scaledH = stageH * state.scale;
+  canvasPad.style.width = 'max(100%, ' + (scaledW + 48) + 'px)';
+  canvasPad.style.height = (scaledH + 20 + 120) + 'px';
+  const hint = $('#zoom-hint');
+  hint.textContent = Math.round(state.scale*100)+'%';
+  hint.classList.add('show');
+  clearTimeout(applyScale._t);
+  applyScale._t = setTimeout(()=> hint.classList.remove('show'), 900);
+}
+
+function updateTopbar(){
+  $('#doc-name').textContent = state.fileName;
+  $('#doc-meta').textContent = state.fileType==='pdf' ? ('Page '+state.currentPage+' of '+state.pageCount) : 'Image';
+  const nav = $('#page-nav');
+  if(state.fileType==='pdf' && state.pageCount>1){
+    nav.classList.remove('hidden');
+    $('#pn-label').textContent = state.currentPage+' / '+state.pageCount;
+    $('#pn-prev').disabled = state.currentPage<=1;
+    $('#pn-next').disabled = state.currentPage>=state.pageCount;
+  } else {
+    nav.classList.add('hidden');
+  }
+}
+
+$('#pn-prev').addEventListener('click', async ()=>{
+  if(state.currentPage>1){ state.currentPage--; await renderPdfPage(state.currentPage); }
+});
+$('#pn-next').addEventListener('click', async ()=>{
+  if(state.currentPage<state.pageCount){ state.currentPage++; await renderPdfPage(state.currentPage); }
+});
+
+/* ===================== SCREEN NAV ===================== */
+function enterEditor(){
+  $('#screen-upload').style.display = 'none';
+  $('#screen-editor').classList.add('active');
+  $('#screen-result').classList.remove('active');
+}
+$('#btn-back').addEventListener('click', ()=>{
+  $('#screen-editor').classList.remove('active');
+  $('#screen-upload').style.display = 'flex';
+});
+$('#btn-result-back').addEventListener('click', ()=>{
+  $('#screen-result').classList.remove('active');
+  $('#screen-editor').classList.add('active');
+});
+$('#btn-another').addEventListener('click', ()=>{
+  $('#screen-result').classList.remove('active');
+  $('#screen-upload').style.display = 'flex';
+  resetState();
+});
+
+/* ===================== TOOLS ===================== */
+$$('.tool-chip').forEach(chip=>{
+  chip.addEventListener('click', ()=>{
+    $$('.tool-chip').forEach(c=>c.classList.remove('active'));
+    chip.classList.add('active');
+    state.tool = chip.dataset.tool;
+    state.activeMarker = null;
+    redrawMarks();
+    updateHint();
+    updateSubtoolVisibility();
+  });
+});
+
+function updateSubtoolVisibility(){
+  const showColor = ['box','brush','text'].includes(state.tool);
+  const showBrushSize = state.tool==='brush' || state.tool==='erase';
+  $('#swatch-row').style.display = showColor ? 'flex' : 'none';
+  $('.brush-size').style.display = showBrushSize ? 'flex' : 'none';
+  $('#subtool-row').style.display = (showColor||showBrushSize) ? 'flex' : 'none';
+}
+
+function updateHint(){
+  const hints = {
+    box: 'Drag to draw a redaction box. Pinch anywhere to zoom.',
+    brush: 'Draw freehand over the area you want hidden.',
+    pixelate: 'Drag a box to pixelate the area underneath.',
+    text: 'Drag a box to place a labeled redaction bar.',
+    move: 'Drag to pan. Pinch to zoom. Tap a mark to select or delete it.',
+    erase: 'Tap or drag over a mark to remove it.'
+  };
+  $('#hint-strip span').textContent = hints[state.tool] || '';
+}
+updateHint(); updateSubtoolVisibility();
+
+$$('.swatch').forEach(s=>{
+  s.addEventListener('click', ()=>{
+    $$('.swatch').forEach(x=>x.classList.remove('active'));
+    s.classList.add('active');
+    state.color = s.dataset.color;
+  });
+});
+$('#brush-size').addEventListener('input', e=>{ state.brushSize = parseInt(e.target.value,10); });
+
+/* ===================== POINTER / DRAW / PAN / ZOOM ===================== */
+function stagePoint(clientX, clientY){
+  const rect = stage.getBoundingClientRect();
+  return { x: (clientX-rect.left)/state.scale, y: (clientY-rect.top)/state.scale };
+}
+
+let activePointers = new Map();
+
+drawCanvas.addEventListener('pointerdown', onPointerDown, {passive:false});
+drawCanvas.addEventListener('pointermove', onPointerMove, {passive:false});
+window.addEventListener('pointerup', onPointerUp, {passive:false});
+window.addEventListener('pointercancel', onPointerUp, {passive:false});
+
+function onPointerDown(e){
+  activePointers.set(e.pointerId, {x:e.clientX,y:e.clientY});
+  if(activePointers.size === 2){
+    state.drawing = false;
+    const pts = Array.from(activePointers.values());
+    state.pinch = {
+      dist: Math.hypot(pts[0].x-pts[1].x, pts[0].y-pts[1].y),
+      scale: state.scale,
+      center: {x:(pts[0].x+pts[1].x)/2, y:(pts[0].y+pts[1].y)/2}
+    };
+    return;
+  }
+  if(activePointers.size > 2) return;
+  e.preventDefault();
+  const p = stagePoint(e.clientX, e.clientY);
+
+  if(state.tool === 'move'){
+    state.panning = true;
+    state.lastPan = {x:e.clientX,y:e.clientY, sl:scrollWrap.scrollLeft, st:scrollWrap.scrollTop};
+    tryHitMarker(p);
+    return;
+  }
+  if(state.tool === 'erase'){
+    eraseAt(p);
+    state.drawing = true;
+    return;
+  }
+  if(!inBounds(p)) return;
+  state.drawing = true;
+  state.dragStart = p;
+  if(state.tool === 'brush'){
+    state.tempPoints = [p];
+  }
+}
+
+function inBounds(p){ return p.x>=0 && p.y>=0 && p.x<=drawCanvas.width && p.y<=drawCanvas.height; }
+
+function onPointerMove(e){
+  if(activePointers.has(e.pointerId)) activePointers.set(e.pointerId, {x:e.clientX,y:e.clientY});
+
+  if(activePointers.size === 2 && state.pinch){
+    e.preventDefault();
+    const pts = Array.from(activePointers.values());
+    const dist = Math.hypot(pts[0].x-pts[1].x, pts[0].y-pts[1].y);
+    let ns = state.pinch.scale * (dist / state.pinch.dist);
+    ns = Math.max(state.minScale, Math.min(state.maxScale, ns));
+    const prevScale = state.scale;
+    const wrapRect = scrollWrap.getBoundingClientRect();
+    const focalX = state.pinch.center.x - wrapRect.left + scrollWrap.scrollLeft;
+    const focalY = state.pinch.center.y - wrapRect.top + scrollWrap.scrollTop;
+    const zoomRatio = ns/prevScale;
+    state.scale = ns;
+    applyScale();
+    scrollWrap.scrollLeft = focalX*zoomRatio - (state.pinch.center.x - wrapRect.left);
+    scrollWrap.scrollTop = focalY*zoomRatio - (state.pinch.center.y - wrapRect.top);
+    return;
+  }
+
+  if(state.panning){
+    e.preventDefault();
+    scrollWrap.scrollLeft = state.lastPan.sl - (e.clientX - state.lastPan.x);
+    scrollWrap.scrollTop = state.lastPan.st - (e.clientY - state.lastPan.y);
+    return;
+  }
+
+  if(!state.drawing) return;
+  e.preventDefault();
+  const p = stagePoint(e.clientX, e.clientY);
+
+  if(state.tool==='erase'){ eraseAt(p); return; }
+
+  if(state.tool === 'brush'){
+    state.tempPoints.push(p);
+    redrawMarks();
+    paintMark(dctx, {type:'brush', color:state.color, size:state.brushSize, points:state.tempPoints}, true);
+  } else if(['box','pixelate','text'].includes(state.tool)){
+    redrawMarks();
+    const rect = normRect(state.dragStart, p);
+    if(state.tool==='pixelate'){
+      drawPixelation(dctx, rect);
+      dctx.save(); dctx.strokeStyle='rgba(255,255,255,.6)'; dctx.lineWidth=1.5; dctx.strokeRect(rect.x,rect.y,rect.w,rect.h); dctx.restore();
+    } else {
+      paintMark(dctx, Object.assign({type: state.tool==='text'?'text':'box', color: state.color, label:'REDACTED'}, rect), true);
+    }
+  }
+}
+
+function normRect(a,b){
+  const x = Math.min(a.x,b.x), y = Math.min(a.y,b.y);
+  const w = Math.abs(b.x-a.x), h = Math.abs(b.y-a.y);
+  return {x,y,w,h};
+}
+
+function onPointerUp(e){
+  activePointers.delete(e.pointerId);
+  if(activePointers.size < 2) state.pinch = null;
+  if(state.panning && activePointers.size===0){ state.panning = false; return; }
+  if(!state.drawing) return;
+  state.drawing = false;
+
+  if(state.tool === 'brush'){
+    if(state.tempPoints && state.tempPoints.length>1){
+      marksForPage(state.currentPage).push({type:'brush', color: state.color, size: state.brushSize, points: state.tempPoints});
+      pushHistory();
+    }
+    state.tempPoints = null;
+    redrawMarks();
+  } else if(['box','pixelate','text'].includes(state.tool) && state.dragStart){
+    const p = stagePoint(e.clientX, e.clientY);
+    const rect = normRect(state.dragStart, p);
+    if(rect.w > 4 && rect.h > 4){
+      const mark = Object.assign({type: state.tool==='text'?'text':(state.tool==='pixelate'?'pixelate':'box'), color: state.color}, rect);
+      if(state.tool==='text') mark.label = 'REDACTED';
+      marksForPage(state.currentPage).push(mark);
+      pushHistory();
+    }
+    state.dragStart = null;
+    redrawMarks();
+  }
+}
+
+function eraseAt(p){
+  const marks = marksForPage(state.currentPage);
+  const r = state.brushSize;
+  let changed = false;
+  for(let i=marks.length-1;i>=0;i--){
+    const m = marks[i];
+    let hit = false;
+    if(m.type==='box'||m.type==='pixelate'||m.type==='text'){
+      hit = p.x>=m.x-r/2 && p.x<=m.x+m.w+r/2 && p.y>=m.y-r/2 && p.y<=m.y+m.h+r/2;
+    } else if(m.type==='brush'){
+      hit = m.points.some(pt=> Math.hypot(pt.x-p.x, pt.y-p.y) < r+ m.size/2);
+    }
+    if(hit){ marks.splice(i,1); changed = true; }
+  }
+  if(changed){ redrawMarks(); pushHistory(); }
+}
+
+function tryHitMarker(p){
+  const marks = marksForPage(state.currentPage);
+  for(let i=marks.length-1;i>=0;i--){
+    const m = marks[i];
+    if((m.type==='box'||m.type==='pixelate'||m.type==='text') && p.x>=m.x&&p.x<=m.x+m.w&&p.y>=m.y&&p.y<=m.y+m.h){
+      return;
+    }
+  }
+}
+
+/* prevent double-tap zoom / native gestures on stage */
+['gesturestart','gesturechange','gestureend'].forEach(ev=> stage.addEventListener(ev, e=>e.preventDefault()));
+let lastTap=0;
+drawCanvas.addEventListener('touchend', e=>{
+  const now = Date.now();
+  if(now-lastTap < 300) e.preventDefault();
+  lastTap = now;
+}, {passive:false});
+
+/* wheel zoom for trackpads (harmless on mobile) */
+scrollWrap.addEventListener('wheel', e=>{
+  if(e.ctrlKey){
+    e.preventDefault();
+    let ns = state.scale * (1 - e.deltaY*0.01);
+    ns = Math.max(state.minScale, Math.min(state.maxScale, ns));
+    state.scale = ns;
+    applyScale();
+  }
+}, {passive:false});
+
+/* ===================== UNDO / REDO ===================== */
+$('#btn-undo').addEventListener('click', ()=>{
+  if(!state.undoStack.length) return;
+  state.redoStack.push(JSON.stringify(state.marks));
+  state.marks = JSON.parse(state.undoStack.pop());
+  redrawMarks();
+  updateUndoRedoButtons();
+});
+$('#btn-redo').addEventListener('click', ()=>{
+  if(!state.redoStack.length) return;
+  state.undoStack.push(JSON.stringify(state.marks));
+  state.marks = JSON.parse(state.redoStack.pop());
+  redrawMarks();
+  updateUndoRedoButtons();
+});
+
+/* ===================== EXPORT SHEET ===================== */
+let selectedFormat = 'pdf';
+let selectedQuality = 0.92;
+
+function buildFormatRow(){
+  const wrap = $('#format-row');
+  wrap.innerHTML='';
+  const options = state.fileType==='pdf' ? [{id:'pdf',label:'PDF'},{id:'png',label:'PNG (per page)'}] : [{id:'png',label:'PNG'},{id:'jpg',label:'JPEG'}];
+  selectedFormat = options[0].id;
+  options.forEach(o=>{
+    const b = document.createElement('button');
+    b.textContent = o.label;
+    b.className = 'pill-btn' + (o.id===selectedFormat?'':' ghost');
+    b.style.flex = '0 0 auto';
+    b.addEventListener('click', ()=>{
+      selectedFormat = o.id;
+      buildFormatRow();
+      buildQualityRow();
+      updateExportSummary();
+    });
+    wrap.appendChild(b);
+  });
+  $('#row-quality').style.display = selectedFormat==='jpg' ? 'flex' : (selectedFormat==='png'&&state.fileType==='image'?'none':'none');
+  $('#quality-row').style.display = selectedFormat==='jpg' ? 'flex' : 'none';
+}
+function buildQualityRow(){
+  const wrap = $('#quality-row');
+  wrap.innerHTML = '';
+  if(selectedFormat!=='jpg') return;
+  [{v:0.7,l:'Smaller'},{v:0.92,l:'Balanced'},{v:0.98,l:'Best'}].forEach(o=>{
+    const b = document.createElement('button');
+    b.textContent = o.l;
+    b.className = 'pill-btn' + (o.v===selectedQuality?'':' ghost');
+    b.style.flex = '1';
+    b.addEventListener('click', ()=>{ selectedQuality = o.v; buildQualityRow(); });
+    wrap.appendChild(b);
+  });
+}
+
+function updateExportSummary(){
+  const totalMarks = Object.values(state.marks).reduce((a,arr)=>a+arr.length,0);
+  const flatten = $('#opt-flatten').checked;
+  const ocr = $('#opt-ocr').checked;
+  const meta = $('#opt-metadata').checked;
+  const el = $('#export-summary');
+  el.innerHTML =
+    '<div class="es-row"><span>Redaction marks</span><b>'+totalMarks+'</b></div>'+
+    '<div class="es-row"><span>Pages</span><b>'+state.pageCount+'</b></div>'+
+    '<div class="es-row"><span>Format</span><b>'+selectedFormat.toUpperCase()+'</b></div>'+
+    '<div class="es-row"><span>Flattened</span><b>'+(flatten?'Yes':'No — marks stay editable')+'</b></div>'+
+    '<div class="es-row"><span>Text layer</span><b>'+(state.fileType==='pdf' ? (ocr?'Removed':'Kept') : 'N/A (image)')+'</b></div>'+
+    '<div class="es-row"><span>Metadata</span><b>'+(meta?'Cleared':'Kept')+'</b></div>';
+}
+
+function openExportSheet(){
+  buildFormatRow();
+  buildQualityRow();
+  const isImage = state.fileType==='image';
+  if(isImage){
+    $('#opt-ocr').checked = true;
+    $('#opt-ocr').disabled = true;
+    $('#row-ocr .opt-desc').textContent = 'Images have no hidden text layer, so there\'s nothing to strip — this is already satisfied.';
+    $('#opt-flatten').checked = true;
+    $('#opt-flatten').disabled = true;
+    $('#row-flatten .opt-desc').textContent = 'Images are always exported as flat pixels — redactions are permanent by nature of the format.';
+  } else {
+    $('#opt-ocr').disabled = false;
+    $('#opt-flatten').disabled = false;
+    $('#row-ocr .opt-desc').textContent = 'Removes selectable/searchable text under redacted areas so covered content can\'t be copy-pasted out.';
+    $('#row-flatten .opt-desc').textContent = 'Merges black-out marks permanently into the page image. Without this, marks could theoretically be moved or deleted.';
+  }
+  updateExportSummary();
+  $('#export-backdrop').classList.add('show');
+  $('#export-sheet').classList.add('show');
+}
+function closeExportSheet(){
+  $('#export-backdrop').classList.remove('show');
+  $('#export-sheet').classList.remove('show');
+}
+$('#btn-export').addEventListener('click', openExportSheet);
+$('#export-close').addEventListener('click', closeExportSheet);
+$('#export-cancel').addEventListener('click', closeExportSheet);
+$('#export-backdrop').addEventListener('click', closeExportSheet);
+['opt-flatten','opt-ocr','opt-metadata'].forEach(id=> $('#'+id).addEventListener('change', updateExportSummary));
+
+$('#export-confirm').addEventListener('click', async ()=>{
+  const flatten = $('#opt-flatten').checked;
+  const stripText = $('#opt-ocr').checked;
+  const clearMeta = $('#opt-metadata').checked;
+  closeExportSheet();
+  await doExport({ flatten, stripText, clearMeta, format: selectedFormat, quality: selectedQuality });
+});
+
+/* ===================== EXPORT LOGIC ===================== */
+async function renderFlattenedPageCanvas(pageNum){
+  let viewport, sourceCanvas;
+  if(state.fileType === 'pdf'){
+    const targetScale = 2.5;
+    const page = await state.pdfDoc.getPage(pageNum);
+    viewport = page.getViewport({ scale: targetScale });
+    const c = document.createElement('canvas');
+    c.width = viewport.width; c.height = viewport.height;
+    const ctx = c.getContext('2d');
+    await page.render({ canvasContext: ctx, viewport }).promise;
+    sourceCanvas = c;
+  } else {
+    const img = state.imageEl;
+    const c = document.createElement('canvas');
+    c.width = img.naturalWidth; c.height = img.naturalHeight;
+    const ctx = c.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+    sourceCanvas = c;
+    viewport = { width: c.width, height: c.height };
+  }
+
+  const editW = drawCanvas.width, editH = drawCanvas.height;
+  const editViewport = state.pageViewports[pageNum];
+  const sx = state.fileType==='pdf' ? (sourceCanvas.width / (editViewport ? editViewport.width : editW)) : (sourceCanvas.width / editW);
+  const sy = state.fileType==='pdf' ? (sourceCanvas.height / (editViewport ? editViewport.height : editH)) : (sourceCanvas.height / editH);
+
+  const outCtx = sourceCanvas.getContext('2d');
+  const tmpBigCtx = sourceCanvas.getContext('2d');
+  const marks = marksForPage(pageNum);
+  marks.forEach(m=>{
+    const scaled = scaleMark(m, sx, sy);
+    if(scaled.type === 'pixelate'){
+      drawPixelationOnSource(tmpBigCtx, sourceCanvas, scaled);
+    } else {
+      paintMark(outCtx, scaled, false);
+    }
+  });
+
+  return sourceCanvas;
+}
+
+function scaleMark(m, sx, sy){
+  const s = Object.assign({}, m);
+  if(m.type==='brush'){
+    s.points = m.points.map(p=>({x:p.x*sx, y:p.y*sy}));
+    s.size = m.size * ((sx+sy)/2);
+  } else {
+    s.x = m.x*sx; s.y = m.y*sy; s.w = m.w*sx; s.h = m.h*sy;
+  }
+  return s;
+}
+
+function drawPixelationOnSource(ctx, canvas, m){
+  const size = state.pixelSize * 1.6;
+  const x = Math.max(0, Math.round(m.x)), y = Math.max(0, Math.round(m.y));
+  const w = Math.min(Math.round(m.w), canvas.width-x), h = Math.min(Math.round(m.h), canvas.height-y);
+  if(w<=0||h<=0) return;
+  try{
+    const src = ctx.getImageData(x,y,w,h);
+    const tmp = document.createElement('canvas'); tmp.width=w; tmp.height=h;
+    tmp.getContext('2d').putImageData(src,0,0);
+    const sw = Math.max(1, Math.floor(w/size)), sh = Math.max(1, Math.floor(h/size));
+    const small = document.createElement('canvas'); small.width=sw; small.height=sh;
+    const sctx = small.getContext('2d'); sctx.imageSmoothingEnabled = true;
+    sctx.drawImage(tmp,0,0,sw,sh);
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(small,0,0,sw,sh,x,y,w,h);
+    ctx.imageSmoothingEnabled = true;
+  } catch(err){
+    ctx.fillStyle = 'rgba(60,60,60,.9)';
+    ctx.fillRect(x,y,w,h);
+  }
+}
+
+async function doExport(opts){
+  try{
+    showLoading('Flattening pages…', 'Rendering redactions permanently');
+    const checks = [];
+    let blob, ext;
+
+    if(state.fileType === 'pdf' && opts.format === 'pdf'){
+      const pdfDoc = await PDFLib.PDFDocument.create();
+      for(let n=1; n<=state.pageCount; n++){
+        showLoading('Processing page '+n+' of '+state.pageCount+'…', 'Flattening redactions');
+        const canvas = await renderFlattenedPageCanvas(n);
+        const dataUrl = canvas.toDataURL('image/png');
+        const pngBytes = dataURLToUint8(dataUrl);
+        const pngImage = await pdfDoc.embedPng(pngBytes);
+        const ptsPerPixel = state.fileType==='pdf' ? (1/2.5) : (72/96);
+        const pageW = canvas.width * ptsPerPixel;
+        const pageH = canvas.height * ptsPerPixel;
+        const page = pdfDoc.addPage([pageW, pageH]);
+        page.drawImage(pngImage, { x:0, y:0, width: pageW, height: pageH });
+      }
+      if(opts.clearMeta){
+        pdfDoc.setTitle(''); pdfDoc.setAuthor(''); pdfDoc.setSubject('');
+        pdfDoc.setKeywords([]); pdfDoc.setProducer(''); pdfDoc.setCreator('');
+        try{ pdfDoc.setCreationDate(new Date(0)); pdfDoc.setModificationDate(new Date(0)); }catch(e){}
+        checks.push('Document metadata cleared');
+      } else {
+        checks.push('Original metadata retained');
+      }
+      checks.push('Every page rebuilt as a flattened image — no vector text remains');
+      checks.push('Original searchable text layer removed by design of this export path');
+      const bytes = await pdfDoc.save();
+      blob = new Blob([bytes], { type: 'application/pdf' });
+      ext = 'pdf';
+    } else if(state.fileType === 'pdf' && opts.format === 'png'){
+      showLoading('Rendering page…', 'Flattening redactions');
+      const canvas = await renderFlattenedPageCanvas(state.currentPage);
+      const dataUrl = canvas.toDataURL('image/png');
+      blob = dataURLToBlob(dataUrl);
+      ext = 'png';
+      checks.push('Current page exported as a flattened image');
+      checks.push('No text layer present in PNG output');
+    } else {
+      showLoading('Rendering image…', 'Flattening redactions');
+      const canvas = await renderFlattenedPageCanvas(1);
+      const mime = opts.format === 'jpg' ? 'image/jpeg' : 'image/png';
+      const dataUrl = canvas.toDataURL(mime, opts.format==='jpg' ? opts.quality : undefined);
+      blob = dataURLToBlob(dataUrl);
+      ext = opts.format === 'jpg' ? 'jpg' : 'png';
+      checks.push('Image redactions merged permanently into pixel data');
+      checks.push('No embedded metadata carried over from source image');
+    }
+
+    if(!opts.flatten){
+      checks.unshift('Note: flatten was turned off, but this export path always produces a rasterized, flattened image — that\'s the only way to guarantee removal.');
+    }
+
+    const base = (state.fileName||'document').replace(/\.[^.]+$/, '');
+    state.exportResult = { blob, filename: base+'-redacted.'+ext, checks };
+    hideLoading();
+    showResult(checks, state.exportResult.filename, blob.size);
+  } catch(err){
+    hideLoading();
+    toast('Export failed. Your edits are still safe in the editor — try again.', 'err', err.message);
+  }
+}
+
+function dataURLToUint8(dataUrl){
+  const base64 = dataUrl.split(',')[1];
+  const bin = atob(base64);
+  const arr = new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) arr[i] = bin.charCodeAt(i);
+  return arr;
+}
+function dataURLToBlob(dataUrl){
+  const arr = dataURLToUint8(dataUrl);
+  const mime = dataUrl.substring(5, dataUrl.indexOf(';'));
+  return new Blob([arr], { type: mime });
+}
+
+function showResult(checks, filename, size){
+  $('#screen-editor').classList.remove('active');
+  $('#screen-result').classList.add('active');
+  const kb = size/1024;
+  $('#result-sub').textContent = filename + ' · ' + (kb>1024 ? (kb/1024).toFixed(1)+' MB' : Math.round(kb)+' KB');
+  const wrap = $('#result-checks');
+  wrap.innerHTML = '';
+  checks.forEach(c=>{
+    const row = document.createElement('div');
+    row.className = 'rc-row';
+    row.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span>'+c+'</span>';
+    wrap.appendChild(row);
+  });
+}
+
+$('#btn-download').addEventListener('click', ()=>{
+  if(!state.exportResult) return;
+  try{
+    const url = URL.createObjectURL(state.exportResult.blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = state.exportResult.filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=> URL.revokeObjectURL(url), 4000);
+    toast('File saved.', 'ok');
+  } catch(err){
+    toast('Couldn\'t trigger the download. Long-press the button area or try a different browser.', 'err', err.message);
+  }
+});
+
+})();
+</script>
+</body>
+</html>
