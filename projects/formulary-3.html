@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Formulary — Share a Calculator</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.2/math.min.js"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        accent: { DEFAULT:'#D97757', 50:'#FDF4F1', 100:'#FBE8E1', 200:'#F5CBBB', 300:'#EEA98F', 400:'#E48A69', 500:'#D97757', 600:'#C15F3F', 700:'#9C4A31', 800:'#7A3A27', 900:'#5C2C1D' },
+        canvas: '#0F0F0E', surface:'#181816', surface2:'#212120', line:'#2C2C2A'
+      },
+      fontFamily: { sans:['-apple-system','BlinkMacSystemFont','Segoe UI','Roboto','sans-serif'], mono:['SF Mono','Menlo','monospace'] }
+    }
+  }
+}
+</script>
+<style>
+body{background:#0F0F0E;-webkit-tap-highlight-color:transparent;overscroll-behavior-y:none}
+input[type=range]{-webkit-appearance:none;appearance:none;height:6px;border-radius:999px;background:#2C2C2A;outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:22px;height:22px;border-radius:999px;background:#D97757;border:3px solid #0F0F0E;box-shadow:0 0 0 1px #D97757}
+input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:999px;background:#D97757;border:3px solid #0F0F0E;box-shadow:0 0 0 1px #D97757}
+input[type=date]{color-scheme:dark}
+.no-scrollbar::-webkit-scrollbar{display:none}
+.no-scrollbar{-ms-overflow-style:none;scrollbar-width:none}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.fade-up{animation:fadeUp .25s ease-out}
+select{-webkit-appearance:none;appearance:none}
+.katex{font-size:1.05em}
+.katex-display{margin:0}
+</style>
+</head>
+<body class="min-h-screen text-neutral-100 font-sans antialiased">
+
+<div id="app" class="max-w-lg mx-auto min-h-screen flex flex-col"></div>
+
+<script>
+const {create, all} = math;
+const mathjs = create(all, {});
+
+const b64e = s => btoa(unescape(encodeURIComponent(s))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+const b64d = s => {
+  let t = s.replace(/-/g,'+').replace(/_/g,'/');
+  while(t.length % 4) t += '=';
+  return decodeURIComponent(escape(atob(t)));
+};
+
+function encodeSpec(spec){ return b64e(JSON.stringify(spec)); }
+function decodeSpec(str){ return JSON.parse(b64d(str)); }
+function icons(){ lucide.createIcons(); }
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function renderTex(label, expr, target){
+  try{
+    const exprTex = mathjs.parse(expr).toTex({parenthesis:'auto'});
+    const labelTex = label ? `\\text{${label.replace(/[{}\\]/g,'')}} = ` : '';
+    katex.render(labelTex + exprTex, target, { throwOnError:false, displayMode:true });
+  }catch(e){
+    target.textContent = `${label ? label + ' = ' : ''}${expr}`;
+  }
+}
+
+const EPOCH = Date.UTC(1970,0,1);
+function dateToDays(dateStr){
+  if(!dateStr) return 0;
+  const d = new Date(dateStr + 'T00:00:00Z');
+  return Math.round((d.getTime() - EPOCH) / 86400000);
+}
+function todayDays(){ return Math.floor(Date.now() / 86400000); }
+
+const TEMPLATES = [
+  { t:'BMI Calculator', d:'Body Mass Index from height and weight', icon:'activity',
+    vars:[
+      {k:'weight',l:'Weight',u:'kg',type:'slider',min:20,max:200,step:0.5,def:70},
+      {k:'height',l:'Height',u:'cm',type:'slider',min:100,max:220,step:1,def:170}
+    ], outputs:[{k:'bmi',l:'BMI',u:'',round:1,expr:'weight / (height/100)^2'}] },
+
+  { t:'Temperature Converter', d:'Convert Celsius to Fahrenheit and Kelvin', icon:'thermometer',
+    vars:[{k:'c',l:'Celsius',u:'°C',type:'slider',min:-50,max:100,step:0.5,def:20}],
+    outputs:[
+      {k:'fahrenheit',l:'Fahrenheit',u:'°F',round:1,expr:'c * 9/5 + 32'},
+      {k:'kelvin',l:'Kelvin',u:'K',round:1,expr:'c + 273.15'}
+    ] },
+
+  { t:'Age Calculator', d:'Exact age in years from a birth date', icon:'cake',
+    vars:[{k:'birthDate',l:'Birth date',u:'',type:'date',def:'2000-01-01'}],
+    outputs:[{k:'age',l:'Age',u:'years',round:0,expr:'floor((today - birthDate) / 365.25)'}] },
+
+  { t:'Molarity Calculator', d:'Concentration from mass, molar mass, and volume — computed in two steps', icon:'flask-conical',
+    vars:[
+      {k:'mass',l:'Mass of solute',u:'g',type:'number',min:0,max:1000,step:0.1,def:58.44},
+      {k:'molarMass',l:'Molar mass',u:'g/mol',type:'number',min:0.01,max:2000,step:0.01,def:58.44},
+      {k:'volume',l:'Volume of solution',u:'L',type:'slider',min:0.1,max:20,step:0.1,def:1}
+    ], outputs:[
+      {k:'moles',l:'Moles of solute',u:'mol',round:3,expr:'mass / molarMass'},
+      {k:'molarity',l:'Molarity',u:'mol/L',round:3,expr:'moles / volume'}
+    ] },
+
+  { t:'Simple Interest', d:'Interest earned over time, with a compounding option', icon:'landmark',
+    vars:[
+      {k:'principal',l:'Principal',u:'$',type:'number',min:0,max:1000000,step:100,def:1000},
+      {k:'rate',l:'Annual rate',u:'%',type:'slider',min:0,max:20,step:0.1,def:5},
+      {k:'years',l:'Years',u:'yr',type:'slider',min:0,max:40,step:1,def:5},
+      {k:'freq',l:'Compounding',u:'',type:'select',options:[{label:'Simple',value:0},{label:'Annually',value:1},{label:'Monthly',value:12}],def:0}
+    ], outputs:[{k:'interest',l:'Interest earned',u:'$',round:2,expr:'freq == 0 ? principal * (rate/100) * years : principal * ((1 + (rate/100)/freq)^(freq*years) - 1)'}] }
+];
+
+const FUNCTION_REFERENCE = [
+  { group:'Arithmetic', items:['+  add','-  subtract','*  multiply','/  divide','^  power','%  modulo'] },
+  { group:'Roots & logs', items:['sqrt(x)','log(x)','log10(x)','log2(x)','exp(x)'] },
+  { group:'Trigonometry', items:['sin(x)  cos(x)  tan(x)','asin(x)  acos(x)  atan(x)'] },
+  { group:'Rounding', items:['round(x)','floor(x)','ceil(x)','abs(x)'] },
+  { group:'Comparison & logic', items:['a == b','a > b  a < b  a >= b  a <= b','cond ? ifTrue : ifFalse','and(a,b)  or(a,b)  not(a)'] },
+  { group:'Aggregation', items:['min(a,b,...)','max(a,b,...)'] },
+  { group:'Constants', items:['pi','e','today  — days since epoch, from date inputs'] }
+];
+
+function fieldMarkup(v, i){
+  const delay = `style="animation-delay:${i*40}ms"`;
+  if(v.type === 'slider'){
+    return `
+    <div class="fade-up" ${delay}>
+      <div class="flex items-baseline justify-between mb-2">
+        <label class="text-sm font-medium text-neutral-300">${escapeHtml(v.l)}</label>
+        <span class="text-sm font-mono text-accent-300" data-readout="${v.k}">${v.def}${v.u ? ' '+escapeHtml(v.u):''}</span>
+      </div>
+      <input type="range" data-var="${v.k}" min="${v.min}" max="${v.max}" step="${v.step}" value="${v.def}" class="w-full">
+      <div class="flex justify-between text-[11px] text-neutral-500 mt-1 font-mono">
+        <span>${v.min}</span><span>${v.max}</span>
+      </div>
+    </div>`;
+  }
+  if(v.type === 'date'){
+    return `
+    <div class="fade-up" ${delay}>
+      <label class="text-sm font-medium text-neutral-300 mb-2 block">${escapeHtml(v.l)}</label>
+      <input type="date" data-var="${v.k}" data-vartype="date" value="${escapeHtml(v.def || '2000-01-01')}"
+        class="w-full bg-surface2 border border-line rounded-xl px-4 py-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent">
+    </div>`;
+  }
+  if(v.type === 'select'){
+    const opts = (v.options||[]).map(o => `<option value="${o.value}" ${o.value==v.def?'selected':''}>${escapeHtml(o.label)}</option>`).join('');
+    return `
+    <div class="fade-up" ${delay}>
+      <label class="text-sm font-medium text-neutral-300 mb-2 block">${escapeHtml(v.l)}</label>
+      <div class="relative">
+        <select data-var="${v.k}" data-vartype="select" class="w-full appearance-none bg-surface2 border border-line rounded-xl pl-4 pr-10 py-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent">${opts}</select>
+        <i data-lucide="chevron-down" class="w-4 h-4 absolute right-4 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none"></i>
+      </div>
+    </div>`;
+  }
+  return `
+  <div class="fade-up" ${delay}>
+    <label class="text-sm font-medium text-neutral-300 mb-2 block">${escapeHtml(v.l)}</label>
+    <div class="relative">
+      <input type="number" inputmode="decimal" data-var="${v.k}" value="${v.def}" ${v.min!==undefined?`min="${v.min}"`:''} ${v.max!==undefined?`max="${v.max}"`:''} ${v.step?`step="${v.step}"`:''}
+        class="w-full bg-surface2 border border-line rounded-xl px-4 py-3 text-[15px] font-mono focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent placeholder-neutral-600">
+      ${v.u ? `<span class="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-neutral-500">${escapeHtml(v.u)}</span>` : ''}
+    </div>
+  </div>`;
+}
+
+function orderOutputs(outputs){
+  const byKey = new Map(outputs.map(o => [o.k, o]));
+  const resolved = new Set();
+  const ordered = [];
+  const visiting = new Set();
+  function visit(o){
+    if(resolved.has(o.k)) return;
+    if(visiting.has(o.k)) throw new Error(`Circular reference detected involving "${o.l}".`);
+    visiting.add(o.k);
+    const parsed = mathjs.parse(o.expr);
+    parsed.traverse(node => {
+      if(node.isSymbolNode && byKey.has(node.name) && node.name !== o.k){
+        visit(byKey.get(node.name));
+      }
+    });
+    visiting.delete(o.k);
+    resolved.add(o.k);
+    ordered.push(o);
+  }
+  outputs.forEach(visit);
+  return ordered;
+}
+
+function validateSpec(spec){
+  if(!spec || typeof spec !== 'object') throw new Error('Formula data is malformed.');
+  if(!Array.isArray(spec.vars) || spec.vars.length === 0) throw new Error('This formula has no defined inputs.');
+  if(!Array.isArray(spec.outputs) || spec.outputs.length === 0) throw new Error('This formula has no defined outputs.');
+  spec.vars.forEach(v => {
+    if(!v.k || !/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(v.k)) throw new Error(`Invalid variable name: "${v.k}"`);
+    if(v.type === 'select' && (!Array.isArray(v.options) || v.options.length === 0)) throw new Error(`"${v.l}" is a dropdown but has no options.`);
+  });
+  spec.outputs.forEach(o => {
+    if(!o.k || !/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(o.k)) throw new Error(`Invalid output key: "${o.k}"`);
+    if(!o.expr || typeof o.expr !== 'string') throw new Error('One of the outputs is missing its expression.');
+    try{ mathjs.parse(o.expr); }catch(e){ throw new Error(`Could not parse "${o.l||'output'}": ${e.message}`); }
+  });
+  orderOutputs(spec.outputs);
+  return true;
+}
+
+function navBar({ title, subtitle }){
+  return `
+  <div class="sticky top-0 z-20 backdrop-blur-xl bg-canvas/85 border-b border-line px-5 pt-5 pb-4">
+    <h1 class="font-semibold tracking-tight text-[18px] truncate">${escapeHtml(title)}</h1>
+    ${subtitle ? `<p class="text-neutral-400 text-[13px] mt-0.5 truncate">${escapeHtml(subtitle)}</p>` : ''}
+  </div>`;
+}
+
+function renderCalculator(spec, hash){
+  const app = document.getElementById('app');
+  const ordered = orderOutputs(spec.outputs);
+
+  app.innerHTML = `
+    ${navBar({ title: spec.t || 'Untitled formula', subtitle: spec.d })}
+    <div class="flex-1 px-5 pt-5 pb-4">
+      <div class="fade-up mb-6">
+        <div class="text-xs uppercase tracking-wider text-neutral-500 font-medium mb-2.5 px-1">Inputs</div>
+        <div class="space-y-5 bg-surface/60 border border-line rounded-2xl p-4" id="fields"></div>
+      </div>
+      <div class="text-xs uppercase tracking-wider text-neutral-500 font-medium mb-2.5 px-1">Results</div>
+      <div id="results" class="space-y-4"></div>
+    </div>
+    <div class="mt-auto px-5 py-6 text-center border-t border-line">
+      <button id="btn-new" class="text-sm font-medium text-neutral-500 hover:text-accent-300 transition-colors">Build a new formula</button>
+    </div>
+  `;
+
+  document.getElementById('fields').innerHTML = spec.vars.map(fieldMarkup).join('');
+  document.getElementById('results').innerHTML = ordered.map((o,i) => `
+    <div class="fade-up rounded-2xl bg-surface border border-line overflow-hidden" style="animation-delay:${i*30}ms" data-result-key="${o.k}">
+      <div class="px-5 pt-4 pb-3 border-b border-line/70">
+        <div class="text-[11px] uppercase tracking-wider text-neutral-500 font-medium mb-2">${escapeHtml(o.l || 'Result')}</div>
+        <div class="tex-box overflow-x-auto no-scrollbar text-neutral-200"></div>
+      </div>
+      <div class="px-5 py-4 bg-gradient-to-br from-accent-900/30 to-transparent">
+        <div class="flex items-baseline gap-2">
+          <span class="result-value text-3xl font-bold tabular-nums text-white">—</span>
+          <span class="text-base text-neutral-400">${escapeHtml(o.u || '')}</span>
+        </div>
+        <div class="result-error hidden mt-2 text-sm text-red-400 flex items-start gap-1.5">
+          <i data-lucide="alert-triangle" class="w-4 h-4 mt-0.5 shrink-0"></i>
+          <span></span>
+        </div>
+      </div>
+    </div>`).join('');
+
+  ordered.forEach(o => {
+    const box = document.querySelector(`[data-result-key="${o.k}"] .tex-box`);
+    renderTex(o.l, o.expr, box);
+  });
+
+  icons();
+
+  const scope = { today: todayDays() };
+  spec.vars.forEach(v => {
+    if(v.type === 'date') scope[v.k] = dateToDays(v.def);
+    else scope[v.k] = Number(v.def ?? v.min ?? 0);
+  });
+
+  function evaluateAll(){
+    ordered.forEach(o => {
+      const card = document.querySelector(`[data-result-key="${o.k}"]`);
+      const valEl = card.querySelector('.result-value');
+      const errEl = card.querySelector('.result-error');
+      try{
+        const val = mathjs.evaluate(o.expr, scope);
+        if(typeof val !== 'number' || !isFinite(val)) throw new Error('Result is not a valid number (check for divide-by-zero).');
+        scope[o.k] = val;
+        const round = o.round ?? 2;
+        valEl.textContent = Number(val.toFixed(round)).toLocaleString(undefined, {maximumFractionDigits: round});
+        errEl.classList.add('hidden');
+        card.classList.remove('border-red-500/50');
+        card.classList.add('border-line');
+      }catch(e){
+        scope[o.k] = NaN;
+        valEl.textContent = '—';
+        errEl.classList.remove('hidden');
+        errEl.querySelector('span').textContent = e.message;
+        card.classList.add('border-red-500/50');
+        card.classList.remove('border-line');
+      }
+    });
+  }
+
+  spec.vars.forEach(v => {
+    const input = document.querySelector(`[data-var="${v.k}"]`);
+    input.addEventListener('input', () => {
+      if(v.type === 'date') scope[v.k] = dateToDays(input.value);
+      else{
+        const num = parseFloat(input.value);
+        scope[v.k] = isNaN(num) ? 0 : num;
+      }
+      if(v.type === 'slider'){
+        document.querySelector(`[data-readout="${v.k}"]`).textContent = `${input.value}${v.u ? ' '+v.u : ''}`;
+      }
+      evaluateAll();
+    });
+  });
+
+  evaluateAll();
+
+  document.getElementById('btn-new').addEventListener('click', () => { history.pushState({}, '', location.pathname); renderBuilder(); });
+}
+
+let builderState = { vars: [], outputs: [], varSeq: 0, outSeq: 0 };
+
+function newVar(){
+  builderState.varSeq += 1;
+  return { id: builderState.varSeq, k: `x${builderState.varSeq}`, l: '', u: '', type: 'number', min: 0, max: 100, step: 1, def: 0, options: [{label:'',value:0}] };
+}
+function newOutput(){
+  builderState.outSeq += 1;
+  return { id: builderState.outSeq, k: `result${builderState.outSeq}`, l: '', u: '', expr: '', round: 2 };
+}
+
+function renderBuilder(){
+  builderState = { vars: [newVar()], outputs: [newOutput()], varSeq: 1, outSeq: 1 };
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    ${navBar({ title: 'Formulary', subtitle: 'Turn a formula into a shareable calculator' })}
+    <div class="flex-1 px-5 pt-6 pb-10">
+
+      <div class="fade-up mb-7 rounded-2xl border border-line bg-gradient-to-br from-accent-900/25 to-surface p-4">
+        <div class="flex gap-3">
+          <div class="w-9 h-9 shrink-0 rounded-xl bg-accent flex items-center justify-center">
+            <i data-lucide="wand-sparkles" class="w-4.5 h-4.5 text-canvas"></i>
+          </div>
+          <div class="min-w-0">
+            <div class="text-[13.5px] font-medium text-neutral-100 leading-snug">Pick a template or start from scratch below.</div>
+            <div class="text-[12.5px] text-neutral-400 mt-0.5 leading-snug">Add inputs and outputs, generate a link, and share it — anyone who opens it gets a working calculator, no setup required.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="fade-up mb-7">
+        <div class="flex items-center justify-between mb-2.5">
+          <div class="text-xs uppercase tracking-wider text-neutral-500 font-medium">Start from a template</div>
+          <button id="btn-reference" class="flex items-center gap-1 text-xs font-medium text-neutral-400 hover:text-accent-300">
+            <i data-lucide="book-open" class="w-3.5 h-3.5"></i> Reference
+          </button>
+        </div>
+        <div class="flex gap-2 overflow-x-auto no-scrollbar pb-1 -mx-5 px-5">
+          ${TEMPLATES.map((t,i) => `
+            <button data-template="${i}" class="shrink-0 flex flex-col items-start gap-2 w-[150px] bg-surface border border-line rounded-xl p-3.5 text-left active:scale-95 transition-transform">
+              <div class="w-8 h-8 rounded-lg bg-accent-900/50 flex items-center justify-center">
+                <i data-lucide="${t.icon}" class="w-4 h-4 text-accent-300"></i>
+              </div>
+              <div class="text-[13px] font-medium leading-tight">${escapeHtml(t.t)}</div>
+              <div class="text-[11px] text-neutral-500 leading-snug">${escapeHtml(t.d)}</div>
+            </button>`).join('')}
+        </div>
+      </div>
+
+      <div class="space-y-5">
+        <div>
+          <label class="text-sm font-medium text-neutral-300 mb-2 block">Formula title</label>
+          <input id="b-title" type="text" placeholder="e.g. Loan Payment Calculator" class="w-full bg-surface2 border border-line rounded-xl px-4 py-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent placeholder-neutral-600">
+        </div>
+        <div>
+          <label class="text-sm font-medium text-neutral-300 mb-2 block">Description <span class="text-neutral-600 font-normal">(optional)</span></label>
+          <input id="b-desc" type="text" placeholder="What does this calculate?" class="w-full bg-surface2 border border-line rounded-xl px-4 py-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent placeholder-neutral-600">
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="text-sm font-medium text-neutral-300">Inputs</label>
+            <button id="b-addvar" class="flex items-center gap-1 text-xs font-medium text-accent-300 py-1 px-2 rounded-lg hover:bg-accent-900/30">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add input
+            </button>
+          </div>
+          <p class="text-[12px] text-neutral-500 mb-2.5 leading-relaxed">What the person using the calculator will fill in.</p>
+          <div id="b-vars" class="space-y-3"></div>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="text-sm font-medium text-neutral-300">Outputs</label>
+            <button id="b-addout" class="flex items-center gap-1 text-xs font-medium text-accent-300 py-1 px-2 rounded-lg hover:bg-accent-900/30">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add output
+            </button>
+          </div>
+          <p class="text-[12px] text-neutral-500 mb-2.5 leading-relaxed">What gets calculated. Add more than one for multi-step formulas or conversions — later outputs can reuse an earlier output's key just like a variable.</p>
+          <div id="b-outputs" class="space-y-3"></div>
+        </div>
+
+        <div id="b-error" class="hidden rounded-xl bg-red-950/50 border border-red-900/60 px-4 py-3 text-sm text-red-400 flex items-start gap-2">
+          <i data-lucide="alert-triangle" class="w-4 h-4 mt-0.5 shrink-0"></i>
+          <span></span>
+        </div>
+
+        <button id="b-generate" class="w-full flex items-center justify-center gap-2 bg-accent hover:bg-accent-600 rounded-xl py-3.5 text-[15px] font-semibold text-white transition-colors">
+          <i data-lucide="wand-sparkles" class="w-4 h-4"></i> Generate link
+        </button>
+      </div>
+
+      <div id="b-result" class="hidden mt-6 fade-up">
+        <div class="rounded-2xl bg-surface border border-line p-4">
+          <div class="text-xs uppercase tracking-wider text-neutral-500 font-medium mb-2">Shareable link</div>
+          <div class="flex items-center gap-2 bg-surface2 rounded-lg px-3 py-2.5 mb-3">
+            <span id="b-link-text" class="text-[13px] font-mono text-neutral-300 truncate flex-1"></span>
+          </div>
+          <div class="flex gap-2">
+            <button id="b-copy" class="flex-1 flex items-center justify-center gap-1.5 bg-accent hover:bg-accent-600 rounded-lg py-2.5 text-sm font-medium text-white">
+              <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copy
+            </button>
+            <button id="b-preview" class="flex-1 flex items-center justify-center gap-1.5 bg-surface2 hover:bg-line border border-line rounded-lg py-2.5 text-sm font-medium text-neutral-300">
+              <i data-lucide="eye" class="w-3.5 h-3.5"></i> Preview
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="reference-sheet" class="hidden fixed inset-0 z-30 bg-canvas/95 backdrop-blur-sm overflow-y-auto">
+      <div class="max-w-lg mx-auto px-5 pt-5 pb-10">
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="text-xl font-semibold tracking-tight">Supported operations</h2>
+          <button id="ref-close" class="w-9 h-9 flex items-center justify-center rounded-lg text-neutral-400 hover:bg-surface2">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+        <div class="space-y-5">
+          ${FUNCTION_REFERENCE.map(g => `
+            <div>
+              <div class="text-xs uppercase tracking-wider text-accent-300 font-medium mb-2">${escapeHtml(g.group)}</div>
+              <div class="rounded-xl bg-surface border border-line divide-y divide-line">
+                ${g.items.map(it => `<div class="px-4 py-2.5 text-[13px] font-mono text-neutral-300">${escapeHtml(it)}</div>`).join('')}
+              </div>
+            </div>`).join('')}
+          <div>
+            <div class="text-xs uppercase tracking-wider text-accent-300 font-medium mb-2">Input types</div>
+            <div class="rounded-xl bg-surface border border-line divide-y divide-line text-[13px] text-neutral-300">
+              <div class="px-4 py-2.5"><span class="font-mono text-accent-300">number</span> — free numeric entry</div>
+              <div class="px-4 py-2.5"><span class="font-mono text-accent-300">slider</span> — numeric range with min/max/step</div>
+              <div class="px-4 py-2.5"><span class="font-mono text-accent-300">date</span> — exposes both the picked date and <span class="font-mono">today</span> as days-since-epoch</div>
+              <div class="px-4 py-2.5"><span class="font-mono text-accent-300">select</span> — dropdown mapping labels to numeric values</div>
+            </div>
+          </div>
+          <div>
+            <div class="text-xs uppercase tracking-wider text-accent-300 font-medium mb-2">Multi-step formulas</div>
+            <div class="rounded-xl bg-surface border border-line px-4 py-3 text-[13px] text-neutral-300 leading-relaxed">
+              Give an output a key (e.g. <span class="font-mono text-accent-300">moles</span>), then reference it in a later output's expression — same as using a variable. Formulary works out the calculation order automatically.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  icons();
+  renderVarRows();
+  renderOutputRows();
+
+  document.querySelectorAll('[data-template]').forEach(btn => {
+    btn.addEventListener('click', () => applyTemplate(TEMPLATES[Number(btn.dataset.template)]));
+  });
+  document.getElementById('b-addvar').addEventListener('click', () => { builderState.vars.push(newVar()); renderVarRows(); });
+  document.getElementById('b-addout').addEventListener('click', () => { builderState.outputs.push(newOutput()); renderOutputRows(); });
+  document.getElementById('b-generate').addEventListener('click', generateFromBuilder);
+  document.getElementById('btn-reference').addEventListener('click', () => document.getElementById('reference-sheet').classList.remove('hidden'));
+  document.getElementById('ref-close').addEventListener('click', () => document.getElementById('reference-sheet').classList.add('hidden'));
+}
+
+function varRowMarkup(v){
+  const typeOptions = ['number','slider','date','select'];
+  return `
+  <div class="bg-surface border border-line rounded-xl p-3.5" data-var-row="${v.id}">
+    <div class="flex items-center gap-2 mb-3">
+      <input data-vfield="l" placeholder="Label (e.g. Weight)" value="${escapeHtml(v.l)}" class="flex-1 bg-surface2 border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-accent">
+      <button data-vremove class="w-8 h-8 shrink-0 flex items-center justify-center rounded-lg text-neutral-500 hover:text-red-400 hover:bg-red-950/30">
+        <i data-lucide="trash-2" class="w-4 h-4"></i>
+      </button>
+    </div>
+    <div class="grid grid-cols-2 gap-2 mb-3">
+      <div>
+        <span class="text-[11px] text-neutral-500 block mb-1">Variable name</span>
+        <input data-vfield="k" value="${escapeHtml(v.k)}" class="w-full bg-surface2 border border-line rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-accent">
+      </div>
+      <div>
+        <span class="text-[11px] text-neutral-500 block mb-1">Type</span>
+        <select data-vfield="type" class="w-full bg-surface2 border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-accent">
+          ${typeOptions.map(t => `<option value="${t}" ${v.type===t?'selected':''}>${t}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div data-vextra></div>
+  </div>`;
+}
+
+function varExtraMarkup(v){
+  if(v.type === 'number' || v.type === 'slider'){
+    return `
+    <div class="grid grid-cols-2 gap-2 mb-3">
+      <div><span class="text-[11px] text-neutral-500 block mb-1">Unit</span><input data-vfield="u" value="${escapeHtml(v.u)}" placeholder="kg" class="w-full bg-surface2 border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-accent"></div>
+      <div><span class="text-[11px] text-neutral-500 block mb-1">Default</span><input data-vfield="def" type="number" value="${v.def}" class="w-full bg-surface2 border border-line rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-accent"></div>
+    </div>
+    <div class="grid grid-cols-3 gap-2">
+      <div><span class="text-[11px] text-neutral-500 block mb-1">Min</span><input data-vfield="min" type="number" value="${v.min}" class="w-full bg-surface2 border border-line rounded-lg px-2 py-2 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-accent"></div>
+      <div><span class="text-[11px] text-neutral-500 block mb-1">Max</span><input data-vfield="max" type="number" value="${v.max}" class="w-full bg-surface2 border border-line rounded-lg px-2 py-2 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-accent"></div>
+      <div><span class="text-[11px] text-neutral-500 block mb-1">Step</span><input data-vfield="step" type="number" value="${v.step}" class="w-full bg-surface2 border border-line rounded-lg px-2 py-2 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-accent"></div>
+    </div>`;
+  }
+  if(v.type === 'date'){
+    return `
+    <div>
+      <span class="text-[11px] text-neutral-500 block mb-1">Default date</span>
+      <input data-vfield="def" type="date" value="${escapeHtml(v.def || '2000-01-01')}" class="w-full bg-surface2 border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-accent">
+      <p class="text-[11px] text-neutral-500 mt-2">Available in expressions as <span class="font-mono text-neutral-400">${escapeHtml(v.k)}</span> (days since epoch). Use the built-in <span class="font-mono text-neutral-400">today</span> for age-style math.</p>
+    </div>`;
+  }
+  if(v.type === 'select'){
+    return `
+    <div>
+      <span class="text-[11px] text-neutral-500 block mb-2">Options (label / numeric value)</span>
+      <div data-select-options class="space-y-2">
+        ${(v.options||[]).map((o,oi) => `
+        <div class="flex items-center gap-2" data-opt-row="${oi}">
+          <input data-optfield="label" value="${escapeHtml(o.label)}" placeholder="Label" class="flex-1 bg-surface2 border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-accent">
+          <input data-optfield="value" type="number" value="${o.value}" placeholder="Value" class="w-20 bg-surface2 border border-line rounded-lg px-2 py-2 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-accent">
+          <button data-optremove class="w-8 h-8 shrink-0 flex items-center justify-center rounded-lg text-neutral-500 hover:text-red-400"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+        </div>`).join('')}
+      </div>
+      <button data-addopt class="mt-2 flex items-center gap-1 text-xs font-medium text-accent-300 py-1 px-2 rounded-lg hover:bg-accent-900/30">
+        <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add option
+      </button>
+    </div>`;
+  }
+  return '';
+}
+
+function bindVarRow(row, v){
+  row.querySelectorAll('[data-vfield]').forEach(input => {
+    const field = input.dataset.vfield;
+    const handler = () => {
+      if(field === 'type'){
+        v.type = input.value;
+        if(v.type === 'date' && !v.def) v.def = '2000-01-01';
+        if(v.type === 'select' && (!v.options || !v.options.length)) v.options = [{label:'',value:0}];
+        renderVarRows();
+        return;
+      }
+      if(['min','max','step'].includes(field)){ v[field] = parseFloat(input.value); }
+      else if(field === 'def'){ v.def = (v.type==='number'||v.type==='slider') ? parseFloat(input.value) : input.value; }
+      else { v[field] = input.value; }
+    };
+    input.addEventListener('input', handler);
+    input.addEventListener('change', handler);
+  });
+  row.querySelector('[data-vremove]').addEventListener('click', () => {
+    builderState.vars = builderState.vars.filter(x => x.id !== v.id);
+    if(builderState.vars.length === 0) builderState.vars.push(newVar());
+    renderVarRows();
+  });
+  if(v.type === 'select'){
+    const bindOptions = () => {
+      row.querySelectorAll('[data-opt-row]').forEach(optRow => {
+        const oi = Number(optRow.dataset.optRow);
+        optRow.querySelectorAll('[data-optfield]').forEach(inp => {
+          const f = inp.dataset.optfield;
+          inp.addEventListener('input', () => {
+            v.options[oi][f] = f === 'value' ? parseFloat(inp.value) : inp.value;
+          });
+        });
+        optRow.querySelector('[data-optremove]').addEventListener('click', () => {
+          v.options.splice(oi,1);
+          if(!v.options.length) v.options.push({label:'',value:0});
+          renderVarRows();
+        });
+      });
+    };
+    bindOptions();
+    row.querySelector('[data-addopt]').addEventListener('click', () => {
+      v.options.push({label:'',value:v.options.length});
+      renderVarRows();
+    });
+  }
+}
+
+function renderVarRows(){
+  const container = document.getElementById('b-vars');
+  container.innerHTML = builderState.vars.map(varRowMarkup).join('');
+  container.querySelectorAll('[data-var-row]').forEach(row => {
+    const id = Number(row.dataset.varRow);
+    const v = builderState.vars.find(x => x.id === id);
+    row.querySelector('[data-vextra]').outerHTML = `<div data-vextra>${varExtraMarkup(v)}</div>`;
+    bindVarRow(row, v);
+  });
+  icons();
+}
+
+function outputRowMarkup(o){
+  return `
+  <div class="bg-surface border border-line rounded-xl p-3.5" data-out-row="${o.id}">
+    <div class="flex items-center gap-2 mb-3">
+      <input data-ofield="l" placeholder="Label (e.g. Fahrenheit)" value="${escapeHtml(o.l)}" class="flex-1 bg-surface2 border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-accent">
+      <input data-ofield="u" placeholder="Unit" value="${escapeHtml(o.u)}" class="w-16 bg-surface2 border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-accent">
+      <button data-oremove class="w-8 h-8 shrink-0 flex items-center justify-center rounded-lg text-neutral-500 hover:text-red-400 hover:bg-red-950/30">
+        <i data-lucide="trash-2" class="w-4 h-4"></i>
+      </button>
+    </div>
+    <div class="mb-2">
+      <span class="text-[11px] text-neutral-500 block mb-1">Output key <span class="text-neutral-600">(reference this from a later output)</span></span>
+      <input data-ofield="k" value="${escapeHtml(o.k)}" class="w-full bg-surface2 border border-line rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-accent">
+    </div>
+    <div>
+      <span class="text-[11px] text-neutral-500 block mb-1">Expression</span>
+      <input data-ofield="expr" placeholder="e.g. c * 9/5 + 32" value="${escapeHtml(o.expr)}" class="w-full bg-surface2 border border-line rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-accent">
+    </div>
+  </div>`;
+}
+
+function renderOutputRows(){
+  const container = document.getElementById('b-outputs');
+  container.innerHTML = builderState.outputs.map(outputRowMarkup).join('');
+  icons();
+  container.querySelectorAll('[data-out-row]').forEach(row => {
+    const id = Number(row.dataset.outRow);
+    const o = builderState.outputs.find(x => x.id === id);
+    row.querySelectorAll('[data-ofield]').forEach(input => {
+      const field = input.dataset.ofield;
+      input.addEventListener('input', () => { o[field] = input.value; });
+    });
+    row.querySelector('[data-oremove]').addEventListener('click', () => {
+      builderState.outputs = builderState.outputs.filter(x => x.id !== id);
+      if(builderState.outputs.length === 0) builderState.outputs.push(newOutput());
+      renderOutputRows();
+    });
+  });
+}
+
+function applyTemplate(t){
+  document.getElementById('b-title').value = t.t;
+  document.getElementById('b-desc').value = t.d || '';
+  builderState.vars = t.vars.map(v => ({ ...v, id: ++builderState.varSeq, options: v.options ? v.options.map(o=>({...o})) : undefined }));
+  builderState.outputs = t.outputs.map(o => ({ ...o, id: ++builderState.outSeq }));
+  renderVarRows();
+  renderOutputRows();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function showBuilderError(msg){
+  const el = document.getElementById('b-error');
+  el.classList.remove('hidden');
+  el.querySelector('span').textContent = msg;
+  document.getElementById('b-result').classList.add('hidden');
+}
+
+function generateFromBuilder(){
+  const errEl = document.getElementById('b-error');
+  errEl.classList.add('hidden');
+  try{
+    const title = document.getElementById('b-title').value.trim();
+    if(!title) throw new Error('Give this formula a title.');
+
+    const vars = builderState.vars.map(v => {
+      if(!v.l.trim()) throw new Error('Every input needs a label.');
+      if(!v.k.trim() || !/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(v.k)) throw new Error(`"${v.k}" isn't a valid variable name. Use letters, numbers, underscore, starting with a letter.`);
+      if(v.k === 'today') throw new Error('"today" is reserved for the current date — pick a different variable name.');
+      const clean = { k:v.k.trim(), l:v.l.trim(), u:(v.u||'').trim(), type:v.type };
+      if(v.type === 'number' || v.type === 'slider'){
+        clean.min = v.min; clean.max = v.max; clean.step = v.step; clean.def = v.def;
+        if(v.type === 'slider' && (isNaN(v.min) || isNaN(v.max) || v.min >= v.max)) throw new Error(`"${clean.l}" needs a valid min/max range (min less than max).`);
+      } else if(v.type === 'date'){
+        clean.def = v.def || '2000-01-01';
+      } else if(v.type === 'select'){
+        const opts = (v.options||[]).filter(o => o.label && o.label.trim());
+        if(!opts.length) throw new Error(`"${clean.l}" needs at least one labeled option.`);
+        clean.options = opts.map(o => ({ label:o.label.trim(), value:Number(o.value)||0 }));
+        clean.def = clean.options[0].value;
+      }
+      return clean;
+    });
+    const varNames = vars.map(v=>v.k);
+    const varDupes = varNames.filter((n,i) => varNames.indexOf(n) !== i);
+    if(varDupes.length) throw new Error(`Duplicate variable name: "${varDupes[0]}"`);
+
+    const knownFns = new Set(['sqrt','log','log10','log2','sin','cos','tan','asin','acos','atan','abs','exp','round','floor','ceil','min','max','pow','pi','e','and','or','not','today']);
+
+    const outputs = builderState.outputs.map(o => {
+      if(!o.l || !o.l.trim()) throw new Error('Every output needs a label.');
+      if(!o.k || !o.k.trim() || !/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(o.k)) throw new Error(`"${o.k}" isn't a valid output key. Use letters, numbers, underscore, starting with a letter.`);
+      if(!o.expr || !o.expr.trim()) throw new Error(`"${o.l}" is missing its expression.`);
+      return { k:o.k.trim(), l:o.l.trim(), u:(o.u||'').trim(), expr:o.expr.trim(), round: 2 };
+    });
+    const outNames = outputs.map(o=>o.k);
+    const outDupes = outNames.filter((n,i) => outNames.indexOf(n) !== i);
+    if(outDupes.length) throw new Error(`Duplicate output key: "${outDupes[0]}"`);
+    const overlap = outNames.find(n => varNames.includes(n));
+    if(overlap) throw new Error(`"${overlap}" is used as both an input and an output key — they need to be different.`);
+
+    let ordered;
+    try{ ordered = orderOutputs(outputs); }
+    catch(e){ throw new Error(e.message); }
+
+    ordered.forEach(o => {
+      let parsed;
+      try{ parsed = mathjs.parse(o.expr); }
+      catch(e){ throw new Error(`"${o.l}" has a syntax error: ${e.message}`); }
+      const used = new Set();
+      parsed.traverse(node => { if(node.isSymbolNode) used.add(node.name); });
+      used.forEach(sym => {
+        if(!varNames.includes(sym) && !outNames.includes(sym) && sym !== 'today' && !knownFns.has(sym)){
+          throw new Error(`"${o.l}" uses "${sym}" but no input or earlier output with that name is defined.`);
+        }
+      });
+    });
+
+    const testScope = { today: todayDays() };
+    vars.forEach(v => testScope[v.k] = v.type === 'date' ? dateToDays(v.def) : Number(v.def));
+    ordered.forEach(o => {
+      try{ testScope[o.k] = mathjs.evaluate(o.expr, testScope); }
+      catch(e){ throw new Error(`Could not evaluate "${o.l}" with default values: ${e.message}`); }
+    });
+
+    const spec = { t:title, d: document.getElementById('b-desc').value.trim(), vars, outputs };
+    validateSpec(spec);
+
+    const hash = encodeSpec(spec);
+    const url = `${location.origin}${location.pathname}?f=${hash}`;
+    const resultBox = document.getElementById('b-result');
+    resultBox.classList.remove('hidden');
+    document.getElementById('b-link-text').textContent = url;
+    resultBox.scrollIntoView({behavior:'smooth', block:'center'});
+
+    document.getElementById('b-copy').onclick = () => {
+      navigator.clipboard.writeText(url).then(() => {
+        const btn = document.getElementById('b-copy');
+        const original = btn.innerHTML;
+        btn.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5"></i> Copied`;
+        icons();
+        setTimeout(() => { btn.innerHTML = original; icons(); }, 1600);
+      }).catch(() => prompt('Copy this link:', url));
+    };
+    document.getElementById('b-preview').onclick = () => { location.href = url; };
+
+  }catch(e){
+    showBuilderError(e.message);
+  }
+}
+
+function boot(){
+  const params = new URLSearchParams(location.search);
+  const hash = params.get('f');
+  if(hash){
+    try{
+      const spec = decodeSpec(hash);
+      validateSpec(spec);
+      renderCalculator(spec, hash);
+      return;
+    }catch(e){
+      renderBuilder();
+      setTimeout(() => {
+        const app = document.getElementById('app');
+        const banner = document.createElement('div');
+        banner.className = 'mx-5 mt-3 fade-up rounded-xl bg-red-950/50 border border-red-900/60 px-4 py-3 text-sm text-red-400 flex items-start gap-2';
+        banner.innerHTML = `<i data-lucide="alert-triangle" class="w-4 h-4 mt-0.5 shrink-0"></i><span>This link's formula could not be loaded (${escapeHtml(e.message)}). Build a new one below.</span>`;
+        app.insertBefore(banner, app.children[1]);
+        icons();
+      }, 0);
+      return;
+    }
+  }
+  renderBuilder();
+}
+
+boot();
+</script>
+</body>
+</html>
