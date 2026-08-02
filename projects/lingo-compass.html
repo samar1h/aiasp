@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Lingo Compass</title>
+<meta name="description" content="Answer a short quiz about your goals and life to get a personalized recommendation for which language to learn next.">
+<meta name="keywords" content="language learning, quiz">
+<meta name="app-icon" content="compass">
+<script>
+window.onerror = function(msg, src, line, col, err) {
+  showErrorBanner(msg, err && err.stack ? err.stack : (src + ':' + line + ':' + col));
+  return false;
+};
+window.addEventListener('unhandledrejection', function(e) {
+  showErrorBanner(e.reason && e.reason.message ? e.reason.message : 'Unhandled error', e.reason && e.reason.stack ? e.reason.stack : String(e.reason));
+});
+function showErrorBanner(message, details) {
+  try {
+    var existing = document.getElementById('__err_banner');
+    if (existing) existing.remove();
+    var banner = document.createElement('div');
+    banner.id = '__err_banner';
+    banner.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:999999;background:#2B2622;color:#FBF7F2;font-family:system-ui,-apple-system,sans-serif;font-size:13px;padding:10px 14px;box-shadow:0 -2px 10px rgba(0,0,0,0.3);';
+    var msg = document.createElement('div');
+    msg.textContent = 'Something went wrong: ' + message;
+    msg.style.cssText = 'display:flex;justify-content:space-between;align-items:center;gap:8px;';
+    var closeBtn = document.createElement('button');
+    closeBtn.textContent = 'Dismiss';
+    closeBtn.style.cssText = 'background:#E07A3E;border:none;color:#2B2622;padding:4px 10px;border-radius:6px;font-size:12px;flex-shrink:0;';
+    closeBtn.onclick = function() { banner.remove(); };
+    msg.appendChild(closeBtn);
+    banner.appendChild(msg);
+    if (details) {
+      var det = document.createElement('details');
+      det.style.cssText = 'margin-top:6px;opacity:0.8;';
+      var sum = document.createElement('summary');
+      sum.textContent = 'Technical details';
+      sum.style.cssText = 'cursor:pointer;';
+      var pre = document.createElement('pre');
+      pre.textContent = details;
+      pre.style.cssText = 'white-space:pre-wrap;word-break:break-word;font-size:11px;margin-top:4px;max-height:120px;overflow:auto;';
+      det.appendChild(sum);
+      det.appendChild(pre);
+      banner.appendChild(det);
+    }
+    document.body.appendChild(banner);
+  } catch (e) {}
+}
+</script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { -webkit-tap-highlight-color: transparent; }
+  body { font-family: 'Inter', system-ui, sans-serif; background: #FBF7F2; color: #2B2622; overscroll-behavior-y: contain; }
+  .font-display { font-family: 'Fraunces', serif; }
+  ::-webkit-scrollbar { display: none; }
+  .fade-in { animation: fadeIn 0.4s ease both; }
+  .slide-up { animation: slideUp 0.45s cubic-bezier(0.16,1,0.3,1) both; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+  .needle-transition { transition: transform 1.6s cubic-bezier(0.22,1,0.36,1); }
+  .card-tap { transition: transform 0.15s ease, box-shadow 0.15s ease; }
+  .card-tap:active { transform: scale(0.97); }
+  .progress-fill { transition: width 0.5s cubic-bezier(0.22,1,0.36,1); }
+  .bar-fill { transition: width 1.2s cubic-bezier(0.22,1,0.36,1); }
+  @media (prefers-reduced-motion: reduce) {
+    .fade-in, .slide-up, .needle-transition, .card-tap, .progress-fill, .bar-fill { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body class="min-h-screen">
+<div id="app" class="max-w-md mx-auto min-h-screen relative pb-8"></div>
+
+<script>
+const LANGS = {
+  spanish: { name: 'Spanish', native: 'Español', flag: '🇪🇸', family: 'Romance', script: 'Latin', speakers: '560M', difficulty: 2, tags: ['travel','career','wide-reach','romance-langs'],
+    blurb: 'Spoken across Spain and nearly all of Latin America, with the largest number of native speakers of any Romance language.',
+    strengths: { travel: 5, career_global: 4, career_business: 4, media: 5, family_heritage: 2, ease: 5, community_local: 3, tech_field: 2 } },
+  french: { name: 'French', native: 'Français', flag: '🇫🇷', family: 'Romance', script: 'Latin', speakers: '280M', difficulty: 2, tags: ['travel','diplomacy','career','wide-reach'],
+    blurb: 'An official language in 29 countries and a working language of the UN, EU, and major diplomatic bodies.',
+    strengths: { travel: 5, career_global: 4, career_business: 3, media: 4, family_heritage: 2, ease: 4, community_local: 2, tech_field: 2 } },
+  german: { name: 'German', native: 'Deutsch', flag: '🇩🇪', family: 'Germanic', script: 'Latin', speakers: '135M', difficulty: 3, tags: ['career','engineering','wide-reach'],
+    blurb: 'Europe\'s largest economy speaks it natively, making it valuable for engineering, manufacturing, and research careers.',
+    strengths: { travel: 3, career_global: 4, career_business: 4, media: 3, family_heritage: 2, ease: 3, community_local: 2, tech_field: 3 } },
+  mandarin: { name: 'Mandarin Chinese', native: '中文', flag: '🇨🇳', family: 'Sino-Tibetan', script: 'Chinese characters', speakers: '1.1B', difficulty: 5, tags: ['career','business','wide-reach','manufacturing','pharma'],
+    blurb: 'The world\'s most-spoken native language and central to global manufacturing, trade, and increasingly pharmaceutical supply chains.',
+    strengths: { travel: 3, career_global: 5, career_business: 5, media: 3, family_heritage: 2, ease: 1, community_local: 2, tech_field: 4 } },
+  japanese: { name: 'Japanese', native: '日本語', flag: '🇯🇵', family: 'Japonic', script: 'Kanji/Kana', speakers: '125M', difficulty: 5, tags: ['media','tech','travel','anime'],
+    blurb: 'A single-country language with an outsized cultural footprint through anime, gaming, and design, plus a strong tech sector.',
+    strengths: { travel: 4, career_global: 3, career_business: 3, media: 5, family_heritage: 2, ease: 1, community_local: 2, tech_field: 4 } },
+  korean: { name: 'Korean', native: '한국어', flag: '🇰🇷', family: 'Koreanic', script: 'Hangul', speakers: '82M', difficulty: 4, tags: ['media','pop-culture','tech'],
+    blurb: 'Driven by a global wave of K-pop and K-drama fandom, with Hangul widely considered one of the easier scripts to learn.',
+    strengths: { travel: 3, career_global: 3, career_business: 3, media: 5, family_heritage: 2, ease: 2, community_local: 2, tech_field: 3 } },
+  arabic: { name: 'Arabic', native: 'العربية', flag: '🇸🇦', family: 'Semitic', script: 'Arabic', speakers: '400M', difficulty: 5, tags: ['diplomacy','career','wide-reach'],
+    blurb: 'Official across 20+ countries in the Middle East and North Africa, with rising strategic and economic relevance.',
+    strengths: { travel: 3, career_global: 4, career_business: 3, media: 2, family_heritage: 2, ease: 1, community_local: 2, tech_field: 2 } },
+  portuguese: { name: 'Portuguese', native: 'Português', flag: '🇵🇹', family: 'Romance', script: 'Latin', speakers: '260M', difficulty: 2, tags: ['travel','business'],
+    blurb: 'The language of Brazil, one of the world\'s largest emerging economies, plus Portugal and parts of Africa.',
+    strengths: { travel: 4, career_global: 3, career_business: 3, media: 3, family_heritage: 2, ease: 4, community_local: 2, tech_field: 2 } },
+  russian: { name: 'Russian', native: 'Русский', flag: '🇷🇺', family: 'Slavic', script: 'Cyrillic', speakers: '255M', difficulty: 4, tags: ['literature','wide-reach'],
+    blurb: 'Widely spoken across Eastern Europe and Central Asia, with a major literary and scientific tradition.',
+    strengths: { travel: 2, career_global: 3, career_business: 2, media: 3, family_heritage: 2, ease: 2, community_local: 2, tech_field: 2 } },
+  hindi: { name: 'Hindi', native: 'हिन्दी', flag: '🇮🇳', family: 'Indo-Aryan', script: 'Devanagari', speakers: '600M', difficulty: 3, tags: ['family','community','wide-reach'],
+    blurb: 'One of India\'s official languages and among the most-spoken languages worldwide, especially useful for regional connection.',
+    strengths: { travel: 2, career_global: 2, career_business: 2, media: 3, family_heritage: 4, ease: 3, community_local: 5, tech_field: 2 } },
+  italian: { name: 'Italian', native: 'Italiano', flag: '🇮🇹', family: 'Romance', script: 'Latin', speakers: '68M', difficulty: 2, tags: ['travel','culture'],
+    blurb: 'Prized for travel, cuisine, art, and opera, and relatively approachable for speakers of other Romance languages.',
+    strengths: { travel: 4, career_global: 2, career_business: 2, media: 3, family_heritage: 2, ease: 5, community_local: 2, tech_field: 1 } },
+  vietnamese: { name: 'Vietnamese', native: 'Tiếng Việt', flag: '🇻🇳', family: 'Austroasiatic', script: 'Latin (diacritics)', speakers: '85M', difficulty: 4, tags: ['travel','emerging-market'],
+    blurb: 'Vietnam is a fast-growing manufacturing hub, and the language uses a Latin-based script despite being tonal.',
+    strengths: { travel: 3, career_global: 2, career_business: 3, media: 2, family_heritage: 2, ease: 2, community_local: 2, tech_field: 3 } }
+};
+
+const QUESTIONS = [
+  {
+    id: 'goal',
+    text: 'What\'s pulling you toward a new language?',
+    icon: 'compass',
+    options: [
+      { label: 'Career and business opportunities', weights: { career_global: 3, career_business: 3, tech_field: 1 } },
+      { label: 'Travel and everyday conversation', weights: { travel: 3, ease: 1 } },
+      { label: 'Movies, music, games, or shows I love', weights: { media: 3 } },
+      { label: 'Family, heritage, or a community near me', weights: { family_heritage: 3, community_local: 2 } }
+    ]
+  },
+  {
+    id: 'region',
+    text: 'Which part of the world matters most to your plans?',
+    icon: 'globe-2',
+    options: [
+      { label: 'East or Southeast Asia', weights: { career_business: 2, tech_field: 2, media: 1 }, boost: ['mandarin','japanese','korean','vietnamese'] },
+      { label: 'Europe', weights: { career_global: 2, travel: 1 }, boost: ['french','german','italian','portuguese','russian'] },
+      { label: 'Latin America', weights: { travel: 2, career_business: 1 }, boost: ['spanish','portuguese'] },
+      { label: 'No single region — I want broad reach', weights: { career_global: 2, wide: 2 } }
+    ]
+  },
+  {
+    id: 'time',
+    text: 'How much time can you realistically put in each week?',
+    icon: 'clock',
+    options: [
+      { label: 'Under 2 hours — I need something efficient', weights: { ease: 3 } },
+      { label: '2–5 hours — steady but not intense', weights: { ease: 2 } },
+      { label: '5–10 hours — I\'m genuinely committed', weights: { ease: 1 } },
+      { label: '10+ hours — this is a real priority for me', weights: {} }
+    ]
+  },
+  {
+    id: 'work',
+    text: 'What best describes your work or field of study?',
+    icon: 'briefcase',
+    options: [
+      { label: 'Healthcare, pharma, or life sciences', weights: { career_business: 2 }, boost: ['mandarin','german'] },
+      { label: 'Tech, engineering, or manufacturing', weights: { tech_field: 3, career_global: 1 } },
+      { label: 'Business, finance, or trade', weights: { career_business: 2, career_global: 2 } },
+      { label: 'Something unrelated to any of these', weights: { travel: 1, media: 1 } }
+    ]
+  },
+  {
+    id: 'script',
+    text: 'How do you feel about learning a new writing system?',
+    icon: 'pen-line',
+    options: [
+      { label: 'Bring it on — I like a real challenge', weights: {} },
+      { label: 'Fine, as long as there\'s a clear path to learn it', weights: { ease: 1 } },
+      { label: 'I\'d rather stick to the Latin alphabet', weights: { ease: 3 }, penalize: ['mandarin','japanese','korean','arabic','russian','hindi'] },
+      { label: 'Not sure yet', weights: { ease: 1 } }
+    ]
+  },
+  {
+    id: 'connection',
+    text: 'Do you already have a personal connection to any of these languages?',
+    icon: 'users',
+    options: [
+      { label: 'Yes — family, friends, or a partner speaks one', weights: { family_heritage: 3, community_local: 2 } },
+      { label: 'Yes — I have local access to speakers or classes', weights: { community_local: 3 } },
+      { label: 'Not really, I\'d be starting fresh', weights: {} },
+      { label: 'I already know a related language', weights: { ease: 2 } }
+    ]
+  },
+  {
+    id: 'horizon',
+    text: 'What\'s your honest time horizon for this?',
+    icon: 'hourglass',
+    options: [
+      { label: 'A trip or event in the next year', weights: { travel: 2, ease: 2 } },
+      { label: 'A career move in the next few years', weights: { career_global: 2, career_business: 2 } },
+      { label: 'A long-term, maybe lifelong pursuit', weights: {} },
+      { label: 'No specific deadline, just curious', weights: { media: 1 } }
+    ]
+  }
+];
+
+const STORAGE_KEY = 'lingo-compass-state-v1';
+let state = {
+  screen: 'welcome',
+  selectedLangs: [],
+  quizIndex: 0,
+  answers: [],
+  scores: {},
+  history: []
+};
+
+function loadState() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed.history) state.history = parsed.history;
+    }
+  } catch (e) {}
+}
+function persistHistory() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ history: state.history })); } catch (e) {}
+}
+
+function icon(name, cls) {
+  return `<i data-lucide="${name}" class="${cls || ''}"></i>`;
+}
+
+function render() {
+  const app = document.getElementById('app');
+  let html = '';
+  if (state.screen === 'welcome') html = renderWelcome();
+  else if (state.screen === 'select') html = renderSelect();
+  else if (state.screen === 'quiz') html = renderQuiz();
+  else if (state.screen === 'result') html = renderResult();
+  else if (state.screen === 'history') html = renderHistory();
+  app.innerHTML = html;
+  lucide.createIcons();
+  attachHandlers();
+}
+
+function renderWelcome() {
+  return `
+  <div class="fade-in min-h-screen flex flex-col justify-between px-6 pt-14 pb-10">
+    <div>
+      <div class="flex items-center gap-2 mb-10">
+        <div class="w-11 h-11 rounded-2xl bg-[#E07A3E] flex items-center justify-center shadow-sm">
+          ${icon('compass', 'w-6 h-6 text-white')}
+        </div>
+        <span class="font-display text-lg tracking-tight text-[#2B2622]">Lingo Compass</span>
+      </div>
+      <h1 class="font-display text-[40px] leading-[1.05] font-medium text-[#2B2622] mb-4">Which language<br>should <span class="italic text-[#E07A3E]">you</span> learn?</h1>
+      <p class="text-[15px] text-[#6B5F55] leading-relaxed max-w-sm">Pick a few languages you're curious about, answer some honest questions about your life and goals, and get a clear recommendation — not a generic ranking.</p>
+    </div>
+    <div class="space-y-3">
+      ${state.history.length ? `
+      <button data-action="view-history" class="w-full flex items-center justify-between bg-white border border-[#EDE4D8] rounded-2xl px-5 py-4 card-tap">
+        <span class="flex items-center gap-3 text-[14px] text-[#6B5F55]">${icon('history', 'w-4 h-4')}Your past results (${state.history.length})</span>
+        ${icon('chevron-right', 'w-4 h-4 text-[#B5A896]')}
+      </button>` : ''}
+      <button data-action="start" class="w-full bg-[#2B2622] text-[#FBF7F2] rounded-2xl px-5 py-4 text-[15px] font-semibold flex items-center justify-center gap-2 card-tap shadow-lg shadow-[#2B2622]/10">
+        Start the quiz ${icon('arrow-right', 'w-4 h-4')}
+      </button>
+      <p class="text-center text-[12px] text-[#B5A896]">Takes about 2 minutes</p>
+    </div>
+  </div>`;
+}
+
+function renderSelect() {
+  const entries = Object.entries(LANGS);
+  const sel = state.selectedLangs;
+  return `
+  <div class="fade-in min-h-screen flex flex-col px-6 pt-8 pb-28">
+    <button data-action="back-welcome" class="mb-6 w-9 h-9 flex items-center justify-center rounded-full bg-white border border-[#EDE4D8] card-tap">${icon('arrow-left', 'w-4 h-4')}</button>
+    <h2 class="font-display text-[26px] font-medium text-[#2B2622] mb-1">Which languages are on your radar?</h2>
+    <p class="text-[14px] text-[#6B5F55] mb-6">Pick 2–5. We'll compare them for you specifically.</p>
+    <div class="grid grid-cols-2 gap-3">
+      ${entries.map(([key, l]) => `
+        <button data-action="toggle-lang" data-key="${key}" class="card-tap text-left rounded-2xl border-2 px-4 py-3.5 ${sel.includes(key) ? 'border-[#E07A3E] bg-[#FDF1E6]' : 'border-[#EDE4D8] bg-white'}">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-2xl">${l.flag}</span>
+            ${sel.includes(key) ? icon('check-circle-2', 'w-5 h-5 text-[#E07A3E]') : ''}
+          </div>
+          <div class="text-[14px] font-semibold text-[#2B2622] leading-tight">${l.name}</div>
+          <div class="text-[12px] text-[#B5A896]">${l.speakers} speakers</div>
+        </button>
+      `).join('')}
+    </div>
+    <div class="fixed bottom-0 left-0 right-0 max-w-md mx-auto px-6 pb-6 pt-4 bg-gradient-to-t from-[#FBF7F2] via-[#FBF7F2] to-transparent">
+      <button data-action="begin-quiz" ${sel.length < 2 ? 'disabled' : ''} class="w-full rounded-2xl px-5 py-4 text-[15px] font-semibold flex items-center justify-center gap-2 card-tap ${sel.length < 2 ? 'bg-[#EDE4D8] text-[#B5A896]' : 'bg-[#2B2622] text-[#FBF7F2] shadow-lg shadow-[#2B2622]/10'}">
+        ${sel.length < 2 ? `Pick at least 2 languages` : `Compare these ${sel.length} ${icon('arrow-right', 'w-4 h-4')}`}
+      </button>
+    </div>
+  </div>`;
+}
+
+function renderQuiz() {
+  const q = QUESTIONS[state.quizIndex];
+  const progress = ((state.quizIndex) / QUESTIONS.length) * 100;
+  return `
+  <div class="fade-in min-h-screen flex flex-col px-6 pt-8 pb-10">
+    <div class="flex items-center gap-3 mb-8">
+      <button data-action="quiz-back" class="w-9 h-9 flex items-center justify-center rounded-full bg-white border border-[#EDE4D8] card-tap flex-shrink-0">${icon('arrow-left', 'w-4 h-4')}</button>
+      <div class="flex-1 h-1.5 bg-[#EDE4D8] rounded-full overflow-hidden">
+        <div class="progress-fill h-full bg-[#E07A3E] rounded-full" style="width:${progress}%"></div>
+      </div>
+      <span class="text-[12px] text-[#B5A896] flex-shrink-0 tabular-nums">${state.quizIndex + 1}/${QUESTIONS.length}</span>
+    </div>
+    <div class="slide-up" key="${q.id}">
+      <div class="w-12 h-12 rounded-2xl bg-[#FDF1E6] flex items-center justify-center mb-5">
+        ${icon(q.icon, 'w-6 h-6 text-[#E07A3E]')}
+      </div>
+      <h2 class="font-display text-[24px] leading-tight font-medium text-[#2B2622] mb-7">${q.text}</h2>
+      <div class="space-y-3">
+        ${q.options.map((opt, i) => `
+          <button data-action="answer" data-idx="${i}" class="card-tap w-full text-left rounded-2xl border-2 border-[#EDE4D8] bg-white px-5 py-4 text-[15px] text-[#2B2622] flex items-center justify-between hover:border-[#E07A3E]">
+            <span>${opt.label}</span>
+            ${icon('chevron-right', 'w-4 h-4 text-[#B5A896] flex-shrink-0 ml-2')}
+          </button>
+        `).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+
+function computeScores() {
+  const scores = {};
+  state.selectedLangs.forEach(k => scores[k] = 0);
+  state.answers.forEach(ans => {
+    const opt = QUESTIONS.find(q => q.id === ans.qId).options[ans.optIdx];
+    state.selectedLangs.forEach(langKey => {
+      const lang = LANGS[langKey];
+      let pts = 0;
+      Object.entries(opt.weights || {}).forEach(([dim, w]) => {
+        if (dim === 'wide') { pts += w * 1; return; }
+        pts += (lang.strengths[dim] || 0) * w * 0.4;
+      });
+      if (opt.boost && opt.boost.includes(langKey)) pts += 4;
+      if (opt.penalize && opt.penalize.includes(langKey)) pts -= 3;
+      scores[langKey] = (scores[langKey] || 0) + pts;
+    });
+  });
+  const vals = Object.values(scores);
+  const min = Math.min(...vals);
+  if (min < 0) Object.keys(scores).forEach(k => scores[k] -= min);
+  const max = Math.max(...Object.values(scores), 1);
+  const normalized = {};
+  Object.entries(scores).forEach(([k, v]) => normalized[k] = Math.round((v / max) * 100));
+  return normalized;
+}
+
+function renderResult() {
+  const scores = state.scores;
+  const ranked = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+  const [winnerKey, winnerScore] = ranked[0];
+  const winner = LANGS[winnerKey];
+  const angleMap = state.selectedLangs.reduce((acc, k, i) => { acc[k] = (i / state.selectedLangs.length) * 360; return acc; }, {});
+  const needleAngle = angleMap[winnerKey] || 0;
+  return `
+  <div class="fade-in min-h-screen flex flex-col px-6 pt-8 pb-10">
+    <div class="flex items-center justify-between mb-6">
+      <span class="text-[12px] font-semibold tracking-wide text-[#B5A896] uppercase">Your result</span>
+      <button data-action="restart" class="w-9 h-9 flex items-center justify-center rounded-full bg-white border border-[#EDE4D8] card-tap">${icon('rotate-ccw', 'w-4 h-4')}</button>
+    </div>
+
+    <div class="relative flex flex-col items-center justify-center mb-8 mt-2">
+      <div class="relative w-48 h-48">
+        <svg viewBox="0 0 200 200" class="w-full h-full">
+          <circle cx="100" cy="100" r="92" fill="none" stroke="#EDE4D8" stroke-width="2"/>
+          ${state.selectedLangs.map((k, i) => {
+            const a = (i / state.selectedLangs.length) * 360 - 90;
+            const rad = a * Math.PI / 180;
+            const x = 100 + 78 * Math.cos(rad);
+            const y = 100 + 78 * Math.sin(rad);
+            return `<circle cx="${x}" cy="${y}" r="3" fill="${k === winnerKey ? '#E07A3E' : '#D8CDBE'}"/>`;
+          }).join('')}
+        </svg>
+        <div id="needle" class="needle-transition absolute inset-0 flex items-start justify-center" style="transform: rotate(0deg);">
+          <div class="w-1 h-20 bg-[#E07A3E] rounded-full mt-4 origin-bottom" style="transform-origin: 50% 100%; margin-top: 20px;"></div>
+        </div>
+        <div class="absolute inset-0 flex items-center justify-center">
+          <div class="w-14 h-14 rounded-full bg-[#2B2622] flex items-center justify-center text-2xl shadow-lg">${winner.flag}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="text-center mb-8">
+      <p class="text-[13px] text-[#B5A896] mb-1">Based on your answers, learn</p>
+      <h2 class="font-display text-[32px] font-medium text-[#2B2622] leading-tight">${winner.name}</h2>
+      <p class="text-[14px] text-[#6B5F55] mt-1">${winner.native} &middot; ${winner.family} family</p>
+    </div>
+
+    <div class="bg-white border border-[#EDE4D8] rounded-2xl px-5 py-4 mb-6">
+      <p class="text-[14px] text-[#4A4038] leading-relaxed">${winner.blurb}</p>
+    </div>
+
+    <h3 class="text-[13px] font-semibold tracking-wide text-[#B5A896] uppercase mb-3">Full ranking</h3>
+    <div class="space-y-3 mb-8">
+      ${ranked.map(([key, score], i) => {
+        const l = LANGS[key];
+        return `
+        <div class="bg-white border border-[#EDE4D8] rounded-2xl px-4 py-3.5">
+          <div class="flex items-center gap-3 mb-2">
+            <span class="text-xl flex-shrink-0">${l.flag}</span>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between">
+                <span class="text-[14px] font-semibold text-[#2B2622] truncate">${i + 1}. ${l.name}</span>
+                <span class="text-[13px] font-semibold text-[#E07A3E] tabular-nums ml-2">${score}%</span>
+              </div>
+            </div>
+          </div>
+          <div class="h-1.5 bg-[#F1EBE1] rounded-full overflow-hidden">
+            <div class="bar-fill h-full rounded-full ${i === 0 ? 'bg-[#E07A3E]' : 'bg-[#D8CDBE]'}" style="width:0%" data-target="${score}"></div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+
+    <div class="grid grid-cols-2 gap-3">
+      <button data-action="retake" class="rounded-2xl border-2 border-[#EDE4D8] bg-white px-4 py-3.5 text-[14px] font-semibold text-[#2B2622] card-tap flex items-center justify-center gap-2">
+        ${icon('refresh-cw', 'w-4 h-4')} Retake
+      </button>
+      <button data-action="new-langs" class="rounded-2xl bg-[#2B2622] text-[#FBF7F2] px-4 py-3.5 text-[14px] font-semibold card-tap flex items-center justify-center gap-2">
+        ${icon('shuffle', 'w-4 h-4')} New set
+      </button>
+    </div>
+  </div>`;
+}
+
+function renderHistory() {
+  return `
+  <div class="fade-in min-h-screen flex flex-col px-6 pt-8 pb-10">
+    <button data-action="back-welcome" class="mb-6 w-9 h-9 flex items-center justify-center rounded-full bg-white border border-[#EDE4D8] card-tap">${icon('arrow-left', 'w-4 h-4')}</button>
+    <h2 class="font-display text-[26px] font-medium text-[#2B2622] mb-6">Past results</h2>
+    <div class="space-y-3">
+      ${state.history.slice().reverse().map(h => {
+        const l = LANGS[h.winnerKey];
+        const d = new Date(h.date);
+        return `
+        <div class="bg-white border border-[#EDE4D8] rounded-2xl px-5 py-4 flex items-center gap-3">
+          <span class="text-2xl">${l ? l.flag : '🌐'}</span>
+          <div class="flex-1 min-w-0">
+            <div class="text-[14px] font-semibold text-[#2B2622]">${l ? l.name : 'Unknown'}</div>
+            <div class="text-[12px] text-[#B5A896]">${d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })} &middot; from ${h.pool.length} options</div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>`;
+}
+
+function attachHandlers() {
+  document.querySelectorAll('[data-action]').forEach(el => {
+    el.addEventListener('click', handleAction);
+  });
+  if (state.screen === 'result') {
+    requestAnimationFrame(() => {
+      const needle = document.getElementById('needle');
+      if (needle) {
+        const ranked = Object.entries(state.scores).sort((a, b) => b[1] - a[1]);
+        const winnerKey = ranked[0][0];
+        const idx = state.selectedLangs.indexOf(winnerKey);
+        const angle = (idx / state.selectedLangs.length) * 360;
+        requestAnimationFrame(() => { needle.style.transform = `rotate(${angle}deg)`; });
+      }
+      document.querySelectorAll('.bar-fill').forEach(bar => {
+        const target = bar.getAttribute('data-target');
+        setTimeout(() => { bar.style.width = target + '%'; }, 100);
+      });
+    });
+  }
+}
+
+function handleAction(e) {
+  const el = e.currentTarget;
+  const action = el.getAttribute('data-action');
+  try {
+    if (action === 'start') { state.screen = 'select'; }
+    else if (action === 'view-history') { state.screen = 'history'; }
+    else if (action === 'back-welcome') { state.screen = 'welcome'; }
+    else if (action === 'toggle-lang') {
+      const key = el.getAttribute('data-key');
+      const i = state.selectedLangs.indexOf(key);
+      if (i > -1) state.selectedLangs.splice(i, 1);
+      else if (state.selectedLangs.length < 5) state.selectedLangs.push(key);
+    }
+    else if (action === 'begin-quiz') {
+      if (state.selectedLangs.length < 2) return;
+      state.quizIndex = 0;
+      state.answers = [];
+      state.screen = 'quiz';
+    }
+    else if (action === 'quiz-back') {
+      if (state.quizIndex === 0) { state.screen = 'select'; }
+      else { state.quizIndex--; state.answers.pop(); }
+    }
+    else if (action === 'answer') {
+      const idx = parseInt(el.getAttribute('data-idx'));
+      const q = QUESTIONS[state.quizIndex];
+      state.answers.push({ qId: q.id, optIdx: idx });
+      if (state.quizIndex < QUESTIONS.length - 1) {
+        state.quizIndex++;
+      } else {
+        state.scores = computeScores();
+        const ranked = Object.entries(state.scores).sort((a, b) => b[1] - a[1]);
+        state.history.push({ date: Date.now(), winnerKey: ranked[0][0], pool: [...state.selectedLangs] });
+        if (state.history.length > 20) state.history.shift();
+        persistHistory();
+        state.screen = 'result';
+      }
+    }
+    else if (action === 'retake') {
+      state.quizIndex = 0;
+      state.answers = [];
+      state.screen = 'quiz';
+    }
+    else if (action === 'new-langs') {
+      state.selectedLangs = [];
+      state.quizIndex = 0;
+      state.answers = [];
+      state.screen = 'select';
+    }
+    else if (action === 'restart') {
+      state.screen = 'welcome';
+    }
+    render();
+  } catch (err) {
+    showErrorBanner(err.message || 'Action failed', err.stack);
+  }
+}
+
+try {
+  loadState();
+  render();
+} catch (err) {
+  showErrorBanner(err.message || 'Failed to start app', err.stack);
+}
+</script>
+</body>
+</html>
