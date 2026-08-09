@@ -1,0 +1,1311 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>jside — JS IDE</title>
+<style>
+:root{
+  --bg:#0d1117; --bg2:#11161d; --bg3:#161c25; --line:#232b36;
+  --text:#d7dee8; --text-dim:#7d8797; --text-faint:#4b5566;
+  --accent:#ffb454; --accent-dim:#8a6a34;
+  --ok:#4fd1a5; --err:#ff6b6b; --warn:#ffb454; --info:#5aa9ff;
+  --mono:'JetBrains Mono',ui-monospace,'SF Mono',Consolas,monospace;
+  --sans:'Inter',system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{
+  margin:0; background:var(--bg); color:var(--text); font-family:var(--sans);
+  overflow:hidden; overscroll-behavior:none;
+  padding-top:env(safe-area-inset-top); padding-bottom:env(safe-area-inset-bottom);
+}
+button{font-family:inherit;}
+::selection{background:#3a4a63;}
+::-webkit-scrollbar{width:10px; height:10px;}
+::-webkit-scrollbar-thumb{background:var(--line); border-radius:6px;}
+::-webkit-scrollbar-track{background:transparent;}
+
+#app{display:flex; flex-direction:column; height:100vh; height:100dvh;}
+
+/* Top bar */
+#topbar{
+  display:flex; align-items:center; gap:8px; padding:8px 10px;
+  background:var(--bg2); border-bottom:1px solid var(--line); flex-shrink:0;
+}
+#topbar .logo{
+  font-family:var(--mono); font-weight:700; font-size:14px; color:var(--accent);
+  letter-spacing:0.5px; margin-right:2px; user-select:none;
+}
+#topbar .spacer{flex:1;}
+.icon-btn{
+  background:none; border:none; color:var(--text-dim); width:36px; height:36px;
+  border-radius:8px; display:flex; align-items:center; justify-content:center;
+  cursor:pointer; flex-shrink:0;
+}
+.icon-btn:active{background:var(--bg3); color:var(--text);}
+.icon-btn svg{width:19px; height:19px;}
+.icon-btn.active{color:var(--accent); background:#2a2010;}
+#filename-label{
+  font-family:var(--mono); font-size:12.5px; color:var(--text-dim); white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis; max-width:34vw;
+}
+#filename-label .dot{color:var(--accent); font-weight:900; margin-left:3px; visibility:hidden;}
+#filename-label.dirty .dot{visibility:visible;}
+
+/* Tab strip */
+#tabstrip{
+  display:flex; overflow-x:auto; background:var(--bg2); border-bottom:1px solid var(--line);
+  flex-shrink:0; scrollbar-width:none;
+}
+#tabstrip::-webkit-scrollbar{display:none;}
+.tab{
+  display:flex; align-items:center; gap:6px; padding:8px 10px; font-family:var(--mono);
+  font-size:12px; color:var(--text-dim); border-right:1px solid var(--line); white-space:nowrap;
+  cursor:pointer; flex-shrink:0; max-width:42vw;
+}
+.tab.active{color:var(--text); background:var(--bg); border-bottom:2px solid var(--accent);}
+.tab .tname{overflow:hidden; text-overflow:ellipsis;}
+.tab .tdirty{color:var(--accent); font-weight:900; visibility:hidden; width:6px;}
+.tab.is-dirty .tdirty{visibility:visible;}
+.tab .tclose{
+  color:var(--text-faint); width:16px; height:16px; display:flex; align-items:center;
+  justify-content:center; border-radius:4px; flex-shrink:0;
+}
+.tab .tclose:active{background:var(--bg3);}
+
+/* Main panel area */
+#main{flex:1; position:relative; min-height:0;}
+.panel{
+  position:absolute; inset:0; display:none; flex-direction:column; overflow:hidden;
+}
+.panel.visible{display:flex;}
+
+/* Editor panel */
+#editor-panel{background:var(--bg);}
+#editor-host{flex:1; min-height:0; overflow:hidden;}
+#editor-host .cm-editor{height:100%;}
+#empty-editor{
+  flex:1; display:flex; align-items:center; justify-content:center; flex-direction:column;
+  color:var(--text-faint); font-family:var(--mono); font-size:13px; gap:10px; padding:20px; text-align:center;
+}
+
+/* Files panel */
+#files-panel{background:var(--bg);}
+#files-toolbar{
+  display:flex; align-items:center; gap:6px; padding:8px 10px; border-bottom:1px solid var(--line);
+  background:var(--bg2); flex-shrink:0;
+}
+#files-toolbar .path-crumb{
+  font-family:var(--mono); font-size:12px; color:var(--text-dim); flex:1; overflow:hidden;
+  text-overflow:ellipsis; white-space:nowrap;
+}
+#file-tree{flex:1; overflow-y:auto; padding:6px;}
+.tree-row{
+  display:flex; align-items:center; gap:8px; padding:10px 8px; border-radius:8px; cursor:pointer;
+  font-family:var(--mono); font-size:13px; user-select:none;
+}
+.tree-row:active{background:var(--bg3);}
+.tree-row.entry-file{color:var(--text);}
+.tree-row .ficon{width:18px; flex-shrink:0; color:var(--text-faint); display:flex; align-items:center; justify-content:center;}
+.tree-row.kind-js .ficon{color:var(--accent);}
+.tree-row .fname{flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.tree-row .fname .entry-badge{
+  font-size:9.5px; color:var(--bg); background:var(--accent); padding:1px 5px; border-radius:4px;
+  margin-left:6px; font-weight:700; vertical-align:middle;
+}
+.tree-row .fmeta{
+  width:30px; height:30px; display:flex; align-items:center; justify-content:center;
+  color:var(--text-faint); border-radius:6px; flex-shrink:0;
+}
+.tree-row .fmeta:active{background:var(--bg);color:var(--text);}
+#files-fab-row{
+  display:flex; gap:8px; padding:10px; border-top:1px solid var(--line); background:var(--bg2); flex-shrink:0;
+}
+.fab-btn{
+  flex:1; background:var(--bg3); border:1px solid var(--line); color:var(--text); font-family:var(--mono);
+  font-size:12px; padding:11px 6px; border-radius:10px; display:flex; align-items:center; justify-content:center; gap:6px;
+}
+.fab-btn:active{background:var(--line);}
+.fab-btn svg{width:15px; height:15px;}
+
+/* Console panel */
+#console-panel{background:var(--bg);}
+#console-toolbar{
+  display:flex; align-items:center; gap:6px; padding:8px 10px; border-bottom:1px solid var(--line);
+  background:var(--bg2); flex-shrink:0;
+}
+#console-mode-toggle{
+  display:flex; background:var(--bg); border-radius:8px; padding:2px; gap:2px; flex-shrink:0;
+}
+#console-mode-toggle button{
+  background:none; border:none; color:var(--text-dim); font-family:var(--mono); font-size:11.5px;
+  padding:6px 12px; border-radius:6px;
+}
+#console-mode-toggle button.active{background:var(--bg3); color:var(--accent);}
+#console-out{
+  flex:1; overflow-y:auto; padding:8px 10px; font-family:var(--mono); font-size:12.5px;
+  line-height:1.55; overscroll-behavior:contain;
+}
+.cline{
+  display:flex; gap:8px; padding:4px 2px; border-bottom:1px solid #ffffff06;
+  white-space:pre-wrap; word-break:break-word; overflow-wrap:anywhere;
+}
+.cline .ctag{
+  flex-shrink:0; font-size:9.5px; font-weight:700; padding:2px 5px; border-radius:4px; height:fit-content;
+  letter-spacing:0.3px; margin-top:1px;
+}
+.cline .cbody{flex:1; min-width:0;}
+.cline.t-log .ctag{background:#1c2430; color:var(--text-dim);}
+.cline.t-warn .ctag{background:#3a2f13; color:var(--warn);}
+.cline.t-warn .cbody{color:var(--warn);}
+.cline.t-error .ctag{background:#3a1717; color:var(--err);}
+.cline.t-error .cbody{color:var(--err);}
+.cline.t-info .ctag{background:#132538; color:var(--info);}
+.cline.t-info .cbody{color:var(--text-dim); font-style:italic;}
+.cline.t-repl-in .ctag{background:#132538; color:var(--info);}
+.cline.t-repl-in .cbody{color:#c9d6e8;}
+.cline.t-repl-out .ctag{background:#132313; color:var(--ok);}
+.cline.t-repl-out .cbody{color:var(--ok);}
+#console-empty{color:var(--text-faint); font-style:italic; padding:10px 4px;}
+#repl-bar{
+  display:none; border-top:1px solid var(--line); background:var(--bg2); flex-shrink:0;
+  align-items:center; gap:6px; padding:8px;
+}
+#repl-bar.visible{display:flex;}
+#repl-prompt{color:var(--accent); font-family:var(--mono); font-size:14px; flex-shrink:0; padding-left:4px;}
+#repl-input{
+  flex:1; background:var(--bg3); border:1px solid var(--line); color:var(--text); font-family:var(--mono);
+  font-size:13.5px; padding:9px 10px; border-radius:8px; outline:none; min-width:0;
+}
+#repl-input:focus{border-color:var(--accent-dim);}
+#run-bar{
+  display:flex; border-top:1px solid var(--line); background:var(--bg2); flex-shrink:0; padding:8px;
+  gap:8px; align-items:center;
+}
+.run-btn{
+  flex:1; background:linear-gradient(180deg,#ffc069,#ffb454); color:#241a06; border:none; font-family:var(--mono);
+  font-weight:700; font-size:13px; padding:11px; border-radius:10px; display:flex; align-items:center;
+  justify-content:center; gap:8px;
+}
+.run-btn:active{filter:brightness(0.92);}
+.run-btn svg{width:15px; height:15px;}
+.clear-btn{
+  background:var(--bg3); border:1px solid var(--line); color:var(--text-dim); font-family:var(--mono);
+  font-size:12px; padding:11px 14px; border-radius:10px;
+}
+
+/* Bottom nav */
+#bottomnav{
+  display:flex; background:var(--bg2); border-top:1px solid var(--line); flex-shrink:0;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.nav-btn{
+  flex:1; background:none; border:none; color:var(--text-faint); padding:8px 4px 9px;
+  display:flex; flex-direction:column; align-items:center; gap:3px; font-size:10px; font-family:var(--sans);
+}
+.nav-btn svg{width:21px; height:21px;}
+.nav-btn.active{color:var(--accent);}
+
+/* Modals */
+.modal-backdrop{
+  position:fixed; inset:0; background:#000000b0; z-index:100; display:none;
+  align-items:flex-end; justify-content:center;
+}
+.modal-backdrop.visible{display:flex;}
+.modal-sheet{
+  background:var(--bg2); border-radius:16px 16px 0 0; width:100%; max-width:560px;
+  padding:16px 16px calc(16px + env(safe-area-inset-bottom)); border-top:1px solid var(--line);
+  max-height:80vh; overflow-y:auto;
+}
+.modal-sheet h3{margin:0 0 14px; font-size:15px; color:var(--text); font-family:var(--mono);}
+.modal-sheet label{display:block; font-size:11.5px; color:var(--text-dim); margin:12px 0 5px; font-family:var(--mono);}
+.modal-sheet input[type=text], .modal-sheet input[type=number]{
+  width:100%; background:var(--bg3); border:1px solid var(--line); color:var(--text); font-family:var(--mono);
+  font-size:14px; padding:10px 11px; border-radius:8px; outline:none;
+}
+.modal-sheet input:focus{border-color:var(--accent-dim);}
+.modal-actions{display:flex; gap:8px; margin-top:18px;}
+.modal-actions button{
+  flex:1; padding:12px; border-radius:10px; font-family:var(--mono); font-size:13px; border:none;
+}
+.btn-primary{background:var(--accent); color:#241a06; font-weight:700;}
+.btn-secondary{background:var(--bg3); border:1px solid var(--line) !important; color:var(--text-dim);}
+.btn-danger{background:#3a1717; color:var(--err);}
+.modal-close{position:absolute; top:14px; right:14px;}
+.modal-sheet{position:relative;}
+.seg{display:flex; background:var(--bg); border-radius:8px; padding:2px; gap:2px;}
+.seg button{flex:1; background:none; border:none; color:var(--text-dim); font-family:var(--mono); font-size:12px; padding:8px; border-radius:6px;}
+.seg button.active{background:var(--bg3); color:var(--accent);}
+.pkg-row{
+  display:flex; align-items:center; gap:8px; padding:10px 6px; border-bottom:1px solid #ffffff08;
+  font-family:var(--mono); font-size:12.5px;
+}
+.pkg-row .pname{flex:1; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.pkg-row .pver{color:var(--text-faint); font-size:11px;}
+.pkg-row button{background:none; border:none; color:var(--err); padding:6px;}
+.hint{font-size:11px; color:var(--text-faint); margin-top:6px; line-height:1.5;}
+#pkg-presets{display:flex; flex-wrap:wrap; gap:7px; margin-bottom:4px;}
+.pkg-preset{
+  display:flex; flex-direction:column; align-items:flex-start; gap:2px; background:var(--bg3);
+  border:1px solid var(--line); color:var(--text); font-family:var(--mono); font-size:11.5px;
+  padding:8px 10px; border-radius:10px; text-align:left; min-width:0;
+}
+.pkg-preset .ppname{font-weight:700; color:var(--accent);}
+.pkg-preset .ppdesc{color:var(--text-dim); font-size:10.5px; font-family:var(--sans); line-height:1.3;}
+.pkg-preset:active{background:var(--line);}
+.pkg-preset.installed{opacity:0.45;}
+.pkg-preset.installed .ppname::after{content:" ✓"; color:var(--ok);}
+.err-box{
+  background:#1e1010; border:1px solid #4a2020; color:var(--err); font-family:var(--mono); font-size:12px;
+  padding:10px; border-radius:8px; margin-top:10px; white-space:pre-wrap; word-break:break-word;
+}
+
+/* Crash overlay */
+#crash-overlay{
+  position:fixed; inset:0; background:#0a0505; z-index:9999; display:none; flex-direction:column;
+  padding:16px; padding-top:calc(16px + env(safe-area-inset-top));
+}
+#crash-overlay.visible{display:flex;}
+#crash-overlay h2{
+  color:var(--err); font-family:var(--mono); font-size:16px; margin:0 0 4px; display:flex; align-items:center; gap:8px;
+}
+#crash-overlay .sub{color:#c99; font-size:12px; font-family:var(--mono); margin-bottom:14px;}
+#crash-body{
+  flex:1; overflow-y:auto; background:#150a0a; border:1px solid #3a1c1c; border-radius:10px; padding:12px;
+  font-family:var(--mono); font-size:12px; color:#ffb0b0; white-space:pre-wrap; word-break:break-word;
+  overflow-wrap:anywhere; line-height:1.5;
+}
+#crash-actions{display:flex; gap:8px; margin-top:12px;}
+#crash-actions button{
+  flex:1; padding:13px; border-radius:10px; font-family:var(--mono); font-size:13px; border:none; font-weight:700;
+}
+#crash-copy{background:var(--err); color:#2a0a0a;}
+#crash-dismiss{background:var(--bg3); color:var(--text-dim); border:1px solid var(--line) !important;}
+#crash-toast{
+  position:fixed; bottom:calc(74px + env(safe-area-inset-bottom)); left:50%; transform:translateX(-50%);
+  background:var(--ok); color:#0a2a1a; font-family:var(--mono); font-size:12px; padding:8px 14px;
+  border-radius:20px; z-index:10000; opacity:0; pointer-events:none; transition:opacity .25s;
+}
+#crash-toast.visible{opacity:1;}
+
+/* Utility */
+.hidden{display:none !important;}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div id="topbar">
+    <span class="logo">jside</span>
+    <span id="filename-label">no file<span class="dot">●</span></span>
+    <div class="spacer"></div>
+    <button class="icon-btn" id="btn-save" title="Save">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg>
+    </button>
+    <button class="icon-btn" id="btn-packages" title="Packages">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+    </button>
+  </div>
+
+  <div id="tabstrip"></div>
+
+  <div id="main">
+
+    <div class="panel visible" id="editor-panel">
+      <div id="editor-host"></div>
+      <div id="empty-editor">
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg>
+        <div>No file open<br>Open the Files tab to pick or create one</div>
+      </div>
+    </div>
+
+    <div class="panel" id="files-panel">
+      <div id="files-toolbar">
+        <span class="path-crumb" id="path-crumb">/</span>
+        <button class="icon-btn" id="btn-refresh-tree" title="Refresh from IndexedDB">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>
+        </button>
+      </div>
+      <div id="file-tree"></div>
+      <div id="files-fab-row">
+        <button class="fab-btn" id="btn-new-file">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M12 11v6M9 14h6"/></svg>
+          File
+        </button>
+        <button class="fab-btn" id="btn-new-folder">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
+          Folder
+        </button>
+        <button class="fab-btn" id="btn-upload">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
+          Upload
+        </button>
+        <input type="file" id="file-input" multiple class="hidden">
+      </div>
+    </div>
+
+    <div class="panel" id="console-panel">
+      <div id="console-toolbar">
+        <div id="console-mode-toggle">
+          <button id="mode-run-btn" class="active">Run output</button>
+          <button id="mode-repl-btn">REPL</button>
+        </div>
+        <div class="spacer"></div>
+        <button class="icon-btn" id="btn-clear-console" title="Clear console">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+        </button>
+      </div>
+      <div id="console-out"><div id="console-empty">No output yet — run a file or switch to REPL.</div></div>
+      <div id="repl-bar">
+        <span id="repl-prompt">›</span>
+        <input id="repl-input" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Type a JS expression and hit Enter…">
+      </div>
+      <div id="run-bar">
+        <button class="clear-btn" id="btn-clear-console-2">Clear</button>
+        <button class="run-btn" id="btn-run">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7Z"/></svg>
+          Run <span id="run-target-name"></span>
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <div id="bottomnav">
+    <button class="nav-btn active" data-panel="editor-panel">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 16 4-4-4-4M6 8l-4 4 4 4M14.5 4l-5 16"/></svg>
+      Editor
+    </button>
+    <button class="nav-btn" data-panel="files-panel">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
+      Files
+    </button>
+    <button class="nav-btn" data-panel="console-panel">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m4 17 6-6-6-6"/><path d="M12 19h8"/></svg>
+      Console
+    </button>
+  </div>
+</div>
+
+<!-- New file/folder modal -->
+<div class="modal-backdrop" id="modal-newitem">
+  <div class="modal-sheet">
+    <button class="icon-btn modal-close" data-close="modal-newitem">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+    <h3 id="newitem-title">New file</h3>
+    <label>Name</label>
+    <input type="text" id="newitem-name" placeholder="e.g. utils.js">
+    <div class="hint" id="newitem-hint">Created inside the current folder. Use a trailing "/name" to nest, e.g. lib/math.js.</div>
+    <div class="modal-actions">
+      <button class="btn-secondary" data-close="modal-newitem">Cancel</button>
+      <button class="btn-primary" id="newitem-confirm">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- Rename/move modal -->
+<div class="modal-backdrop" id="modal-rename">
+  <div class="modal-sheet">
+    <button class="icon-btn modal-close" data-close="modal-rename">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+    <h3>Rename / move</h3>
+    <label>Path</label>
+    <input type="text" id="rename-name">
+    <div class="hint">Full path from root. Changing the folder portion moves the file.</div>
+    <div class="modal-actions">
+      <button class="btn-secondary" id="rename-set-entry" style="flex:none; padding:12px 16px;">Set as entry file</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-danger" id="rename-delete">Delete</button>
+      <button class="btn-primary" id="rename-confirm">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Packages modal -->
+<div class="modal-backdrop" id="modal-packages">
+  <div class="modal-sheet">
+    <button class="icon-btn modal-close" data-close="modal-packages">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+    <h3>CDN packages</h3>
+    <div class="hint" style="margin-top:-8px;margin-bottom:10px;">Not real npm. Resolves through esm.sh at run time and maps the bare import specifier to that URL. Requires network access to esm.sh.</div>
+    <label>Popular picks</label>
+    <div id="pkg-presets"></div>
+    <label>Package name</label>
+    <input type="text" id="pkg-name" placeholder="e.g. lodash-es">
+    <label>Version (optional)</label>
+    <input type="text" id="pkg-version" placeholder="e.g. 4.17.21 — leave blank for latest">
+    <div class="modal-actions">
+      <button class="btn-primary" id="pkg-install" style="flex:none; padding:12px 20px;">Resolve &amp; install</button>
+    </div>
+    <div id="pkg-error" class="err-box hidden"></div>
+    <label style="margin-top:20px;">Installed</label>
+    <div id="pkg-list"></div>
+  </div>
+</div>
+
+<!-- Crash overlay -->
+<div id="crash-overlay">
+  <h2>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><path d="M12 9v4M12 17h.01"/></svg>
+    The IDE shell crashed
+  </h2>
+  <div class="sub">This is an error in jside itself, not your code. Copy it and reload if needed.</div>
+  <div id="crash-body"></div>
+  <div id="crash-actions">
+    <button id="crash-copy">Copy error</button>
+    <button id="crash-dismiss">Dismiss</button>
+  </div>
+</div>
+<div id="crash-toast">Copied</div>
+
+<script>
+// ---- Top-level crash handler (installed first, before anything else can throw) ----
+(function(){
+  const overlay = document.getElementById('crash-overlay');
+  const body = document.getElementById('crash-body');
+  let lastText = '';
+  function fmt(err, extra){
+    if (err instanceof Error) return (err.stack || (err.name+': '+err.message)) + (extra?'\n\n'+extra:'');
+    try { return String(err) + (extra?'\n\n'+extra:''); } catch(e){ return 'Unserializable error' + (extra?'\n\n'+extra:''); }
+  }
+  window.__jideCrash = function(err, extra){
+    lastText = fmt(err, extra);
+    body.textContent = lastText;
+    overlay.classList.add('visible');
+  };
+  // Errors thrown by the user's own running/REPL code are expected and belong in the console
+  // pane, not this overlay. The app sets window.__jideRunningUserCode true for the duration of
+  // any user-code execution so this handler can tell the two apart.
+  window.addEventListener('error', function(e){
+    if (window.__jideRunningUserCode) return;
+    window.__jideCrash(e.error || e.message, e.filename ? (e.filename+':'+e.lineno+':'+e.colno) : '');
+  });
+  window.addEventListener('unhandledrejection', function(e){
+    if (window.__jideRunningUserCode) return;
+    window.__jideCrash(e.reason);
+  });
+  document.getElementById('crash-copy').addEventListener('click', function(){
+    const toast = document.getElementById('crash-toast');
+    const done = ()=>{ toast.classList.add('visible'); setTimeout(()=>toast.classList.remove('visible'), 1200); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(lastText).then(done).catch(()=>{ fallbackCopy(lastText); done(); });
+    } else { fallbackCopy(lastText); done(); }
+  });
+  function fallbackCopy(text){
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy'); }catch(e){}
+    document.body.removeChild(ta);
+  }
+  document.getElementById('crash-dismiss').addEventListener('click', function(){
+    overlay.classList.remove('visible');
+  });
+})();
+</script>
+
+<script type="importmap">
+{
+  "imports": {
+    "idb": "https://esm.sh/idb@8"
+  }
+}
+</script>
+
+<script type="module">
+import { openDB } from 'idb';
+import { EditorState, Compartment } from 'https://esm.sh/@codemirror/state@6';
+import {
+  EditorView, keymap, lineNumbers, highlightActiveLine, highlightActiveLineGutter,
+  drawSelection, dropCursor, rectangularSelection, crosshairCursor
+} from 'https://esm.sh/@codemirror/view@6';
+import { defaultKeymap, history, historyKeymap, indentWithTab } from 'https://esm.sh/@codemirror/commands@6';
+import { javascript } from 'https://esm.sh/@codemirror/lang-javascript@6';
+import {
+  syntaxHighlighting, defaultHighlightStyle, indentOnInput, bracketMatching,
+  foldGutter, foldKeymap, indentUnit
+} from 'https://esm.sh/@codemirror/language@6';
+import { closeBrackets, closeBracketsKeymap, autocompletion, completionKeymap } from 'https://esm.sh/@codemirror/autocomplete@6';
+import { searchKeymap, highlightSelectionMatches } from 'https://esm.sh/@codemirror/search@6';
+import { oneDark } from 'https://esm.sh/@codemirror/theme-one-dark@6';
+
+try {
+  await runApp();
+} catch (err) {
+  window.__jideCrash(err, 'Thrown during app initialization.');
+}
+
+async function runApp(){
+
+// ============================================================ DB LAYER
+const db = await openDB('jside-fs', 1, {
+  upgrade(d){
+    d.createObjectStore('files', { keyPath: 'path' });
+    d.createObjectStore('meta');
+  }
+});
+
+const DEFAULT_MAIN = `console.log("hello from main.js");\n\nfunction add(a, b) {\n  return a + b;\n}\n\nconsole.log("2 + 3 =", add(2, 3));\n`;
+
+async function fsInit(){
+  const count = await db.count('files');
+  if (count === 0) {
+    await db.put('files', { path: 'main.js', type: 'file', content: DEFAULT_MAIN, mtime: Date.now() });
+    await db.put('meta', 'main.js', 'entry');
+  }
+}
+await fsInit();
+
+async function fsList(){
+  return db.getAll('files');
+}
+async function fsGet(path){
+  return db.get('files', path);
+}
+async function fsPut(path, content){
+  await db.put('files', { path, type: 'file', content, mtime: Date.now() });
+}
+async function fsPutFolder(path){
+  await db.put('files', { path, type: 'folder', mtime: Date.now() });
+}
+async function fsDelete(path, isFolder){
+  if (isFolder) {
+    const all = await fsList();
+    const prefix = path + '/';
+    const toDelete = all.filter(f => f.path === path || f.path.startsWith(prefix));
+    for (const f of toDelete) await db.delete('files', f.path);
+  } else {
+    await db.delete('files', path);
+  }
+}
+async function fsRename(oldPath, newPath, isFolder){
+  if (isFolder) {
+    const all = await fsList();
+    const prefix = oldPath + '/';
+    const affected = all.filter(f => f.path === oldPath || f.path.startsWith(prefix));
+    for (const f of affected) {
+      const rest = f.path === oldPath ? '' : f.path.slice(prefix.length);
+      const np = rest ? newPath + '/' + rest : newPath;
+      const rec = { ...f, path: np, mtime: Date.now() };
+      await db.delete('files', f.path);
+      await db.put('files', rec);
+    }
+  } else {
+    const rec = await fsGet(oldPath);
+    if (!rec) return;
+    await db.delete('files', oldPath);
+    await db.put('files', { ...rec, path: newPath, mtime: Date.now() });
+  }
+}
+async function getEntry(){ return (await db.get('meta', 'entry')) || null; }
+async function setEntry(path){ await db.put('meta', path, 'entry'); }
+async function getPackages(){ return (await db.get('meta', 'packages')) || []; }
+async function setPackages(list){ await db.put('meta', list, 'packages'); }
+
+// ============================================================ STATE
+const state = {
+  tree: [],              // flat list of {path,type,content,mtime}
+  openTabs: [],           // array of paths
+  activePath: null,
+  dirty: new Set(),       // paths with unsaved editor changes
+  editorContents: new Map(), // path -> in-memory content (source of truth while editing)
+  entry: null,
+  packages: [],
+  replHistory: [],
+  currentPanel: 'editor-panel',
+  consoleMode: 'run',     // 'run' | 'repl'
+};
+
+// ============================================================ DOM refs
+const $ = sel => document.querySelector(sel);
+const fileTreeEl = $('#file-tree');
+const tabstripEl = $('#tabstrip');
+const filenameLabel = $('#filename-label');
+const editorHost = $('#editor-host');
+const emptyEditorEl = $('#empty-editor');
+const consoleOut = $('#console-out');
+const runTargetName = $('#run-target-name');
+const pathCrumb = $('#path-crumb');
+
+// ============================================================ EDITOR
+const langCompartment = new Compartment();
+let cmView = null;
+let suppressChangeEvent = false;
+
+function makeEditorState(content, path){
+  return EditorState.create({
+    doc: content,
+    extensions: [
+      lineNumbers(),
+      highlightActiveLineGutter(),
+      history(),
+      foldGutter(),
+      drawSelection(),
+      dropCursor(),
+      indentUnit.of('  '),
+      indentOnInput(),
+      syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+      bracketMatching(),
+      closeBrackets(),
+      autocompletion(),
+      rectangularSelection(),
+      crosshairCursor(),
+      highlightActiveLine(),
+      highlightSelectionMatches(),
+      langCompartment.of(javascript()),
+      oneDark,
+      keymap.of([
+        ...closeBracketsKeymap, ...defaultKeymap, ...searchKeymap,
+        ...historyKeymap, ...foldKeymap, ...completionKeymap, indentWithTab,
+        { key: 'Mod-s', run: () => { saveActiveFile(); return true; } },
+        { key: 'Mod-Enter', run: () => { runActiveOrEntry(); return true; } },
+      ]),
+      EditorView.updateListener.of(update => {
+        if (update.docChanged && !suppressChangeEvent && state.activePath) {
+          const text = update.state.doc.toString();
+          state.editorContents.set(state.activePath, text);
+          markDirty(state.activePath, true);
+          scheduleAutosave(state.activePath);
+        }
+      }),
+      EditorView.theme({
+        '&': { height: '100%', fontSize: '13.5px' },
+        '.cm-scroller': { fontFamily: 'var(--mono)', overflow: 'auto', WebkitOverflowScrolling: 'touch' },
+        '.cm-content': { paddingBottom: '40vh' },
+        '.cm-gutters': { backgroundColor: 'var(--bg2)', border: 'none', color: 'var(--text-faint)' },
+      }),
+    ]
+  });
+}
+
+function openEditorFor(path, content){
+  emptyEditorEl.style.display = 'none';
+  if (!cmView) {
+    cmView = new EditorView({ state: makeEditorState(content, path), parent: editorHost });
+  } else {
+    suppressChangeEvent = true;
+    cmView.setState(makeEditorState(content, path));
+    suppressChangeEvent = false;
+  }
+}
+
+function showEmptyEditor(){
+  if (cmView) { cmView.destroy(); cmView = null; }
+  editorHost.innerHTML = '';
+  emptyEditorEl.style.display = 'flex';
+}
+
+let autosaveTimers = new Map();
+function scheduleAutosave(path){
+  clearTimeout(autosaveTimers.get(path));
+  autosaveTimers.set(path, setTimeout(() => saveFile(path), 700));
+}
+
+async function saveFile(path){
+  const content = state.editorContents.get(path);
+  if (content === undefined) return;
+  await fsPut(path, content);
+  const rec = state.tree.find(f => f.path === path);
+  if (rec) rec.content = content;
+  markDirty(path, false);
+}
+async function saveActiveFile(){
+  if (state.activePath) await saveFile(state.activePath);
+}
+
+function markDirty(path, isDirty){
+  if (isDirty) state.dirty.add(path); else state.dirty.delete(path);
+  renderTabs();
+  updateFilenameLabel();
+}
+
+function updateFilenameLabel(){
+  if (!state.activePath) {
+    filenameLabel.innerHTML = 'no file<span class="dot">●</span>';
+    filenameLabel.classList.remove('dirty');
+    return;
+  }
+  filenameLabel.textContent = state.activePath;
+  const dot = document.createElement('span'); dot.className='dot'; dot.textContent='●';
+  filenameLabel.appendChild(dot);
+  filenameLabel.classList.toggle('dirty', state.dirty.has(state.activePath));
+}
+
+// ============================================================ TABS
+async function openFile(path){
+  if (!state.openTabs.includes(path)) state.openTabs.push(path);
+  await activateTab(path);
+  showPanel('editor-panel');
+}
+
+async function activateTab(path){
+  if (state.activePath && state.editorContents.has(state.activePath)) {
+    // content already tracked live; nothing to snapshot
+  }
+  state.activePath = path;
+  let content = state.editorContents.get(path);
+  if (content === undefined) {
+    const rec = await fsGet(path);
+    content = rec ? rec.content : '';
+    state.editorContents.set(path, content);
+  }
+  openEditorFor(path, content);
+  renderTabs();
+  updateFilenameLabel();
+  updateRunTargetLabel();
+}
+
+function closeTab(path){
+  const idx = state.openTabs.indexOf(path);
+  if (idx === -1) return;
+  state.openTabs.splice(idx, 1);
+  state.editorContents.delete(path);
+  state.dirty.delete(path);
+  if (state.activePath === path) {
+    const next = state.openTabs[idx] || state.openTabs[idx - 1] || null;
+    if (next) activateTab(next);
+    else { state.activePath = null; showEmptyEditor(); updateFilenameLabel(); updateRunTargetLabel(); }
+  }
+  renderTabs();
+}
+
+function renderTabs(){
+  tabstripEl.innerHTML = '';
+  for (const path of state.openTabs) {
+    const tab = document.createElement('div');
+    tab.className = 'tab' + (path === state.activePath ? ' active' : '') + (state.dirty.has(path) ? ' is-dirty' : '');
+    const name = document.createElement('span'); name.className = 'tname'; name.textContent = path.split('/').pop();
+    const dirty = document.createElement('span'); dirty.className = 'tdirty'; dirty.textContent = '●';
+    const close = document.createElement('span'); close.className = 'tclose';
+    close.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>';
+    close.addEventListener('click', e => { e.stopPropagation(); closeTab(path); });
+    tab.appendChild(name); tab.appendChild(dirty); tab.appendChild(close);
+    tab.addEventListener('click', () => activateTab(path));
+    tabstripEl.appendChild(tab);
+  }
+}
+
+function updateRunTargetLabel(){
+  const target = state.activePath && state.activePath.endsWith('.js') ? state.activePath : state.entry;
+  runTargetName.textContent = target ? '· ' + target.split('/').pop() : '';
+}
+
+// ============================================================ FILE TREE
+function buildTreeStructure(flat){
+  const root = { name: '', path: '', type: 'folder', children: [] };
+  const map = new Map([['', root]]);
+  const sorted = [...flat].sort((a,b) => a.path.localeCompare(b.path));
+  for (const rec of sorted) {
+    const parts = rec.path.split('/');
+    let curPath = '';
+    for (let i = 0; i < parts.length; i++) {
+      const isLast = i === parts.length - 1;
+      const parentPath = curPath;
+      curPath = curPath ? curPath + '/' + parts[i] : parts[i];
+      if (!map.has(curPath)) {
+        const node = { name: parts[i], path: curPath, type: isLast ? rec.type : 'folder', children: isLast && rec.type==='file' ? null : [] };
+        map.set(curPath, node);
+        map.get(parentPath).children.push(node);
+      } else if (isLast) {
+        map.get(curPath).type = rec.type;
+      }
+    }
+  }
+  return root;
+}
+
+function sortNodes(nodes){
+  nodes.sort((a,b) => (a.type==='folder')===(b.type==='folder') ? a.name.localeCompare(b.name) : (a.type==='folder'?-1:1));
+  for (const n of nodes) if (n.children) sortNodes(n.children);
+}
+
+async function renderTree(){
+  state.tree = await fsList();
+  state.entry = await getEntry();
+  const root = buildTreeStructure(state.tree);
+  sortNodes(root.children);
+  fileTreeEl.innerHTML = '';
+  renderTreeLevel(root.children, fileTreeEl, 0);
+  pathCrumb.textContent = '/ (' + state.tree.filter(f=>f.type==='file').length + ' files)';
+  updateRunTargetLabel();
+}
+
+function iconFor(node){
+  if (node.type === 'folder') return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>';
+  if (node.name.endsWith('.js')) return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 16 4-4-4-4M6 8l-4 4 4 4M14.5 4l-5 16"/></svg>';
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg>';
+}
+
+function renderTreeLevel(nodes, container, depth){
+  for (const node of nodes) {
+    const row = document.createElement('div');
+    row.className = 'tree-row' + (node.type==='file' && node.name.endsWith('.js') ? ' kind-js' : '');
+    row.style.paddingLeft = (8 + depth*18) + 'px';
+    const icon = document.createElement('span'); icon.className='ficon'; icon.innerHTML = iconFor(node);
+    const name = document.createElement('span'); name.className='fname';
+    name.textContent = node.name;
+    if (node.type === 'file' && node.path === state.entry) {
+      row.classList.add('entry-file');
+      const badge = document.createElement('span'); badge.className='entry-badge'; badge.textContent='ENTRY';
+      name.appendChild(badge);
+    }
+    const meta = document.createElement('span'); meta.className='fmeta';
+    meta.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="12" cy="19" r="1.2"/></svg>';
+    meta.addEventListener('click', e => { e.stopPropagation(); openRowMenu(node); });
+    row.appendChild(icon); row.appendChild(name); row.appendChild(meta);
+    row.addEventListener('click', () => {
+      if (node.type === 'file') openFile(node.path);
+    });
+    container.appendChild(row);
+    if (node.type === 'folder' && node.children) {
+      renderTreeLevel(node.children, container, depth+1);
+    }
+  }
+}
+
+let menuTargetNode = null;
+function openRowMenu(node){
+  menuTargetNode = node;
+  $('#rename-name').value = node.path;
+  $('#rename-set-entry').style.display = (node.type === 'file' && node.path.endsWith('.js')) ? 'block' : 'none';
+  showModal('modal-rename');
+}
+
+// ============================================================ CODE EXECUTION
+// Runs directly in this document via dynamic import() of blob URLs — no iframe sandbox.
+// User code has full access to the page/JS environment (by request — no isolation here).
+let sandboxBlobUrls = [];
+
+function revokeSandboxUrls(){
+  for (const u of sandboxBlobUrls) URL.revokeObjectURL(u);
+  sandboxBlobUrls = [];
+}
+
+// Build blob URLs for every local .js file, rewriting both relative sibling imports and bare
+// package specifiers directly to their resolved URLs. Browsers only accept an import map that's
+// registered before any module has executed on the page — since CodeMirror is already loaded as
+// a module by the time the user runs anything, we can't inject one later. So instead of an
+// import map, every specifier is rewritten straight into the blob source at build time.
+function buildLocalModuleUrls(files, pkgList){
+  const jsFiles = files.filter(f => f.type === 'file' && f.path.endsWith('.js'));
+  const contents = new Map(jsFiles.map(f => [f.path, f.content]));
+  const pkgMap = new Map((pkgList || []).map(p => [p.name, p.url]));
+  function resolveRelative(fromPath, spec){
+    if (!spec.startsWith('.')) return null;
+    const baseDir = fromPath.split('/').slice(0,-1);
+    const parts = spec.split('/');
+    const stack = [...baseDir];
+    for (const part of parts) {
+      if (part === '.' || part === '') continue;
+      if (part === '..') stack.pop();
+      else stack.push(part);
+    }
+    let joined = stack.join('/');
+    if (!joined.endsWith('.js')) joined += '.js';
+    return joined;
+  }
+  // Pass 1: rewrite each file's imports to placeholder markers — either a local-file marker
+  // (resolved once every file's blob URL is known) or straight to the CDN URL for packages.
+  const rewritten = new Map();
+  for (const f of jsFiles) {
+    let src = f.content;
+    src = src.replace(/(\bimport\s+(?:[\s\S]*?\bfrom\s+)?|\bexport\s+[\s\S]*?\bfrom\s+|\bimport\s*\(\s*)(['"])([^'"]+)\2/g,
+      (whole, prefix, quote, spec) => {
+        const rel = resolveRelative(f.path, spec);
+        if (rel && contents.has(rel)) return prefix + quote + '__LOCAL__' + rel + quote;
+        if (!spec.startsWith('.') && pkgMap.has(spec)) return prefix + quote + pkgMap.get(spec) + quote;
+        return whole; // unresolved bare specifier — left as-is; will 404 with a clear browser error
+      });
+    rewritten.set(f.path, src);
+  }
+  // Pass 2: create blobs, substituting __LOCAL__<path> markers with real blob URLs. Local files
+  // reference each other by a synthetic name first since blob URLs can't be predicted before
+  // the blob exists.
+  const moduleNames = new Map(jsFiles.map(f => [f.path, 'local-module:' + f.path]));
+  const finalImports = {};
+  for (const f of jsFiles) {
+    let src = rewritten.get(f.path);
+    src = src.replace(/__LOCAL__([^'"]+)/g, (whole, p) => moduleNames.get(p) || whole);
+    const blob = new Blob([src], { type: 'text/javascript' });
+    const url = URL.createObjectURL(blob);
+    sandboxBlobUrls.push(url);
+    finalImports[moduleNames.get(f.path)] = url;
+  }
+  return finalImports;
+}
+
+// Console output is captured by patching console.* directly on this page (no sandboxing —
+// user code runs with full page/JS access, same document, same origin).
+let consolePatched = false;
+function patchConsole(){
+  if (consolePatched) return;
+  consolePatched = true;
+  ['log','warn','error','info','debug'].forEach(method => {
+    const orig = console[method].bind(console);
+    console[method] = (...args) => {
+      orig(...args);
+      appendConsoleLine(method === 'debug' ? 'log' : method, args.map(safeStringify).join(' '));
+    };
+  });
+  window.addEventListener('error', e => {
+    if (!window.__jideRunningUserCode) return;
+    appendConsoleLine('error', (e.error && e.error.stack) ? e.error.stack : String(e.message));
+  });
+  window.addEventListener('unhandledrejection', e => {
+    if (!window.__jideRunningUserCode) return;
+    const r = e.reason;
+    appendConsoleLine('error', 'Uncaught (in promise) ' + ((r && r.stack) ? r.stack : String(r)));
+  });
+}
+function safeStringify(v){
+  if (typeof v === 'string') return v;
+  if (v instanceof Error) return v.stack || (v.name + ': ' + v.message);
+  if (v === undefined) return 'undefined';
+  try {
+    if (typeof v === 'function') return v.toString();
+    const seen = new WeakSet();
+    return JSON.stringify(v, (k, val) => {
+      if (typeof val === 'object' && val !== null) { if (seen.has(val)) return '[Circular]'; seen.add(val); }
+      if (typeof val === 'bigint') return val.toString() + 'n';
+      return val;
+    }, 2);
+  } catch (e) { try { return String(v); } catch (e2) { return '[Unserializable value]'; } }
+}
+
+async function runEntryOrActive(){
+  const target = (state.activePath && state.activePath.endsWith('.js')) ? state.activePath : state.entry;
+  if (!target) { appendConsoleLine('info', 'No .js file to run — open one or mark an entry file.'); return; }
+  if (state.dirty.has(target)) await saveFile(target);
+  await runFile(target);
+}
+async function runActiveOrEntry(){ await runEntryOrActive(); showPanel('console-panel'); setConsoleMode('run'); }
+
+async function runFile(path){
+  showPanel('console-panel'); setConsoleMode('run');
+  patchConsole();
+  revokeSandboxUrls();
+  const files = await fsList();
+  const rec = files.find(f => f.path === path);
+  if (!rec) { appendConsoleLine('error', 'File not found: ' + path); return; }
+  let localImports = {};
+  try {
+    localImports = buildLocalModuleUrls(files, state.packages);
+  } catch (e) {
+    appendConsoleLine('error', 'Failed to resolve imports: ' + (e && e.message ? e.message : e));
+    return;
+  }
+  appendConsoleLine('info', 'Running ' + path + ' …');
+  const entryUrl = localImports['local-module:' + path];
+  window.__jideRunningUserCode = true;
+  try {
+    await import(/* @vite-ignore */ entryUrl);
+  } catch (err) {
+    appendConsoleLine('error', (err && err.stack) ? err.stack : String(err));
+  }
+  // The flag is left on: user code may still be running async (timers, pending promises) after
+  // the top-level module settles, and its errors should keep going to the console pane, not the
+  // crash overlay — see the top-level handler above.
+}
+
+async function evalRepl(code){
+  patchConsole();
+  appendConsoleLine('repl-in', code);
+  const files = await fsList();
+  let localImports = {};
+  try { localImports = buildLocalModuleUrls(files, state.packages); } catch (e) {}
+  window.__jideRunningUserCode = true;
+  let result, isError = false;
+  try {
+    const blob = new Blob(['export default (async () => { return (\n' + code + '\n); })();'], { type: 'text/javascript' });
+    let url = URL.createObjectURL(blob);
+    try {
+      const mod = await import(/* @vite-ignore */ url);
+      result = await mod.default;
+    } catch (parseErr) {
+      URL.revokeObjectURL(url);
+      const blob2 = new Blob(['export default (async () => {\n' + code + '\n})();'], { type: 'text/javascript' });
+      url = URL.createObjectURL(blob2);
+      const mod2 = await import(/* @vite-ignore */ url);
+      result = await mod2.default;
+    }
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    isError = true;
+    result = (err && err.stack) ? err.stack : String(err);
+  }
+  appendConsoleLine(isError ? 'repl-out-err' : 'repl-out', isError ? result : safeStringify(result));
+}
+
+// ============================================================ CONSOLE UI
+const TAG_MAP = {
+  log: ['t-log','LOG'], warn: ['t-warn','WARN'], error: ['t-error','ERROR'],
+  info: ['t-info','—'], 'repl-in': ['t-repl-in','›'], 'repl-out': ['t-repl-out','='],
+  'repl-out-err': ['t-error','ERR'],
+};
+function appendConsoleLine(kind, text){
+  const empty = $('#console-empty'); if (empty) empty.remove();
+  const [cls, tag] = TAG_MAP[kind] || ['t-log','LOG'];
+  const row = document.createElement('div');
+  row.className = 'cline ' + cls;
+  const tagEl = document.createElement('span'); tagEl.className = 'ctag'; tagEl.textContent = tag;
+  const bodyEl = document.createElement('span'); bodyEl.className = 'cbody'; bodyEl.textContent = text;
+  row.appendChild(tagEl); row.appendChild(bodyEl);
+  consoleOut.appendChild(row);
+  consoleOut.scrollTop = consoleOut.scrollHeight;
+}
+function clearConsole(){
+  consoleOut.innerHTML = '<div id="console-empty">No output yet — run a file or switch to REPL.</div>';
+}
+
+function setConsoleMode(mode){
+  state.consoleMode = mode;
+  $('#mode-run-btn').classList.toggle('active', mode==='run');
+  $('#mode-repl-btn').classList.toggle('active', mode==='repl');
+  $('#repl-bar').classList.toggle('visible', mode==='repl');
+  $('#run-bar').style.display = mode==='run' ? 'flex' : 'none';
+}
+
+// ============================================================ PANEL SWITCHING
+function showPanel(id){
+  state.currentPanel = id;
+  document.querySelectorAll('.panel').forEach(p => p.classList.toggle('visible', p.id === id));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.panel === id));
+  if (id === 'files-panel') renderTree();
+  if (id === 'editor-panel' && cmView) cmView.focus();
+}
+
+// ============================================================ MODALS
+function showModal(id){ $('#'+id).classList.add('visible'); }
+function hideModal(id){ $('#'+id).classList.remove('visible'); }
+
+// ============================================================ EVENT WIRING
+document.querySelectorAll('.nav-btn').forEach(btn => {
+  btn.addEventListener('click', () => showPanel(btn.dataset.panel));
+});
+document.querySelectorAll('[data-close]').forEach(btn => {
+  btn.addEventListener('click', () => hideModal(btn.dataset.close));
+});
+document.querySelectorAll('.modal-backdrop').forEach(bd => {
+  bd.addEventListener('click', e => { if (e.target === bd) bd.classList.remove('visible'); });
+});
+
+$('#btn-save').addEventListener('click', saveActiveFile);
+$('#btn-refresh-tree').addEventListener('click', renderTree);
+$('#btn-run').addEventListener('click', runEntryOrActive);
+$('#btn-clear-console').addEventListener('click', clearConsole);
+$('#btn-clear-console-2').addEventListener('click', clearConsole);
+$('#mode-run-btn').addEventListener('click', () => setConsoleMode('run'));
+$('#mode-repl-btn').addEventListener('click', () => setConsoleMode('repl'));
+
+$('#repl-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    const val = e.target.value;
+    if (!val.trim()) return;
+    state.replHistory.push(val);
+    evalRepl(val);
+    e.target.value = '';
+  }
+});
+
+// New file/folder
+let newItemMode = 'file';
+$('#btn-new-file').addEventListener('click', () => {
+  newItemMode = 'file';
+  $('#newitem-title').textContent = 'New file';
+  $('#newitem-name').value = '';
+  $('#newitem-name').placeholder = 'e.g. utils.js or lib/math.js';
+  showModal('modal-newitem');
+});
+$('#btn-new-folder').addEventListener('click', () => {
+  newItemMode = 'folder';
+  $('#newitem-title').textContent = 'New folder';
+  $('#newitem-name').value = '';
+  $('#newitem-name').placeholder = 'e.g. lib';
+  showModal('modal-newitem');
+});
+$('#newitem-confirm').addEventListener('click', async () => {
+  const raw = $('#newitem-name').value.trim().replace(/^\/+/, '');
+  if (!raw) return;
+  const existing = await fsGet(raw);
+  if (existing) { alert('A file already exists at that path.'); return; }
+  if (newItemMode === 'file') {
+    await fsPut(raw, '');
+  } else {
+    await fsPutFolder(raw);
+  }
+  hideModal('modal-newitem');
+  await renderTree();
+  if (newItemMode === 'file') openFile(raw);
+});
+
+$('#btn-upload').addEventListener('click', () => $('#file-input').click());
+$('#file-input').addEventListener('change', async e => {
+  const files = [...e.target.files];
+  for (const f of files) {
+    const isText = /^text\/|json|javascript|xml|csv/.test(f.type) || /\.(js|json|txt|md|css|html|csv|svg)$/i.test(f.name);
+    if (isText) {
+      const text = await f.text();
+      await fsPut(f.name, text);
+    } else {
+      const buf = await f.arrayBuffer();
+      const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
+      await fsPut(f.name, '__BINARY_BASE64__' + b64);
+    }
+  }
+  e.target.value = '';
+  await renderTree();
+});
+
+// Rename/move/delete
+$('#rename-confirm').addEventListener('click', async () => {
+  if (!menuTargetNode) return;
+  const newPath = $('#rename-name').value.trim().replace(/^\/+/, '');
+  if (!newPath || newPath === menuTargetNode.path) { hideModal('modal-rename'); return; }
+  await fsRename(menuTargetNode.path, newPath, menuTargetNode.type === 'folder');
+  if (state.entry === menuTargetNode.path) await setEntry(newPath);
+  const idx = state.openTabs.indexOf(menuTargetNode.path);
+  if (idx !== -1) {
+    state.openTabs[idx] = newPath;
+    if (state.activePath === menuTargetNode.path) state.activePath = newPath;
+    const content = state.editorContents.get(menuTargetNode.path);
+    state.editorContents.delete(menuTargetNode.path);
+    if (content !== undefined) state.editorContents.set(newPath, content);
+  }
+  hideModal('modal-rename');
+  await renderTree();
+  renderTabs();
+  updateFilenameLabel();
+});
+$('#rename-delete').addEventListener('click', async () => {
+  if (!menuTargetNode) return;
+  if (!confirm('Delete "' + menuTargetNode.path + '"? This cannot be undone.')) return;
+  await fsDelete(menuTargetNode.path, menuTargetNode.type === 'folder');
+  if (state.entry === menuTargetNode.path) await db.delete('meta', 'entry');
+  if (state.openTabs.includes(menuTargetNode.path)) closeTab(menuTargetNode.path);
+  hideModal('modal-rename');
+  await renderTree();
+});
+$('#rename-set-entry').addEventListener('click', async () => {
+  if (!menuTargetNode || menuTargetNode.type !== 'file' || !menuTargetNode.path.endsWith('.js')) {
+    alert('Only a .js file can be the entry file.'); return;
+  }
+  await setEntry(menuTargetNode.path);
+  hideModal('modal-rename');
+  await renderTree();
+  updateRunTargetLabel();
+});
+
+// Set as entry — long-ish press substitute: tap badge area via row click on js files offers a quick toggle through the rename sheet's context. Simpler: add via menu.
+$('#rename-name').addEventListener('keydown', e => { if (e.key === 'Enter') $('#rename-confirm').click(); });
+
+// ============================================================ PACKAGES
+const PKG_PRESETS = [
+  { name: 'lodash-es', desc: 'Utility functions' },
+  { name: 'date-fns', desc: 'Date handling' },
+  { name: 'zod', desc: 'Schema validation' },
+  { name: 'nanoid', desc: 'Tiny unique IDs' },
+  { name: 'chart.js', desc: 'Charts & graphs' },
+  { name: 'uuid', desc: 'UUID generation' },
+];
+
+$('#btn-packages').addEventListener('click', async () => { await renderPackageList(); renderPresets(); showModal('modal-packages'); });
+
+function renderPresets(){
+  const wrap = $('#pkg-presets');
+  wrap.innerHTML = '';
+  for (const preset of PKG_PRESETS) {
+    const installed = state.packages.some(p => p.name === preset.name);
+    const btn = document.createElement('button');
+    btn.className = 'pkg-preset' + (installed ? ' installed' : '');
+    btn.innerHTML = `<span class="ppname">${preset.name}</span><span class="ppdesc">${preset.desc}</span>`;
+    btn.disabled = installed;
+    btn.addEventListener('click', () => installPackage(preset.name, ''));
+    wrap.appendChild(btn);
+  }
+}
+
+async function renderPackageList(){
+  state.packages = await getPackages();
+  const list = $('#pkg-list');
+  list.innerHTML = '';
+  if (state.packages.length === 0) {
+    list.innerHTML = '<div class="hint">No packages installed yet.</div>';
+    return;
+  }
+  for (const pkg of state.packages) {
+    const row = document.createElement('div'); row.className = 'pkg-row';
+    row.innerHTML = `<span class="pname">${pkg.name}</span><span class="pver">${pkg.version || 'latest'}</span>`;
+    const rm = document.createElement('button');
+    rm.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>';
+    rm.addEventListener('click', async () => {
+      state.packages = state.packages.filter(p => p.name !== pkg.name);
+      await setPackages(state.packages);
+      await renderPackageList();
+      renderPresets();
+    });
+    row.appendChild(rm);
+    list.appendChild(row);
+  }
+}
+
+async function installPackage(name, version){
+  const errBox = $('#pkg-error');
+  errBox.classList.add('hidden');
+  if (!name) return;
+  const installBtn = $('#pkg-install');
+  const origText = installBtn.textContent;
+  installBtn.textContent = 'Resolving…'; installBtn.disabled = true;
+  try {
+    const spec = version ? `${name}@${version}` : name;
+    const url = `https://esm.sh/${spec}`;
+    const resp = await fetch(url, { method: 'GET' });
+    if (!resp.ok) {
+      throw new Error(`esm.sh responded ${resp.status} ${resp.statusText} for "${spec}". Check the package name/version.`);
+    }
+    const text = await resp.text();
+    if (/Package not found/i.test(text) || resp.status === 404) {
+      throw new Error(`Package "${spec}" was not found on esm.sh.`);
+    }
+    state.packages = state.packages.filter(p => p.name !== name);
+    state.packages.push({ name, version: version || 'latest', url });
+    await setPackages(state.packages);
+    $('#pkg-name').value = ''; $('#pkg-version').value = '';
+    await renderPackageList();
+    renderPresets();
+  } catch (err) {
+    errBox.textContent = 'Install failed: ' + (err && err.message ? err.message : String(err));
+    errBox.classList.remove('hidden');
+  } finally {
+    installBtn.textContent = origText; installBtn.disabled = false;
+  }
+}
+
+$('#pkg-install').addEventListener('click', () => {
+  const name = $('#pkg-name').value.trim();
+  const version = $('#pkg-version').value.trim();
+  installPackage(name, version);
+});
+
+// ============================================================ INIT
+state.packages = await getPackages();
+await renderTree();
+const entry = await getEntry();
+if (entry) {
+  await openFile(entry);
+} else {
+  showEmptyEditor();
+}
+showPanel('editor-panel');
+setConsoleMode('run');
+
+} // end runApp
+</script>
+
+</body>
+</html>
+
