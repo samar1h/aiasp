@@ -1,0 +1,1276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SQL Quest</title>
+<meta name="description" content="Learn SQL from zero in about an hour through bite-sized interactive lessons and a live playground.">
+<meta name="keywords" content="SQL, learning">
+<meta name="app-icon" content="database">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<script>
+window.__errLog = [];
+function showErrorBanner(msg, detail){
+  window.__errLog.push({msg:msg, detail:detail, t:new Date().toISOString()});
+  var existing = document.getElementById('__errBanner');
+  if(existing){ existing.remove(); }
+  var b = document.createElement('div');
+  b.id = '__errBanner';
+  b.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:999999;background:#1c1917;color:#fed7aa;font-family:monospace;font-size:12px;padding:10px 12px;box-shadow:0 -2px 10px rgba(0,0,0,.4);';
+  var top = document.createElement('div');
+  top.style.cssText = 'display:flex;justify-content:space-between;align-items:center;gap:8px;';
+  var t = document.createElement('span');
+  t.textContent = '⚠ ' + msg;
+  var closeBtn = document.createElement('button');
+  closeBtn.textContent = '✕';
+  closeBtn.style.cssText = 'background:none;border:none;color:#fed7aa;font-size:14px;padding:4px 8px;cursor:pointer;';
+  closeBtn.onclick = function(){ b.remove(); };
+  top.appendChild(t); top.appendChild(closeBtn);
+  b.appendChild(top);
+  var details = document.createElement('details');
+  details.style.cssText = 'margin-top:6px;';
+  var summary = document.createElement('summary');
+  summary.textContent = 'Technical details';
+  summary.style.cssText = 'cursor:pointer;color:#fdba74;';
+  var pre = document.createElement('pre');
+  pre.style.cssText = 'white-space:pre-wrap;word-break:break-word;margin-top:6px;color:#e7e5e4;max-height:120px;overflow:auto;';
+  pre.textContent = detail || 'No additional details';
+  details.appendChild(summary); details.appendChild(pre);
+  b.appendChild(details);
+  document.body ? document.body.appendChild(b) : window.addEventListener('DOMContentLoaded', function(){ document.body.appendChild(b); });
+}
+window.onerror = function(message, source, lineno, colno, error){
+  showErrorBanner('Something went wrong: ' + message, (error && error.stack) ? error.stack : (source + ':' + lineno + ':' + colno));
+  return false;
+};
+window.addEventListener('unhandledrejection', function(event){
+  var reason = event.reason;
+  var msg = (reason && reason.message) ? reason.message : String(reason);
+  showErrorBanner('Something went wrong: ' + msg, (reason && reason.stack) ? reason.stack : String(reason));
+});
+</script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        ink: '#1C1917',
+        cream: '#FFF8F0',
+        paper: '#FFFFFF',
+        orange: { DEFAULT:'#EA580C', 50:'#FFF7ED', 100:'#FFEDD5', 200:'#FED7AA', 300:'#FDBA74', 400:'#FB923C', 500:'#F97316', 600:'#EA580C', 700:'#C2410C' },
+        sky: { DEFAULT:'#0EA5E9', 100:'#E0F2FE', 200:'#BAE6FD', 600:'#0284C7' },
+        leaf: { DEFAULT:'#16A34A', 100:'#DCFCE7', 600:'#15803D' },
+        sand: { 50:'#FAF7F2', 100:'#F3EEE6', 200:'#E7DFD2', 300:'#D8CCB8' }
+      },
+      fontFamily: {
+        display: ['Fraunces','serif'],
+        body: ['Inter','system-ui','sans-serif'],
+        mono: ['JetBrains Mono','monospace']
+      },
+      boxShadow: {
+        card: '0 1px 2px rgba(28,25,23,.04), 0 4px 16px rgba(28,25,23,.06)',
+        pop: '0 8px 30px rgba(234,88,12,.18)'
+      }
+    }
+  }
+}
+</script>
+<style>
+  * { -webkit-tap-highlight-color: transparent; }
+  html, body { overscroll-behavior-y: contain; }
+  body { font-family: 'Inter', system-ui, sans-serif; background:#FAF7F2; color:#1C1917; }
+  .font-display { font-family: 'Fraunces', serif; }
+  .font-mono { font-family: 'JetBrains Mono', monospace; }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-thumb { background: #E7DFD2; border-radius: 4px; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  .card-enter { animation: cardEnter .38s cubic-bezier(.22,1,.36,1) both; }
+  @keyframes cardEnter { from { opacity:0; transform: translateY(14px) scale(.985); } to { opacity:1; transform: translateY(0) scale(1); } }
+  .card-exit-left { animation: exitLeft .28s ease both; }
+  .card-exit-right { animation: exitRight .28s ease both; }
+  @keyframes exitLeft { to { opacity:0; transform: translateX(-40px) scale(.97); } }
+  @keyframes exitRight { to { opacity:0; transform: translateX(40px) scale(.97); } }
+  .pop-in { animation: popIn .3s cubic-bezier(.34,1.56,.64,1) both; }
+  @keyframes popIn { from { opacity:0; transform: scale(.8); } to { opacity:1; transform: scale(1); } }
+  .row-in { animation: rowIn .35s ease both; }
+  @keyframes rowIn { from { opacity:0; transform: translateY(-6px); background-color: rgba(234,88,12,.14); } to { opacity:1; transform: translateY(0); background-color: transparent; } }
+  .row-out { animation: rowOut .35s ease both; }
+  @keyframes rowOut { from { opacity:1; background-color: rgba(220,38,38,.12); } to { opacity:0; transform: scale(.96); background-color: rgba(220,38,38,.12); } }
+  .cell-flash { animation: cellFlash 1s ease; }
+  @keyframes cellFlash { 0%{ background-color: rgba(14,165,233,.28);} 100%{ background-color: transparent; } }
+  .xp-fill { transition: width .6s cubic-bezier(.22,1,.36,1); }
+  .path-node { transition: transform .18s ease; }
+  .path-node:active { transform: scale(.94); }
+  .btn-press:active { transform: scale(.96); }
+  .btn-press { transition: transform .12s ease; }
+  @keyframes floatUp { 0%{opacity:0; transform:translateY(6px) scale(.9);} 15%{opacity:1;} 100%{opacity:0; transform:translateY(-34px) scale(1.05);} }
+  .xp-toast { animation: floatUp 1.1s ease both; }
+  .confetti-piece { position:fixed; top:-10px; z-index:9999; border-radius:2px; animation: fall linear forwards; }
+  @keyframes fall { to { transform: translateY(110vh) rotate(540deg); opacity:.3; } }
+  .glow-ring { box-shadow: 0 0 0 3px rgba(234,88,12,.55), 0 0 22px rgba(234,88,12,.35); }
+  .scale-in-out { animation: scaleInOut 1.6s ease-in-out infinite; }
+  @keyframes scaleInOut { 0%,100%{ transform:scale(1);} 50%{ transform:scale(1.04);} }
+  .typing-dot { animation: typingDot 1.2s ease-in-out infinite; }
+  @keyframes typingDot { 0%,60%,100%{ opacity:.3; } 30%{ opacity:1; } }
+  .lock-shake { animation: lockShake .4s ease; }
+  @keyframes lockShake { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-4px);} 75%{transform:translateX(4px);} }
+  .snake-path { stroke-dasharray: 8 10; }
+  input, select, textarea { font-family: inherit; }
+  .safe-top { padding-top: env(safe-area-inset-top); }
+  .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+</style>
+</head>
+<body class="min-h-screen">
+<div id="root"></div>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script id="curriculum-data">
+window.SQLQ_TABLES = {
+  pets: {
+    columns: ['id','name','species','age','owner'],
+    types: {id:'INTEGER', name:'TEXT', species:'TEXT', age:'INTEGER', owner:'TEXT'},
+    rows: [
+      [1,'Biscuit','Dog',3,'Amara'],
+      [2,'Whiskers','Cat',5,'Leo'],
+      [3,'Tank','Turtle',12,'Amara'],
+      [4,'Pepper','Dog',1,'Sana'],
+      [5,'Milo','Cat',2,'Leo'],
+      [6,'Nibbles','Rabbit',4,'Priya']
+    ]
+  },
+  orders: {
+    columns: ['id','customer','item','qty','price'],
+    types: {id:'INTEGER', customer:'TEXT', item:'TEXT', qty:'INTEGER', price:'REAL'},
+    rows: [
+      [101,'Amara','Dog Leash',2,12.50],
+      [102,'Leo','Cat Toy',1,6.00],
+      [103,'Sana','Dog Bed',1,45.00],
+      [104,'Priya','Rabbit Hutch',1,89.99],
+      [105,'Amara','Cat Toy',3,6.00]
+    ]
+  },
+  customers: {
+    columns: ['id','name','city'],
+    types: {id:'INTEGER', name:'TEXT', city:'TEXT'},
+    rows: [
+      [1,'Amara','Austin'],
+      [2,'Leo','Denver'],
+      [3,'Sana','Austin'],
+      [4,'Priya','Boston']
+    ]
+  }
+};
+
+window.SQLQ_CHAPTERS = [
+  {
+    id: 'intro',
+    title: 'Welcome to SQL',
+    subtitle: 'What tables are & your first query',
+    icon: 'sparkles',
+    color: 'orange',
+    xpTotal: 40,
+    steps: [
+      { type:'text', title:'What is a database?', body:"A database is just an organized set of tables. Think of a table like a spreadsheet — rows going down, columns going across.", xp:5 },
+      { type:'table-reveal', title:'Meet your first table', body:"Here's a table called **pets**. Each row is one pet. Each column is one piece of info about it.", table:'pets', highlight:'all', xp:5 },
+      { type:'concept-labels', title:'Rows & columns', body:"Tap the labels to see what's what.", table:'pets', xp:5 },
+      { type:'command-anatomy', title:'Your first command', body:"`SELECT` grabs data. The `*` means \"every column\". `FROM` says which table.", command:'SELECT * FROM pets;', parts:[
+          {label:'keyword', text:'SELECT', desc:'Get some data'},
+          {label:'target', text:'*', desc:'Every column'},
+          {label:'keyword', text:'FROM', desc:'Out of this table'},
+          {label:'table', text:'pets', desc:'The table name'}
+        ], xp:5 },
+      { type:'live-query', title:'Run it yourself', body:'Tap **Run** to see SELECT * in action.', table:'pets', query:'SELECT * FROM pets;', resultCols:['id','name','species','age','owner'], resultRowsFn:'all', xp:10 },
+      { type:'live-query', title:'Pick specific columns', body:'Swap `*` for column names, separated by commas, to grab only what you need.', table:'pets', query:'SELECT name, species FROM pets;', resultCols:['name','species'], resultRowsFn:'cols:name,species', xp:10 }
+    ]
+  },
+  {
+    id: 'filter',
+    title: 'Filtering & Sorting',
+    subtitle: 'WHERE, ORDER BY, LIMIT',
+    icon: 'filter',
+    color: 'sky',
+    xpTotal: 60,
+    steps: [
+      { type:'text', title:'Not everything, just some', body:"So far we grab whole tables. Usually you want a slice — \"only the dogs\", \"the 5 newest orders\". That's what `WHERE` is for.", xp:5 },
+      { type:'command-anatomy', title:'The WHERE clause', body:'WHERE filters rows — only ones that make the condition true survive.', command:"SELECT * FROM pets WHERE species = 'Dog';", parts:[
+          {label:'keyword', text:'SELECT *', desc:'All columns'},
+          {label:'keyword', text:'FROM pets', desc:'From this table'},
+          {label:'keyword', text:'WHERE', desc:'Only rows where...'},
+          {label:'condition', text:"species = 'Dog'", desc:'...species equals Dog'}
+        ], xp:5 },
+      { type:'live-query', title:'Filter by equality', body:"Run it — watch rows that don't match fade out.", table:'pets', query:"SELECT * FROM pets WHERE species = 'Dog';", resultCols:['id','name','species','age','owner'], resultRowsFn:"where:species=Dog", filterAnim:true, xp:10 },
+      { type:'text', title:'Comparison operators', body:"Beyond `=`, you get `>` `<` `>=` `<=` `!=`. They work just like math class.\n\n`age > 3` → older than 3\n`age <= 2` → 2 or younger", xp:5 },
+      { type:'live-query', title:'Filter by number', body:'Find pets older than 3.', table:'pets', query:'SELECT * FROM pets WHERE age > 3;', resultCols:['id','name','species','age','owner'], resultRowsFn:'where:age>3', filterAnim:true, xp:10 },
+      { type:'text', title:'Combine conditions', body:"`AND` — both must be true.\n`OR` — either can be true.\n\n`species = 'Dog' AND age < 2` → young dogs only.", xp:5 },
+      { type:'live-query', title:'AND in action', body:'Dogs younger than 2.', table:'pets', query:"SELECT * FROM pets WHERE species = 'Dog' AND age < 2;", resultCols:['id','name','species','age','owner'], resultRowsFn:'where:dogyoung', filterAnim:true, xp:10 },
+      { type:'command-anatomy', title:'Sorting with ORDER BY', body:'ORDER BY sorts your results. Add DESC to flip it to descending.', command:'SELECT * FROM pets ORDER BY age DESC;', parts:[
+          {label:'keyword', text:'ORDER BY', desc:'Sort the results'},
+          {label:'target', text:'age', desc:'By this column'},
+          {label:'keyword', text:'DESC', desc:'Highest first'}
+        ], xp:5 },
+      { type:'live-query', title:'Sort it', body:'Oldest pet first.', table:'pets', query:'SELECT * FROM pets ORDER BY age DESC;', resultCols:['id','name','species','age','owner'], resultRowsFn:'orderby:age:desc', sortAnim:true, xp:5 }
+    ]
+  },
+  {
+    id: 'shape',
+    title: 'Shaping Data',
+    subtitle: 'DISTINCT, COUNT, GROUP BY',
+    icon: 'layout-grid',
+    color: 'leaf',
+    xpTotal: 60,
+    steps: [
+      { type:'text', title:'Summarizing data', body:"Sometimes you don't want raw rows — you want a summary. \"How many dogs do we have?\" \"What's the average age?\" That's aggregation.", xp:5 },
+      { type:'command-anatomy', title:'DISTINCT removes duplicates', body:'DISTINCT keeps only unique values in a column.', command:'SELECT DISTINCT species FROM pets;', parts:[
+          {label:'keyword', text:'DISTINCT', desc:'Unique values only'},
+          {label:'target', text:'species', desc:'From this column'}
+        ], xp:5 },
+      { type:'live-query', title:'Run DISTINCT', body:'See every species, listed once each.', table:'pets', query:'SELECT DISTINCT species FROM pets;', resultCols:['species'], resultRowsFn:'distinct:species', xp:10 },
+      { type:'command-anatomy', title:'COUNT rows', body:'Aggregate functions turn many rows into one number.', command:'SELECT COUNT(*) FROM pets;', parts:[
+          {label:'keyword', text:'COUNT(*)', desc:'How many rows total'}
+        ], xp:5 },
+      { type:'live-query', title:'Count everything', body:'How many pets total?', table:'pets', query:'SELECT COUNT(*) FROM pets;', resultCols:['COUNT(*)'], resultRowsFn:'count:all', xp:5 },
+      { type:'text', title:'More aggregate functions', body:"`SUM(col)` — total\n`AVG(col)` — average\n`MIN(col)` / `MAX(col)` — smallest / largest\n\nAll collapse a column into one value.", xp:5 },
+      { type:'live-query', title:'Average age', body:'What is the average pet age?', table:'pets', query:'SELECT AVG(age) FROM pets;', resultCols:['AVG(age)'], resultRowsFn:'avg:age', xp:5 },
+      { type:'command-anatomy', title:'GROUP BY buckets rows', body:'GROUP BY splits rows into buckets by a column, then aggregates each bucket separately.', command:'SELECT species, COUNT(*) FROM pets GROUP BY species;', parts:[
+          {label:'keyword', text:'GROUP BY', desc:'One bucket per...'},
+          {label:'target', text:'species', desc:'...distinct species'},
+          {label:'keyword', text:'COUNT(*)', desc:'Count each bucket'}
+        ], xp:10 },
+      { type:'live-query', title:'Count per species', body:'How many of each species?', table:'pets', query:'SELECT species, COUNT(*) FROM pets GROUP BY species;', resultCols:['species','COUNT(*)'], resultRowsFn:'groupby:species:count', groupAnim:true, xp:10 }
+    ]
+  },
+  {
+    id: 'dml',
+    title: 'Changing Data',
+    subtitle: 'INSERT, UPDATE, DELETE',
+    icon: 'pencil',
+    color: 'orange',
+    xpTotal: 60,
+    steps: [
+      { type:'text', title:'Data isn\'t static', body:"Real tables change: new rows come in, old ones get corrected or removed. Three commands handle this — INSERT, UPDATE, DELETE. Together with SELECT they're called DML: Data Manipulation Language.", xp:5 },
+      { type:'command-anatomy', title:'INSERT adds a row', body:'You name the columns, then supply matching values in the same order.', command:"INSERT INTO pets (name, species, age, owner) VALUES ('Coco', 'Dog', 1, 'Sana');", parts:[
+          {label:'keyword', text:'INSERT INTO', desc:'Add a new row'},
+          {label:'table', text:'pets (name, species, age, owner)', desc:'Into these columns'},
+          {label:'keyword', text:'VALUES', desc:'With these values'},
+          {label:'condition', text:"('Coco', 'Dog', 1, 'Sana')", desc:'One per column, in order'}
+        ], xp:10 },
+      { type:'live-query', title:'Insert a new pet', body:'Watch the new row slide in at the bottom.', table:'pets', query:"INSERT INTO pets (name, species, age, owner) VALUES ('Coco', 'Dog', 1, 'Sana');", mutation:'insert', insertRow:[7,'Coco','Dog',1,'Sana'], xp:15 },
+      { type:'command-anatomy', title:'UPDATE changes values', body:'SET says what to change. WHERE says which rows — skip it and you\'d update every row!', command:"UPDATE pets SET age = 2 WHERE name = 'Coco';", parts:[
+          {label:'keyword', text:'UPDATE pets', desc:'In this table'},
+          {label:'keyword', text:'SET', desc:'Change this...'},
+          {label:'target', text:'age = 2', desc:'...to this value'},
+          {label:'keyword', text:'WHERE', desc:'Only for row(s) where'},
+          {label:'condition', text:"name = 'Coco'", desc:'name is Coco'}
+        ], xp:10 },
+      { type:'live-query', title:'Update a row', body:"Coco's birthday — bump the age. Watch the cell flash.", table:'pets', query:"UPDATE pets SET age = 2 WHERE name = 'Coco';", mutation:'update', updateMatch:{col:'name', val:'Coco'}, updateSet:{col:'age', val:2}, needsInsertFirst:true, xp:10 },
+      { type:'command-anatomy', title:'DELETE removes rows', body:'Just like UPDATE, always pair DELETE with a WHERE — or you\'ll wipe the whole table.', command:"DELETE FROM pets WHERE name = 'Coco';", parts:[
+          {label:'keyword', text:'DELETE FROM pets', desc:'Remove rows here'},
+          {label:'keyword', text:'WHERE', desc:'Only where'},
+          {label:'condition', text:"name = 'Coco'", desc:"name is Coco"}
+        ], xp:5 },
+      { type:'live-query', title:'Delete the row', body:'Watch it fade and disappear.', table:'pets', query:"DELETE FROM pets WHERE name = 'Coco';", mutation:'delete', deleteMatch:{col:'name', val:'Coco'}, xp:5 }
+    ]
+  },
+  {
+    id: 'ddl',
+    title: 'Building Structure',
+    subtitle: 'CREATE, ALTER, DROP TABLE',
+    icon: 'hammer',
+    color: 'sky',
+    xpTotal: 40,
+    steps: [
+      { type:'text', title:'Before there\'s data, there\'s structure', body:"Every table needs to be defined first: its name, its columns, and what type of data each column holds. That's DDL — Data Definition Language.", xp:5 },
+      { type:'text', title:'Common data types', body:"`INTEGER` — whole numbers\n`REAL` — decimals\n`TEXT` — words, letters, dates\n`BOOLEAN` — true / false\n\nEvery column picks one.", xp:5 },
+      { type:'command-anatomy', title:'CREATE TABLE', body:'Define a name, then each column with its type in parentheses.', command:'CREATE TABLE toys (\n  id INTEGER,\n  name TEXT,\n  price REAL\n);', parts:[
+          {label:'keyword', text:'CREATE TABLE', desc:'Make a new table'},
+          {label:'table', text:'toys', desc:'Named this'},
+          {label:'target', text:'id INTEGER', desc:'Whole-number column'},
+          {label:'target', text:'name TEXT', desc:'Text column'},
+          {label:'target', text:'price REAL', desc:'Decimal column'}
+        ], xp:10 },
+      { type:'table-build', title:'Watch a table get built', body:'Tap **Run** and see the empty table appear column by column.', columns:['id','name','price'], types:{id:'INTEGER',name:'TEXT',price:'REAL'}, query:'CREATE TABLE toys (\n  id INTEGER,\n  name TEXT,\n  price REAL\n);', xp:10 },
+      { type:'command-anatomy', title:'ALTER TABLE adds a column', body:'Tables can evolve after creation — add a column without losing existing data.', command:'ALTER TABLE toys ADD COLUMN in_stock BOOLEAN;', parts:[
+          {label:'keyword', text:'ALTER TABLE toys', desc:'Modify this table'},
+          {label:'keyword', text:'ADD COLUMN', desc:'New column'},
+          {label:'target', text:'in_stock BOOLEAN', desc:'Named & typed'}
+        ], xp:5 },
+      { type:'text', title:'DROP TABLE deletes everything', body:"`DROP TABLE toys;` erases the table and every row inside it — permanently. There's no undo, so it's the most dangerous command in SQL.", xp:5 }
+    ]
+  },
+  {
+    id: 'joins',
+    title: 'Combining Tables',
+    subtitle: 'JOIN across related tables',
+    icon: 'link-2',
+    color: 'leaf',
+    xpTotal: 40,
+    steps: [
+      { type:'text', title:'Data lives in more than one table', body:"Real databases split data across tables to avoid repetition — one table for **customers**, another for **orders**. JOIN lets you combine them for a query.", xp:5 },
+      { type:'dual-table', title:'Two related tables', body:"**orders** references customers by name. A JOIN matches rows where that shared value lines up.", left:'customers', right:'orders', xp:5 },
+      { type:'command-anatomy', title:'INNER JOIN', body:'ON tells SQL which columns must match between the two tables.', command:'SELECT customers.name, orders.item\nFROM customers\nJOIN orders ON customers.name = orders.customer;', parts:[
+          {label:'keyword', text:'FROM customers', desc:'Start here'},
+          {label:'keyword', text:'JOIN orders', desc:'Combine with this'},
+          {label:'keyword', text:'ON', desc:'Where they match:'},
+          {label:'condition', text:'customers.name = orders.customer', desc:'same person'}
+        ], xp:10 },
+      { type:'live-query', title:'Run the JOIN', body:'Watch matching rows connect and merge.', table:'customers', query:'SELECT customers.name, orders.item, orders.price\nFROM customers\nJOIN orders ON customers.name = orders.customer;', resultCols:['name','item','price'], resultRowsFn:'join', joinAnim:true, xp:20 }
+    ]
+  }
+];
+</script>
+<script type="text/babel" id="app-script">
+const { useState, useEffect, useRef, useMemo, useCallback } = React;
+
+const COLOR_MAP = {
+  orange: { bg:'bg-orange-50', text:'text-orange-600', border:'border-orange-200', solid:'bg-orange-600', ring:'ring-orange-300', chip:'bg-orange-100 text-orange-700' },
+  sky: { bg:'bg-sky-100', text:'text-sky-600', border:'border-sky-200', solid:'bg-sky-600', ring:'ring-sky-300', chip:'bg-sky-100 text-sky-700' },
+  leaf: { bg:'bg-leaf-100', text:'text-leaf-600', border:'border-leaf-200', solid:'bg-leaf-600', ring:'ring-leaf-300', chip:'bg-leaf-100 text-leaf-700' }
+};
+
+function useLocalState(key, initial){
+  const [state, setState] = useState(() => {
+    try {
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : initial;
+    } catch(e){ return initial; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem(key, JSON.stringify(state)); } catch(e){}
+  }, [key, state]);
+  return [state, setState];
+}
+
+function Icon({ name, size = 20, className = '' }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    if (ref.current && window.lucide) {
+      ref.current.innerHTML = '';
+      try {
+        const el = document.createElement('i');
+        el.setAttribute('data-lucide', name);
+        ref.current.appendChild(el);
+        window.lucide.createIcons({ nodes: [el] });
+      } catch(e){}
+    }
+  }, [name]);
+  return <span ref={ref} className={className} style={{display:'inline-flex', width:size, height:size}}></span>;
+}
+
+function parseInline(text){
+  if(!text) return null;
+  const parts = String(text).split(/(\*\*[^*]+\*\*|`[^`]+`)/g).filter(Boolean);
+  return parts.map((p, i) => {
+    if(p.startsWith('**') && p.endsWith('**')){
+      return <strong key={i} className="font-semibold text-ink">{p.slice(2,-2)}</strong>;
+    }
+    if(p.startsWith('`') && p.endsWith('`')){
+      return <code key={i} className="font-mono text-[13px] bg-sand-100 text-orange-700 px-1.5 py-0.5 rounded-md">{p.slice(1,-1)}</code>;
+    }
+    return <span key={i}>{p}</span>;
+  });
+}
+
+function RichText({ text, className }){
+  const lines = String(text||'').split('\n');
+  return <div className={className}>{lines.map((l,i) => <p key={i} className={i>0 ? 'mt-2' : ''}>{parseInline(l)}</p>)}</div>;
+}
+
+function XpToast({ amount, id }){
+  return (
+    <div key={id} className="xp-toast fixed left-1/2 -translate-x-1/2 top-24 z-[200] pointer-events-none">
+      <div className="bg-ink text-white font-mono font-bold text-sm px-3 py-1.5 rounded-full shadow-pop flex items-center gap-1.5">
+        <Icon name="zap" size={14} className="text-orange-300" /> +{amount} XP
+      </div>
+    </div>
+  );
+}
+
+function Confetti({ active }){
+  const pieces = useMemo(() => Array.from({length: 26}).map((_,i) => ({
+    id:i, left: Math.random()*100, delay: Math.random()*0.3, dur: 1.6+Math.random()*1.2,
+    color: ['#EA580C','#0EA5E9','#16A34A','#FB923C','#FDBA74'][i%5],
+    size: 5+Math.random()*5, rot: Math.random()*360
+  })), [active]);
+  if(!active) return null;
+  return <>{pieces.map(p => (
+    <div key={p.id} className="confetti-piece" style={{ left: p.left+'vw', width:p.size, height:p.size*1.6, background:p.color, animationDuration: p.dur+'s', animationDelay: p.delay+'s', transform:`rotate(${p.rot}deg)` }}></div>
+  ))}</>;
+}
+
+function computeRows(step, baseTable){
+  const t = window.SQLQ_TABLES[baseTable];
+  const fn = step.resultRowsFn;
+  if(!fn) return [];
+  if(fn === 'all') return t.rows.map(r => ({row:r, match:true}));
+  if(fn.startsWith('cols:')){
+    const cols = fn.slice(5).split(',');
+    const idxs = cols.map(c => t.columns.indexOf(c));
+    return t.rows.map(r => ({row: idxs.map(i => r[i]), match:true}));
+  }
+  if(fn.startsWith('where:')){
+    const cond = fn.slice(6);
+    if(cond === 'species=Dog'){
+      const sIdx = t.columns.indexOf('species');
+      return t.rows.map(r => ({row:r, match: r[sIdx]==='Dog'}));
+    }
+    if(cond === 'age>3'){
+      const aIdx = t.columns.indexOf('age');
+      return t.rows.map(r => ({row:r, match: r[aIdx] > 3}));
+    }
+    if(cond === 'dogyoung'){
+      const sIdx = t.columns.indexOf('species'); const aIdx = t.columns.indexOf('age');
+      return t.rows.map(r => ({row:r, match: r[sIdx]==='Dog' && r[aIdx] < 2}));
+    }
+  }
+  if(fn.startsWith('orderby:')){
+    const [,col,dir] = fn.split(':');
+    const idx = t.columns.indexOf(col);
+    const sorted = [...t.rows].sort((a,b) => dir==='desc' ? b[idx]-a[idx] : a[idx]-b[idx]);
+    return sorted.map(r => ({row:r, match:true}));
+  }
+  if(fn.startsWith('distinct:')){
+    const col = fn.slice(9);
+    const idx = t.columns.indexOf(col);
+    const seen = new Set(); const out = [];
+    t.rows.forEach(r => { if(!seen.has(r[idx])){ seen.add(r[idx]); out.push({row:[r[idx]], match:true}); } });
+    return out;
+  }
+  if(fn === 'count:all'){
+    return [{row:[t.rows.length], match:true}];
+  }
+  if(fn.startsWith('avg:')){
+    const col = fn.slice(4); const idx = t.columns.indexOf(col);
+    const avg = t.rows.reduce((s,r)=>s+r[idx],0)/t.rows.length;
+    return [{row:[Math.round(avg*100)/100], match:true}];
+  }
+  if(fn.startsWith('groupby:')){
+    const [,col] = fn.split(':');
+    const idx = t.columns.indexOf(col);
+    const groups = {};
+    t.rows.forEach(r => { groups[r[idx]] = (groups[r[idx]]||0)+1; });
+    return Object.keys(groups).map(k => ({row:[k, groups[k]], match:true}));
+  }
+  if(fn === 'join'){
+    const custT = window.SQLQ_TABLES.customers;
+    const ordT = window.SQLQ_TABLES.orders;
+    const nameIdx = custT.columns.indexOf('name');
+    const custIdx = ordT.columns.indexOf('customer');
+    const itemIdx = ordT.columns.indexOf('item');
+    const priceIdx = ordT.columns.indexOf('price');
+    const out = [];
+    ordT.rows.forEach(orow => {
+      const cust = custT.rows.find(crow => crow[nameIdx] === orow[custIdx]);
+      if(cust) out.push({row:[orow[custIdx], orow[itemIdx], orow[priceIdx]], match:true});
+    });
+    return out;
+  }
+  return t.rows.map(r => ({row:r, match:true}));
+}
+
+function MiniTable({ columns, rows, highlightMode, phase, types }){
+  return (
+    <div className="rounded-2xl border border-sand-200 bg-white overflow-hidden shadow-card">
+      <div className="overflow-x-auto no-scrollbar">
+        <table className="w-full text-[13px]">
+          <thead>
+            <tr className="bg-sand-50 border-b border-sand-200">
+              {columns.map((c,i) => (
+                <th key={i} className="text-left px-3 py-2 font-mono font-semibold text-ink whitespace-nowrap">
+                  {c}{types && types[c] ? <span className="block text-[10px] font-normal text-stone-400">{types[c]}</span> : null}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.length === 0 && (
+              <tr><td colSpan={columns.length} className="px-3 py-6 text-center text-stone-400 text-xs">No rows yet</td></tr>
+            )}
+            {rows.map((r, ri) => (
+              <tr key={ri} className={`border-b last:border-0 border-sand-100 ${r.dim ? 'opacity-25' : ''} ${r.animIn ? 'row-in' : ''} ${r.animOut ? 'row-out' : ''}`}>
+                {r.row.map((cell, ci) => (
+                  <td key={ci} className={`px-3 py-2 font-mono whitespace-nowrap text-stone-700 ${r.flashCol === ci ? 'cell-flash font-bold text-orange-600' : ''}`}>{String(cell)}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function CommandAnatomy({ command, parts }){
+  const [active, setActive] = useState(null);
+  return (
+    <div className="space-y-3">
+      <div className="bg-ink rounded-2xl p-4 font-mono text-[13px] leading-relaxed text-orange-100 whitespace-pre-wrap break-words shadow-card">
+        {command}
+      </div>
+      <div className="text-[11px] uppercase tracking-wide text-stone-400 font-semibold px-1">Tap a piece to see what it does</div>
+      <div className="flex flex-wrap gap-2">
+        {parts.map((p,i) => (
+          <button key={i} onClick={() => setActive(active===i?null:i)} className={`btn-press px-3 py-2 rounded-xl font-mono text-[12px] border transition-colors ${active===i ? 'bg-orange-600 text-white border-orange-600' : 'bg-white text-ink border-sand-200'}`}>
+            {p.text}
+          </button>
+        ))}
+      </div>
+      {active !== null && (
+        <div className="pop-in bg-orange-50 border border-orange-200 rounded-xl px-4 py-3 text-sm text-orange-900">
+          <span className="font-mono font-semibold">{parts[active].text}</span> — {parts[active].desc}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function LiveQueryStep({ step, onComplete, completed }){
+  const [phase, setPhase] = useState('idle');
+  const baseTable = window.SQLQ_TABLES[step.table];
+  const [displayRows, setDisplayRows] = useState(() => baseTable.rows.map(r => ({row:r})));
+  const [resultCols, setResultCols] = useState(baseTable.columns);
+  const [showResult, setShowResult] = useState(false);
+  const [insertedTracker, setInsertedTracker] = useState(false);
+
+  useEffect(() => {
+    setPhase('idle'); setShowResult(false);
+    let rows = baseTable.rows;
+    if(step.mutation === 'update' && step.needsInsertFirst){
+      rows = [...baseTable.rows, [7,'Coco','Dog',1,'Sana']];
+    }
+    setDisplayRows(rows.map(r => ({row:r})));
+    setResultCols(baseTable.columns);
+  }, [step]);
+
+  function run(){
+    if(phase === 'running') return;
+    setPhase('running');
+    setTimeout(() => {
+      if(step.mutation === 'insert'){
+        setDisplayRows(prev => [...prev, { row: step.insertRow, animIn:true }]);
+        setResultCols(baseTable.columns);
+        setPhase('done'); setShowResult(true);
+      } else if(step.mutation === 'update'){
+        setDisplayRows(prev => prev.map(r => {
+          if(r.row[baseTable.columns.indexOf(step.updateMatch.col)] === step.updateMatch.val){
+            const nr = [...r.row];
+            nr[baseTable.columns.indexOf(step.updateSet.col)] = step.updateSet.val;
+            return { row: nr, flashCol: baseTable.columns.indexOf(step.updateSet.col) };
+          }
+          return r;
+        }));
+        setResultCols(baseTable.columns);
+        setPhase('done'); setShowResult(true);
+      } else if(step.mutation === 'delete'){
+        setDisplayRows(prev => prev.map(r => r.row[baseTable.columns.indexOf(step.deleteMatch.col)] === step.deleteMatch.val ? {...r, animOut:true} : r));
+        setTimeout(() => {
+          setDisplayRows(prev => prev.filter(r => r.row[baseTable.columns.indexOf(step.deleteMatch.col)] !== step.deleteMatch.val));
+        }, 340);
+        setResultCols(baseTable.columns);
+        setPhase('done'); setShowResult(true);
+      } else {
+        const computed = computeRows(step, step.table);
+        if(step.filterAnim){
+          setDisplayRows(computed.map(c => ({ row:c.row, dim: !c.match })));
+          setResultCols(step.resultCols);
+          setTimeout(() => setShowResult(true), 500);
+        } else if(step.sortAnim){
+          setDisplayRows(computed.map(c => ({row:c.row})));
+          setResultCols(step.resultCols);
+          setTimeout(() => setShowResult(true), 400);
+        } else if(step.groupAnim || step.joinAnim){
+          setResultCols(step.resultCols);
+          setDisplayRows(computed.map(c => ({row:c.row, animIn:true})));
+          setTimeout(() => setShowResult(true), 300);
+        } else {
+          setResultCols(step.resultCols);
+          setDisplayRows(computed.filter(c=>c.match).map(c => ({row:c.row})));
+          setTimeout(() => setShowResult(true), 300);
+        }
+        setPhase('done');
+      }
+      if(!completed) onComplete(step.xp);
+    }, 550);
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-ink rounded-2xl p-4 font-mono text-[13px] leading-relaxed text-orange-100 whitespace-pre-wrap break-words shadow-card relative">
+        {step.query}
+        {phase === 'running' && (
+          <div className="absolute inset-0 bg-ink/70 rounded-2xl flex items-center justify-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-orange-300 typing-dot" style={{animationDelay:'0s'}}></span>
+            <span className="w-1.5 h-1.5 rounded-full bg-orange-300 typing-dot" style={{animationDelay:'.15s'}}></span>
+            <span className="w-1.5 h-1.5 rounded-full bg-orange-300 typing-dot" style={{animationDelay:'.3s'}}></span>
+          </div>
+        )}
+      </div>
+      <button onClick={run} disabled={phase==='running'} className="btn-press w-full bg-orange-600 hover:bg-orange-700 disabled:opacity-60 text-white font-semibold py-3.5 rounded-2xl flex items-center justify-center gap-2 shadow-pop">
+        <Icon name="play" size={17} /> {phase==='done' ? 'Run again' : 'Run query'}
+      </button>
+      <MiniTable columns={showResult ? resultCols : baseTable.columns} rows={displayRows} />
+      {showResult && (
+        <div className="pop-in flex items-center gap-2 text-leaf-600 text-sm font-medium px-1">
+          <Icon name="check-circle-2" size={16} /> Query complete
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TableBuildStep({ step, onComplete, completed }){
+  const [built, setBuilt] = useState([]);
+  const [running, setRunning] = useState(false);
+  function run(){
+    if(running) return;
+    setRunning(true);
+    setBuilt([]);
+    step.columns.forEach((c,i) => {
+      setTimeout(() => setBuilt(prev => [...prev, c]), i*350 + 300);
+    });
+    setTimeout(() => { setRunning(false); if(!completed) onComplete(step.xp); }, step.columns.length*350 + 500);
+  }
+  return (
+    <div className="space-y-4">
+      <div className="bg-ink rounded-2xl p-4 font-mono text-[13px] leading-relaxed text-orange-100 whitespace-pre-wrap break-words shadow-card">{step.query}</div>
+      <button onClick={run} disabled={running} className="btn-press w-full bg-orange-600 hover:bg-orange-700 disabled:opacity-60 text-white font-semibold py-3.5 rounded-2xl flex items-center justify-center gap-2 shadow-pop">
+        <Icon name="play" size={17} /> {built.length>0 ? 'Rebuild' : 'Run query'}
+      </button>
+      <div className="rounded-2xl border border-sand-200 bg-white overflow-hidden shadow-card min-h-[110px]">
+        <div className="overflow-x-auto no-scrollbar">
+          <table className="w-full text-[13px]">
+            <thead>
+              <tr className="bg-sand-50 border-b border-sand-200">
+                {built.map((c,i) => (
+                  <th key={i} className="pop-in text-left px-3 py-2 font-mono font-semibold text-ink whitespace-nowrap">
+                    {c}<span className="block text-[10px] font-normal text-stone-400">{step.types[c]}</span>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody><tr><td colSpan={built.length||1} className="px-3 py-6 text-center text-stone-400 text-xs">{built.length===step.columns.length ? 'Table created — empty, ready for data' : (built.length===0 ? 'Tap run to build it' : '')}</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ConceptLabels({ step, onComplete, completed }){
+  const t = window.SQLQ_TABLES[step.table];
+  const [tapped, setTapped] = useState({ row:false, col:false });
+  useEffect(() => {
+    if(tapped.row && tapped.col && !completed) onComplete(step.xp);
+  }, [tapped]);
+  return (
+    <div className="space-y-4">
+      <div className="rounded-2xl border border-sand-200 bg-white overflow-hidden shadow-card relative">
+        <div className="overflow-x-auto no-scrollbar">
+          <table className="w-full text-[13px]">
+            <thead>
+              <tr className="bg-sand-50 border-b border-sand-200">
+                {t.columns.map((c,i) => (
+                  <th key={i} onClick={() => setTapped(p=>({...p,col:true}))} className={`text-left px-3 py-2 font-mono font-semibold cursor-pointer transition-colors ${tapped.col ? 'text-sky-600 bg-sky-100' : 'text-ink'}`}>{c}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {t.rows.slice(0,4).map((r,ri) => (
+                <tr key={ri} onClick={() => setTapped(p=>({...p,row:true}))} className={`border-b last:border-0 border-sand-100 cursor-pointer transition-colors ${tapped.row && ri===0 ? 'bg-orange-100' : ''}`}>
+                  {r.map((cell,ci) => <td key={ci} className="px-3 py-2 font-mono whitespace-nowrap text-stone-700">{String(cell)}</td>)}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div className={`rounded-xl p-3 border text-sm transition-colors ${tapped.col ? 'border-sky-200 bg-sky-100 text-sky-700' : 'border-sand-200 bg-white text-stone-500'}`}>
+          <div className="font-semibold flex items-center gap-1.5"><Icon name="arrow-down" size={14}/> Column</div>
+          <div className="text-xs mt-0.5">One type of info, e.g. every pet's name</div>
+        </div>
+        <div className={`rounded-xl p-3 border text-sm transition-colors ${tapped.row ? 'border-orange-200 bg-orange-100 text-orange-700' : 'border-sand-200 bg-white text-stone-500'}`}>
+          <div className="font-semibold flex items-center gap-1.5"><Icon name="arrow-right" size={14}/> Row</div>
+          <div className="text-xs mt-0.5">One complete record, e.g. one pet</div>
+        </div>
+      </div>
+      {!(tapped.row && tapped.col) && <div className="text-xs text-stone-400 text-center">Tap a column header, then tap a row</div>}
+    </div>
+  );
+}
+
+function DualTable({ step }){
+  const l = window.SQLQ_TABLES[step.left];
+  const r = window.SQLQ_TABLES[step.right];
+  return (
+    <div className="space-y-3">
+      <div>
+        <div className="text-xs font-semibold text-stone-500 mb-1.5 px-1">customers</div>
+        <MiniTable columns={l.columns} rows={l.rows.map(row=>({row}))} />
+      </div>
+      <div className="flex justify-center"><Icon name="link-2" size={18} className="text-orange-500" /></div>
+      <div>
+        <div className="text-xs font-semibold text-stone-500 mb-1.5 px-1">orders</div>
+        <MiniTable columns={r.columns} rows={r.rows.map(row=>({row}))} />
+      </div>
+    </div>
+  );
+}
+
+function TableReveal({ step }){
+  const t = window.SQLQ_TABLES[step.table];
+  return <MiniTable columns={t.columns} rows={t.rows.map(r=>({row:r}))} />;
+}
+
+function StepCard({ step, onComplete, completed, chapterColor }){
+  const c = COLOR_MAP[chapterColor] || COLOR_MAP.orange;
+  return (
+    <div className="card-enter">
+      <div className="flex items-center gap-2 mb-3">
+        <span className={`inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wide px-2 py-1 rounded-full ${c.chip}`}>
+          <Icon name="zap" size={11} /> {step.xp} XP
+        </span>
+      </div>
+      <h2 className="font-display text-2xl font-semibold text-ink mb-2 leading-tight">{step.title}</h2>
+      {step.body && <RichText text={step.body} className="text-[15px] text-stone-600 leading-relaxed mb-4" />}
+      <div className="mt-4">
+        {step.type === 'text' && (
+          <div className="flex justify-center py-2">
+            <div className={`w-16 h-16 rounded-2xl ${c.bg} flex items-center justify-center`}>
+              <Icon name="book-open" size={28} className={c.text} />
+            </div>
+          </div>
+        )}
+        {step.type === 'table-reveal' && <TableReveal step={step} />}
+        {step.type === 'concept-labels' && <ConceptLabels step={step} onComplete={onComplete} completed={completed} />}
+        {step.type === 'command-anatomy' && <CommandAnatomy command={step.command} parts={step.parts} />}
+        {step.type === 'live-query' && <LiveQueryStep step={step} onComplete={onComplete} completed={completed} />}
+        {step.type === 'table-build' && <TableBuildStep step={step} onComplete={onComplete} completed={completed} />}
+        {step.type === 'dual-table' && <DualTable step={step} />}
+      </div>
+    </div>
+  );
+}
+
+function LessonView({ chapter, progress, onExit, onStepComplete, onChapterComplete }){
+  const stepKey = `${chapter.id}`;
+  const savedIdx = progress.lessonPositions?.[stepKey] || 0;
+  const [idx, setIdx] = useState(Math.min(savedIdx, chapter.steps.length-1));
+  const [anim, setAnim] = useState('');
+  const [toast, setToast] = useState(null);
+  const completedSteps = progress.stepCompletion?.[stepKey] || {};
+  const step = chapter.steps[idx];
+
+  function markComplete(xp){
+    onStepComplete(chapter.id, idx, xp);
+    setToast({ id: Date.now(), amount: xp });
+    setTimeout(() => setToast(null), 1100);
+  }
+
+  function go(delta){
+    const next = idx + delta;
+    if(next < 0) return;
+    if(next >= chapter.steps.length){
+      onChapterComplete(chapter.id);
+      onExit();
+      return;
+    }
+    setAnim(delta > 0 ? 'card-exit-left' : 'card-exit-right');
+    setTimeout(() => {
+      setIdx(next);
+      setAnim('');
+    }, 200);
+  }
+
+  const isLast = idx === chapter.steps.length - 1;
+  const isCompleted = !!completedSteps[idx];
+
+  return (
+    <div className="fixed inset-0 bg-sand-50 z-50 flex flex-col safe-top safe-bottom">
+      {toast && <XpToast amount={toast.amount} id={toast.id} />}
+      <div className="flex items-center gap-3 px-4 pt-4 pb-2">
+        <button onClick={onExit} className="btn-press w-9 h-9 rounded-full bg-white shadow-card flex items-center justify-center text-stone-500 flex-shrink-0">
+          <Icon name="x" size={18} />
+        </button>
+        <div className="flex-1 flex gap-1">
+          {chapter.steps.map((s,i) => (
+            <div key={i} className="flex-1 h-1.5 rounded-full overflow-hidden bg-sand-200">
+              <div className={`h-full rounded-full transition-all duration-300 ${i < idx || (i===idx) ? 'bg-orange-500' : 'bg-sand-200'}`} style={{width: i<idx ? '100%' : (i===idx ? '100%' : '0%')}}></div>
+            </div>
+          ))}
+        </div>
+        <span className="text-xs font-mono text-stone-400 flex-shrink-0">{idx+1}/{chapter.steps.length}</span>
+      </div>
+      <div className="flex-1 overflow-y-auto px-4 pt-2 pb-4 no-scrollbar">
+        <div className={anim}>
+          <StepCard key={idx} step={step} onComplete={markComplete} completed={isCompleted} chapterColor={chapter.color} />
+        </div>
+      </div>
+      <div className="px-4 pb-4 pt-2 flex gap-3">
+        {idx > 0 && (
+          <button onClick={() => go(-1)} className="btn-press w-14 h-14 rounded-2xl bg-white shadow-card flex items-center justify-center text-stone-500 flex-shrink-0">
+            <Icon name="arrow-left" size={20} />
+          </button>
+        )}
+        <button onClick={() => go(1)} className="btn-press flex-1 bg-ink text-white font-semibold py-4 rounded-2xl flex items-center justify-center gap-2 shadow-card">
+          {isLast ? <>Finish chapter <Icon name="party-popper" size={18} /></> : <>Continue <Icon name="arrow-right" size={18} /></>}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function levelFromXp(xp){
+  return Math.floor(xp / 60) + 1;
+}
+function xpForLevel(level){
+  return (level-1) * 60;
+}
+
+function PathNode({ chapter, idx, state, xp, onOpen }){
+  const c = COLOR_MAP[chapter.color] || COLOR_MAP.orange;
+  const locked = state === 'locked';
+  const done = state === 'done';
+  const current = state === 'current';
+  const [shake, setShake] = useState(false);
+  const offsetX = idx % 2 === 0 ? 'ml-0' : 'ml-16';
+  function handleClick(){
+    if(locked){ setShake(true); setTimeout(()=>setShake(false), 400); return; }
+    onOpen(chapter);
+  }
+  return (
+    <div className={`flex flex-col items-center ${offsetX === 'ml-16' ? 'items-end pr-4' : 'items-start pl-4'} w-full`}>
+      <button onClick={handleClick} className={`path-node btn-press relative flex items-center gap-3 ${offsetX==='ml-16' ? 'flex-row-reverse text-right' : ''} ${shake ? 'lock-shake' : ''}`}>
+        <div className={`relative w-16 h-16 rounded-full flex items-center justify-center shadow-card border-4 ${locked ? 'bg-sand-100 border-sand-200' : done ? `${c.solid} border-white` : `bg-white ${c.border} ${current ? 'glow-ring' : ''}`}`}>
+          {locked ? <Icon name="lock" size={22} className="text-stone-400" /> : done ? <Icon name="check" size={24} className="text-white" /> : <Icon name={chapter.icon} size={24} className={c.text} />}
+          {current && !done && <span className="absolute -inset-1 rounded-full border-2 border-orange-400 scale-in-out"></span>}
+        </div>
+        <div className={`max-w-[150px] ${locked ? 'opacity-40' : ''}`}>
+          <div className="font-display font-semibold text-[15px] text-ink leading-tight">{chapter.title}</div>
+          <div className="text-[11px] text-stone-500 mt-0.5">{chapter.subtitle}</div>
+        </div>
+      </button>
+    </div>
+  );
+}
+
+function HomeScreen({ progress, onOpenChapter, onOpenPlayground, onReset }){
+  const chapters = window.SQLQ_CHAPTERS;
+  const totalXp = progress.totalXp || 0;
+  const level = levelFromXp(totalXp);
+  const xpIntoLevel = totalXp - xpForLevel(level);
+  const xpPct = Math.min(100, (xpIntoLevel/60)*100);
+  const [showReset, setShowReset] = useState(false);
+
+  function chapterState(chapter, idx){
+    const completedChapters = progress.completedChapters || {};
+    if(completedChapters[chapter.id]) return 'done';
+    if(idx === 0) return 'current';
+    const prevChapter = chapters[idx-1];
+    if(completedChapters[prevChapter.id]) return 'current';
+    return 'locked';
+  }
+
+  const doneCount = chapters.filter(c => (progress.completedChapters||{})[c.id]).length;
+
+  return (
+    <div className="min-h-screen pb-10 safe-top">
+      <div className="px-5 pt-6 pb-5 bg-white border-b border-sand-200 sticky top-0 z-30">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <div className="w-9 h-9 rounded-xl bg-orange-600 flex items-center justify-center shadow-pop">
+              <Icon name="database" size={18} className="text-white" />
+            </div>
+            <span className="font-display font-bold text-xl text-ink">SQL Quest</span>
+          </div>
+          <button onClick={() => setShowReset(true)} className="btn-press w-9 h-9 rounded-full bg-sand-100 flex items-center justify-center text-stone-400">
+            <Icon name="rotate-ccw" size={16} />
+          </button>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 rounded-full bg-orange-100 flex items-center justify-center font-display font-bold text-orange-600 flex-shrink-0">{level}</div>
+          <div className="flex-1">
+            <div className="flex justify-between text-[11px] font-semibold text-stone-500 mb-1">
+              <span>Level {level}</span>
+              <span className="font-mono">{xpIntoLevel}/60 XP</span>
+            </div>
+            <div className="h-2.5 rounded-full bg-sand-100 overflow-hidden">
+              <div className="h-full bg-gradient-to-r from-orange-400 to-orange-600 rounded-full xp-fill" style={{width: xpPct+'%'}}></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="px-5 pt-6">
+        <div className="flex items-center justify-between mb-1">
+          <h1 className="font-display text-2xl font-semibold text-ink">Your path</h1>
+          <span className="text-xs font-mono text-stone-400">{doneCount}/{chapters.length} chapters</span>
+        </div>
+        <p className="text-sm text-stone-500 mb-6">Learn SQL in about an hour, one bite-sized chapter at a time.</p>
+      </div>
+
+      <div className="relative px-1">
+        <div className="flex flex-col gap-7">
+          {chapters.map((chapter, idx) => (
+            <PathNode key={chapter.id} chapter={chapter} idx={idx} state={chapterState(chapter, idx)} xp={progress.totalXp} onOpen={onOpenChapter} />
+          ))}
+          <div className={`flex flex-col items-start pl-4 w-full ${chapters.length % 2 === 0 ? '' : 'items-end pr-4'}`}>
+            <div className="flex items-center gap-3 opacity-50">
+              <div className="w-16 h-16 rounded-full bg-sand-100 border-4 border-sand-200 flex items-center justify-center">
+                <Icon name="shield" size={22} className="text-stone-400" />
+              </div>
+              <div>
+                <div className="font-display font-semibold text-[15px] text-ink">Access Control</div>
+                <div className="text-[11px] text-stone-500">Coming soon</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="px-5 mt-10">
+        <button onClick={onOpenPlayground} className="btn-press w-full bg-ink text-white rounded-2xl p-5 flex items-center gap-4 shadow-card">
+          <div className="w-12 h-12 rounded-xl bg-orange-600 flex items-center justify-center flex-shrink-0">
+            <Icon name="terminal" size={22} className="text-white" />
+          </div>
+          <div className="text-left flex-1">
+            <div className="font-display font-semibold text-lg">Playground</div>
+            <div className="text-xs text-stone-300 mt-0.5">Run real SQL against a live database</div>
+          </div>
+          <Icon name="arrow-right" size={20} className="text-stone-400" />
+        </button>
+      </div>
+
+      {showReset && (
+        <div className="fixed inset-0 bg-ink/40 z-[100] flex items-end sm:items-center justify-center p-4" onClick={()=>setShowReset(false)}>
+          <div className="bg-white rounded-2xl p-5 w-full max-w-sm card-enter" onClick={e=>e.stopPropagation()}>
+            <h3 className="font-display text-lg font-semibold mb-1.5">Reset progress?</h3>
+            <p className="text-sm text-stone-500 mb-4">This clears your XP and chapter progress. Can't be undone.</p>
+            <div className="flex gap-3">
+              <button onClick={()=>setShowReset(false)} className="btn-press flex-1 py-3 rounded-xl bg-sand-100 text-stone-600 font-semibold text-sm">Cancel</button>
+              <button onClick={()=>{onReset(); setShowReset(false);}} className="btn-press flex-1 py-3 rounded-xl bg-red-600 text-white font-semibold text-sm">Reset</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+</script>
+<script type="text/babel" id="app-script-2">
+
+const SEED_SQL = `
+CREATE TABLE pets (id INTEGER PRIMARY KEY, name TEXT, species TEXT, age INTEGER, owner TEXT);
+INSERT INTO pets (name, species, age, owner) VALUES ('Biscuit','Dog',3,'Amara'),('Whiskers','Cat',5,'Leo'),('Tank','Turtle',12,'Amara'),('Pepper','Dog',1,'Sana'),('Milo','Cat',2,'Leo'),('Nibbles','Rabbit',4,'Priya');
+CREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT, city TEXT);
+INSERT INTO customers (name, city) VALUES ('Amara','Austin'),('Leo','Denver'),('Sana','Austin'),('Priya','Boston');
+CREATE TABLE orders (id INTEGER PRIMARY KEY, customer TEXT, item TEXT, qty INTEGER, price REAL);
+INSERT INTO orders (customer, item, qty, price) VALUES ('Amara','Dog Leash',2,12.50),('Leo','Cat Toy',1,6.00),('Sana','Dog Bed',1,45.00),('Priya','Rabbit Hutch',1,89.99),('Amara','Cat Toy',3,6.00);
+`;
+
+const QUICK_SNIPPETS = [
+  { label:'SELECT all', sql:'SELECT * FROM pets;' },
+  { label:'WHERE', sql:"SELECT * FROM pets WHERE species = 'Dog';" },
+  { label:'ORDER BY', sql:'SELECT * FROM pets ORDER BY age DESC;' },
+  { label:'GROUP BY', sql:'SELECT species, COUNT(*) FROM pets GROUP BY species;' },
+  { label:'JOIN', sql:'SELECT customers.name, orders.item FROM customers JOIN orders ON customers.name = orders.customer;' },
+  { label:'INSERT', sql:"INSERT INTO pets (name, species, age, owner) VALUES ('Rex','Dog',4,'You');" },
+  { label:'UPDATE', sql:"UPDATE pets SET age = age + 1 WHERE name = 'Rex';" },
+  { label:'DELETE', sql:"DELETE FROM pets WHERE name = 'Rex';" }
+];
+
+function usePlaygroundDb(){
+  const [db, setDb] = useState(null);
+  const [status, setStatus] = useState('loading');
+  const [error, setError] = useState(null);
+
+  const init = useCallback(async () => {
+    setStatus('loading'); setError(null);
+    try {
+      const SQL = await window.initSqlJs({ locateFile: f => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/${f}` });
+      const database = new SQL.Database();
+      database.run(SEED_SQL);
+      setDb(database);
+      setStatus('ready');
+    } catch(e){
+      setError(e.message || String(e));
+      setStatus('error');
+    }
+  }, []);
+
+  useEffect(() => { init(); }, [init]);
+
+  return { db, status, error, reload: init };
+}
+
+function ResultTable({ result }){
+  if(!result) return null;
+  if(result.error){
+    return (
+      <div className="bg-red-50 border border-red-200 text-red-700 rounded-2xl p-4 text-sm">
+        <div className="font-semibold mb-1 flex items-center gap-1.5"><Icon name="alert-triangle" size={15} /> Query error</div>
+        <div className="font-mono text-xs whitespace-pre-wrap break-words">{result.error}</div>
+      </div>
+    );
+  }
+  if(result.info){
+    return (
+      <div className="bg-leaf-100 border border-leaf-100 text-leaf-600 rounded-2xl p-4 text-sm flex items-center gap-2">
+        <Icon name="check-circle-2" size={16} /> {result.info}
+      </div>
+    );
+  }
+  if(!result.columns || result.columns.length === 0){
+    return <div className="text-center text-stone-400 text-sm py-6">No results</div>;
+  }
+  return (
+    <div className="rounded-2xl border border-sand-200 bg-white overflow-hidden shadow-card">
+      <div className="overflow-x-auto no-scrollbar">
+        <table className="w-full text-[13px]">
+          <thead>
+            <tr className="bg-sand-50 border-b border-sand-200">
+              {result.columns.map((c,i) => <th key={i} className="text-left px-3 py-2 font-mono font-semibold text-ink whitespace-nowrap">{c}</th>)}
+            </tr>
+          </thead>
+          <tbody>
+            {result.values.length === 0 && <tr><td colSpan={result.columns.length} className="px-3 py-6 text-center text-stone-400 text-xs">No rows</td></tr>}
+            {result.values.map((row, ri) => (
+              <tr key={ri} className="row-in border-b last:border-0 border-sand-100">
+                {row.map((cell, ci) => <td key={ci} className="px-3 py-2 font-mono whitespace-nowrap text-stone-700">{cell === null ? <span className="text-stone-300 italic">null</span> : String(cell)}</td>)}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="px-3 py-2 bg-sand-50 border-t border-sand-200 text-[11px] text-stone-400 font-mono">{result.values.length} row{result.values.length!==1?'s':''}</div>
+    </div>
+  );
+}
+
+function SchemaPanel({ db, refreshKey }){
+  const [tables, setTables] = useState([]);
+  useEffect(() => {
+    if(!db) return;
+    try {
+      const res = db.exec("SELECT name FROM sqlite_master WHERE type='table';");
+      const names = res[0] ? res[0].values.map(v => v[0]) : [];
+      const info = names.map(n => {
+        const cols = db.exec(`PRAGMA table_info(${n});`);
+        const colNames = cols[0] ? cols[0].values.map(v => ({name:v[1], type:v[2]})) : [];
+        const count = db.exec(`SELECT COUNT(*) FROM ${n};`);
+        return { name:n, columns: colNames, rowCount: count[0] ? count[0].values[0][0] : 0 };
+      });
+      setTables(info);
+    } catch(e){}
+  }, [db, refreshKey]);
+  return (
+    <div className="space-y-2">
+      {tables.map(t => (
+        <div key={t.name} className="bg-white rounded-xl border border-sand-200 p-3">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="font-mono font-semibold text-sm text-ink flex items-center gap-1.5"><Icon name="table-2" size={14} className="text-orange-500" />{t.name}</span>
+            <span className="text-[11px] font-mono text-stone-400">{t.rowCount} rows</span>
+          </div>
+          <div className="flex flex-wrap gap-1">
+            {t.columns.map(c => <span key={c.name} className="text-[10px] font-mono bg-sand-100 text-stone-500 px-1.5 py-0.5 rounded">{c.name}:{c.type}</span>)}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PlaygroundView({ onExit }){
+  const { db, status, error, reload } = usePlaygroundDb();
+  const [sql, setSql] = useState("SELECT * FROM pets;");
+  const [result, setResult] = useState(null);
+  const [running, setRunning] = useState(false);
+  const [tab, setTab] = useState('query');
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [history, setHistory] = useState([]);
+
+  function runQuery(){
+    if(!db || running) return;
+    setRunning(true);
+    setTimeout(() => {
+      try {
+        const trimmed = sql.trim();
+        if(!trimmed){ setRunning(false); return; }
+        const isSelect = /^\s*(select|pragma|explain)/i.test(trimmed);
+        if(isSelect){
+          const res = db.exec(trimmed);
+          setResult(res[0] ? { columns: res[0].columns, values: res[0].values } : { columns: [], values: [] });
+        } else {
+          db.run(trimmed);
+          const verb = trimmed.match(/^\s*(\w+)/)[1].toUpperCase();
+          setResult({ info: `${verb} executed successfully` });
+          setRefreshKey(k => k+1);
+        }
+        setHistory(h => [trimmed, ...h.filter(x=>x!==trimmed)].slice(0,8));
+      } catch(e){
+        setResult({ error: e.message || String(e) });
+      }
+      setRunning(false);
+    }, 300);
+  }
+
+  function resetDb(){
+    setResult(null);
+    reload();
+    setRefreshKey(k=>k+1);
+  }
+
+  return (
+    <div className="fixed inset-0 bg-sand-50 z-50 flex flex-col safe-top safe-bottom">
+      <div className="flex items-center gap-3 px-4 pt-4 pb-3 bg-white border-b border-sand-200">
+        <button onClick={onExit} className="btn-press w-9 h-9 rounded-full bg-sand-100 flex items-center justify-center text-stone-500 flex-shrink-0">
+          <Icon name="x" size={18} />
+        </button>
+        <div className="flex-1">
+          <div className="font-display font-semibold text-lg text-ink leading-tight">Playground</div>
+          <div className="text-[11px] text-stone-400">Real SQLite, running in your browser</div>
+        </div>
+        <button onClick={resetDb} className="btn-press w-9 h-9 rounded-full bg-sand-100 flex items-center justify-center text-stone-500 flex-shrink-0" title="Reset database">
+          <Icon name="rotate-ccw" size={16} />
+        </button>
+      </div>
+
+      <div className="flex px-4 pt-3 gap-2">
+        <button onClick={()=>setTab('query')} className={`btn-press flex-1 py-2.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-1.5 ${tab==='query' ? 'bg-ink text-white' : 'bg-white text-stone-500 border border-sand-200'}`}>
+          <Icon name="terminal" size={15} /> Query
+        </button>
+        <button onClick={()=>setTab('schema')} className={`btn-press flex-1 py-2.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-1.5 ${tab==='schema' ? 'bg-ink text-white' : 'bg-white text-stone-500 border border-sand-200'}`}>
+          <Icon name="database" size={15} /> Tables
+        </button>
+      </div>
+
+      {status === 'loading' && (
+        <div className="flex-1 flex flex-col items-center justify-center gap-3 text-stone-400">
+          <Icon name="loader-2" size={28} className="animate-spin" />
+          <span className="text-sm">Loading SQL engine…</span>
+        </div>
+      )}
+      {status === 'error' && (
+        <div className="flex-1 flex flex-col items-center justify-center gap-3 text-stone-500 px-8 text-center">
+          <Icon name="wifi-off" size={28} className="text-red-400" />
+          <span className="text-sm">Couldn't load the SQL engine. Check your connection.</span>
+          <details className="text-xs text-stone-400"><summary>Details</summary>{error}</details>
+          <button onClick={reload} className="btn-press mt-2 px-4 py-2 rounded-xl bg-ink text-white text-sm font-semibold">Try again</button>
+        </div>
+      )}
+
+      {status === 'ready' && tab === 'query' && (
+        <div className="flex-1 overflow-y-auto px-4 pt-4 pb-4 no-scrollbar space-y-4">
+          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+            {QUICK_SNIPPETS.map(s => (
+              <button key={s.label} onClick={()=>setSql(s.sql)} className="btn-press flex-shrink-0 px-3 py-1.5 rounded-full bg-white border border-sand-200 text-xs font-mono text-stone-600 whitespace-nowrap">{s.label}</button>
+            ))}
+          </div>
+          <textarea
+            value={sql}
+            onChange={e => setSql(e.target.value)}
+            rows={4}
+            spellCheck={false}
+            className="w-full bg-ink text-orange-100 font-mono text-[13px] leading-relaxed rounded-2xl p-4 shadow-card resize-none outline-none focus:ring-2 focus:ring-orange-400"
+            placeholder="Write SQL here…"
+          />
+          <button onClick={runQuery} disabled={running} className="btn-press w-full bg-orange-600 hover:bg-orange-700 disabled:opacity-60 text-white font-semibold py-3.5 rounded-2xl flex items-center justify-center gap-2 shadow-pop">
+            {running ? <Icon name="loader-2" size={17} className="animate-spin" /> : <Icon name="play" size={17} />} Run
+          </button>
+          <ResultTable result={result} />
+          {history.length > 0 && (
+            <div>
+              <div className="text-[11px] uppercase tracking-wide text-stone-400 font-semibold px-1 mb-1.5">Recent</div>
+              <div className="space-y-1.5">
+                {history.map((h,i) => (
+                  <button key={i} onClick={()=>setSql(h)} className="btn-press w-full text-left bg-white border border-sand-200 rounded-lg px-3 py-2 font-mono text-[11px] text-stone-500 truncate block">{h}</button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {status === 'ready' && tab === 'schema' && (
+        <div className="flex-1 overflow-y-auto px-4 pt-4 pb-4 no-scrollbar">
+          <SchemaPanel db={db} refreshKey={refreshKey} />
+          <div className="mt-4 bg-sky-100 border border-sky-200 rounded-xl p-3 text-xs text-sky-700 flex gap-2">
+            <Icon name="info" size={14} className="flex-shrink-0 mt-0.5" />
+            <span>This is a real, live database seeded with sample data. Changes you make with INSERT, UPDATE, or DELETE stick until you reset it.</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function App(){
+  const [progress, setProgress] = useLocalState('sqlquest_progress', { totalXp:0, completedChapters:{}, stepCompletion:{}, lessonPositions:{} });
+  const [view, setView] = useState('home');
+  const [activeChapter, setActiveChapter] = useState(null);
+  const [confetti, setConfetti] = useState(false);
+
+  function handleStepComplete(chapterId, stepIdx, xp){
+    setProgress(prev => {
+      const stepDone = prev.stepCompletion?.[chapterId]?.[stepIdx];
+      if(stepDone) return { ...prev, lessonPositions: { ...prev.lessonPositions, [chapterId]: stepIdx } };
+      return {
+        ...prev,
+        totalXp: (prev.totalXp||0) + xp,
+        stepCompletion: { ...prev.stepCompletion, [chapterId]: { ...(prev.stepCompletion?.[chapterId]||{}), [stepIdx]: true } },
+        lessonPositions: { ...prev.lessonPositions, [chapterId]: stepIdx }
+      };
+    });
+  }
+
+  function handleChapterComplete(chapterId){
+    setProgress(prev => {
+      if(prev.completedChapters?.[chapterId]) return { ...prev, lessonPositions: { ...prev.lessonPositions, [chapterId]: 0 } };
+      return { ...prev, completedChapters: { ...prev.completedChapters, [chapterId]: true }, lessonPositions: { ...prev.lessonPositions, [chapterId]: 0 } };
+    });
+    setConfetti(true);
+    setTimeout(() => setConfetti(false), 2200);
+  }
+
+  function openChapter(chapter){
+    setActiveChapter(chapter);
+    setView('lesson');
+  }
+
+  function resetProgress(){
+    setProgress({ totalXp:0, completedChapters:{}, stepCompletion:{}, lessonPositions:{} });
+  }
+
+  return (
+    <>
+      <Confetti active={confetti} />
+      {view === 'home' && (
+        <HomeScreen progress={progress} onOpenChapter={openChapter} onOpenPlayground={()=>setView('playground')} onReset={resetProgress} />
+      )}
+      {view === 'lesson' && activeChapter && (
+        <LessonView chapter={activeChapter} progress={progress} onExit={()=>setView('home')} onStepComplete={handleStepComplete} onChapterComplete={handleChapterComplete} />
+      )}
+      {view === 'playground' && (
+        <PlaygroundView onExit={()=>setView('home')} />
+      )}
+    </>
+  );
+}
+
+try {
+  const root = ReactDOM.createRoot(document.getElementById('root'));
+  root.render(<App />);
+  window.lucide && window.lucide.createIcons();
+} catch(e){
+  showErrorBanner('The app failed to start: ' + e.message, e.stack);
+}
+</script>
+
+</body>
+</html>
