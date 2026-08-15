@@ -1,0 +1,1317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>Collagen</title>
+<meta name="description" content="Build, arrange, and export custom photo collages with auto layouts, freeform drag, and per-photo crop control.">
+<meta name="keywords" content="collage maker, photo editor">
+<meta name="app-icon" content="layout-grid">
+<script>
+window.addEventListener('error', function(e) {
+  showFatalError(e.message, e.error && e.error.stack);
+});
+window.addEventListener('unhandledrejection', function(e) {
+  showFatalError(e.reason && e.reason.message ? e.reason.message : String(e.reason), e.reason && e.reason.stack);
+});
+function showFatalError(msg, stack) {
+  try {
+    var el = document.getElementById('__fatal_err');
+    if (el) { el.style.display = 'block'; document.getElementById('__fatal_err_msg').textContent = msg || 'Unknown error'; if(stack) document.getElementById('__fatal_err_stack').textContent = stack; return; }
+    var banner = document.createElement('div');
+    banner.id = '__fatal_err';
+    banner.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#2A2723;color:#F7F5F1;font-family:sans-serif;font-size:13px;padding:10px 14px;z-index:999999;box-shadow:0 -2px 12px rgba(0,0,0,.3)';
+    banner.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><span id="__fatal_err_msg" style="flex:1">' + (msg||'Unknown error') + '</span><button id="__fatal_err_toggle" style="background:#EA6C3C;border:none;color:#fff;padding:4px 10px;border-radius:6px;font-size:12px">Details</button><button id="__fatal_err_close" style="background:transparent;border:1px solid #555;color:#fff;padding:4px 10px;border-radius:6px;font-size:12px">×</button></div><pre id="__fatal_err_stack" style="display:none;white-space:pre-wrap;margin-top:8px;font-size:11px;color:#ccc;max-height:150px;overflow:auto">' + (stack||'') + '</pre>';
+    document.body.appendChild(banner);
+    document.getElementById('__fatal_err_toggle').onclick = function() {
+      var s = document.getElementById('__fatal_err_stack');
+      s.style.display = s.style.display === 'none' ? 'block' : 'none';
+    };
+    document.getElementById('__fatal_err_close').onclick = function() { banner.style.display = 'none'; };
+  } catch(_) {}
+}
+</script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/interact.js/1.10.27/interact.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #F7F5F1;
+    --ink: #1C1A17;
+    --accent: #EA6C3C;
+    --accent-dark: #C7512A;
+    --tray: #E8E3D9;
+    --stone: #8A8578;
+    --chrome: #2A2723;
+  }
+  * { -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body { font-family: 'Inter', sans-serif; background: var(--paper); color: var(--ink); overscroll-behavior: none; height: 100vh; height: 100dvh; }
+  .font-display { font-family: 'Fraunces', serif; }
+  ::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+  .sprocket-row {
+    background-image: radial-gradient(circle, var(--stone) 1.5px, transparent 1.5px);
+    background-size: 14px 14px;
+    background-position: center;
+    opacity: 0.25;
+  }
+
+  #canvas-wrap { touch-action: none; }
+  .shape-piece {
+    position: absolute;
+    overflow: hidden;
+    touch-action: none;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.08), 0 6px 16px -4px rgba(0,0,0,0.18);
+  }
+  .shape-piece.selected {
+    outline: 2.5px solid var(--accent);
+    outline-offset: 2px;
+    z-index: 50 !important;
+  }
+  .shape-piece img {
+    position: absolute;
+    max-width: none;
+    max-height: none;
+    user-select: none;
+    -webkit-user-drag: none;
+    pointer-events: none;
+  }
+  .shape-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--tray);
+    border: 2px dashed #C9C2B2;
+    color: var(--stone);
+  }
+
+  .sheet {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    background: white;
+    border-radius: 22px 22px 0 0;
+    box-shadow: 0 -8px 30px rgba(0,0,0,0.18);
+    transform: translateY(100%);
+    transition: transform 0.32s cubic-bezier(.32,.72,0,1);
+    z-index: 200;
+    max-height: 82vh;
+    display: flex;
+    flex-direction: column;
+  }
+  .sheet.open { transform: translateY(0); }
+  .sheet-handle { width: 36px; height: 4px; border-radius: 4px; background: #DDD7CA; margin: 10px auto 4px; }
+
+  .backdrop {
+    position: fixed; inset: 0; background: rgba(20,18,16,0.42);
+    opacity: 0; pointer-events: none; transition: opacity 0.28s ease; z-index: 150;
+  }
+  .backdrop.open { opacity: 1; pointer-events: auto; }
+
+  .tool-pill {
+    display: flex; align-items: center; gap: 6px;
+    padding: 9px 14px; border-radius: 999px;
+    font-size: 13px; font-weight: 600;
+    transition: all 0.15s ease;
+  }
+  .tool-pill.active { background: var(--ink); color: white; }
+  .tool-pill:not(.active) { background: white; color: var(--ink); }
+
+  .swatch { width: 30px; height: 30px; border-radius: 9px; border: 2px solid rgba(0,0,0,0.08); flex-shrink: 0; }
+  .swatch.active { outline: 2.5px solid var(--accent); outline-offset: 2px; }
+
+  .thumb-btn { transition: transform 0.12s ease; }
+  .thumb-btn:active { transform: scale(0.93); }
+
+  .fit-btn { transition: all 0.15s ease; }
+  .fit-btn.active { background: var(--ink); color: white; }
+
+  @keyframes toast-in { from { opacity:0; transform: translate(-50%, 8px); } to { opacity:1; transform: translate(-50%,0); } }
+  #toast { animation: toast-in 0.22s ease; }
+
+  .layout-thumb { transition: transform .12s ease, border-color .12s ease; }
+  .layout-thumb:active { transform: scale(0.94); }
+  .layout-thumb.active { border-color: var(--accent) !important; background: #FFF3EC; }
+
+  .spinner { border: 2.5px solid rgba(255,255,255,0.25); border-top-color: white; border-radius: 50%; width: 18px; height: 18px; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  input[type=range] { -webkit-appearance: none; height: 4px; border-radius: 4px; background: #E5E0D5; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; background: var(--accent); border: 3px solid white; box-shadow: 0 1px 4px rgba(0,0,0,0.3); }
+
+  .checker-bg {
+    background-image: linear-gradient(45deg, #ddd 25%, transparent 25%), linear-gradient(-45deg, #ddd 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ddd 75%), linear-gradient(-45deg, transparent 75%, #ddd 75%);
+    background-size: 16px 16px;
+    background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+  }
+</style>
+</head>
+<body class="w-screen flex flex-col">
+
+<div id="__fatal_err" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#2A2723;color:#F7F5F1;font-family:sans-serif;font-size:13px;padding:10px 14px;z-index:999999;box-shadow:0 -2px 12px rgba(0,0,0,.3)">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+    <span id="__fatal_err_msg" style="flex:1">Something went wrong</span>
+    <button onclick="document.getElementById('__fatal_err_stack').style.display = document.getElementById('__fatal_err_stack').style.display==='none'?'block':'none'" style="background:#EA6C3C;border:none;color:#fff;padding:4px 10px;border-radius:6px;font-size:12px">Details</button>
+    <button onclick="document.getElementById('__fatal_err').style.display='none'" style="background:transparent;border:1px solid #555;color:#fff;padding:4px 10px;border-radius:6px;font-size:12px">×</button>
+  </div>
+  <pre id="__fatal_err_stack" style="display:none;white-space:pre-wrap;margin-top:8px;font-size:11px;color:#ccc;max-height:150px;overflow:auto"></pre>
+</div>
+
+<header class="flex items-center justify-between px-4 py-3 bg-white border-b border-black/5 z-30 shrink-0">
+  <div class="flex items-center gap-2">
+    <div class="w-8 h-8 rounded-lg bg-[var(--ink)] flex items-center justify-center">
+      <i data-lucide="layout-grid" class="w-4.5 h-4.5 text-[var(--accent)]" style="width:18px;height:18px"></i>
+    </div>
+    <span class="font-display font-semibold text-lg tracking-tight">Collagen</span>
+  </div>
+  <div class="flex items-center gap-1.5">
+    <button id="undoBtn" class="w-9 h-9 rounded-full flex items-center justify-center text-[var(--ink)] disabled:opacity-30" disabled>
+      <i data-lucide="undo-2" style="width:19px;height:19px"></i>
+    </button>
+    <button id="redoBtn" class="w-9 h-9 rounded-full flex items-center justify-center text-[var(--ink)] disabled:opacity-30" disabled>
+      <i data-lucide="redo-2" style="width:19px;height:19px"></i>
+    </button>
+    <button id="resetBtn" class="w-9 h-9 rounded-full flex items-center justify-center text-[var(--ink)]">
+      <i data-lucide="rotate-ccw" style="width:18px;height:18px"></i>
+    </button>
+  </div>
+</header>
+
+<div class="flex-1 flex flex-col min-h-0 relative">
+
+  <div class="flex items-center gap-2 px-4 py-2.5 overflow-x-auto no-scrollbar bg-[var(--paper)] border-b border-black/5 shrink-0">
+    <button id="modeAutoBtn" class="tool-pill active shrink-0"><i data-lucide="grid-3x3" style="width:15px;height:15px"></i>Auto</button>
+    <button id="modeFreeBtn" class="tool-pill shrink-0"><i data-lucide="move" style="width:15px;height:15px"></i>Freeform</button>
+    <div class="w-px h-6 bg-black/10 shrink-0 mx-0.5"></div>
+    <button id="openLayoutsBtn" class="tool-pill shrink-0"><i data-lucide="layout-panel-top" style="width:15px;height:15px"></i>Layout</button>
+    <button id="openSizeBtn" class="tool-pill shrink-0"><i data-lucide="ratio" style="width:15px;height:15px"></i>Size</button>
+    <button id="openCanvasBgBtn" class="tool-pill shrink-0"><i data-lucide="palette" style="width:15px;height:15px"></i>Background</button>
+    <button id="openSpacingBtn" class="tool-pill shrink-0"><i data-lucide="expand" style="width:15px;height:15px"></i>Spacing</button>
+  </div>
+
+  <div id="canvasScroll" class="flex-1 overflow-auto flex items-center justify-center p-5 min-h-0">
+    <div id="canvas-outer" class="relative shrink-0">
+      <div id="canvas-wrap" class="relative shadow-2xl" style="width:340px;height:340px;background:#ffffff;border-radius:14px;overflow:hidden;">
+        <div id="empty-state" class="absolute inset-0 flex flex-col items-center justify-center text-center px-8 gap-3">
+          <div class="w-16 h-16 rounded-2xl bg-[var(--tray)] flex items-center justify-center">
+            <i data-lucide="images" style="width:28px;height:28px;color:var(--stone)"></i>
+          </div>
+          <p class="font-display font-semibold text-base">Start your collage</p>
+          <p class="text-xs text-[var(--stone)] leading-relaxed">Add photos below — the layout builds itself, and you can drag anything once it's in.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="px-4 pb-1 pt-1 shrink-0">
+    <div class="flex gap-2.5 overflow-x-auto no-scrollbar pb-1" id="filmstrip"></div>
+  </div>
+
+  <div class="flex items-center gap-2.5 px-4 pt-1 pb-4 shrink-0 bg-[var(--paper)]">
+    <button id="addPhotosBtn" class="flex-1 flex items-center justify-center gap-2 bg-[var(--ink)] text-white font-semibold text-sm py-3.5 rounded-2xl active:scale-[0.98] transition-transform">
+      <i data-lucide="image-plus" style="width:17px;height:17px"></i> Add photos
+    </button>
+    <button id="exportBtn" class="flex items-center justify-center gap-2 bg-[var(--accent)] text-white font-semibold text-sm py-3.5 px-5 rounded-2xl active:scale-[0.98] transition-transform">
+      <i data-lucide="download" style="width:17px;height:17px"></i>
+    </button>
+  </div>
+</div>
+
+<input type="file" id="fileInput" accept="image/*" multiple class="hidden">
+
+<div id="backdrop" class="backdrop"></div>
+
+<div id="sheetShape" class="sheet">
+  <div class="sheet-handle"></div>
+  <div class="flex items-center justify-between px-5 pb-2 pt-1 shrink-0">
+    <span class="font-display font-semibold text-base">Edit photo</span>
+    <button data-close-sheet class="w-8 h-8 rounded-full bg-[var(--tray)] flex items-center justify-center"><i data-lucide="x" style="width:16px;height:16px"></i></button>
+  </div>
+  <div class="overflow-y-auto px-5 pb-6 flex flex-col gap-5">
+    <div>
+      <p class="text-xs font-semibold text-[var(--stone)] uppercase tracking-wide mb-2">Shape</p>
+      <div class="grid grid-cols-6 gap-2" id="shapePicker"></div>
+    </div>
+    <div>
+      <p class="text-xs font-semibold text-[var(--stone)] uppercase tracking-wide mb-2">Fit</p>
+      <div class="flex gap-2">
+        <button id="fitFillBtn" class="fit-btn flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-black/10 text-sm font-medium"><i data-lucide="scan" style="width:15px;height:15px"></i>Fill</button>
+        <button id="fitContainBtn" class="fit-btn flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-black/10 text-sm font-medium"><i data-lucide="minimize-2" style="width:15px;height:15px"></i>Fit</button>
+      </div>
+    </div>
+    <div>
+      <div class="flex items-center justify-between mb-2">
+        <p class="text-xs font-semibold text-[var(--stone)] uppercase tracking-wide">Zoom</p>
+        <span id="zoomVal" class="text-xs font-semibold text-[var(--stone)]">100%</span>
+      </div>
+      <input type="range" id="zoomSlider" min="100" max="300" value="100" class="w-full">
+    </div>
+    <div>
+      <p class="text-xs font-semibold text-[var(--stone)] uppercase tracking-wide mb-2">Reposition</p>
+      <div class="flex flex-col gap-3">
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-xs text-[var(--stone)]">Horizontal</span>
+            <span id="panXVal" class="text-xs font-semibold text-[var(--stone)]">50%</span>
+          </div>
+          <input type="range" id="panXSlider" min="0" max="100" value="50" class="w-full">
+        </div>
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-xs text-[var(--stone)]">Vertical</span>
+            <span id="panYVal" class="text-xs font-semibold text-[var(--stone)]">50%</span>
+          </div>
+          <input type="range" id="panYSlider" min="0" max="100" value="50" class="w-full">
+        </div>
+      </div>
+    </div>
+    <div>
+      <p class="text-xs font-semibold text-[var(--stone)] uppercase tracking-wide mb-2">Shape background</p>
+      <div class="flex gap-2 flex-wrap" id="shapeBgSwatches"></div>
+    </div>
+    <div id="radiusRow">
+      <p class="text-xs font-semibold text-[var(--stone)] uppercase tracking-wide mb-2">Corner radius</p>
+      <input type="range" id="radiusSlider" min="0" max="48" value="0" class="w-full">
+    </div>
+    <div class="grid grid-cols-3 gap-2 pt-1">
+      <button id="duplicateBtn" class="flex flex-col items-center gap-1.5 py-3 rounded-xl bg-[var(--tray)] text-xs font-medium"><i data-lucide="copy" style="width:18px;height:18px"></i>Duplicate</button>
+      <button id="frontBtn" class="flex flex-col items-center gap-1.5 py-3 rounded-xl bg-[var(--tray)] text-xs font-medium"><i data-lucide="bring-to-front" style="width:18px;height:18px"></i>To front</button>
+      <button id="deleteShapeBtn" class="flex flex-col items-center gap-1.5 py-3 rounded-xl bg-red-50 text-red-600 text-xs font-medium"><i data-lucide="trash-2" style="width:18px;height:18px"></i>Remove</button>
+    </div>
+  </div>
+</div>
+
+<div id="sheetLayouts" class="sheet">
+  <div class="sheet-handle"></div>
+  <div class="flex items-center justify-between px-5 pb-2 pt-1 shrink-0">
+    <span class="font-display font-semibold text-base">Choose a layout</span>
+    <button data-close-sheet class="w-8 h-8 rounded-full bg-[var(--tray)] flex items-center justify-center"><i data-lucide="x" style="width:16px;height:16px"></i></button>
+  </div>
+  <div class="px-5 pb-6 overflow-y-auto">
+    <p class="text-xs text-[var(--stone)] mb-3" id="layoutHint">Layouts shown match your current photo count.</p>
+    <div id="layoutGrid" class="grid grid-cols-3 gap-3"></div>
+  </div>
+</div>
+
+<div id="sheetSize" class="sheet">
+  <div class="sheet-handle"></div>
+  <div class="flex items-center justify-between px-5 pb-2 pt-1 shrink-0">
+    <span class="font-display font-semibold text-base">Canvas size</span>
+    <button data-close-sheet class="w-8 h-8 rounded-full bg-[var(--tray)] flex items-center justify-center"><i data-lucide="x" style="width:16px;height:16px"></i></button>
+  </div>
+  <div class="px-5 pb-6 overflow-y-auto flex flex-col gap-4">
+    <div class="grid grid-cols-3 gap-2" id="presetGrid"></div>
+    <div class="pt-1">
+      <p class="text-xs font-semibold text-[var(--stone)] uppercase tracking-wide mb-2">Custom (px)</p>
+      <div class="flex items-center gap-2">
+        <input type="number" id="customW" min="100" max="4000" class="flex-1 bg-[var(--tray)] rounded-xl px-3 py-2.5 text-sm font-medium outline-none" placeholder="Width">
+        <i data-lucide="x" style="width:14px;height:14px;color:var(--stone)"></i>
+        <input type="number" id="customH" min="100" max="4000" class="flex-1 bg-[var(--tray)] rounded-xl px-3 py-2.5 text-sm font-medium outline-none" placeholder="Height">
+        <button id="applyCustomSize" class="bg-[var(--ink)] text-white text-sm font-semibold px-4 py-2.5 rounded-xl shrink-0">Set</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="sheetCanvasBg" class="sheet">
+  <div class="sheet-handle"></div>
+  <div class="flex items-center justify-between px-5 pb-2 pt-1 shrink-0">
+    <span class="font-display font-semibold text-base">Canvas background</span>
+    <button data-close-sheet class="w-8 h-8 rounded-full bg-[var(--tray)] flex items-center justify-center"><i data-lucide="x" style="width:16px;height:16px"></i></button>
+  </div>
+  <div class="px-5 pb-6 overflow-y-auto">
+    <div class="flex gap-2.5 flex-wrap" id="canvasBgSwatches"></div>
+  </div>
+</div>
+
+<div id="sheetSpacing" class="sheet">
+  <div class="sheet-handle"></div>
+  <div class="flex items-center justify-between px-5 pb-2 pt-1 shrink-0">
+    <span class="font-display font-semibold text-base">Spacing & corners</span>
+    <button data-close-sheet class="w-8 h-8 rounded-full bg-[var(--tray)] flex items-center justify-center"><i data-lucide="x" style="width:16px;height:16px"></i></button>
+  </div>
+  <div class="px-5 pb-6 overflow-y-auto flex flex-col gap-5">
+    <div>
+      <div class="flex items-center justify-between mb-2">
+        <p class="text-xs font-semibold text-[var(--stone)] uppercase tracking-wide">Gap between photos</p>
+        <span id="gapVal" class="text-xs font-semibold text-[var(--stone)]">8px</span>
+      </div>
+      <input type="range" id="gapSlider" min="0" max="40" value="8" class="w-full">
+    </div>
+    <div>
+      <div class="flex items-center justify-between mb-2">
+        <p class="text-xs font-semibold text-[var(--stone)] uppercase tracking-wide">Outer margin</p>
+        <span id="marginVal" class="text-xs font-semibold text-[var(--stone)]">0px</span>
+      </div>
+      <input type="range" id="marginSlider" min="0" max="60" value="0" class="w-full">
+    </div>
+    <div>
+      <div class="flex items-center justify-between mb-2">
+        <p class="text-xs font-semibold text-[var(--stone)] uppercase tracking-wide">All corners</p>
+        <span id="allRadiusVal" class="text-xs font-semibold text-[var(--stone)]">0px</span>
+      </div>
+      <input type="range" id="allRadiusSlider" min="0" max="48" value="0" class="w-full">
+    </div>
+  </div>
+</div>
+
+<div id="sheetExport" class="sheet">
+  <div class="sheet-handle"></div>
+  <div class="flex items-center justify-between px-5 pb-2 pt-1 shrink-0">
+    <span class="font-display font-semibold text-base">Export collage</span>
+    <button data-close-sheet class="w-8 h-8 rounded-full bg-[var(--tray)] flex items-center justify-center"><i data-lucide="x" style="width:16px;height:16px"></i></button>
+  </div>
+  <div class="px-5 pb-8 overflow-y-auto flex flex-col gap-3">
+    <button id="doDownload" class="flex items-center gap-3 bg-[var(--tray)] rounded-2xl p-4 active:scale-[0.98] transition-transform">
+      <div class="w-10 h-10 rounded-full bg-[var(--ink)] flex items-center justify-center shrink-0"><i data-lucide="download" style="width:18px;height:18px;color:white"></i></div>
+      <div class="text-left"><p class="font-semibold text-sm">Download</p><p class="text-xs text-[var(--stone)]">Save as PNG to your device</p></div>
+    </button>
+    <button id="doShare" class="flex items-center gap-3 bg-[var(--tray)] rounded-2xl p-4 active:scale-[0.98] transition-transform">
+      <div class="w-10 h-10 rounded-full bg-[var(--ink)] flex items-center justify-center shrink-0"><i data-lucide="share-2" style="width:18px;height:18px;color:white"></i></div>
+      <div class="text-left"><p class="font-semibold text-sm">Share</p><p class="text-xs text-[var(--stone)]">Send directly to apps</p></div>
+    </button>
+    <button id="doCopy" class="flex items-center gap-3 bg-[var(--tray)] rounded-2xl p-4 active:scale-[0.98] transition-transform">
+      <div class="w-10 h-10 rounded-full bg-[var(--ink)] flex items-center justify-center shrink-0"><i data-lucide="copy" style="width:18px;height:18px;color:white"></i></div>
+      <div class="text-left"><p class="font-semibold text-sm">Copy</p><p class="text-xs text-[var(--stone)]">Copy image to clipboard</p></div>
+    </button>
+  </div>
+</div>
+
+<script>
+lucide.createIcons();
+
+const COLORS = ['#FFFFFF','#F7F5F1','#1C1A17','#2A2723','#EA6C3C','#E8E3D9','#D9CFC0','#B8C4B8','#C9D4DD','#E5C7C0','#00000000'];
+
+const SHAPES = {
+  rect: { label: 'Square', clip: 'none' },
+  circle: { label: 'Circle', clip: 'ellipse(50% 50% at 50% 50%)' },
+  rounded: { label: 'Rounded', clip: null },
+  hexagon: { label: 'Hexagon', clip: 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)' },
+  triangle: { label: 'Triangle', clip: 'polygon(50% 0%, 100% 100%, 0% 100%)' },
+  diamond: { label: 'Diamond', clip: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)' },
+  pentagon: { label: 'Pentagon', clip: 'polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%)' },
+  star: { label: 'Star', clip: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)' },
+  arch: { label: 'Arch', clip: null },
+};
+function shapeClipPath(s) {
+  const def = SHAPES[s.shape || 'rect'];
+  if (!def) return 'none';
+  if (s.shape === 'rounded') return 'none';
+  if (s.shape === 'arch') return 'none';
+  return def.clip;
+}
+
+const state = {
+  canvasW: 340, canvasH: 340,
+  bgColor: '#FFFFFF',
+  gap: 8, margin: 0, radiusAll: 0,
+  mode: 'auto',
+  layoutId: null,
+  shapes: [],
+  selectedId: null,
+};
+let history = [], future = [], suppressHistory = false;
+let uidCounter = 1;
+const uid = () => 'p' + (uidCounter++);
+
+function snapshot() {
+  return JSON.parse(JSON.stringify({ canvasW: state.canvasW, canvasH: state.canvasH, bgColor: state.bgColor, gap: state.gap, margin: state.margin, radiusAll: state.radiusAll, mode: state.mode, layoutId: state.layoutId, shapes: state.shapes }));
+}
+function pushHistory() {
+  if (suppressHistory) return;
+  history.push(snapshot());
+  if (history.length > 40) history.shift();
+  future = [];
+  updateUndoRedoBtns();
+}
+function restoreSnapshot(snap) {
+  suppressHistory = true;
+  Object.assign(state, JSON.parse(JSON.stringify(snap)));
+  state.selectedId = null;
+  renderAll();
+  suppressHistory = false;
+  updateUndoRedoBtns();
+}
+function updateUndoRedoBtns() {
+  document.getElementById('undoBtn').disabled = history.length === 0;
+  document.getElementById('redoBtn').disabled = future.length === 0;
+}
+document.getElementById('undoBtn').onclick = () => {
+  if (!history.length) return;
+  future.push(snapshot());
+  restoreSnapshot(history.pop());
+};
+document.getElementById('redoBtn').onclick = () => {
+  if (!future.length) return;
+  history.push(snapshot());
+  restoreSnapshot(future.pop());
+};
+document.getElementById('resetBtn').onclick = () => {
+  if (!state.shapes.length || confirm('Clear the whole collage and start over?')) {
+    pushHistory();
+    state.shapes = [];
+    state.layoutId = null;
+    renderAll();
+  }
+};
+
+const LAYOUTS = {
+  1: [
+    {name:'full', cells:[{x:0,y:0,w:1,h:1}]},
+  ],
+  2: [
+    {name:'side', cells:[{x:0,y:0,w:0.5,h:1},{x:0.5,y:0,w:0.5,h:1}]},
+    {name:'stack', cells:[{x:0,y:0,w:1,h:0.5},{x:0,y:0.5,w:1,h:0.5}]},
+    {name:'70-30', cells:[{x:0,y:0,w:0.68,h:1},{x:0.68,y:0,w:0.32,h:1}]},
+    {name:'30-70', cells:[{x:0,y:0,w:0.32,h:1},{x:0.32,y:0,w:0.68,h:1}]},
+    {name:'top-heavy', cells:[{x:0,y:0,w:1,h:0.68},{x:0,y:0.68,w:1,h:0.32}]},
+    {name:'bottom-heavy', cells:[{x:0,y:0,w:1,h:0.32},{x:0,y:0.32,w:1,h:0.68}]},
+  ],
+  3: [
+    {name:'big-left', cells:[{x:0,y:0,w:0.6,h:1},{x:0.6,y:0,w:0.4,h:0.5},{x:0.6,y:0.5,w:0.4,h:0.5}]},
+    {name:'big-top', cells:[{x:0,y:0,w:1,h:0.55},{x:0,y:0.55,w:0.5,h:0.45},{x:0.5,y:0.55,w:0.5,h:0.45}]},
+    {name:'three-col', cells:[{x:0,y:0,w:0.3334,h:1},{x:0.3334,y:0,w:0.3333,h:1},{x:0.6667,y:0,w:0.3333,h:1}]},
+    {name:'three-row', cells:[{x:0,y:0,w:1,h:0.3334},{x:0,y:0.3334,w:1,h:0.3333},{x:0,y:0.6667,w:1,h:0.3333}]},
+    {name:'big-right', cells:[{x:0,y:0,w:0.4,h:0.5},{x:0,y:0.5,w:0.4,h:0.5},{x:0.4,y:0,w:0.6,h:1}]},
+    {name:'big-bottom', cells:[{x:0,y:0,w:0.5,h:0.45},{x:0.5,y:0,w:0.5,h:0.45},{x:0,y:0.45,w:1,h:0.55}]},
+  ],
+  4: [
+    {name:'grid2x2', cells:[{x:0,y:0,w:0.5,h:0.5},{x:0.5,y:0,w:0.5,h:0.5},{x:0,y:0.5,w:0.5,h:0.5},{x:0.5,y:0.5,w:0.5,h:0.5}]},
+    {name:'big-left3', cells:[{x:0,y:0,w:0.55,h:1},{x:0.55,y:0,w:0.45,h:0.3334},{x:0.55,y:0.3334,w:0.45,h:0.3333},{x:0.55,y:0.6667,w:0.45,h:0.3333}]},
+    {name:'row-plus3', cells:[{x:0,y:0,w:1,h:0.45},{x:0,y:0.45,w:0.3334,h:0.55},{x:0.3334,y:0.45,w:0.3333,h:0.55},{x:0.6667,y:0.45,w:0.3333,h:0.55}]},
+    {name:'col4', cells:[{x:0,y:0,w:0.25,h:1},{x:0.25,y:0,w:0.25,h:1},{x:0.5,y:0,w:0.25,h:1},{x:0.75,y:0,w:0.25,h:1}]},
+    {name:'row4', cells:[{x:0,y:0,w:1,h:0.25},{x:0,y:0.25,w:1,h:0.25},{x:0,y:0.5,w:1,h:0.25},{x:0,y:0.75,w:1,h:0.25}]},
+    {name:'big-right3', cells:[{x:0,y:0,w:0.45,h:0.3334},{x:0,y:0.3334,w:0.45,h:0.3333},{x:0,y:0.6667,w:0.45,h:0.3333},{x:0.45,y:0,w:0.55,h:1}]},
+    {name:'big-top3', cells:[{x:0,y:0,w:1,h:0.55},{x:0,y:0.55,w:0.3334,h:0.45},{x:0.3334,y:0.55,w:0.3333,h:0.45},{x:0.6667,y:0.55,w:0.3333,h:0.45}]},
+  ],
+  5: [
+    {name:'top2bot3', cells:[{x:0,y:0,w:0.5,h:0.45},{x:0.5,y:0,w:0.5,h:0.45},{x:0,y:0.45,w:0.3334,h:0.55},{x:0.3334,y:0.45,w:0.3333,h:0.55},{x:0.6667,y:0.45,w:0.3333,h:0.55}]},
+    {name:'big1plus4', cells:[{x:0,y:0,w:1,h:0.5},{x:0,y:0.5,w:0.25,h:0.5},{x:0.25,y:0.5,w:0.25,h:0.5},{x:0.5,y:0.5,w:0.25,h:0.5},{x:0.75,y:0.5,w:0.25,h:0.5}]},
+    {name:'left-big4', cells:[{x:0,y:0,w:0.5,h:1},{x:0.5,y:0,w:0.5,h:0.25},{x:0.5,y:0.25,w:0.5,h:0.25},{x:0.5,y:0.5,w:0.5,h:0.25},{x:0.5,y:0.75,w:0.5,h:0.25}]},
+    {name:'top3bot2', cells:[{x:0,y:0,w:0.3334,h:0.55},{x:0.3334,y:0,w:0.3333,h:0.55},{x:0.6667,y:0,w:0.3333,h:0.55},{x:0,y:0.55,w:0.5,h:0.45},{x:0.5,y:0.55,w:0.5,h:0.45}]},
+    {name:'center-focus', cells:[{x:0.25,y:0.25,w:0.5,h:0.5},{x:0,y:0,w:0.25,h:0.5},{x:0,y:0.5,w:0.25,h:0.5},{x:0.75,y:0,w:0.25,h:0.5},{x:0.75,y:0.5,w:0.25,h:0.5}]},
+  ],
+  6: [
+    {name:'grid2x3', cells:[{x:0,y:0,w:0.5,h:0.3334},{x:0.5,y:0,w:0.5,h:0.3334},{x:0,y:0.3334,w:0.5,h:0.3333},{x:0.5,y:0.3334,w:0.5,h:0.3333},{x:0,y:0.6667,w:0.5,h:0.3333},{x:0.5,y:0.6667,w:0.5,h:0.3333}]},
+    {name:'grid3x2', cells:[{x:0,y:0,w:0.3334,h:0.5},{x:0.3334,y:0,w:0.3333,h:0.5},{x:0.6667,y:0,w:0.3333,h:0.5},{x:0,y:0.5,w:0.3334,h:0.5},{x:0.3334,y:0.5,w:0.3333,h:0.5},{x:0.6667,y:0.5,w:0.3333,h:0.5}]},
+    {name:'big1plus5', cells:[{x:0,y:0,w:0.6,h:0.6},{x:0.6,y:0,w:0.4,h:0.3},{x:0.6,y:0.3,w:0.4,h:0.3},{x:0,y:0.6,w:0.3334,h:0.4},{x:0.3334,y:0.6,w:0.3333,h:0.4},{x:0.6667,y:0.6,w:0.3333,h:0.4}]},
+    {name:'col2row3', cells:[{x:0,y:0,w:0.3334,h:0.6},{x:0.3334,y:0,w:0.3333,h:0.6},{x:0.6667,y:0,w:0.3333,h:0.6},{x:0,y:0.6,w:0.3334,h:0.4},{x:0.3334,y:0.6,w:0.3333,h:0.4},{x:0.6667,y:0.6,w:0.3333,h:0.4}]},
+    {name:'row1big5', cells:[{x:0,y:0,w:1,h:0.4},{x:0,y:0.4,w:0.2,h:0.6},{x:0.2,y:0.4,w:0.2,h:0.6},{x:0.4,y:0.4,w:0.2,h:0.6},{x:0.6,y:0.4,w:0.2,h:0.6},{x:0.8,y:0.4,w:0.2,h:0.6}]},
+  ],
+  7: [
+    {name:'grid-2-2-3', cells:[{x:0,y:0,w:0.5,h:0.3334},{x:0.5,y:0,w:0.5,h:0.3334},{x:0,y:0.3334,w:0.5,h:0.3333},{x:0.5,y:0.3334,w:0.5,h:0.3333},{x:0,y:0.6667,w:0.3334,h:0.3333},{x:0.3334,y:0.6667,w:0.3333,h:0.3333},{x:0.6667,y:0.6667,w:0.3333,h:0.3333}]},
+    {name:'big1plus6', cells:[{x:0,y:0,w:1,h:0.4},{x:0,y:0.4,w:0.3334,h:0.3},{x:0.3334,y:0.4,w:0.3333,h:0.3},{x:0.6667,y:0.4,w:0.3333,h:0.3},{x:0,y:0.7,w:0.3334,h:0.3},{x:0.3334,y:0.7,w:0.3333,h:0.3},{x:0.6667,y:0.7,w:0.3333,h:0.3}]},
+    {name:'col3row4', cells:[{x:0,y:0,w:0.3334,h:0.5},{x:0.3334,y:0,w:0.3333,h:0.5},{x:0.6667,y:0,w:0.3333,h:0.5},{x:0,y:0.5,w:0.25,h:0.5},{x:0.25,y:0.5,w:0.25,h:0.5},{x:0.5,y:0.5,w:0.25,h:0.5},{x:0.75,y:0.5,w:0.25,h:0.5}]},
+  ],
+  8: [
+    {name:'grid4x2', cells:[{x:0,y:0,w:0.25,h:0.5},{x:0.25,y:0,w:0.25,h:0.5},{x:0.5,y:0,w:0.25,h:0.5},{x:0.75,y:0,w:0.25,h:0.5},{x:0,y:0.5,w:0.25,h:0.5},{x:0.25,y:0.5,w:0.25,h:0.5},{x:0.5,y:0.5,w:0.25,h:0.5},{x:0.75,y:0.5,w:0.25,h:0.5}]},
+    {name:'grid2x4', cells:[{x:0,y:0,w:0.5,h:0.25},{x:0.5,y:0,w:0.5,h:0.25},{x:0,y:0.25,w:0.5,h:0.25},{x:0.5,y:0.25,w:0.5,h:0.25},{x:0,y:0.5,w:0.5,h:0.25},{x:0.5,y:0.5,w:0.5,h:0.25},{x:0,y:0.75,w:0.5,h:0.25},{x:0.5,y:0.75,w:0.5,h:0.25}]},
+    {name:'big1plus7', cells:[{x:0,y:0,w:0.6,h:0.6},{x:0.6,y:0,w:0.4,h:0.3},{x:0.6,y:0.3,w:0.4,h:0.3},{x:0,y:0.6,w:0.2,h:0.4},{x:0.2,y:0.6,w:0.2,h:0.4},{x:0.4,y:0.6,w:0.2,h:0.4},{x:0.6,y:0.6,w:0.2,h:0.4},{x:0.8,y:0.6,w:0.2,h:0.4}]},
+  ],
+  9: [
+    {name:'grid3x3', cells:[{x:0,y:0,w:0.3334,h:0.3334},{x:0.3334,y:0,w:0.3333,h:0.3334},{x:0.6667,y:0,w:0.3333,h:0.3334},{x:0,y:0.3334,w:0.3334,h:0.3333},{x:0.3334,y:0.3334,w:0.3333,h:0.3333},{x:0.6667,y:0.3334,w:0.3333,h:0.3333},{x:0,y:0.6667,w:0.3334,h:0.3333},{x:0.3334,y:0.6667,w:0.3333,h:0.3333},{x:0.6667,y:0.6667,w:0.3333,h:0.3333}]},
+  ],
+};
+function getLayoutSet(n) {
+  if (n <= 0) return [];
+  if (LAYOUTS[n]) return LAYOUTS[n];
+  const cols = Math.ceil(Math.sqrt(n));
+  const rows = Math.ceil(n / cols);
+  const plainGrid = [];
+  for (let i = 0; i < n; i++) {
+    const r = Math.floor(i / cols), c = i % cols;
+    plainGrid.push({x: c/cols, y: r/rows, w: 1/cols, h: 1/rows});
+  }
+  const altCols = rows;
+  const altRows = cols;
+  const altGrid = [];
+  for (let i = 0; i < n; i++) {
+    const r = Math.floor(i / altCols), c = i % altCols;
+    altGrid.push({x: c/altCols, y: r/altRows, w: 1/altCols, h: 1/altRows});
+  }
+  const sets = [{name:'grid'+cols+'x'+rows, cells: plainGrid}];
+  if (altCols !== cols || altRows !== rows) {
+    sets.push({name:'grid'+altCols+'x'+altRows, cells: altGrid});
+  }
+  return sets;
+}
+
+function applyLayout(cells) {
+  const usableW = state.canvasW - state.margin*2;
+  const usableH = state.canvasH - state.margin*2;
+  state.shapes.forEach((s, i) => {
+    const c = cells[i % cells.length];
+    s.x = state.margin + c.x * usableW + state.gap/2;
+    s.y = state.margin + c.y * usableH + state.gap/2;
+    s.w = c.w * usableW - state.gap;
+    s.h = c.h * usableH - state.gap;
+  });
+}
+
+function reflowAuto(preferLayoutIdx) {
+  const n = state.shapes.length;
+  const sets = getLayoutSet(n);
+  if (!sets.length) return;
+  const idx = (preferLayoutIdx != null && sets[preferLayoutIdx]) ? preferLayoutIdx : 0;
+  state.layoutId = idx;
+  applyLayout(sets[idx].cells);
+}
+
+function addImages(files) {
+  const arr = Array.from(files).filter(f => f.type.startsWith('image/'));
+  if (!arr.length) return;
+  let loaded = 0;
+  const newShapes = [];
+  arr.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        newShapes.push({
+          id: uid(), src: e.target.result, natW: img.naturalWidth, natH: img.naturalHeight,
+          x: 20, y: 20, w: 120, h: 120, fit: 'fill', zoom: 100, panX: 50, panY: 50,
+          bg: '#FFFFFF', radius: 0, shape: 'rect', rotation: 0, z: state.shapes.length + newShapes.length + 1,
+        });
+        loaded++;
+        if (loaded === arr.length) {
+          pushHistory();
+          state.shapes.push(...newShapes);
+          if (state.mode === 'auto') reflowAuto();
+          renderAll();
+          showToast(newShapes.length > 1 ? newShapes.length + ' photos added' : 'Photo added');
+        }
+      };
+      img.onerror = () => { loaded++; showToast('Could not load an image', true); };
+      img.src = e.target.result;
+    };
+    reader.onerror = () => { loaded++; showToast('Could not read a file', true); };
+    reader.readAsDataURL(file);
+  });
+}
+
+function renderAll() {
+  renderCanvasSize();
+  renderShapes();
+  renderFilmstrip();
+  renderLayoutSheet();
+  updateEmptyState();
+  updateUndoRedoBtns();
+  lucide.createIcons();
+}
+
+function renderCanvasSize() {
+  const wrap = document.getElementById('canvas-wrap');
+  const scroll = document.getElementById('canvasScroll');
+  const maxW = Math.min(scroll.clientWidth - 40, 420);
+  const maxH = Math.min(scroll.clientHeight - 40, 560);
+  const scale = Math.min(maxW / state.canvasW, maxH / state.canvasH, 1.4);
+  wrap.style.width = (state.canvasW * scale) + 'px';
+  wrap.style.height = (state.canvasH * scale) + 'px';
+  wrap.dataset.scale = scale;
+  wrap.style.background = state.bgColor === '#00000000' ? 'transparent' : state.bgColor;
+  wrap.style.borderRadius = '14px';
+  if (state.bgColor === '#00000000') {
+    wrap.classList.add('checker-bg');
+  } else {
+    wrap.classList.remove('checker-bg');
+  }
+}
+
+function updateEmptyState() {
+  document.getElementById('empty-state').style.display = state.shapes.length ? 'none' : 'flex';
+}
+
+function renderShapes() {
+  const wrap = document.getElementById('canvas-wrap');
+  wrap.querySelectorAll('.shape-piece').forEach(el => el.remove());
+  const scale = parseFloat(wrap.dataset.scale) || 1;
+  state.shapes.sort((a,b) => a.z - b.z).forEach(s => {
+    const el = document.createElement('div');
+    el.className = 'shape-piece' + (s.id === state.selectedId ? ' selected' : '');
+    el.dataset.id = s.id;
+    el.style.left = (s.x * scale) + 'px';
+    el.style.top = (s.y * scale) + 'px';
+    el.style.width = (s.w * scale) + 'px';
+    el.style.height = (s.h * scale) + 'px';
+    el.style.background = s.bg === '#00000000' ? 'transparent' : s.bg;
+    el.style.zIndex = s.z;
+    applyShapeStyle(el, s);
+
+    const img = document.createElement('img');
+    img.src = s.src;
+    img.draggable = false;
+    positionImageInShape(img, s);
+    el.appendChild(img);
+    wrap.appendChild(el);
+
+    interact(el)
+      .draggable({
+        listeners: {
+          start() {
+            state.selectedId = s.id;
+            document.querySelectorAll('.shape-piece').forEach(e2 => e2.classList.toggle('selected', e2.dataset.id === s.id));
+            pushHistory();
+            if (state.mode === 'auto') switchToFreeformSilently();
+          },
+          move(event) {
+            const sc = parseFloat(wrap.dataset.scale) || 1;
+            s.x += event.dx / sc;
+            s.y += event.dy / sc;
+            el.style.left = (s.x * sc) + 'px';
+            el.style.top = (s.y * sc) + 'px';
+          },
+          end() {}
+        }
+      })
+      .resizable({
+        edges: { left: true, right: true, bottom: true, top: true },
+        listeners: {
+          start() {
+            state.selectedId = s.id;
+            pushHistory();
+            if (state.mode === 'auto') switchToFreeformSilently();
+          },
+          move(event) {
+            const sc = parseFloat(wrap.dataset.scale) || 1;
+            s.w = Math.max(24, event.rect.width / sc);
+            s.h = Math.max(24, event.rect.height / sc);
+            s.x += event.deltaRect.left / sc;
+            s.y += event.deltaRect.top / sc;
+            el.style.width = (s.w * sc) + 'px';
+            el.style.height = (s.h * sc) + 'px';
+            el.style.left = (s.x * sc) + 'px';
+            el.style.top = (s.y * sc) + 'px';
+            positionImageInShape(img, s, el);
+            applyShapeStyle(el, s);
+          },
+          end() {}
+        },
+        modifiers: [interact.modifiers.restrictSize({ min: { width: 24, height: 24 } })]
+      });
+
+    let tapStart = 0;
+    el.addEventListener('pointerdown', () => { tapStart = Date.now(); }, {passive:true});
+    el.addEventListener('pointerup', (ev) => {
+      if (Date.now() - tapStart < 220) {
+        selectShape(s.id);
+      }
+    });
+  });
+}
+
+function applyShapeStyle(el, s) {
+  const shape = s.shape || 'rect';
+  el.style.clipPath = 'none';
+  el.style.borderRadius = '0px';
+  if (shape === 'rounded') {
+    el.style.borderRadius = (s.radius) + 'px';
+  } else if (shape === 'arch') {
+    const w = parseFloat(el.style.width) || 1;
+    el.style.borderRadius = (w/2) + 'px ' + (w/2) + 'px 0 0';
+  } else if (shape === 'circle') {
+    el.style.clipPath = 'ellipse(50% 50% at 50% 50%)';
+  } else if (SHAPES[shape] && SHAPES[shape].clip) {
+    el.style.clipPath = SHAPES[shape].clip;
+  } else {
+    el.style.borderRadius = (s.radius) + 'px';
+  }
+}
+
+function positionImageInShape(imgEl, s, elForSize) {
+  const scale = parseFloat(document.getElementById('canvas-wrap').dataset.scale) || 1;
+  const boxW = s.w * scale, boxH = s.h * scale;
+  const natRatio = s.natW / s.natH;
+  const boxRatio = boxW / boxH;
+  let baseW, baseH;
+  if (s.fit === 'fill') {
+    if (natRatio > boxRatio) { baseH = boxH; baseW = boxH * natRatio; }
+    else { baseW = boxW; baseH = boxW / natRatio; }
+  } else {
+    if (natRatio > boxRatio) { baseW = boxW; baseH = boxW / natRatio; }
+    else { baseH = boxH; baseW = boxH * natRatio; }
+  }
+  const zoomedW = baseW * (s.zoom / 100);
+  const zoomedH = baseH * (s.zoom / 100);
+  imgEl.style.width = zoomedW + 'px';
+  imgEl.style.height = zoomedH + 'px';
+  const excessX = zoomedW - boxW;
+  const excessY = zoomedH - boxH;
+  const posX = excessX > 0 ? -excessX * (s.panX / 100) : (boxW - zoomedW) / 2;
+  const posY = excessY > 0 ? -excessY * (s.panY / 100) : (boxH - zoomedH) / 2;
+  imgEl.style.left = posX + 'px';
+  imgEl.style.top = posY + 'px';
+}
+
+let panDragState = null;
+
+function selectShape(id) {
+  state.selectedId = id;
+  document.querySelectorAll('.shape-piece').forEach(e2 => e2.classList.toggle('selected', e2.dataset.id === id));
+  const s = state.shapes.find(x => x.id === id);
+  if (!s) return;
+  openSheet('sheetShape');
+  syncShapeSheet(s);
+  attachImagePanHandler(s);
+}
+
+function attachImagePanHandler(s) {
+  syncPanSliders(s);
+}
+function syncPanSliders(s) {
+  const panXSlider = document.getElementById('panXSlider');
+  const panYSlider = document.getElementById('panYSlider');
+  panXSlider.value = s.panX;
+  panYSlider.value = s.panY;
+  document.getElementById('panXVal').textContent = Math.round(s.panX) + '%';
+  document.getElementById('panYVal').textContent = Math.round(s.panY) + '%';
+}
+document.getElementById('panXSlider').oninput = (e) => {
+  const s = curShape(); if (!s) return;
+  s.panX = +e.target.value;
+  document.getElementById('panXVal').textContent = s.panX + '%';
+  const wrap = document.getElementById('canvas-wrap');
+  const img = wrap.querySelector('.shape-piece[data-id="'+s.id+'"] img');
+  if (img) positionImageInShape(img, s);
+};
+document.getElementById('panXSlider').onchange = () => pushHistory();
+document.getElementById('panYSlider').oninput = (e) => {
+  const s = curShape(); if (!s) return;
+  s.panY = +e.target.value;
+  document.getElementById('panYVal').textContent = s.panY + '%';
+  const wrap = document.getElementById('canvas-wrap');
+  const img = wrap.querySelector('.shape-piece[data-id="'+s.id+'"] img');
+  if (img) positionImageInShape(img, s);
+};
+document.getElementById('panYSlider').onchange = () => pushHistory();
+
+const SHAPE_ICONS = { rect: 'square', circle: 'circle', rounded: 'squircle', hexagon: 'hexagon', triangle: 'triangle', diamond: 'gem', pentagon: 'pentagon', star: 'star', arch: 'landmark' };
+function renderShapePicker(s) {
+  const wrap = document.getElementById('shapePicker');
+  wrap.innerHTML = '';
+  Object.keys(SHAPES).forEach(key => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    const active = (s.shape || 'rect') === key;
+    btn.className = 'flex flex-col items-center justify-center gap-1 py-2.5 rounded-xl border-2 text-[10px] font-medium' + (active ? ' border-[var(--accent)] bg-orange-50' : ' border-black/10 bg-[var(--tray)]');
+    btn.innerHTML = '<i data-lucide="' + (SHAPE_ICONS[key] || 'square') + '" style="width:16px;height:16px"></i>';
+    btn.title = SHAPES[key].label;
+    btn.addEventListener('click', (ev) => {
+      ev.preventDefault(); ev.stopPropagation();
+      pushHistory();
+      s.shape = key;
+      renderShapes();
+      renderShapePicker(s);
+      attachImagePanHandler(s);
+    });
+    wrap.appendChild(btn);
+  });
+  lucide.createIcons();
+}
+
+function syncShapeSheet(s) {
+  renderShapePicker(s);
+  syncPanSliders(s);
+  document.getElementById('fitFillBtn').classList.toggle('active', s.fit === 'fill');
+  document.getElementById('fitContainBtn').classList.toggle('active', s.fit === 'contain');
+  document.getElementById('zoomSlider').value = s.zoom;
+  document.getElementById('zoomVal').textContent = s.zoom + '%';
+  document.getElementById('radiusSlider').value = s.radius;
+  document.getElementById('radiusRow').style.display = (s.shape === 'rect' || s.shape === 'rounded') ? 'block' : 'none';
+  const swatchWrap = document.getElementById('shapeBgSwatches');
+  swatchWrap.innerHTML = '';
+  COLORS.forEach(c => {
+    const sw = document.createElement('button');
+    sw.type = 'button';
+    sw.className = 'swatch' + (s.bg === c ? ' active' : '');
+    sw.style.background = c === '#00000000' ? 'transparent' : c;
+    if (c === '#00000000') sw.classList.add('checker-bg');
+    sw.addEventListener('click', (ev) => {
+      ev.preventDefault(); ev.stopPropagation();
+      pushHistory(); s.bg = c; renderShapes(); syncShapeSheet(s); attachImagePanHandler(s);
+    });
+    swatchWrap.appendChild(sw);
+  });
+  const customWrap = document.createElement('div');
+  customWrap.className = 'swatch relative overflow-hidden cursor-pointer';
+  customWrap.style.background = 'conic-gradient(red,yellow,lime,cyan,blue,magenta,red)';
+  const customInput = document.createElement('input');
+  customInput.type = 'color';
+  customInput.className = 'opacity-0 w-full h-full absolute inset-0 cursor-pointer';
+  customInput.value = s.bg && s.bg.length === 7 ? s.bg : '#ffffff';
+  customInput.addEventListener('input', (e) => { pushHistory(); s.bg = e.target.value; renderShapes(); attachImagePanHandler(s); });
+  customInput.addEventListener('change', () => syncShapeSheet(s));
+  customWrap.appendChild(customInput);
+  swatchWrap.appendChild(customWrap);
+}
+
+document.getElementById('fitFillBtn').onclick = () => { const s = curShape(); if(!s) return; pushHistory(); s.fit='fill'; s.panX=50; s.panY=50; renderShapes(); syncShapeSheet(s); attachImagePanHandler(s); };
+document.getElementById('fitContainBtn').onclick = () => { const s = curShape(); if(!s) return; pushHistory(); s.fit='contain'; renderShapes(); syncShapeSheet(s); attachImagePanHandler(s); };
+document.getElementById('zoomSlider').oninput = (e) => { const s = curShape(); if(!s) return; s.zoom = +e.target.value; document.getElementById('zoomVal').textContent = s.zoom+'%'; const wrap=document.getElementById('canvas-wrap'); const img = wrap.querySelector('.shape-piece[data-id="'+s.id+'"] img'); if(img) positionImageInShape(img, s); };
+document.getElementById('zoomSlider').onchange = () => pushHistory();
+document.getElementById('radiusSlider').oninput = (e) => { const s = curShape(); if(!s) return; s.radius = +e.target.value; const wrap=document.getElementById('canvas-wrap'); const el = wrap.querySelector('.shape-piece[data-id="'+s.id+'"]'); if(el) applyShapeStyle(el, s); };
+document.getElementById('radiusSlider').onchange = () => pushHistory();
+document.getElementById('duplicateBtn').onclick = () => {
+  const s = curShape(); if(!s) return;
+  pushHistory();
+  const copy = JSON.parse(JSON.stringify(s));
+  copy.id = uid(); copy.x += 16; copy.y += 16; copy.z = state.shapes.length + 1;
+  state.shapes.push(copy);
+  state.selectedId = copy.id;
+  renderShapes(); renderFilmstrip();
+  showToast('Photo duplicated');
+};
+document.getElementById('frontBtn').onclick = () => {
+  const s = curShape(); if(!s) return;
+  pushHistory();
+  const maxZ = Math.max(...state.shapes.map(x=>x.z), 0);
+  s.z = maxZ + 1;
+  renderShapes();
+};
+document.getElementById('deleteShapeBtn').onclick = () => {
+  const s = curShape(); if(!s) return;
+  pushHistory();
+  state.shapes = state.shapes.filter(x => x.id !== s.id);
+  state.selectedId = null;
+  if (state.mode === 'auto') reflowAuto();
+  closeSheet('sheetShape');
+  renderAll();
+  showToast('Photo removed');
+};
+function curShape() { return state.shapes.find(x => x.id === state.selectedId); }
+
+function renderFilmstrip() {
+  const strip = document.getElementById('filmstrip');
+  strip.innerHTML = '';
+  state.shapes.forEach(s => {
+    const btn = document.createElement('button');
+    btn.className = 'thumb-btn relative w-14 h-14 rounded-xl overflow-hidden shrink-0 border-2';
+    btn.style.borderColor = s.id === state.selectedId ? 'var(--accent)' : 'transparent';
+    btn.innerHTML = '<img src="'+s.src+'" class="w-full h-full object-cover">';
+    btn.onclick = () => { selectShape(s.id); scrollShapeIntoView(s.id); };
+    strip.appendChild(btn);
+  });
+}
+
+function scrollShapeIntoView(id) {}
+
+function renderLayoutSheet() {
+  const grid = document.getElementById('layoutGrid');
+  grid.innerHTML = '';
+  const n = state.shapes.length;
+  document.getElementById('layoutHint').textContent = n ? ('Layouts for ' + n + ' photo' + (n>1?'s':'') + '.') : 'Add photos first to see layout options.';
+  if (!n) return;
+  const sets = getLayoutSet(n);
+  sets.forEach((set, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'layout-thumb aspect-square rounded-xl border-2 border-black/10 p-2 bg-[var(--tray)]' + (state.layoutId === idx ? ' active' : '');
+    const svg = document.createElement('div');
+    svg.className = 'w-full h-full relative';
+    set.cells.forEach(c => {
+      const cell = document.createElement('div');
+      cell.className = 'absolute bg-[var(--stone)] rounded-sm';
+      cell.style.left = (c.x*100)+'%'; cell.style.top=(c.y*100)+'%'; cell.style.width=(c.w*100 - 4)+'%'; cell.style.height=(c.h*100-4)+'%';
+      svg.appendChild(cell);
+    });
+    btn.appendChild(svg);
+    btn.onclick = () => {
+      pushHistory();
+      state.mode = 'auto';
+      syncModeButtons();
+      applyLayout(set.cells);
+      state.layoutId = idx;
+      renderShapes();
+      renderLayoutSheet();
+      showToast('Layout applied');
+    };
+    grid.appendChild(btn);
+  });
+}
+
+function syncModeButtons() {
+  document.getElementById('modeAutoBtn').classList.toggle('active', state.mode === 'auto');
+  document.getElementById('modeFreeBtn').classList.toggle('active', state.mode === 'free');
+}
+document.getElementById('modeAutoBtn').onclick = () => {
+  if (state.mode === 'auto') return;
+  pushHistory();
+  state.mode = 'auto';
+  syncModeButtons();
+  reflowAuto(state.layoutId);
+  renderShapes();
+  showToast('Auto layout — photos snap to grid');
+};
+document.getElementById('modeFreeBtn').onclick = () => {
+  if (state.mode === 'free') return;
+  state.mode = 'free';
+  syncModeButtons();
+  showToast('Freeform — drag and resize freely');
+};
+
+let freeformSwitchToastShown = false;
+function switchToFreeformSilently() {
+  state.mode = 'free';
+  syncModeButtons();
+  if (!freeformSwitchToastShown) {
+    showToast('Switched to Freeform to keep your changes');
+    freeformSwitchToastShown = true;
+  }
+}
+
+const SIZE_PRESETS = [
+  {name:'Square', w:1080, h:1080, icon:'square'},
+  {name:'Story', w:1080, h:1920, icon:'rectangle-vertical'},
+  {name:'Portrait', w:1080, h:1350, icon:'rectangle-vertical'},
+  {name:'Landscape', w:1920, h:1080, icon:'rectangle-horizontal'},
+  {name:'A4 Print', w:2480, h:3508, icon:'file'},
+  {name:'Widescreen', w:1920, h:1080, icon:'monitor'},
+];
+function renderPresetGrid() {
+  const grid = document.getElementById('presetGrid');
+  grid.innerHTML = '';
+  SIZE_PRESETS.forEach(p => {
+    const btn = document.createElement('button');
+    const active = state.canvasW === p.w && state.canvasH === p.h;
+    btn.className = 'flex flex-col items-center gap-1.5 py-3 rounded-xl border-2 text-xs font-medium' + (active ? ' border-[var(--accent)] bg-orange-50' : ' border-black/10 bg-[var(--tray)]');
+    btn.innerHTML = '<i data-lucide="'+p.icon+'" style="width:18px;height:18px"></i>' + p.name + '<span class="text-[10px] text-[var(--stone)]">'+p.w+'×'+p.h+'</span>';
+    btn.onclick = () => {
+      pushHistory();
+      const ratioChange = resizeCanvas(p.w, p.h);
+      renderPresetGrid();
+      renderAll();
+    };
+    grid.appendChild(btn);
+  });
+  lucide.createIcons();
+}
+function resizeCanvas(newW, newH) {
+  const scaleX = newW / state.canvasW;
+  const scaleY = newH / state.canvasH;
+  state.shapes.forEach(s => {
+    s.x *= scaleX; s.y *= scaleY; s.w *= scaleX; s.h *= scaleY;
+  });
+  state.canvasW = newW; state.canvasH = newH;
+  if (state.mode === 'auto' && state.layoutId != null) {
+    const sets = getLayoutSet(state.shapes.length);
+    if (sets[state.layoutId]) applyLayout(sets[state.layoutId].cells);
+  }
+}
+document.getElementById('applyCustomSize').onclick = () => {
+  const w = parseInt(document.getElementById('customW').value);
+  const h = parseInt(document.getElementById('customH').value);
+  if (!w || !h || w < 50 || h < 50 || w > 5000 || h > 5000) {
+    showToast('Enter a size between 50 and 5000px', true);
+    return;
+  }
+  pushHistory();
+  resizeCanvas(w, h);
+  renderPresetGrid();
+  renderAll();
+  showToast('Canvas resized');
+};
+
+function renderCanvasBgSwatches() {
+  const wrap = document.getElementById('canvasBgSwatches');
+  wrap.innerHTML = '';
+  COLORS.forEach(c => {
+    const sw = document.createElement('button');
+    sw.type = 'button';
+    sw.className = 'swatch' + (state.bgColor === c ? ' active' : '');
+    sw.style.background = c === '#00000000' ? 'transparent' : c;
+    if (c === '#00000000') sw.classList.add('checker-bg');
+    sw.addEventListener('click', (ev) => {
+      ev.preventDefault(); ev.stopPropagation();
+      pushHistory(); state.bgColor = c; renderCanvasSize(); renderCanvasBgSwatches();
+    });
+    wrap.appendChild(sw);
+  });
+  const customWrap = document.createElement('div');
+  customWrap.className = 'swatch relative overflow-hidden cursor-pointer';
+  customWrap.style.background = 'conic-gradient(red,yellow,lime,cyan,blue,magenta,red)';
+  const customInput = document.createElement('input');
+  customInput.type = 'color';
+  customInput.className = 'opacity-0 w-full h-full absolute inset-0 cursor-pointer';
+  customInput.value = state.bgColor && state.bgColor.length === 7 ? state.bgColor : '#ffffff';
+  customInput.addEventListener('input', (e) => { pushHistory(); state.bgColor = e.target.value; renderCanvasSize(); });
+  customInput.addEventListener('change', () => renderCanvasBgSwatches());
+  customWrap.appendChild(customInput);
+  wrap.appendChild(customWrap);
+}
+
+document.getElementById('gapSlider').oninput = (e) => {
+  state.gap = +e.target.value;
+  document.getElementById('gapVal').textContent = state.gap + 'px';
+  if (state.mode === 'auto' && state.layoutId != null) {
+    const sets = getLayoutSet(state.shapes.length);
+    if (sets[state.layoutId]) { applyLayout(sets[state.layoutId].cells); renderShapes(); }
+  }
+};
+document.getElementById('gapSlider').onchange = () => pushHistory();
+document.getElementById('marginSlider').oninput = (e) => {
+  state.margin = +e.target.value;
+  document.getElementById('marginVal').textContent = state.margin + 'px';
+  if (state.mode === 'auto' && state.layoutId != null) {
+    const sets = getLayoutSet(state.shapes.length);
+    if (sets[state.layoutId]) { applyLayout(sets[state.layoutId].cells); renderShapes(); }
+  }
+};
+document.getElementById('marginSlider').onchange = () => pushHistory();
+document.getElementById('allRadiusSlider').oninput = (e) => {
+  state.radiusAll = +e.target.value;
+  document.getElementById('allRadiusVal').textContent = state.radiusAll + 'px';
+  state.shapes.forEach(s => s.radius = state.radiusAll);
+  renderShapes();
+};
+document.getElementById('allRadiusSlider').onchange = () => pushHistory();
+
+function openSheet(id) {
+  document.querySelectorAll('.sheet').forEach(s => s.classList.remove('open'));
+  document.getElementById(id).classList.add('open');
+  document.getElementById('backdrop').classList.add('open');
+}
+function closeSheet(id) {
+  document.getElementById(id).classList.remove('open');
+  const anyOpen = [...document.querySelectorAll('.sheet')].some(s => s.classList.contains('open'));
+  if (!anyOpen) document.getElementById('backdrop').classList.remove('open');
+  if (id === 'sheetShape') { state.selectedId = null; renderShapes(); renderFilmstrip(); }
+}
+document.querySelectorAll('[data-close-sheet]').forEach(btn => {
+  btn.onclick = () => { const sheet = btn.closest('.sheet'); closeSheet(sheet.id); };
+});
+document.getElementById('backdrop').onclick = () => {
+  document.querySelectorAll('.sheet.open').forEach(s => closeSheet(s.id));
+};
+
+document.getElementById('openLayoutsBtn').onclick = () => { renderLayoutSheet(); openSheet('sheetLayouts'); };
+document.getElementById('openSizeBtn').onclick = () => { renderPresetGrid(); document.getElementById('customW').value = state.canvasW; document.getElementById('customH').value = state.canvasH; openSheet('sheetSize'); };
+document.getElementById('openCanvasBgBtn').onclick = () => { renderCanvasBgSwatches(); openSheet('sheetCanvasBg'); };
+document.getElementById('openSpacingBtn').onclick = () => openSheet('sheetSpacing');
+document.getElementById('exportBtn').onclick = () => openSheet('sheetExport');
+
+document.getElementById('addPhotosBtn').onclick = () => document.getElementById('fileInput').click();
+document.getElementById('fileInput').onchange = (e) => { addImages(e.target.files); e.target.value = ''; };
+
+const wrapEl = document.getElementById('canvas-wrap');
+wrapEl.addEventListener('dragover', e => { e.preventDefault(); });
+wrapEl.addEventListener('drop', e => { e.preventDefault(); if (e.dataTransfer.files.length) addImages(e.dataTransfer.files); });
+document.getElementById('canvas-wrap').addEventListener('pointerdown', (e) => {
+  if (e.target.id === 'canvas-wrap' || e.target.id === 'empty-state' || e.target.closest('#empty-state')) {
+    if (state.selectedId) { state.selectedId = null; document.querySelectorAll('.shape-piece').forEach(e2 => e2.classList.remove('selected')); }
+  }
+});
+
+let toastTimer;
+function showToast(msg, isError) {
+  clearTimeout(toastTimer);
+  let el = document.getElementById('toast');
+  if (el) el.remove();
+  el = document.createElement('div');
+  el.id = 'toast';
+  el.className = 'fixed left-1/2 bottom-24 z-50 px-4 py-2.5 rounded-full text-sm font-medium text-white shadow-lg';
+  el.style.background = isError ? '#C0392B' : 'var(--ink)';
+  el.style.transform = 'translateX(-50%)';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  toastTimer = setTimeout(() => el.remove(), 2200);
+}
+
+function getShapePath2D(shape, w, h) {
+  const p = new Path2D();
+  if (shape === 'circle') {
+    const rx = w/2, ry = h/2;
+    p.ellipse(rx, ry, rx, ry, 0, 0, Math.PI*2);
+  } else if (shape === 'hexagon') {
+    const pts = [[0.25,0],[0.75,0],[1,0.5],[0.75,1],[0.25,1],[0,0.5]];
+    pts.forEach((pt,i) => i===0 ? p.moveTo(pt[0]*w, pt[1]*h) : p.lineTo(pt[0]*w, pt[1]*h));
+    p.closePath();
+  } else if (shape === 'triangle') {
+    p.moveTo(0.5*w,0); p.lineTo(w,h); p.lineTo(0,h); p.closePath();
+  } else if (shape === 'diamond') {
+    p.moveTo(0.5*w,0); p.lineTo(w,0.5*h); p.lineTo(0.5*w,h); p.lineTo(0,0.5*h); p.closePath();
+  } else if (shape === 'pentagon') {
+    const pts = [[0.5,0],[1,0.38],[0.82,1],[0.18,1],[0,0.38]];
+    pts.forEach((pt,i) => i===0 ? p.moveTo(pt[0]*w, pt[1]*h) : p.lineTo(pt[0]*w, pt[1]*h));
+    p.closePath();
+  } else if (shape === 'star') {
+    const pts = [[0.5,0],[0.61,0.35],[0.98,0.35],[0.68,0.57],[0.79,0.91],[0.5,0.70],[0.21,0.91],[0.32,0.57],[0.02,0.35],[0.39,0.35]];
+    pts.forEach((pt,i) => i===0 ? p.moveTo(pt[0]*w, pt[1]*h) : p.lineTo(pt[0]*w, pt[1]*h));
+    p.closePath();
+  } else if (shape === 'arch') {
+    const r = w/2;
+    p.moveTo(0, h);
+    p.lineTo(0, r);
+    p.arc(r, r, r, Math.PI, 0, false);
+    p.lineTo(w, h);
+    p.closePath();
+  } else if (shape === 'rounded') {
+    const r = Math.min(w, h) * 0.18;
+    roundRectPath(p, 0, 0, w, h, r);
+  } else {
+    p.rect(0, 0, w, h);
+  }
+  return p;
+}
+function roundRectPath(p, x, y, w, h, r) {
+  p.moveTo(x+r, y);
+  p.lineTo(x+w-r, y);
+  p.arcTo(x+w, y, x+w, y+r, r);
+  p.lineTo(x+w, y+h-r);
+  p.arcTo(x+w, y+h, x+w-r, y+h, r);
+  p.lineTo(x+r, y+h);
+  p.arcTo(x, y+h, x, y+h-r, r);
+  p.lineTo(x, y+r);
+  p.arcTo(x, y, x+r, y, r);
+  p.closePath();
+}
+
+function computeImageDraw(s, boxW, boxH) {
+  const natRatio = s.natW / s.natH;
+  const boxRatio = boxW / boxH;
+  let baseW, baseH;
+  if (s.fit === 'fill') {
+    if (natRatio > boxRatio) { baseH = boxH; baseW = boxH * natRatio; }
+    else { baseW = boxW; baseH = boxW / natRatio; }
+  } else {
+    if (natRatio > boxRatio) { baseW = boxW; baseH = boxW / natRatio; }
+    else { baseH = boxH; baseW = boxH * natRatio; }
+  }
+  const zoomedW = baseW * (s.zoom / 100);
+  const zoomedH = baseH * (s.zoom / 100);
+  const excessX = zoomedW - boxW;
+  const excessY = zoomedH - boxH;
+  const posX = excessX > 0 ? -excessX * (s.panX / 100) : (boxW - zoomedW) / 2;
+  const posY = excessY > 0 ? -excessY * (s.panY / 100) : (boxH - zoomedH) / 2;
+  return { drawW: zoomedW, drawH: zoomedH, drawX: posX, drawY: posY };
+}
+
+function loadImageEl(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error('Failed to load an image for export'));
+    img.src = src;
+  });
+}
+
+async function renderExportCanvas(targetScale) {
+  if (!state.shapes.length) { showToast('Add some photos first', true); return null; }
+  const scale = targetScale || 2;
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(state.canvasW * scale);
+  canvas.height = Math.round(state.canvasH * scale);
+  const ctx = canvas.getContext('2d');
+  ctx.scale(scale, scale);
+  if (state.bgColor !== '#00000000') {
+    ctx.fillStyle = state.bgColor;
+    ctx.fillRect(0, 0, state.canvasW, state.canvasH);
+  }
+  const sorted = state.shapes.slice().sort((a,b) => a.z - b.z);
+  for (const s of sorted) {
+    const imgEl = await loadImageEl(s.src);
+    ctx.save();
+    ctx.translate(s.x, s.y);
+    const path = getShapePath2D(s.shape || 'rect', s.w, s.h);
+    if (s.bg !== '#00000000') {
+      ctx.fillStyle = s.bg;
+      ctx.fill(path);
+    }
+    ctx.clip(path);
+    const draw = computeImageDraw(s, s.w, s.h);
+    ctx.drawImage(imgEl, draw.drawX, draw.drawY, draw.drawW, draw.drawH);
+    ctx.restore();
+  }
+  return canvas;
+}
+
+function setBtnLoading(btn, loading, iconName, label) {
+  if (loading) {
+    btn.dataset.orig = btn.innerHTML;
+    btn.innerHTML = btn.innerHTML.replace(/<i.*?<\/i>/, '<span class="spinner"></span>');
+  } else if (btn.dataset.orig) {
+    btn.innerHTML = btn.dataset.orig;
+    lucide.createIcons();
+  }
+}
+
+document.getElementById('doDownload').onclick = async () => {
+  const btn = document.getElementById('doDownload');
+  setBtnLoading(btn, true);
+  try {
+    const canvas = await renderExportCanvas(2);
+    if (!canvas) { setBtnLoading(btn,false); return; }
+    const link = document.createElement('a');
+    link.download = 'collage-' + Date.now() + '.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    showToast('Collage downloaded');
+  } catch (err) {
+    showToast('Could not export: ' + err.message, true);
+  }
+  setBtnLoading(btn, false);
+};
+
+document.getElementById('doShare').onclick = async () => {
+  const btn = document.getElementById('doShare');
+  setBtnLoading(btn, true);
+  try {
+    const canvas = await renderExportCanvas(2);
+    if (!canvas) { setBtnLoading(btn,false); return; }
+    canvas.toBlob(async (blob) => {
+      try {
+        const file = new File([blob], 'collage.png', { type: 'image/png' });
+        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], title: 'My collage' });
+          showToast('Shared');
+        } else {
+          const link = document.createElement('a');
+          link.download = 'collage-' + Date.now() + '.png';
+          link.href = URL.createObjectURL(blob);
+          link.click();
+          showToast('Sharing not supported here — downloaded instead');
+        }
+      } catch (err) {
+        if (err.name !== 'AbortError') showToast('Share failed: ' + err.message, true);
+      }
+      setBtnLoading(btn, false);
+    }, 'image/png');
+  } catch (err) {
+    showToast('Could not export: ' + err.message, true);
+    setBtnLoading(btn, false);
+  }
+};
+
+document.getElementById('doCopy').onclick = async () => {
+  const btn = document.getElementById('doCopy');
+  setBtnLoading(btn, true);
+  try {
+    const canvas = await renderExportCanvas(2);
+    if (!canvas) { setBtnLoading(btn,false); return; }
+    canvas.toBlob(async (blob) => {
+      try {
+        if (navigator.clipboard && window.ClipboardItem) {
+          await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+          showToast('Copied to clipboard');
+        } else {
+          showToast('Clipboard not supported on this browser', true);
+        }
+      } catch (err) {
+        showToast('Copy failed: ' + err.message, true);
+      }
+      setBtnLoading(btn, false);
+    }, 'image/png');
+  } catch (err) {
+    showToast('Could not export: ' + err.message, true);
+    setBtnLoading(btn, false);
+  }
+};
+
+window.addEventListener('resize', () => renderAll());
+document.addEventListener('gesturestart', e => e.preventDefault());
+
+syncModeButtons();
+renderAll();
+</script>
+</body>
+</html>
