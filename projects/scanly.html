@@ -1,0 +1,1210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Scanly</title>
+<meta name="description" content="A fast, focused QR and barcode scanner that detects multiple codes in a single image, with smart parsing for links, Wi-Fi, UPI, and contacts.">
+<meta name="keywords" content="qr scanner, barcode scanner">
+<meta name="app-icon" content="scan-line">
+<script>
+window.onerror = function(msg, src, line, col, err) {
+  showFatal(msg, err && err.stack ? err.stack : (src+':'+line+':'+col));
+  return false;
+};
+window.addEventListener('unhandledrejection', function(e) {
+  showFatal(e.reason && e.reason.message ? e.reason.message : String(e.reason), e.reason && e.reason.stack ? e.reason.stack : '');
+});
+function showFatal(msg, details) {
+  try {
+    var b = document.getElementById('__fatal_banner');
+    if (!b) {
+      b = document.createElement('div');
+      b.id = '__fatal_banner';
+      b.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#1c1917;color:#fef3ec;font-family:-apple-system,sans-serif;font-size:13px;padding:10px 14px;z-index:999999;box-shadow:0 -2px 10px rgba(0,0,0,.3)';
+      var t = document.createElement('div');
+      t.textContent = '⚠ Something went wrong: ' + msg;
+      t.style.cssText = 'cursor:pointer';
+      var d = document.createElement('pre');
+      d.textContent = details || 'No further details';
+      d.style.cssText = 'display:none;white-space:pre-wrap;margin-top:8px;font-size:11px;opacity:.8;max-height:120px;overflow:auto';
+      t.onclick = function(){ d.style.display = d.style.display === 'none' ? 'block' : 'none'; };
+      b.appendChild(t); b.appendChild(d);
+      document.body.appendChild(b);
+    }
+  } catch(e) {}
+}
+function setVh() {
+  document.documentElement.style.setProperty('--vh100', window.innerHeight + 'px');
+}
+setVh();
+window.addEventListener('resize', setVh);
+window.addEventListener('orientationchange', setVh);
+</script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.20.0/umd/index.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --accent: #e8622c;
+    --accent-dark: #c94f1e;
+    --accent-light: #fdeee6;
+    --ink: #1c1917;
+    --paper: #fdfcfb;
+    --vh100: 100vh;
+  }
+  * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+  html, body {
+    background: var(--ink);
+    overscroll-behavior: none;
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+  }
+  body { font-family: 'Manrope', sans-serif; color: var(--ink); }
+  .mono { font-family: 'Space Mono', monospace; }
+  .safe-bottom { padding-bottom: max(env(safe-area-inset-bottom, 0px), 8px); }
+  .safe-top { padding-top: env(safe-area-inset-top, 0px); }
+  ::-webkit-scrollbar { display: none; }
+
+  #app {
+    height: 100dvh;
+    height: var(--vh100);
+    max-width: 32rem;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    background: var(--paper);
+  }
+
+  .noise-bg {
+    background-image: radial-gradient(circle at 1px 1px, rgba(232,98,44,0.08) 1px, transparent 0);
+    background-size: 22px 22px;
+  }
+
+  .scan-frame { position: relative; }
+  .scan-corner {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    border-color: var(--accent);
+  }
+  .scan-line {
+    position: absolute;
+    left: 6%;
+    right: 6%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    box-shadow: 0 0 12px 2px rgba(232,98,44,0.7);
+    animation: scanmove 2.4s ease-in-out infinite;
+  }
+  @keyframes scanmove {
+    0%, 100% { top: 6%; opacity: .3; }
+    50% { top: 94%; opacity: 1; }
+  }
+
+  @keyframes riseIn {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .rise-in { animation: riseIn .35s cubic-bezier(.16,1,.3,1) both; }
+
+  @keyframes popIn {
+    0% { opacity: 0; transform: scale(.94) translateY(8px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  .pop-in { animation: popIn .28s cubic-bezier(.34,1.2,.64,1) both; }
+
+  @keyframes toastIn {
+    from { opacity: 0; transform: translate(-50%, 10px); }
+    to { opacity: 1; transform: translate(-50%, 0); }
+  }
+  .toast-anim { animation: toastIn .25s ease-out; }
+
+  .btn-press { transition: transform .12s ease, opacity .12s ease; }
+  .btn-press:active { transform: scale(0.96); opacity: .85; }
+
+  .glow-ring { box-shadow: 0 0 0 4px rgba(232,98,44,0.12); }
+
+  .card-shadow {
+    box-shadow: 0 1px 2px rgba(28,25,23,0.04), 0 8px 24px -8px rgba(28,25,23,0.08);
+  }
+
+  .torch-active { background: var(--accent) !important; color: white !important; }
+
+  .flash-success { animation: flashsuccess .5s ease; }
+  @keyframes flashsuccess {
+    0% { box-shadow: inset 0 0 0 0 rgba(74,222,128,0); }
+    30% { box-shadow: inset 0 0 0 6px rgba(74,222,128,0.9); }
+    100% { box-shadow: inset 0 0 0 0 rgba(74,222,128,0); }
+  }
+
+  #videoEl { transform: scaleX(1); }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+  }
+  input[type="range"]::-webkit-slider-runnable-track {
+    height: 4px;
+    background: rgba(255,255,255,0.25);
+    border-radius: 4px;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--accent);
+    margin-top: -7px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+  }
+  input[type="range"]::-moz-range-track {
+    height: 4px;
+    background: rgba(255,255,255,0.25);
+    border-radius: 4px;
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border: none;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <header class="safe-top px-4 pt-3 pb-2 flex items-center justify-between flex-shrink-0 bg-[var(--paper)] z-30">
+    <div class="flex items-center gap-2.5">
+      <div class="w-8 h-8 rounded-xl bg-[var(--ink)] flex items-center justify-center">
+        <i data-lucide="scan-line" class="w-4 h-4 text-[var(--accent)]"></i>
+      </div>
+      <h1 class="text-lg font-extrabold tracking-tight">Scanly</h1>
+    </div>
+    <button id="historyBtn" class="btn-press w-9 h-9 rounded-full flex items-center justify-center hover:bg-black/5 relative">
+      <i data-lucide="history" class="w-5 h-5"></i>
+      <span id="historyDot" class="hidden absolute top-1 right-1 w-2 h-2 rounded-full bg-[var(--accent)]"></span>
+    </button>
+  </header>
+
+  <main class="flex-1 min-h-0 px-4 pt-2 flex flex-col noise-bg">
+
+    <div id="cameraView" class="flex-1 min-h-0 rounded-3xl overflow-hidden relative bg-[var(--ink)] card-shadow">
+      <video id="videoEl" class="w-full h-full object-cover" playsinline muted autoplay></video>
+      <canvas id="canvasEl" class="hidden"></canvas>
+
+      <div id="camIdle" class="absolute inset-0 flex flex-col items-center justify-center gap-3 text-white/70 px-8 text-center z-10">
+        <i data-lucide="camera" class="w-9 h-9"></i>
+        <p class="text-sm">Tap below to start scanning</p>
+        <button id="startCamBtn" class="btn-press mt-1 px-5 py-2.5 rounded-full bg-[var(--accent)] text-white text-sm font-bold flex items-center gap-2">
+          <i data-lucide="play" class="w-4 h-4"></i> Start Camera
+        </button>
+      </div>
+
+      <div id="scanOverlay" class="hidden absolute inset-0">
+        <div class="absolute inset-[9%] scan-frame">
+          <div class="scan-corner top-0 left-0 border-t-4 border-l-4 rounded-tl-2xl"></div>
+          <div class="scan-corner top-0 right-0 border-t-4 border-r-4 rounded-tr-2xl"></div>
+          <div class="scan-corner bottom-0 left-0 border-b-4 border-l-4 rounded-bl-2xl"></div>
+          <div class="scan-corner bottom-0 right-0 border-b-4 border-r-4 rounded-br-2xl"></div>
+          <div class="scan-line"></div>
+        </div>
+      </div>
+
+      <div id="zoomWrap" class="hidden absolute left-0 right-0 bottom-16 px-8 flex items-center gap-2.5 z-10">
+        <i data-lucide="zoom-out" class="w-4 h-4 text-white/70 flex-shrink-0"></i>
+        <input id="zoomSlider" type="range" min="1" max="5" step="0.1" value="1" class="flex-1">
+        <i data-lucide="zoom-in" class="w-4 h-4 text-white/70 flex-shrink-0"></i>
+      </div>
+
+      <div id="camControls" class="hidden absolute bottom-3 left-0 right-0 flex items-center justify-center gap-3 z-10">
+        <button id="torchBtn" class="hidden btn-press w-10 h-10 rounded-full bg-white/15 backdrop-blur-md text-white flex items-center justify-center">
+          <i data-lucide="zap" class="w-4 h-4"></i>
+        </button>
+        <button id="switchCamBtn" class="btn-press w-10 h-10 rounded-full bg-white/15 backdrop-blur-md text-white flex items-center justify-center">
+          <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+        </button>
+        <button id="stopCamBtn" class="btn-press w-10 h-10 rounded-full bg-white/15 backdrop-blur-md text-white flex items-center justify-center">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div id="camError" class="hidden absolute inset-0 flex-col items-center justify-center gap-2 text-white/80 px-8 text-center z-20 bg-[var(--ink)]">
+        <i data-lucide="camera-off" class="w-8 h-8 text-[var(--accent)]"></i>
+        <p id="camErrorMsg" class="text-sm max-w-xs"></p>
+        <button id="camErrorUploadBtn" class="btn-press mt-2 px-4 py-2 rounded-full bg-white/15 text-white text-xs font-bold">Upload an image instead</button>
+      </div>
+    </div>
+
+    <div id="uploadView" class="hidden flex-1 min-h-0 flex flex-col">
+      <div id="dropZone" class="flex-1 min-h-0 rounded-3xl border-2 border-dashed border-black/15 flex flex-col items-center justify-center gap-2.5 text-center px-8 cursor-pointer transition-colors">
+        <div class="w-14 h-14 rounded-2xl bg-[var(--accent-light)] flex items-center justify-center">
+          <i data-lucide="image-plus" class="w-6 h-6 text-[var(--accent)]"></i>
+        </div>
+        <p class="font-bold text-sm">Tap to upload an image</p>
+        <p class="text-xs text-[var(--ink)]/50">Finds every QR code and barcode in the photo</p>
+      </div>
+      <input type="file" id="fileInput" accept="image/*" multiple class="hidden">
+      <div id="uploadPreviewWrap" class="hidden flex-1 min-h-0 rounded-3xl overflow-hidden relative card-shadow flex flex-col">
+        <div id="uploadImgTap" class="flex-1 min-h-0 relative cursor-pointer">
+          <img id="uploadPreview" class="w-full h-full object-contain bg-[var(--ink)]">
+          <canvas id="uploadOverlay" class="absolute pointer-events-none"></canvas>
+          <div id="uploadScanning" class="hidden absolute inset-0 flex flex-col items-center justify-center gap-2.5 bg-[var(--ink)]/70 backdrop-blur-[1px]">
+            <div class="w-8 h-8 border-[3px] border-white/25 border-t-[var(--accent)] rounded-full animate-spin"></div>
+            <p class="text-white/80 text-xs font-semibold">Scanning for codes…</p>
+          </div>
+        </div>
+        <button id="removeUploadBtn" class="btn-press absolute top-3 right-3 w-8 h-8 rounded-full bg-black/50 backdrop-blur-md text-white flex items-center justify-center z-10">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+        <div id="multiResultBar" class="hidden flex-shrink-0 bg-[var(--paper)] px-4 pt-3 pb-3">
+          <p id="multiResultCount" class="text-xs font-bold text-[var(--ink)]/50 mb-2 px-0.5"></p>
+          <div id="multiResultList" class="flex gap-2 overflow-x-auto -mx-4 px-4"></div>
+        </div>
+      </div>
+    </div>
+
+    <p id="scanHint" class="text-center text-xs text-[var(--ink)]/40 py-2 flex-shrink-0">Point your camera at a QR code — it scans automatically</p>
+  </main>
+
+  <nav class="px-4 pb-2 flex-shrink-0">
+    <div class="flex gap-2 bg-black/5 p-1 rounded-2xl">
+      <button id="modeCam" class="mode-btn btn-press flex-1 py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-1.5 bg-[var(--ink)] text-white">
+        <i data-lucide="camera" class="w-4 h-4"></i> Camera
+      </button>
+      <button id="modeUpload" class="mode-btn btn-press flex-1 py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-1.5 text-[var(--ink)]/50">
+        <i data-lucide="image-up" class="w-4 h-4"></i> Upload
+      </button>
+    </div>
+  </nav>
+
+  <div id="resultSheet" class="hidden fixed inset-0 z-40">
+    <div id="sheetBackdrop" class="absolute inset-0 bg-black/40 backdrop-blur-[2px]"></div>
+    <div id="sheetPanel" class="absolute bottom-0 left-0 right-0 max-w-lg mx-auto bg-[var(--paper)] rounded-t-3xl safe-bottom pop-in max-h-[88%] overflow-y-auto">
+      <div class="w-10 h-1.5 bg-black/15 rounded-full mx-auto mt-3"></div>
+      <div class="p-5" id="sheetContent"></div>
+    </div>
+  </div>
+
+  <div id="historySheet" class="hidden fixed inset-0 z-40">
+    <div id="historyBackdrop" class="absolute inset-0 bg-black/40 backdrop-blur-[2px]"></div>
+    <div class="absolute bottom-0 left-0 right-0 max-w-lg mx-auto bg-[var(--paper)] rounded-t-3xl safe-bottom pop-in max-h-[80%] flex flex-col">
+      <div class="w-10 h-1.5 bg-black/15 rounded-full mx-auto mt-3 flex-shrink-0"></div>
+      <div class="p-5 pb-3 flex items-center justify-between flex-shrink-0">
+        <h2 class="text-lg font-extrabold">History</h2>
+        <button id="clearHistoryBtn" class="text-xs font-bold text-[var(--accent)] btn-press">Clear all</button>
+      </div>
+      <div id="historyList" class="px-5 pb-5 overflow-y-auto space-y-2.5"></div>
+    </div>
+  </div>
+
+  <div id="toast" class="hidden fixed bottom-24 left-1/2 z-50 toast-anim">
+    <div class="bg-[var(--ink)] text-white text-sm font-semibold px-4 py-2.5 rounded-full flex items-center gap-2 shadow-xl whitespace-nowrap">
+      <i data-lucide="check" class="w-4 h-4 text-[var(--accent)]"></i>
+      <span id="toastMsg">Copied</span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+lucide.createIcons();
+
+const state = {
+  stream: null,
+  track: null,
+  torchOn: false,
+  facingMode: 'environment',
+  scanning: false,
+  rafId: null,
+  zoomCaps: null,
+  history: JSON.parse(localStorage.getItem('scanly_history') || '[]').map(h => ({ ...h, thumb: undefined }))
+};
+
+const $ = id => document.getElementById(id);
+const icons = () => lucide.createIcons();
+
+function toast(msg) {
+  const t = $('toast');
+  $('toastMsg').textContent = msg;
+  t.classList.remove('hidden');
+  clearTimeout(toast._tm);
+  toast._tm = setTimeout(() => t.classList.add('hidden'), 1800);
+}
+
+function vibrate(ms) {
+  try { if (navigator.vibrate) navigator.vibrate(ms); } catch(e) {}
+}
+
+let historyThumbs = {};
+try { historyThumbs = JSON.parse(sessionStorage.getItem('scanly_thumbs') || '{}'); } catch(e) {}
+
+function saveHistory(entry, thumb) {
+  const rawHistory = JSON.parse(localStorage.getItem('scanly_history') || '[]');
+  const dup = rawHistory[0];
+  if (dup && dup.raw === entry.raw && Date.now() - dup.ts < 4000) return;
+  const id = entry.ts + '_' + Math.random().toString(36).slice(2, 7);
+  const stored = { ...entry, id };
+  rawHistory.unshift(stored);
+  if (rawHistory.length > 60) rawHistory.pop();
+  localStorage.setItem('scanly_history', JSON.stringify(rawHistory));
+  state.history = rawHistory;
+  if (thumb) {
+    historyThumbs[id] = thumb;
+    try { sessionStorage.setItem('scanly_thumbs', JSON.stringify(historyThumbs)); } catch(e) {}
+  }
+  $('historyDot').classList.remove('hidden');
+  return stored;
+}
+
+function clearHistory() {
+  state.history = [];
+  localStorage.removeItem('scanly_history');
+  historyThumbs = {};
+  try { sessionStorage.removeItem('scanly_thumbs'); } catch(e) {}
+  renderHistory();
+  $('historyDot').classList.add('hidden');
+}
+
+function detectQRType(text) {
+  if (/^WIFI:/i.test(text)) return parseWifi(text);
+  if (/^BEGIN:VCARD/i.test(text)) return parseVCard(text);
+  if (/^upi:\/\//i.test(text)) return parseUPI(text);
+  if (/^mailto:/i.test(text)) return { type: 'email', label: 'Email', icon: 'mail', data: parseMailto(text), raw: text };
+  if (/^(tel|TEL):/i.test(text)) return { type: 'phone', label: 'Phone Number', icon: 'phone', data: { number: text.replace(/^tel:/i, '') }, raw: text };
+  if (/^smsto:|^sms:/i.test(text)) return { type: 'sms', label: 'SMS', icon: 'message-circle', data: parseSms(text), raw: text };
+  if (/^https?:\/\//i.test(text)) return { type: 'url', label: 'Website', icon: 'link', data: { url: text }, raw: text };
+  if (/^geo:/i.test(text)) return { type: 'geo', label: 'Location', icon: 'map-pin', data: { coords: text.replace(/^geo:/i,'') }, raw: text };
+  if (/^[\d\s+().-]{7,20}$/.test(text.trim())) return { type: 'phone', label: 'Phone Number', icon: 'phone', data: { number: text.trim() }, raw: text };
+  return { type: 'text', label: 'Plain Text', icon: 'type', data: { text }, raw: text };
+}
+
+function parseWifi(text) {
+  const get = (k) => { const m = text.match(new RegExp(k + ':((?:\\\\.|[^;])*)')); return m ? m[1].replace(/\\(.)/g, '$1') : ''; };
+  return { type: 'wifi', label: 'Wi-Fi Network', icon: 'wifi', data: { ssid: get('S'), pass: get('P'), enc: get('T') || 'WPA', hidden: get('H') === 'true' }, raw: text };
+}
+
+function parseVCard(text) {
+  const get = (k) => { const m = text.match(new RegExp(k + '[^:\\n]*:([^\\n\\r]*)', 'i')); return m ? m[1].trim() : ''; };
+  let name = get('FN');
+  if (!name) { const n = get('N'); name = n ? n.split(';').filter(Boolean).reverse().join(' ') : ''; }
+  return { type: 'vcard', label: 'Contact Card', icon: 'contact', data: { name, phone: get('TEL'), email: get('EMAIL'), org: get('ORG') }, raw: text };
+}
+
+function parseUPI(text) {
+  const url = new URL(text);
+  const p = url.searchParams;
+  return { type: 'upi', label: 'UPI Payment', icon: 'indian-rupee', data: { pa: p.get('pa') || '', pn: p.get('pn') || '', am: p.get('am') || '', cu: p.get('cu') || 'INR', tn: p.get('tn') || '' }, raw: text };
+}
+
+function parseMailto(text) {
+  const [addrPart, query] = text.replace(/^mailto:/i, '').split('?');
+  const p = new URLSearchParams(query || '');
+  return { to: addrPart, subject: p.get('subject') || '', body: p.get('body') || '' };
+}
+
+function parseSms(text) {
+  const body = text.split(':').slice(1).join(':');
+  const [num, ...rest] = body.split(':');
+  return { number: num, message: rest.join(':').replace(/^body=/, '') };
+}
+
+function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
+function openResultSheet(parsed, thumb) {
+  vibrate(40);
+  $('sheetContent').innerHTML = buildResultContent(parsed, thumb);
+  $('resultSheet').classList.remove('hidden');
+  icons();
+  bindResultActions(parsed, thumb);
+}
+
+function buildResultContent(parsed, thumb) {
+  const { type, label, icon, data, raw } = parsed;
+  let body = '';
+  if (type === 'url') {
+    body = `<a href="${esc(data.url)}" target="_blank" rel="noopener" class="text-[var(--accent)] font-semibold break-all text-sm">${esc(data.url)}</a>`;
+  } else if (type === 'wifi') {
+    body = `<div class="space-y-2.5">
+      <div class="flex justify-between items-center bg-black/[0.03] rounded-xl px-3.5 py-2.5"><span class="text-xs text-[var(--ink)]/50 font-semibold">Network</span><span class="font-bold text-sm">${esc(data.ssid)}</span></div>
+      <div class="flex justify-between items-center bg-black/[0.03] rounded-xl px-3.5 py-2.5"><span class="text-xs text-[var(--ink)]/50 font-semibold">Password</span><span class="font-bold text-sm mono">${esc(data.pass) || '—'}</span></div>
+      <div class="flex justify-between items-center bg-black/[0.03] rounded-xl px-3.5 py-2.5"><span class="text-xs text-[var(--ink)]/50 font-semibold">Security</span><span class="font-bold text-sm">${esc(data.enc)}</span></div>
+    </div>`;
+  } else if (type === 'upi') {
+    body = `<div class="space-y-2.5">
+      <div class="flex justify-between items-center bg-black/[0.03] rounded-xl px-3.5 py-2.5"><span class="text-xs text-[var(--ink)]/50 font-semibold">Pay to</span><span class="font-bold text-sm">${esc(data.pn) || esc(data.pa)}</span></div>
+      <div class="flex justify-between items-center bg-black/[0.03] rounded-xl px-3.5 py-2.5"><span class="text-xs text-[var(--ink)]/50 font-semibold">UPI ID</span><span class="font-bold text-sm mono break-all">${esc(data.pa)}</span></div>
+      ${data.am ? `<div class="flex justify-between items-center bg-[var(--accent-light)] rounded-xl px-3.5 py-2.5"><span class="text-xs text-[var(--accent-dark)] font-semibold">Amount</span><span class="font-extrabold text-sm text-[var(--accent-dark)]">${esc(data.cu)} ${esc(data.am)}</span></div>` : ''}
+      ${data.tn ? `<div class="flex justify-between items-center bg-black/[0.03] rounded-xl px-3.5 py-2.5"><span class="text-xs text-[var(--ink)]/50 font-semibold">Note</span><span class="font-semibold text-sm">${esc(data.tn)}</span></div>` : ''}
+    </div>`;
+  } else if (type === 'vcard') {
+    body = `<div class="space-y-2.5">
+      <div class="flex justify-between items-center bg-black/[0.03] rounded-xl px-3.5 py-2.5"><span class="text-xs text-[var(--ink)]/50 font-semibold">Name</span><span class="font-bold text-sm">${esc(data.name) || '—'}</span></div>
+      ${data.phone ? `<div class="flex justify-between items-center bg-black/[0.03] rounded-xl px-3.5 py-2.5"><span class="text-xs text-[var(--ink)]/50 font-semibold">Phone</span><span class="font-bold text-sm">${esc(data.phone)}</span></div>` : ''}
+      ${data.email ? `<div class="flex justify-between items-center bg-black/[0.03] rounded-xl px-3.5 py-2.5"><span class="text-xs text-[var(--ink)]/50 font-semibold">Email</span><span class="font-bold text-sm break-all">${esc(data.email)}</span></div>` : ''}
+      ${data.org ? `<div class="flex justify-between items-center bg-black/[0.03] rounded-xl px-3.5 py-2.5"><span class="text-xs text-[var(--ink)]/50 font-semibold">Org</span><span class="font-bold text-sm">${esc(data.org)}</span></div>` : ''}
+    </div>`;
+  } else if (type === 'phone') {
+    body = `<span class="font-bold text-lg mono">${esc(data.number)}</span>`;
+  } else if (type === 'email') {
+    body = `<div class="space-y-2.5">
+      <div class="flex justify-between items-center bg-black/[0.03] rounded-xl px-3.5 py-2.5"><span class="text-xs text-[var(--ink)]/50 font-semibold">To</span><span class="font-bold text-sm break-all">${esc(data.to)}</span></div>
+      ${data.subject ? `<div class="flex justify-between items-center bg-black/[0.03] rounded-xl px-3.5 py-2.5"><span class="text-xs text-[var(--ink)]/50 font-semibold">Subject</span><span class="font-bold text-sm">${esc(data.subject)}</span></div>` : ''}
+    </div>`;
+  } else if (type === 'sms') {
+    body = `<div class="space-y-2.5">
+      <div class="flex justify-between items-center bg-black/[0.03] rounded-xl px-3.5 py-2.5"><span class="text-xs text-[var(--ink)]/50 font-semibold">To</span><span class="font-bold text-sm">${esc(data.number)}</span></div>
+      ${data.message ? `<div class="bg-black/[0.03] rounded-xl px-3.5 py-2.5"><span class="text-xs text-[var(--ink)]/50 font-semibold block mb-1">Message</span><span class="font-semibold text-sm">${esc(data.message)}</span></div>` : ''}
+    </div>`;
+  } else if (type === 'geo') {
+    body = `<span class="font-bold text-sm mono">${esc(data.coords)}</span>`;
+  } else {
+    body = `<p class="text-sm font-medium leading-relaxed whitespace-pre-wrap break-words">${esc(data.text)}</p>`;
+  }
+
+  const primaryAction = getPrimaryAction(parsed);
+  const formatBadge = parsed.format && parsed.format !== 'QR_CODE'
+    ? `<span class="text-[10px] font-bold uppercase tracking-wide text-[var(--ink)]/40 bg-black/[0.04] px-2 py-1 rounded-full">${esc(parsed.format.replace(/_/g,' '))}</span>`
+    : '';
+
+  return `
+    <div class="flex items-start gap-3 mb-4">
+      ${thumb ? `<img src="${thumb}" class="w-14 h-14 object-cover rounded-2xl border border-black/10 flex-shrink-0" />`
+        : `<div class="w-14 h-14 rounded-2xl bg-[var(--accent-light)] flex items-center justify-center flex-shrink-0"><i data-lucide="${icon}" class="w-6 h-6 text-[var(--accent)]"></i></div>`}
+      <div class="min-w-0 flex-1 pt-0.5">
+        <div class="flex items-center gap-1.5 flex-wrap mb-0.5">
+          <p class="text-[10px] font-bold uppercase tracking-wide text-[var(--ink)]/40">Detected</p>
+          ${formatBadge}
+        </div>
+        <h3 class="font-extrabold text-base leading-tight">${label}</h3>
+      </div>
+    </div>
+    <div class="mb-5">${body}</div>
+    <div class="flex gap-2 mb-2">
+      ${primaryAction ? `<button id="primaryActionBtn" class="btn-press flex-1 py-3 rounded-xl bg-[var(--accent)] text-white text-sm font-bold flex items-center justify-center gap-1.5">
+        <i data-lucide="${primaryAction.icon}" class="w-4 h-4"></i> ${primaryAction.label}
+      </button>` : ''}
+      <button id="copyResultBtn" class="btn-press ${primaryAction ? 'w-12' : 'flex-1'} py-3 rounded-xl bg-black/[0.06] text-[var(--ink)] text-sm font-bold flex items-center justify-center gap-1.5">
+        <i data-lucide="copy" class="w-4 h-4"></i>${primaryAction ? '' : ' Copy'}
+      </button>
+      <button id="shareResultBtn" class="btn-press w-12 py-3 rounded-xl bg-black/[0.06] text-[var(--ink)] text-sm font-bold flex items-center justify-center">
+        <i data-lucide="share-2" class="w-4 h-4"></i>
+      </button>
+      ${thumb ? `<div class="relative flex-shrink-0" id="imageActionsWrap">
+        <button id="imageActionsBtn" class="btn-press w-12 py-3 rounded-xl bg-black/[0.06] text-[var(--ink)] text-sm font-bold flex items-center justify-center h-full">
+          <i data-lucide="more-vertical" class="w-4 h-4"></i>
+        </button>
+        <div id="imageActionsMenu" class="hidden absolute bottom-full right-0 mb-2 w-44 bg-white rounded-2xl card-shadow p-1.5 z-10">
+          <button id="downloadThumbBtn" class="btn-press w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-semibold text-left hover:bg-black/[0.03]">
+            <i data-lucide="download" class="w-4 h-4 text-[var(--ink)]/60"></i> Save image
+          </button>
+          <button id="shareThumbBtn" class="btn-press w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-semibold text-left hover:bg-black/[0.03]">
+            <i data-lucide="image" class="w-4 h-4 text-[var(--ink)]/60"></i> Share image
+          </button>
+        </div>
+      </div>` : ''}
+    </div>
+    <button id="closeSheetBtn" class="w-full text-center text-xs font-semibold text-[var(--ink)]/40 mt-3 py-2">Close</button>
+  `;
+}
+
+function getPrimaryAction(parsed) {
+  const { type, data } = parsed;
+  if (type === 'url') return { label: 'Open Link', icon: 'external-link', action: () => window.open(data.url, '_blank') };
+  if (type === 'wifi') return { label: 'Copy Password', icon: 'key', action: () => copyText(data.pass) };
+  if (type === 'phone') return { label: 'Call', icon: 'phone-call', action: () => window.location.href = 'tel:' + data.number };
+  if (type === 'upi') return { label: 'Pay Now', icon: 'wallet', action: () => window.location.href = parsed.raw };
+  if (type === 'vcard') return { label: 'Save Contact', icon: 'user-plus', action: () => downloadVCard(parsed) };
+  if (type === 'email') return { label: 'Send Email', icon: 'send', action: () => window.location.href = parsed.raw };
+  if (type === 'sms') return { label: 'Send SMS', icon: 'send', action: () => window.location.href = parsed.raw };
+  if (type === 'geo') return { label: 'Open Map', icon: 'map', action: () => window.open('https://maps.google.com/?q=' + data.coords, '_blank') };
+  return null;
+}
+
+function downloadVCard(parsed) {
+  const blob = new Blob([parsed.raw], { type: 'text/vcard' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = (parsed.data.name || 'contact') + '.vcf';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function copyText(text) {
+  navigator.clipboard.writeText(text || '').then(() => { toast('Copied to clipboard'); vibrate(20); }).catch(() => toast('Copy failed'));
+}
+
+function dataURLtoBlob(dataUrl) {
+  const [head, b64] = dataUrl.split(',');
+  const mime = head.match(/:(.*?);/)[1];
+  const bin = atob(b64);
+  const arr = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  return new Blob([arr], { type: mime });
+}
+
+function bindResultActions(parsed, thumb) {
+  const primary = getPrimaryAction(parsed);
+  const pBtn = $('primaryActionBtn');
+  if (pBtn && primary) pBtn.onclick = primary.action;
+  $('copyResultBtn').onclick = () => copyText(parsed.raw);
+  $('shareResultBtn').onclick = async () => {
+    try {
+      if (navigator.share) await navigator.share({ text: parsed.raw });
+      else copyText(parsed.raw);
+    } catch(e) {}
+  };
+  $('closeSheetBtn').onclick = closeResultSheet;
+  const menuBtn = $('imageActionsBtn');
+  const menu = $('imageActionsMenu');
+  if (menuBtn && menu) {
+    menuBtn.onclick = (e) => { e.stopPropagation(); menu.classList.toggle('hidden'); };
+    document.addEventListener('click', () => menu.classList.add('hidden'), { once: true });
+  }
+  const dlBtn = $('downloadThumbBtn');
+  if (dlBtn && thumb) {
+    dlBtn.onclick = () => {
+      const a = document.createElement('a');
+      a.href = thumb; a.download = 'qr-' + Date.now() + '.png';
+      a.click();
+      toast('Image saved');
+      menu.classList.add('hidden');
+    };
+  }
+  const shBtn = $('shareThumbBtn');
+  if (shBtn && thumb) {
+    shBtn.onclick = async () => {
+      try {
+        const blob = dataURLtoBlob(thumb);
+        const file = new File([blob], 'qrcode.png', { type: 'image/png' });
+        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file] });
+        } else {
+          const a = document.createElement('a');
+          a.href = thumb; a.download = 'qrcode.png'; a.click();
+        }
+      } catch(e) {}
+      menu.classList.add('hidden');
+    };
+  }
+}
+
+function closeResultSheet() {
+  $('resultSheet').classList.add('hidden');
+  if (state.stream) { state.scanning = true; scanLoop(); }
+}
+$('sheetBackdrop').onclick = closeResultSheet;
+
+function cropFromVideo(location) {
+  try {
+    const video = $('videoEl');
+    const xs = [location.topLeftCorner.x, location.topRightCorner.x, location.bottomLeftCorner.x, location.bottomRightCorner.x];
+    const ys = [location.topLeftCorner.y, location.topRightCorner.y, location.bottomLeftCorner.y, location.bottomRightCorner.y];
+    const minX = Math.max(0, Math.min(...xs) - 20);
+    const minY = Math.max(0, Math.min(...ys) - 20);
+    const maxX = Math.min(video.videoWidth, Math.max(...xs) + 20);
+    const maxY = Math.min(video.videoHeight, Math.max(...ys) + 20);
+    const w = maxX - minX, h = maxY - minY;
+    if (w <= 0 || h <= 0) return null;
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    c.getContext('2d').drawImage(video, minX, minY, w, h, 0, 0, w, h);
+    return c.toDataURL('image/png');
+  } catch(e) { return null; }
+}
+
+function cropFromCanvas(sourceCanvas, location) {
+  try {
+    const xs = [location.topLeftCorner.x, location.topRightCorner.x, location.bottomLeftCorner.x, location.bottomRightCorner.x];
+    const ys = [location.topLeftCorner.y, location.topRightCorner.y, location.bottomLeftCorner.y, location.bottomRightCorner.y];
+    const minX = Math.max(0, Math.min(...xs) - 20);
+    const minY = Math.max(0, Math.min(...ys) - 20);
+    const maxX = Math.min(sourceCanvas.width, Math.max(...xs) + 20);
+    const maxY = Math.min(sourceCanvas.height, Math.max(...ys) + 20);
+    const w = maxX - minX, h = maxY - minY;
+    if (w <= 0 || h <= 0) return null;
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    c.getContext('2d').drawImage(sourceCanvas, minX, minY, w, h, 0, 0, w, h);
+    return c.toDataURL('image/png');
+  } catch(e) { return null; }
+}
+
+function handleScanResult(text, source, thumb, format) {
+  state.scanning = 'locked';
+  stopScanLoop();
+  vibrate(30);
+  const cam = $('cameraView');
+  cam.classList.add('flash-success');
+  setTimeout(() => cam.classList.remove('flash-success'), 500);
+  const parsed = detectQRType(text);
+  if (format) parsed.format = format;
+  const stored = saveHistory({ ...parsed, ts: Date.now() }, thumb);
+  setTimeout(() => openResultSheet(parsed, thumb), 150);
+}
+
+async function startCamera() {
+  $('camError').classList.remove('flex');
+  $('camError').classList.add('hidden');
+  $('camIdle').classList.remove('hidden');
+  try {
+    if (state.stream) stopCamera();
+    const constraints = { video: { facingMode: state.facingMode, width: { ideal: 1280 }, height: { ideal: 960 } } };
+    const stream = await navigator.mediaDevices.getUserMedia(constraints);
+    state.stream = stream;
+    state.track = stream.getVideoTracks()[0];
+    const video = $('videoEl');
+    video.srcObject = stream;
+    await video.play();
+    $('camIdle').classList.add('hidden');
+    $('camControls').classList.remove('hidden');
+    $('scanOverlay').classList.remove('hidden');
+    setupCapabilities();
+    state.scanning = true;
+    scanLoop();
+  } catch (err) {
+    $('camIdle').classList.add('hidden');
+    $('camError').classList.remove('hidden');
+    $('camError').classList.add('flex');
+    $('camErrorMsg').textContent = err.name === 'NotAllowedError' || err.name === 'NotFoundError' || err.name === 'SecurityError'
+      ? "This page can't access your camera here — often because it's opened from a downloaded file rather than a real web address. Upload an image instead, or open this file on a live site (like GitHub Pages)."
+      : ('Could not access camera: ' + err.message);
+  }
+}
+
+function setupCapabilities() {
+  const torchBtn = $('torchBtn');
+  const zoomWrap = $('zoomWrap');
+  torchBtn.classList.add('hidden');
+  zoomWrap.classList.add('hidden');
+  state.zoomCaps = null;
+  if (!state.track || !state.track.getCapabilities) return;
+  try {
+    const caps = state.track.getCapabilities();
+    if (caps.torch) torchBtn.classList.remove('hidden');
+    if (caps.zoom && caps.zoom.max > caps.zoom.min) {
+      state.zoomCaps = caps.zoom;
+      const slider = $('zoomSlider');
+      slider.min = caps.zoom.min;
+      slider.max = caps.zoom.max;
+      slider.step = ((caps.zoom.max - caps.zoom.min) / 20) || 0.1;
+      slider.value = caps.zoom.min;
+      zoomWrap.classList.remove('hidden');
+    }
+  } catch(e) {}
+}
+
+function stopCamera() {
+  if (state.stream) { state.stream.getTracks().forEach(t => t.stop()); state.stream = null; state.track = null; }
+  stopScanLoop();
+  $('camIdle').classList.remove('hidden');
+  $('camControls').classList.add('hidden');
+  $('scanOverlay').classList.add('hidden');
+  $('zoomWrap').classList.add('hidden');
+  $('camError').classList.add('hidden');
+  $('camError').classList.remove('flex');
+  state.torchOn = false;
+  $('torchBtn').classList.remove('torch-active');
+}
+
+function stopScanLoop() {
+  state.scanning = false;
+  if (state.rafId) cancelAnimationFrame(state.rafId);
+}
+
+function scanLoop() {
+  if (!state.scanning || state.scanning === 'locked') return;
+  const video = $('videoEl');
+  const canvas = $('canvasEl');
+  if (video.readyState === video.HAVE_ENOUGH_DATA) {
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    try {
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' });
+      if (code && code.data) {
+        state.scanning = 'locked';
+        stopScanLoop();
+        const found = scanAllCodesInCanvas(canvas);
+        if (found.length > 1) {
+          vibrate(30);
+          const cam = $('cameraView');
+          cam.classList.add('flash-success');
+          setTimeout(() => cam.classList.remove('flash-success'), 500);
+          found.forEach(f => {
+            const parsed = detectQRType(f.data);
+            parsed.format = f.format;
+            saveHistory({ ...parsed, ts: Date.now() }, f.thumb);
+          });
+          setTimeout(() => openCameraMultiSheet(found), 150);
+        } else {
+          const thumb = code.location ? cropFromCanvas(canvas, code.location) : null;
+          handleScanResult(code.data, 'camera', thumb, 'QR_CODE');
+        }
+        return;
+      }
+    } catch(e) {}
+  }
+  state.rafId = requestAnimationFrame(scanLoop);
+}
+
+function openCameraMultiSheet(found) {
+  $('sheetContent').innerHTML = `
+    <div class="flex items-center gap-3 mb-4">
+      <div class="w-11 h-11 rounded-2xl bg-[var(--accent-light)] flex items-center justify-center flex-shrink-0">
+        <i data-lucide="layers" class="w-5 h-5 text-[var(--accent)]"></i>
+      </div>
+      <div>
+        <p class="text-[10px] font-bold uppercase tracking-wide text-[var(--ink)]/40">Multiple codes</p>
+        <h3 class="font-extrabold text-base">${found.length} codes found</h3>
+      </div>
+    </div>
+    <div id="camMultiList" class="space-y-2 mb-2"></div>
+    <button id="closeSheetBtn" class="w-full text-center text-xs font-semibold text-[var(--ink)]/40 mt-3 py-2">Close</button>
+  `;
+  const list = $('camMultiList');
+  list.innerHTML = found.map((f, i) => {
+    const parsed = detectQRType(f.data);
+    const thumbHtml = f.thumb ? `<img src="${f.thumb}" class="w-10 h-10 rounded-xl object-cover flex-shrink-0" />`
+      : `<div class="w-10 h-10 rounded-xl bg-[var(--accent-light)] flex items-center justify-center flex-shrink-0"><i data-lucide="${parsed.icon}" class="w-4 h-4 text-[var(--accent)]"></i></div>`;
+    return `<button data-cam-idx="${i}" class="cam-multi-item btn-press w-full text-left flex items-center gap-3 bg-white rounded-2xl p-3 card-shadow">
+      ${thumbHtml}
+      <div class="min-w-0 flex-1">
+        <p class="text-xs font-bold text-[var(--ink)]/50">${parsed.label}</p>
+        <p class="text-sm font-semibold truncate">${esc(parsed.raw)}</p>
+      </div>
+      <i data-lucide="chevron-right" class="w-4 h-4 text-[var(--ink)]/30 flex-shrink-0"></i>
+    </button>`;
+  }).join('');
+  $('resultSheet').classList.remove('hidden');
+  icons();
+  document.querySelectorAll('.cam-multi-item').forEach(el => {
+    el.onclick = () => {
+      const f = found[el.dataset.camIdx];
+      const parsed = detectQRType(f.data);
+      parsed.format = f.format;
+      openResultSheet(parsed, f.thumb);
+    };
+  });
+  $('closeSheetBtn').onclick = closeResultSheet;
+  $('sheetBackdrop').onclick = closeResultSheet;
+}
+
+async function toggleTorch() {
+  if (!state.track) return;
+  try {
+    state.torchOn = !state.torchOn;
+    await state.track.applyConstraints({ advanced: [{ torch: state.torchOn }] });
+    $('torchBtn').classList.toggle('torch-active', state.torchOn);
+  } catch(e) { toast('Torch not supported on this device'); state.torchOn = !state.torchOn; }
+}
+
+async function applyZoom(val) {
+  if (!state.track || !state.zoomCaps) return;
+  try { await state.track.applyConstraints({ advanced: [{ zoom: parseFloat(val) }] }); } catch(e) {}
+}
+
+$('zoomSlider').addEventListener('input', (e) => applyZoom(e.target.value));
+
+function switchCamera() {
+  state.facingMode = state.facingMode === 'environment' ? 'user' : 'environment';
+  startCamera();
+}
+
+let zxingMultiReader = null;
+function getZxingReader() {
+  if (zxingMultiReader) return zxingMultiReader;
+  try {
+    const ZX = window.ZXing;
+    if (!ZX || !ZX.MultiFormatReader) return null;
+    const hints = new Map();
+    if (ZX.DecodeHintType) hints.set(ZX.DecodeHintType.TRY_HARDER, true);
+    if (ZX.DecodeHintType && ZX.BarcodeFormat) {
+      hints.set(ZX.DecodeHintType.POSSIBLE_FORMATS, [
+        ZX.BarcodeFormat.EAN_13, ZX.BarcodeFormat.EAN_8, ZX.BarcodeFormat.UPC_A, ZX.BarcodeFormat.UPC_E,
+        ZX.BarcodeFormat.CODE_128, ZX.BarcodeFormat.CODE_39, ZX.BarcodeFormat.CODE_93, ZX.BarcodeFormat.CODABAR,
+        ZX.BarcodeFormat.ITF, ZX.BarcodeFormat.DATA_MATRIX, ZX.BarcodeFormat.AZTEC, ZX.BarcodeFormat.PDF_417,
+        ZX.BarcodeFormat.RSS_14, ZX.BarcodeFormat.RSS_EXPANDED
+      ]);
+    }
+    zxingMultiReader = new ZX.MultiFormatReader();
+    zxingMultiReader.setHints(hints);
+    return zxingMultiReader;
+  } catch(e) { return null; }
+}
+
+function decodeOneZxing(canvas, cropY, cropH) {
+  const reader = getZxingReader();
+  const ZX = window.ZXing;
+  if (!reader || !ZX) return null;
+  let srcCanvas = canvas, offsetY = 0;
+  if (typeof cropY === 'number') {
+    const strip = document.createElement('canvas');
+    strip.width = canvas.width; strip.height = cropH;
+    strip.getContext('2d').drawImage(canvas, 0, cropY, canvas.width, cropH, 0, 0, canvas.width, cropH);
+    srcCanvas = strip; offsetY = cropY;
+  }
+  try {
+    const luminanceSource = new ZX.HTMLCanvasElementLuminanceSource(srcCanvas);
+    const binaryBitmap = new ZX.BinaryBitmap(new ZX.HybridBinarizer(luminanceSource));
+    const result = reader.decode(binaryBitmap);
+    if (!result) return null;
+    const text = result.getText();
+    let format = 'BARCODE';
+    try {
+      const fmt = result.getBarcodeFormat();
+      format = (ZX.BarcodeFormat && ZX.BarcodeFormat[fmt]) || String(fmt);
+    } catch(e) {}
+    const location = pointsToLocation(result, canvas, format, offsetY);
+    return { data: text, location, format };
+  } catch(e) { return null; }
+}
+
+function decodeAllZxingStrips(canvas) {
+  const found = [];
+  const seen = new Set();
+  const full = decodeOneZxing(canvas);
+  if (full && full.data) { found.push(full); seen.add(full.format + '::' + full.data); }
+  const stripH = Math.max(300, Math.round(canvas.height / 6));
+  for (let y = 0; y < canvas.height; y += Math.round(stripH * 0.6)) {
+    const h = Math.min(stripH, canvas.height - y);
+    if (h < 60) break;
+    const r = decodeOneZxing(canvas, y, h);
+    if (r && r.data) {
+      const key = r.format + '::' + r.data;
+      if (!seen.has(key)) { seen.add(key); found.push(r); }
+    }
+  }
+  return found;
+}
+
+function pointsToLocation(result, canvas, format, offsetY) {
+  try {
+    offsetY = offsetY || 0;
+    const points = result.getResultPoints ? result.getResultPoints() : [];
+    if (!points || points.length < 1) return null;
+    const xs = points.map(p => p.getX()), ys = points.map(p => p.getY() + offsetY);
+    let minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+    const is1D = !['QR_CODE', 'DATA_MATRIX', 'AZTEC', 'PDF_417'].includes(format);
+    if (is1D) {
+      const barcodeHeight = Math.max(60, (maxX - minX) * 0.28);
+      const cy = (minY + maxY) / 2;
+      minY = cy - barcodeHeight / 2;
+      maxY = cy + barcodeHeight / 2;
+    }
+    if (maxX - minX < 4) { minX -= 40; maxX += 40; }
+    if (maxY - minY < 4) { minY -= 40; maxY += 40; }
+    const padX = Math.max(14, (maxX - minX) * 0.12);
+    const padY = Math.max(14, (maxY - minY) * 0.18);
+    minX = Math.max(0, minX - padX); maxX = Math.min(canvas.width, maxX + padX);
+    minY = Math.max(0, minY - padY); maxY = Math.min(canvas.height, maxY + padY);
+    return {
+      topLeftCorner: { x: minX, y: minY },
+      topRightCorner: { x: maxX, y: minY },
+      bottomLeftCorner: { x: minX, y: maxY },
+      bottomRightCorner: { x: maxX, y: maxY }
+    };
+  } catch(e) { return null; }
+}
+
+function decodeOneJsQR(ctx, w, h) {
+  try {
+    const imageData = ctx.getImageData(0, 0, w, h);
+    const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'attemptBoth' });
+    if (code && code.data) return { data: code.data, location: code.location, format: 'QR_CODE' };
+  } catch(e) {}
+  return null;
+}
+
+function scaleLocation(loc, factor) {
+  const s = (p) => ({ x: p.x * factor, y: p.y * factor });
+  return {
+    topLeftCorner: s(loc.topLeftCorner), topRightCorner: s(loc.topRightCorner),
+    bottomLeftCorner: s(loc.bottomLeftCorner), bottomRightCorner: s(loc.bottomRightCorner)
+  };
+}
+
+function maskRegion(ctx, location, w, h) {
+  const xs = [location.topLeftCorner.x, location.topRightCorner.x, location.bottomLeftCorner.x, location.bottomRightCorner.x];
+  const ys = [location.topLeftCorner.y, location.topRightCorner.y, location.bottomLeftCorner.y, location.bottomRightCorner.y];
+  const minX = Math.max(0, Math.min(...xs) - 4);
+  const minY = Math.max(0, Math.min(...ys) - 4);
+  const maxX = Math.min(w, Math.max(...xs) + 4);
+  const maxY = Math.min(h, Math.max(...ys) + 4);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(minX, minY, maxX - minX, maxY - minY);
+}
+
+function scanAllCodesInCanvas(sourceCanvas) {
+  const MAX_DIM = 2200;
+  let scale = 1;
+  if (sourceCanvas.width > MAX_DIM || sourceCanvas.height > MAX_DIM) {
+    scale = MAX_DIM / Math.max(sourceCanvas.width, sourceCanvas.height);
+  }
+  const w = Math.round(sourceCanvas.width * scale), h = Math.round(sourceCanvas.height * scale);
+  const work = document.createElement('canvas');
+  work.width = w; work.height = h;
+  const ctx = work.getContext('2d', { willReadFrequently: true });
+  ctx.drawImage(sourceCanvas, 0, 0, w, h);
+
+  const results = [];
+  const seen = new Set();
+
+  const barcodes = decodeAllZxingStrips(work);
+  barcodes.forEach(found => {
+    const key = found.format + '::' + found.data;
+    if (seen.has(key)) return;
+    seen.add(key);
+    const fullLocation = found.location ? scaleLocation(found.location, 1 / scale) : null;
+    const thumb = fullLocation ? cropFromCanvas(sourceCanvas, fullLocation) : null;
+    const box = boxFromLocation(fullLocation);
+    results.push({ data: found.data, format: found.format, thumb, box });
+    if (found.location) maskRegion(ctx, found.location, w, h);
+  });
+
+  const MAX_QR = 20;
+  for (let pass = 0; pass < MAX_QR; pass++) {
+    const found = decodeOneJsQR(ctx, w, h);
+    if (!found || !found.data) break;
+    const key = found.format + '::' + found.data;
+    if (seen.has(key)) {
+      if (found.location) maskRegion(ctx, found.location, w, h);
+      else break;
+      continue;
+    }
+    seen.add(key);
+    const fullLocation = found.location ? scaleLocation(found.location, 1 / scale) : null;
+    const thumb = fullLocation ? cropFromCanvas(sourceCanvas, fullLocation) : null;
+    const box = boxFromLocation(fullLocation);
+    results.push({ data: found.data, format: found.format, thumb, box });
+    if (found.location) maskRegion(ctx, found.location, w, h);
+    else break;
+  }
+  return results;
+}
+
+function boxFromLocation(loc) {
+  if (!loc) return null;
+  const xs = [loc.topLeftCorner.x, loc.topRightCorner.x, loc.bottomLeftCorner.x, loc.bottomRightCorner.x];
+  const ys = [loc.topLeftCorner.y, loc.topRightCorner.y, loc.bottomLeftCorner.y, loc.bottomRightCorner.y];
+  const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+  return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
+}
+
+function scanImageFile(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    $('uploadPreview').src = e.target.result;
+    $('uploadPreviewWrap').classList.remove('hidden');
+    $('dropZone').classList.add('hidden');
+    $('multiResultBar').classList.add('hidden');
+    $('uploadScanning').classList.remove('hidden');
+    const img = new Image();
+    img.onload = () => {
+      setTimeout(() => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width; canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+          const found = scanAllCodesInCanvas(canvas);
+          $('uploadScanning').classList.add('hidden');
+          if (!found.length) {
+            toast('No QR code or barcode found in this image');
+            return;
+          }
+          found.forEach(f => {
+            const parsed = detectQRType(f.data);
+            parsed.format = f.format;
+            saveHistory({ ...parsed, ts: Date.now() }, f.thumb);
+          });
+          if (found.length === 1) {
+            const parsed = detectQRType(found[0].data);
+            parsed.format = found[0].format;
+            vibrate(30);
+            setTimeout(() => openResultSheet(parsed, found[0].thumb), 150);
+          } else {
+            vibrate(30);
+            drawUploadOverlay(found, img);
+            renderMultiResults(found);
+          }
+        } catch(err) {
+          $('uploadScanning').classList.add('hidden');
+          toast('Could not read image');
+        }
+      }, 30);
+    };
+    img.onerror = () => { $('uploadScanning').classList.add('hidden'); toast('Could not load image'); };
+    img.src = e.target.result;
+  };
+  reader.onerror = () => toast('Could not read file');
+  reader.readAsDataURL(file);
+}
+
+function drawUploadOverlay(found, imgEl) {
+  try {
+    const canvas = $('uploadOverlay');
+    const rect = imgEl.getBoundingClientRect();
+    const wrapRect = imgEl.parentElement.getBoundingClientRect();
+    canvas.width = rect.width; canvas.height = rect.height;
+    canvas.style.left = (rect.left - wrapRect.left) + 'px';
+    canvas.style.top = (rect.top - wrapRect.top) + 'px';
+    const naturalW = imgEl.naturalWidth, naturalH = imgEl.naturalHeight;
+    const scaleX = rect.width / naturalW, scaleY = rect.height / naturalH;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    found.forEach(f => {
+      if (!f.box) return;
+      ctx.strokeStyle = '#e8622c';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      const bx = f.box.x * scaleX, by = f.box.y * scaleY, bw = f.box.w * scaleX, bh = f.box.h * scaleY;
+      if (ctx.roundRect) ctx.roundRect(bx, by, bw, bh, 10);
+      else ctx.rect(bx, by, bw, bh);
+      ctx.stroke();
+    });
+  } catch(e) {}
+}
+
+function renderMultiResults(found) {
+  const bar = $('multiResultBar');
+  const list = $('multiResultList');
+  $('multiResultCount').textContent = `${found.length} codes found — tap one`;
+  list.innerHTML = found.map((f, i) => {
+    const parsed = detectQRType(f.data);
+    const thumbHtml = f.thumb
+      ? `<img src="${f.thumb}" class="w-full h-full object-cover" />`
+      : `<div class="w-full h-full flex items-center justify-center bg-[var(--accent-light)]"><i data-lucide="${parsed.icon}" class="w-5 h-5 text-[var(--accent)]"></i></div>`;
+    return `
+      <button data-multi-idx="${i}" class="multi-result-item btn-press flex-shrink-0 w-20 flex flex-col items-center gap-1.5">
+        <div class="w-16 h-16 rounded-2xl overflow-hidden border-2 border-white card-shadow bg-[var(--ink)]">${thumbHtml}</div>
+        <span class="text-[10px] font-bold text-[var(--ink)]/60 truncate w-full text-center">${esc(parsed.label)}</span>
+      </button>`;
+  }).join('');
+  bar.classList.remove('hidden');
+  icons();
+  document.querySelectorAll('.multi-result-item').forEach(el => {
+    el.onclick = () => {
+      const f = found[el.dataset.multiIdx];
+      const parsed = detectQRType(f.data);
+      parsed.format = f.format;
+      openResultSheet(parsed, f.thumb);
+    };
+  });
+}
+
+function clearUpload() {
+  $('uploadPreviewWrap').classList.add('hidden');
+  $('dropZone').classList.remove('hidden');
+  $('multiResultBar').classList.add('hidden');
+  $('fileInput').value = '';
+}
+
+function setMode(mode) {
+  if (mode === 'camera') {
+    $('cameraView').classList.remove('hidden');
+    $('uploadView').classList.add('hidden');
+    $('modeCam').classList.add('bg-[var(--ink)]', 'text-white');
+    $('modeCam').classList.remove('text-[var(--ink)]/50');
+    $('modeUpload').classList.remove('bg-[var(--ink)]', 'text-white');
+    $('modeUpload').classList.add('text-[var(--ink)]/50');
+    $('scanHint').textContent = "Point your camera at a QR code — it scans automatically";
+  } else {
+    $('cameraView').classList.add('hidden');
+    $('uploadView').classList.remove('hidden');
+    stopCamera();
+    $('modeUpload').classList.add('bg-[var(--ink)]', 'text-white');
+    $('modeUpload').classList.remove('text-[var(--ink)]/50');
+    $('modeCam').classList.remove('bg-[var(--ink)]', 'text-white');
+    $('modeCam').classList.add('text-[var(--ink)]/50');
+    $('scanHint').textContent = "Upload a photo — Scanly finds every code inside it, even several at once";
+  }
+}
+
+$('modeCam').onclick = () => setMode('camera');
+$('modeUpload').onclick = () => setMode('upload');
+$('startCamBtn').onclick = () => { state.scanning = true; startCamera(); };
+$('stopCamBtn').onclick = stopCamera;
+$('torchBtn').onclick = toggleTorch;
+$('switchCamBtn').onclick = switchCamera;
+$('camErrorUploadBtn').onclick = () => setMode('upload');
+
+$('dropZone').onclick = () => $('fileInput').click();
+$('fileInput').onchange = (e) => { if (e.target.files[0]) scanImageFile(e.target.files[0]); if (e.target.files.length > 1) toast('Scanning the first image — upload others one at a time'); };
+$('uploadImgTap').onclick = () => $('fileInput').click();
+$('removeUploadBtn').onclick = (e) => { e.stopPropagation(); clearUpload(); };
+['dragover','dragleave','drop'].forEach(evt => {
+  $('dropZone').addEventListener(evt, (e) => { e.preventDefault(); e.stopPropagation(); });
+});
+$('dropZone').addEventListener('dragover', () => $('dropZone').classList.add('border-[var(--accent)]', 'bg-[var(--accent-light)]'));
+$('dropZone').addEventListener('dragleave', () => $('dropZone').classList.remove('border-[var(--accent)]', 'bg-[var(--accent-light)]'));
+$('dropZone').addEventListener('drop', (e) => {
+  $('dropZone').classList.remove('border-[var(--accent)]', 'bg-[var(--accent-light)]');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) scanImageFile(file);
+});
+
+function renderHistory() {
+  const list = $('historyList');
+  if (!state.history.length) {
+    list.innerHTML = `<div class="py-16 flex flex-col items-center gap-2 text-center">
+      <i data-lucide="inbox" class="w-8 h-8 text-[var(--ink)]/20"></i>
+      <p class="text-sm text-[var(--ink)]/40">No scans yet</p>
+    </div>`;
+    icons();
+    return;
+  }
+  list.innerHTML = state.history.map((h, i) => {
+    const thumb = historyThumbs[h.id];
+    const thumbHtml = thumb
+      ? `<img src="${thumb}" class="w-9 h-9 rounded-xl object-cover flex-shrink-0" />`
+      : `<div class="w-9 h-9 rounded-xl bg-[var(--accent-light)] flex items-center justify-center flex-shrink-0"><i data-lucide="${h.icon}" class="w-4 h-4 text-[var(--accent)]"></i></div>`;
+    return `
+    <div class="flex items-center gap-2">
+      <button data-idx="${i}" class="history-item btn-press flex-1 min-w-0 text-left flex items-center gap-3 bg-white rounded-2xl p-3 card-shadow">
+        ${thumbHtml}
+        <div class="min-w-0 flex-1">
+          <p class="text-xs font-bold text-[var(--ink)]/50">${h.label}</p>
+          <p class="text-sm font-semibold truncate">${esc(h.raw)}</p>
+        </div>
+        <i data-lucide="chevron-right" class="w-4 h-4 text-[var(--ink)]/30 flex-shrink-0"></i>
+      </button>
+      <button data-copy-idx="${i}" class="history-copy btn-press w-10 h-10 rounded-xl bg-black/[0.04] flex items-center justify-center flex-shrink-0">
+        <i data-lucide="copy" class="w-4 h-4 text-[var(--ink)]/50"></i>
+      </button>
+    </div>
+  `;
+  }).join('');
+  icons();
+  document.querySelectorAll('.history-item').forEach(el => {
+    el.onclick = () => { closeHistorySheet(); const h = state.history[el.dataset.idx]; openResultSheet(h, historyThumbs[h.id]); };
+  });
+  document.querySelectorAll('.history-copy').forEach(el => {
+    el.onclick = (e) => { e.stopPropagation(); copyText(state.history[el.dataset.copyIdx].raw); };
+  });
+}
+
+function openHistorySheet() { renderHistory(); $('historySheet').classList.remove('hidden'); }
+function closeHistorySheet() { $('historySheet').classList.add('hidden'); }
+$('historyBtn').onclick = openHistorySheet;
+$('historyBackdrop').onclick = closeHistorySheet;
+$('clearHistoryBtn').onclick = clearHistory;
+if (state.history.length) $('historyDot').classList.remove('hidden');
+
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && state.stream) stopCamera();
+});
+</script>
+</body>
+</html>
