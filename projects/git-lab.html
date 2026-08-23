@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Git Lab</title>
+<meta name="description" content="Learn Git and GitHub from zero with a live, simulated terminal and repository you can actually break and fix.">
+<meta name="keywords" content="git, github">
+<meta name="app-icon" content="git-branch">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<script>
+window.onerror = function(msg, src, line, col, err) {
+  var b = document.getElementById('boot-error-banner');
+  if (!b) {
+    b = document.createElement('div');
+    b.id = 'boot-error-banner';
+    b.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#3a1410;color:#ffd8cc;font:13px/1.4 -apple-system,sans-serif;z-index:999999;padding:10px 14px;border-top:2px solid #e8622c;';
+    document.body ? document.body.appendChild(b) : document.documentElement.appendChild(b);
+  }
+  var details = (err && err.stack) ? err.stack : (src + ':' + line + ':' + col);
+  b.innerHTML = '<div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;">' +
+    '<div><strong>Something went wrong.</strong> ' + String(msg).replace(/</g,'&lt;') + '</div>' +
+    '<button onclick="this.closest(\'#boot-error-banner\').remove()" style="background:none;border:none;color:#ffd8cc;font-size:16px;line-height:1;padding:0 4px;">×</button></div>' +
+    '<details style="margin-top:6px;"><summary style="cursor:pointer;opacity:.8;">Technical details</summary><pre style="white-space:pre-wrap;font-size:11px;opacity:.85;margin-top:4px;">' + String(details).replace(/</g,'&lt;') + '</pre></details>';
+  return false;
+};
+window.addEventListener('unhandledrejection', function(e) {
+  window.onerror('Unhandled: ' + (e.reason && e.reason.message ? e.reason.message : e.reason), '', 0, 0, e.reason);
+});
+</script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink:#1C1A17; --paper:#FAF8F5; --panel:#FFFFFF; --line:#E7E1D8;
+    --flame:#E8622C; --flame-dark:#C94E1E; --moss:#3F7D58; --amber:#B8860B;
+    --term-bg:#161412; --term-line:#2A2622;
+  }
+  * { -webkit-tap-highlight-color: transparent; }
+  html, body { background: var(--paper); color: var(--ink); overscroll-behavior-y: none; }
+  body { font-family: 'Inter', sans-serif; }
+  .font-display { font-family: 'Fraunces', serif; }
+  .font-mono { font-family: 'JetBrains Mono', monospace; }
+  .app-vh { height: 100vh; height: 100dvh; }
+  .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-thumb { background: #D8D0C2; border-radius: 3px; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  @keyframes fadeUp { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: translateY(0); } }
+  .anim-in { animation: fadeUp .35s cubic-bezier(.16,1,.3,1) both; }
+  @keyframes popIn { from { opacity:0; transform: scale(.9); } to { opacity:1; transform: scale(1); } }
+  .anim-pop { animation: popIn .3s cubic-bezier(.34,1.56,.64,1) both; }
+  @keyframes flyRight { 0% { transform: translateX(0); opacity: 1; } 100% { transform: translateX(var(--fly-dist,60px)); opacity: 0; } }
+  @keyframes pulseRing { 0% { box-shadow: 0 0 0 0 rgba(232,98,44,.35); } 100% { box-shadow: 0 0 0 10px rgba(232,98,44,0); } }
+  .pulse-ring { animation: pulseRing 1.1s ease-out; }
+  .tab-btn { transition: color .15s, transform .1s; }
+  .tab-btn:active { transform: scale(.92); }
+  .card-btn { transition: transform .12s, box-shadow .12s, border-color .12s; }
+  .card-btn:active { transform: scale(.97); }
+  .term-scroll { scroll-behavior: smooth; }
+  .blink-cursor { animation: blink 1s step-end infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .chip { transition: background .15s, color .15s, border-color .15s; }
+  .file-row { transition: background .2s, opacity .3s, transform .3s; }
+  .progress-fill { transition: width .4s cubic-bezier(.16,1,.3,1); }
+  .reveal-panel { transition: max-height .35s cubic-bezier(.16,1,.3,1), opacity .3s; overflow: hidden; }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  }
+  input, button, select { font-family: inherit; }
+  input:focus-visible, button:focus-visible, select:focus-visible { outline: 2px solid var(--flame); outline-offset: 2px; }
+  .tree-node { transition: all .25s cubic-bezier(.16,1,.3,1); }
+</style>
+</head>
+<body class="app-vh flex flex-col overflow-hidden">
+
+<div id="root" class="flex-1 flex flex-col min-h-0"></div>
+
+<script>
+(function(){
+
+const LESSONS = [
+{
+  id: 'intro', unit: 'Foundations', title: 'What even is Git?', icon: 'sparkles',
+  body: [
+    "Git is a **version control system**. It's a program on your computer that remembers every version of your files, so you can always go back, compare, or undo.",
+    "**GitHub** is a different thing — a website that stores copies of your Git projects online, so you can back them up and work with other people. Git works completely fine with no internet and no GitHub at all.",
+    "Think of it like this: Git is the camera that takes snapshots of your project. GitHub is the photo album in the cloud where you can store and share those snapshots."
+  ],
+  demo: { type: 'concept', visual: 'trees-intro' },
+  quiz: { q: "Which statement is true?", options: ["Git and GitHub are the same thing", "Git works on your computer; GitHub is a website that stores Git projects", "You need internet to use Git"], correct: 1 }
+},
+{
+  id: 'init', unit: 'Foundations', title: 'Starting a repository', icon: 'folder-plus',
+  body: [
+    "A **repository** (or \"repo\") is a project folder that Git is watching. To turn any folder into a repo, you run one command inside it:",
+  ],
+  demo: { type: 'terminal', starterFiles: [], allowedCommands: ['git init', 'ls', 'ls -a'], goal: "Run `git init` to create a new repository.", successCmd: 'git init' },
+  explainAfter: [
+    "That command created a hidden folder called **.git** inside your project. That's it — that's the whole repository. Every commit, every branch, every bit of history Git tracks lives inside that one folder.",
+    "Delete `.git` and you delete all Git history — your actual files are untouched, but the tracking is gone."
+  ],
+  quiz: { q: "What does `git init` actually create?", options: ["A GitHub account", "A hidden .git folder that stores all history", "A new text file"], correct: 1 }
+},
+{
+  id: 'trees', unit: 'Foundations', title: 'The three trees', icon: 'layout-panel-top',
+  body: [
+    "This is the single most important idea in Git. Every file in your project lives in one of **three places**:",
+    "1. **Working Directory** — the actual files on your disk, the ones you edit in your editor.",
+    "2. **Staging Area** (also called the \"index\") — a holding area for changes you're about to commit. Think of it as a shopping cart.",
+    "3. **Repository** — the permanent history. Once something is here, it's a saved snapshot forever.",
+    "A file moves left to right: you edit it (Working Directory), you `git add` it (Staging Area), you `git commit` it (Repository)."
+  ],
+  demo: { type: 'concept', visual: 'trees-explain' },
+  quiz: { q: "Which command moves a file from Staging into the permanent Repository?", options: ["git add", "git commit", "git init"], correct: 1 }
+},
+{
+  id: 'status', unit: 'Foundations', title: 'Checking status', icon: 'search',
+  body: [
+    "`git status` is the command you'll run more than any other. It tells you, in plain language, what state every file is in — untracked, modified, staged, or clean.",
+    "Get in the habit: whenever you're unsure what's going on, run `git status` first."
+  ],
+  demo: { type: 'terminal', starterFiles: [{name:'index.html', content:'<h1>Hello</h1>', tracked:false}], allowedCommands: ['git status', 'ls'], goal: "Run `git status` to see the untracked file.", successCmd: 'git status' },
+  explainAfter: ["Notice it listed `index.html` as **Untracked** — Git sees the file exists, but isn't watching it yet. That changes with `git add`."],
+  quiz: { q: "What does `git status` do?", options: ["Deletes uncommitted files", "Shows the current state of your files (untracked/staged/modified)", "Uploads your project to GitHub"], correct: 1 }
+},
+{
+  id: 'add', unit: 'Making changes', title: 'Staging with git add', icon: 'plus-circle',
+  body: [
+    "`git add <filename>` moves a file from the Working Directory into the Staging Area — it tells Git \"I want this change included in my next commit.\"",
+    "You can stage one file (`git add index.html`), several by name, or everything at once with `git add .`"
+  ],
+  demo: { type: 'terminal', starterFiles: [{name:'index.html', content:'<h1>Hello</h1>', tracked:false}], allowedCommands: ['git status', 'git add index.html', 'git add .'], goal: "Stage index.html with `git add index.html`.", successCmd: 'git add index.html' },
+  explainAfter: ["Watch the visual — `index.html` just moved from the Working Directory panel into the Staging Area panel. Run `git status` again any time to confirm."],
+  quiz: { q: "What's the effect of `git add .`?", options: ["Stages every changed file in the folder at once", "Commits every file", "Deletes the staging area"], correct: 0 }
+},
+{
+  id: 'commit', unit: 'Making changes', title: 'Saving a snapshot', icon: 'camera',
+  body: [
+    "`git commit -m \"message\"` takes everything in the Staging Area and permanently saves it as a snapshot in your Repository, with a message describing what changed.",
+    "Good commit messages are short and describe **why**, not just what: `\"Fix login button alignment\"` beats `\"changes\"`.",
+    "Each commit gets a unique ID (a hash like `a3f9c1e`) so you can always refer back to that exact moment."
+  ],
+  demo: { type: 'terminal', starterFiles: [{name:'index.html', content:'<h1>Hello</h1>', tracked:true, staged:true}], allowedCommands: ['git commit -m "Initial commit"', 'git status', 'git log'], goal: 'Commit your staged file with `git commit -m "Initial commit"`.', successCmd: 'git commit -m "Initial commit"' },
+  explainAfter: ["Nice — that file just became part of permanent history. Try `git log` to see the commit you just made."],
+  quiz: { q: "Where do committed changes go?", options: ["Nowhere, they vanish", "Into the permanent Repository history, each with its own ID", "Straight to GitHub automatically"], correct: 1 }
+},
+{
+  id: 'log', unit: 'Making changes', title: 'Viewing history', icon: 'history',
+  body: [
+    "`git log` shows every commit ever made, newest first: who made it, when, its unique hash, and its message.",
+    "This is your project's full memory — you can always scroll back through it to see how the project evolved."
+  ],
+  demo: { type: 'terminal', starterFiles: [{name:'index.html', content:'<h1>Hello</h1>', tracked:true, committed:true}], allowedCommands: ['git log', 'git log --oneline'], goal: "Run `git log` to view commit history.", successCmd: 'git log' },
+  quiz: { q: "git log shows...", options: ["Only the very last commit", "The full history of commits, newest first", "Files you haven't saved yet"], correct: 1 }
+},
+{
+  id: 'gitignore', unit: 'Making changes', title: 'Ignoring files', icon: 'eye-off',
+  body: [
+    "Not every file belongs in Git — things like build output, secret keys, or dependency folders (`node_modules`) shouldn't be tracked.",
+    "A **.gitignore** file lists patterns for files Git should never track or stage, even with `git add .`",
+    "Example .gitignore:",
+  ],
+  code: "node_modules/\n.env\n*.log\n.DS_Store",
+  demo: { type: 'terminal', starterFiles: [{name:'.gitignore', content:'node_modules/\n.env', tracked:true, committed:true},{name:'secrets.env', content:'API_KEY=xxxx', tracked:false, ignored:true}], allowedCommands: ['git status', 'git add .'], goal: "Run `git status` — notice secrets.env doesn't show up as untracked.", successCmd: 'git status' },
+  explainAfter: ["Because `secrets.env` matches a pattern in `.gitignore`, Git pretends it doesn't exist. This is exactly how real projects keep API keys and passwords out of history."],
+  quiz: { q: "What's .gitignore for?", options: ["Listing files Git should never track", "Deleting files permanently", "Storing your GitHub password"], correct: 0 }
+},
+{
+  id: 'branch', unit: 'Branching', title: 'What is a branch?', icon: 'git-branch',
+  body: [
+    "A **branch** is an independent line of development. Your main branch (usually called `main`) holds your stable, working code.",
+    "When you want to try something — a new feature, an experiment — you create a new branch. It starts as an exact copy of where you branched from, but changes on it don't affect `main` until you merge them.",
+    "This is Git's superpower: you can experiment freely with zero risk to your working code."
+  ],
+  demo: { type: 'concept', visual: 'branch-diagram' },
+  quiz: { q: "Why use a branch instead of editing main directly?", options: ["Branches are required by law", "It lets you experiment without risking your stable code", "It makes files smaller"], correct: 1 }
+},
+{
+  id: 'branch-cmd', unit: 'Branching', title: 'Creating & switching branches', icon: 'git-fork',
+  body: [
+    "`git branch <name>` creates a new branch. `git checkout <name>` (or the newer `git switch <name>`) moves you onto it.",
+    "The shortcut `git checkout -b <name>` does both at once: create and switch in one step."
+  ],
+  demo: { type: 'terminal', starterFiles: [{name:'index.html', content:'<h1>Hello</h1>', tracked:true, committed:true}], allowedCommands: ['git branch', 'git checkout -b feature-login', 'git status'], goal: "Create and switch to a new branch: `git checkout -b feature-login`.", successCmd: 'git checkout -b feature-login' },
+  explainAfter: ["You're now on `feature-login`. Any commits you make here won't touch `main` until you merge them."],
+  quiz: { q: "What does `git checkout -b new-feature` do?", options: ["Deletes the main branch", "Creates a branch called new-feature and switches to it", "Uploads to GitHub"], correct: 1 }
+},
+{
+  id: 'merge', unit: 'Branching', title: 'Merging branches', icon: 'git-merge',
+  body: [
+    "Once your work on a branch is ready, `git merge <branch>` brings those changes into your current branch.",
+    "Typical flow: switch back to `main` with `git checkout main`, then run `git merge feature-login` to pull that branch's commits in.",
+    "If both branches changed the *same lines* of the *same file*, Git can't decide which version wins — that's called a **merge conflict**, and you resolve it by hand."
+  ],
+  demo: { type: 'terminal', starterFiles: [{name:'index.html', content:'<h1>Hello</h1>', tracked:true, committed:true, branch:'main'}], allowedCommands: ['git checkout main', 'git merge feature-login', 'git status'], goal: "Switch to main, then merge feature-login: run `git checkout main` then `git merge feature-login`.", successCmd: 'git merge feature-login', prereqCmd: 'git checkout main' },
+  explainAfter: ["Merged! `main` now contains everything from `feature-login` too."],
+  quiz: { q: "A merge conflict happens when...", options: ["You forget to commit", "Two branches changed the same lines and Git can't auto-pick a winner", "You run git init twice"], correct: 1 }
+},
+{
+  id: 'remote', unit: 'GitHub', title: 'Remotes: connecting to GitHub', icon: 'cloud',
+  body: [
+    "So far everything has been local — on your computer only. A **remote** is a version of your repo hosted elsewhere, usually on GitHub.",
+    "`git remote add origin <url>` connects your local repo to a GitHub repo. By convention, that connection is named `origin`.",
+    "This just links the two — it doesn't send anything yet. That's the next step."
+  ],
+  demo: { type: 'terminal', starterFiles: [{name:'index.html', content:'<h1>Hello</h1>', tracked:true, committed:true}], allowedCommands: ['git remote add origin https://github.com/you/project.git', 'git remote -v'], goal: "Connect a remote: `git remote add origin https://github.com/you/project.git`.", successCmd: 'git remote add origin https://github.com/you/project.git' },
+  quiz: { q: "What does 'origin' usually refer to?", options: ["The first commit ever made", "The nickname for your connected GitHub remote", "A branch name"], correct: 1 }
+},
+{
+  id: 'push', unit: 'GitHub', title: 'Pushing to GitHub', icon: 'upload-cloud',
+  body: [
+    "`git push origin main` uploads your local commits to the connected GitHub repo, so they're backed up online and visible to others.",
+    "You only push what you've committed — uncommitted or unstaged changes never leave your computer."
+  ],
+  demo: { type: 'terminal', starterFiles: [{name:'index.html', content:'<h1>Hello</h1>', tracked:true, committed:true, hasRemote:true}], allowedCommands: ['git push origin main', 'git status'], goal: "Push your commits: `git push origin main`.", successCmd: 'git push origin main' },
+  explainAfter: ["Your commits are now on GitHub — anyone with access to that repo can see them, clone them, or pull them down."],
+  quiz: { q: "What actually gets pushed to GitHub?", options: ["Every file on your computer", "Only your committed history", "Nothing, push just checks for updates"], correct: 1 }
+},
+{
+  id: 'clone-pull', unit: 'GitHub', title: 'Clone & pull', icon: 'download-cloud',
+  body: [
+    "`git clone <url>` downloads a full copy of a GitHub repo — including its entire history — onto your computer. You use this once, to start working on a project that already exists on GitHub.",
+    "`git pull` is different: it updates a repo you already have, fetching any new commits from GitHub and merging them in. You'll run this often, especially when collaborating."
+  ],
+  demo: { type: 'concept', visual: 'clone-pull-diagram' },
+  quiz: { q: "When would you use git clone instead of git pull?", options: ["Every single time you save a file", "The very first time you get a copy of an existing repo", "To delete a repo"], correct: 1 }
+},
+{
+  id: 'credentials', unit: 'GitHub', title: 'How credentials work', icon: 'key-round',
+  body: [
+    "GitHub no longer accepts your account password for pushing code over HTTPS — you need a **Personal Access Token (PAT)** instead, which acts like a special password just for Git.",
+    "The more common approach today is **SSH keys**: a pair of files on your computer (a private key you keep secret, a public key you paste into GitHub settings). Once set up, Git authenticates automatically — no typing passwords at all.",
+    "Either way, the credential proves to GitHub \"this push is really coming from an account with permission\" — it's never sent as plain text."
+  ],
+  demo: { type: 'concept', visual: 'credentials-diagram' },
+  quiz: { q: "What should you use instead of your GitHub account password for git operations?", options: ["Your email address", "A Personal Access Token or an SSH key", "Your GitHub username twice"], correct: 1 }
+},
+{
+  id: 'undo', unit: 'Fixing mistakes', title: 'Undoing changes', icon: 'undo-2',
+  body: [
+    "Mistakes are normal — Git has an undo for nearly every stage:",
+    "• **Unstage a file** (keep the edits, remove from staging): `git restore --staged <file>`",
+    "• **Discard changes in a file** (back to last commit): `git restore <file>`",
+    "• **Undo the last commit but keep the changes**: `git reset --soft HEAD~1`",
+  ],
+  demo: { type: 'terminal', starterFiles: [{name:'index.html', content:'<h1>Hello</h1>', tracked:true, staged:true}], allowedCommands: ['git restore --staged index.html', 'git status'], goal: "Unstage the file: `git restore --staged index.html`.", successCmd: 'git restore --staged index.html' },
+  explainAfter: ["The file moved back from Staging into the Working Directory — your edits are still there, just no longer marked to be committed."],
+  quiz: { q: "Which command unstages a file without discarding your edits?", options: ["git restore --staged <file>", "git init", "git push"], correct: 0 }
+},
+{
+  id: 'pr', unit: 'Collaborating', title: 'Pull requests', icon: 'git-pull-request',
+  body: [
+    "A **Pull Request (PR)** is a GitHub feature (not a Git command) — it's a request to merge your branch into another branch, with a space for discussion, review comments, and automated checks before it's accepted.",
+    "Typical team flow: create a branch → commit changes → push the branch → open a PR on GitHub → teammates review and comment → merge once approved.",
+    "PRs are the main way teams collaborate safely: nothing lands on `main` without someone else being able to see and discuss it first."
+  ],
+  demo: { type: 'concept', visual: 'pr-diagram' },
+  quiz: { q: "A Pull Request is...", options: ["A Git command that deletes branches", "A GitHub feature to propose and review merging one branch into another", "A way to download a repo"], correct: 1 }
+},
+];
+
+const UNITS = [...new Set(LESSONS.map(l=>l.unit))];
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem('gitlab_progress_v1');
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  return { completed: {}, currentLesson: LESSONS[0].id };
+}
+function saveState(s) {
+  try { localStorage.setItem('gitlab_progress_v1', JSON.stringify(s)); } catch(e) {}
+}
+
+let state = loadState();
+let activeTab = 'learn';
+let activeLessonId = null;
+
+const root = document.getElementById('root');
+
+function icon(name, cls) {
+  return `<i data-lucide="${name}" class="${cls||''}"></i>`;
+}
+
+function render() {
+  root.innerHTML = `
+    <div class="flex-1 min-h-0 flex flex-col">
+      <div id="page" class="flex-1 min-h-0 overflow-y-auto no-scrollbar"></div>
+      <nav class="safe-bottom border-t shrink-0" style="background:var(--panel); border-color:var(--line);">
+        <div class="flex items-stretch">
+          ${navBtn('learn','book-open','Learn')}
+          ${navBtn('repo','folder-git-2','Repository')}
+          ${navBtn('terminal','square-terminal','Terminal')}
+        </div>
+      </nav>
+    </div>
+  `;
+  document.querySelectorAll('.nav-btn').forEach(b => b.addEventListener('click', () => {
+    activeTab = b.dataset.tab;
+    if (activeTab !== 'learn') activeLessonId = null;
+    render();
+  }));
+  renderPage();
+  lucide.createIcons();
+}
+
+function navBtn(tab, iconName, label) {
+  const active = activeTab === tab;
+  return `<button class="nav-btn tab-btn flex-1 flex flex-col items-center gap-1 py-2.5" data-tab="${tab}" style="color:${active?'var(--flame)':'#8A8375'}">
+    ${icon(iconName, 'w-5 h-5')}
+    <span class="text-[11px] font-medium">${label}</span>
+  </button>`;
+}
+
+function renderPage() {
+  const page = document.getElementById('page');
+  if (activeTab === 'learn') {
+    page.innerHTML = activeLessonId ? lessonScreen(activeLessonId) : learnHome();
+  } else if (activeTab === 'repo') {
+    page.innerHTML = repoScreen();
+  } else if (activeTab === 'terminal') {
+    page.innerHTML = freeTerminalScreen();
+  }
+  wireInteractions();
+  lucide.createIcons();
+}
+
+function completedCount() { return Object.values(state.completed).filter(Boolean).length; }
+
+function learnHome() {
+  const pct = Math.round((completedCount() / LESSONS.length) * 100);
+  let html = `
+  <div class="px-5 pt-6 pb-4 anim-in">
+    <div class="flex items-center gap-2 mb-1">
+      ${icon('git-branch','w-6 h-6')}
+      <h1 class="font-display text-2xl font-semibold" style="color:var(--ink)">Git Lab</h1>
+    </div>
+    <p class="text-sm" style="color:#6B6458">Learn Git &amp; GitHub by actually doing it.</p>
+    <div class="mt-4 rounded-2xl p-4" style="background:var(--panel); border:1px solid var(--line);">
+      <div class="flex justify-between items-baseline mb-2">
+        <span class="text-xs font-semibold uppercase tracking-wide" style="color:#8A8375">Your progress</span>
+        <span class="text-sm font-mono font-semibold" style="color:var(--flame)">${completedCount()}/${LESSONS.length}</span>
+      </div>
+      <div class="h-2 rounded-full overflow-hidden" style="background:var(--line)">
+        <div class="h-full progress-fill rounded-full" style="width:${pct}%; background:linear-gradient(90deg,var(--flame),var(--flame-dark))"></div>
+      </div>
+    </div>
+  </div>`;
+
+  UNITS.forEach(unit => {
+    const lessons = LESSONS.filter(l => l.unit === unit);
+    html += `<div class="px-5 mb-2 mt-5"><h2 class="text-xs font-semibold uppercase tracking-wide" style="color:#8A8375">${unit}</h2></div>`;
+    html += `<div class="px-5 flex flex-col gap-2 mb-2">`;
+    lessons.forEach((l, i) => {
+      const done = !!state.completed[l.id];
+      const idx = LESSONS.indexOf(l);
+      const prevDone = idx === 0 || !!state.completed[LESSONS[idx-1].id];
+      const locked = !done && !prevDone;
+      html += `
+      <button class="lesson-btn card-btn flex items-center gap-3 rounded-xl p-3.5 text-left ${locked?'opacity-50':''}" data-id="${l.id}" ${locked?'disabled':''}
+        style="background:var(--panel); border:1px solid var(--line);">
+        <div class="w-10 h-10 rounded-full flex items-center justify-center shrink-0" style="background:${done?'var(--moss)':'#F3EEE4'}; color:${done?'#fff':'#8A8375'}">
+          ${done ? icon('check','w-5 h-5') : icon(l.icon,'w-5 h-5')}
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="font-medium text-[15px] truncate" style="color:var(--ink)">${l.title}</div>
+          <div class="text-xs" style="color:#8A8375">${done ? 'Completed' : locked ? 'Locked' : 'Tap to start'}</div>
+        </div>
+        ${locked ? icon('lock','w-4 h-4 shrink-0') : icon('chevron-right','w-4 h-4 shrink-0')}
+      </button>`;
+    });
+    html += `</div>`;
+  });
+  html += `<div class="h-6"></div>`;
+  return html;
+}
+
+let lessonProgress = { step: 0, quizAnswered: false, quizCorrect: false, demoDone: false };
+
+function lessonScreen(id) {
+  const idx = LESSONS.findIndex(l=>l.id===id);
+  const l = LESSONS[idx];
+  if (!lessonProgress.forId || lessonProgress.forId !== id) lessonProgress = { forId: id, step: 0, quizAnswered: false, quizCorrect: false, demoDone: false };
+
+  let bodyHtml = l.body.map(p => `<p class="text-[15px] leading-relaxed mb-3" style="color:#3A3630">${mdInline(p)}</p>`).join('');
+  if (l.code) bodyHtml += `<pre class="font-mono text-[13px] rounded-lg p-3 mb-3 overflow-x-auto" style="background:var(--term-bg); color:#E8E4DC">${escapeHtml(l.code)}</pre>`;
+
+  return `
+  <div class="anim-in">
+    <div class="sticky top-0 z-10 px-4 py-3 flex items-center gap-3 backdrop-blur" style="background:rgba(250,248,245,.92); border-bottom:1px solid var(--line)">
+      <button id="back-btn" class="w-8 h-8 rounded-full flex items-center justify-center card-btn" style="background:var(--panel); border:1px solid var(--line)">${icon('chevron-left','w-4 h-4')}</button>
+      <div class="flex-1 min-w-0">
+        <div class="text-[11px] font-semibold uppercase tracking-wide" style="color:#8A8375">${l.unit}</div>
+        <div class="font-medium text-[15px] truncate">${l.title}</div>
+      </div>
+      <div class="text-xs font-mono shrink-0" style="color:#8A8375">${idx+1}/${LESSONS.length}</div>
+    </div>
+    <div class="px-5 pt-5 pb-8">
+      <div class="w-11 h-11 rounded-xl flex items-center justify-center mb-4" style="background:#FBEEE7; color:var(--flame)">${icon(l.icon,'w-6 h-6')}</div>
+      ${bodyHtml}
+      <div id="demo-slot" class="mt-4"></div>
+      <div id="explain-slot"></div>
+      <div id="quiz-slot" class="mt-2"></div>
+      <div id="complete-slot" class="mt-2"></div>
+    </div>
+  </div>`;
+}
+
+function mdInline(s) {
+  return escapeHtml(s).replace(/\*\*(.+?)\*\*/g, '<strong style="color:var(--ink)">$1</strong>').replace(/`(.+?)`/g, '<code class="font-mono text-[13px] px-1.5 py-0.5 rounded" style="background:#F3EEE4;color:var(--flame-dark)">$1</code>');
+}
+function escapeHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function repoScreen() {
+  const sim = getFreeSim();
+  return `<div class="anim-in px-5 pt-6 pb-8">
+    <h1 class="font-display text-xl font-semibold mb-1">Repository view</h1>
+    <p class="text-sm mb-5" style="color:#6B6458">Live view of your free-play terminal below. Switch to the Terminal tab to run commands.</p>
+    ${threeTreesVisual(sim, 'repo-tab')}
+    <div class="mt-5 rounded-2xl p-4" style="background:var(--panel); border:1px solid var(--line)">
+      <div class="flex items-center gap-2 mb-3"><span class="text-xs font-semibold uppercase tracking-wide" style="color:#8A8375">Commit history</span></div>
+      ${commitLogHtml(sim)}
+    </div>
+  </div>`;
+}
+
+function commitLogHtml(sim) {
+  if (!sim.commits.length) return `<p class="text-sm" style="color:#8A8375">No commits yet. Try \`git commit\` in the Terminal tab.</p>`;
+  return `<div class="flex flex-col gap-3">` + sim.commits.slice().reverse().map((c,i) => `
+    <div class="flex gap-3">
+      <div class="flex flex-col items-center pt-1">
+        <div class="w-2.5 h-2.5 rounded-full shrink-0" style="background:var(--flame)"></div>
+        ${i < sim.commits.length-1 ? `<div class="w-px flex-1 mt-1" style="background:var(--line)"></div>` : ''}
+      </div>
+      <div class="pb-1">
+        <div class="text-sm font-medium">${escapeHtml(c.message)}</div>
+        <div class="text-xs font-mono" style="color:#8A8375">${c.hash} · ${c.branch}</div>
+      </div>
+    </div>`).join('') + `</div>`;
+}
+
+function threeTreesVisual(sim, keyPrefix) {
+  const wd = sim.files.filter(f => !f.ignored);
+  const staged = sim.files.filter(f => f.staged);
+  const committed = sim.commits.length > 0;
+  const col = (title, iconName, items, colorVar, emptyMsg) => `
+    <div class="flex-1 min-w-0 rounded-xl p-3" style="background:var(--panel); border:1px solid var(--line)">
+      <div class="flex items-center gap-1.5 mb-2">
+        ${icon(iconName,'w-3.5 h-3.5')}
+        <span class="text-[10.5px] font-semibold uppercase tracking-wide truncate" style="color:#8A8375">${title}</span>
+      </div>
+      <div class="flex flex-col gap-1.5 min-h-[44px]">
+        ${items.length ? items.map(t => `<div class="tree-node text-[11px] font-mono px-2 py-1.5 rounded-md truncate" style="background:${colorVar}20; color:${colorVar}; border:1px solid ${colorVar}40">${escapeHtml(t)}</div>`).join('') : `<div class="text-[11px]" style="color:#B5AE9F">${emptyMsg}</div>`}
+      </div>
+    </div>`;
+  return `<div class="flex gap-2.5 items-stretch">
+    ${col('Working Dir','file-edit', wd.filter(f=>!f.staged||f.modifiedAfterStage).map(f=>f.name), '#8A8375', 'empty')}
+    ${icon('arrow-right','w-4 h-4 shrink-0 self-center mt-4')}
+    ${col('Staging','box', staged.map(f=>f.name), 'var(--amber)', 'empty')}
+    ${icon('arrow-right','w-4 h-4 shrink-0 self-center mt-4')}
+    ${col('Repository','database', committed ? [`${sim.commits.length} commit${sim.commits.length>1?'s':''}`] : [], 'var(--moss)', 'empty')}
+  </div>`;
+}
+
+function conceptVisual(kind) {
+  if (kind === 'trees-intro') {
+    return `<div class="rounded-2xl p-5" style="background:var(--panel); border:1px solid var(--line)">
+      <div class="flex items-center justify-around text-center">
+        <div class="flex flex-col items-center gap-2">
+          <div class="w-14 h-14 rounded-full flex items-center justify-center" style="background:#F3EEE4">${icon('laptop','w-6 h-6')}</div>
+          <span class="text-xs font-medium">Your computer</span>
+          <span class="text-[10px]" style="color:#8A8375">runs Git</span>
+        </div>
+        ${icon('arrow-right','w-5 h-5 mt-6')}
+        <div class="flex flex-col items-center gap-2">
+          <div class="w-14 h-14 rounded-full flex items-center justify-center" style="background:#FBEEE7; color:var(--flame)">${icon('cloud','w-6 h-6')}</div>
+          <span class="text-xs font-medium">GitHub</span>
+          <span class="text-[10px]" style="color:#8A8375">stores backups</span>
+        </div>
+      </div>
+    </div>`;
+  }
+  if (kind === 'trees-explain') {
+    return threeTreesVisual({files:[{name:'app.js',staged:false}], commits:[]}, 'concept');
+  }
+  if (kind === 'branch-diagram') {
+    return `<div class="rounded-2xl p-5" style="background:var(--panel); border:1px solid var(--line)">
+      <svg viewBox="0 0 300 120" class="w-full h-28">
+        <line x1="20" y1="30" x2="280" y2="30" stroke="#3F7D58" stroke-width="3"/>
+        <circle cx="60" cy="30" r="5" fill="#3F7D58"/><circle cx="120" cy="30" r="5" fill="#3F7D58"/><circle cx="260" cy="30" r="5" fill="#3F7D58"/>
+        <path d="M120,30 C160,30 160,85 200,85" stroke="#E8622C" stroke-width="3" fill="none"/>
+        <line x1="200" y1="85" x2="240" y2="85" stroke="#E8622C" stroke-width="3"/>
+        <circle cx="200" cy="85" r="5" fill="#E8622C"/><circle cx="240" cy="85" r="5" fill="#E8622C"/>
+        <text x="10" y="20" font-size="11" fill="#3F7D58" font-family="monospace">main</text>
+        <text x="130" y="105" font-size="11" fill="#E8622C" font-family="monospace">feature-login</text>
+      </svg>
+      <p class="text-xs text-center mt-1" style="color:#8A8375">feature-login splits off, develops independently, then can merge back</p>
+    </div>`;
+  }
+  if (kind === 'clone-pull-diagram') {
+    return `<div class="rounded-2xl p-4 flex flex-col gap-3" style="background:var(--panel); border:1px solid var(--line)">
+      <div class="flex items-center gap-3"><div class="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style="background:#FBEEE7;color:var(--flame)">${icon('download-cloud','w-4 h-4')}</div><div><div class="text-sm font-medium font-mono">git clone</div><div class="text-xs" style="color:#8A8375">First time only — full copy + history</div></div></div>
+      <div class="flex items-center gap-3"><div class="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style="background:#F3EEE4;color:#8A8375">${icon('refresh-cw','w-4 h-4')}</div><div><div class="text-sm font-medium font-mono">git pull</div><div class="text-xs" style="color:#8A8375">Every time after — fetch new commits</div></div></div>
+    </div>`;
+  }
+  if (kind === 'credentials-diagram') {
+    return `<div class="rounded-2xl p-4" style="background:var(--panel); border:1px solid var(--line)">
+      <div class="flex items-center justify-between">
+        <div class="flex flex-col items-center gap-1.5"><div class="w-12 h-12 rounded-full flex items-center justify-center" style="background:#F3EEE4">${icon('laptop','w-5 h-5')}</div><span class="text-[10px]">Your machine</span></div>
+        <div class="flex-1 text-center px-2"><div class="text-[10px] font-mono" style="color:var(--flame)">SSH key / PAT</div>${icon('arrow-right','w-4 h-4 mx-auto')}</div>
+        <div class="flex flex-col items-center gap-1.5"><div class="w-12 h-12 rounded-full flex items-center justify-center" style="background:#FBEEE7;color:var(--flame)">${icon('github','w-5 h-5')}</div><span class="text-[10px]">GitHub</span></div>
+      </div>
+    </div>`;
+  }
+  if (kind === 'pr-diagram') {
+    return `<div class="rounded-2xl p-4" style="background:var(--panel); border:1px solid var(--line)">
+      <div class="flex flex-col gap-2.5 text-sm">
+        ${['Push your branch','Open a Pull Request','Teammates review & comment','Merge into main'].map((t,i)=>`<div class="flex items-center gap-2.5"><div class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-mono shrink-0" style="background:var(--flame);color:#fff">${i+1}</div><span>${t}</span></div>`).join('')}
+      </div>
+    </div>`;
+  }
+  return '';
+}
+
+function makeSim(starterFiles, opts) {
+  opts = opts || {};
+  const branches = ['main'].concat(opts.extraBranches || []);
+  return {
+    files: (starterFiles||[]).map(f => ({...f})),
+    commits: (starterFiles||[]).some(f=>f.committed) ? [{ hash: randHash(), message: 'Initial commit', branch: (starterFiles.find(f=>f.branch)||{}).branch || 'main' }] : [],
+    inited: true,
+    branches: branches,
+    currentBranch: (starterFiles||[]).find(f=>f.branch)?.branch || 'main',
+    remote: (starterFiles||[]).some(f=>f.hasRemote) ? 'https://github.com/you/project.git' : null,
+    hasFeatureBranch: !!(opts.extraBranches && opts.extraBranches.length),
+  };
+}
+function randHash() { return Math.random().toString(16).slice(2,9); }
+
+let lessonSim = null;
+let lessonSimLog = [];
+
+function lessonScreenDemo(l) {
+  if (l.demo.type === 'concept') {
+    return `<div class="anim-in">${conceptVisual(l.demo.visual)}</div>`;
+  }
+  if (!lessonSim || lessonSim.forId !== l.id) {
+    const opts = l.id === 'merge' ? { extraBranches: ['feature-login'] } : {};
+    lessonSim = makeSim(l.demo.starterFiles, opts);
+    lessonSim.forId = l.id;
+    lessonSimLog = [{type:'sys', text:'Simulated shell — type or tap a command below.'}];
+  }
+  return terminalWidget(lessonSim, lessonSimLog, l.demo.allowedCommands, 'lesson-term', l.demo.goal);
+}
+
+function terminalWidget(sim, log, allowed, idPrefix, goal) {
+  return `
+  <div class="rounded-2xl overflow-hidden" style="border:1px solid var(--line)">
+    <div class="rounded-t-2xl p-3" style="background:var(--term-bg)">
+      <div class="flex items-center gap-1.5 mb-2">
+        <div class="w-2.5 h-2.5 rounded-full" style="background:#FF5F57"></div>
+        <div class="w-2.5 h-2.5 rounded-full" style="background:#FEBC2E"></div>
+        <div class="w-2.5 h-2.5 rounded-full" style="background:#28C840"></div>
+        <span class="text-[11px] font-mono ml-2" style="color:#8A8375">~/project (${sim.currentBranch||'main'})</span>
+      </div>
+      <div id="${idPrefix}-log" class="font-mono text-[12.5px] leading-relaxed overflow-y-auto no-scrollbar term-scroll" style="max-height:180px; color:#E8E4DC">
+        ${log.map(renderLogLine).join('')}
+      </div>
+      <div class="flex items-center gap-1.5 mt-2 pt-2" style="border-top:1px solid var(--term-line)">
+        <span class="font-mono text-[12.5px]" style="color:var(--flame)">$</span>
+        <input id="${idPrefix}-input" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="type a command…" class="flex-1 bg-transparent font-mono text-[12.5px] outline-none" style="color:#fff" />
+      </div>
+    </div>
+    ${goal ? `<div class="px-3.5 py-2.5 flex items-start gap-2" style="background:#FBEEE7">${icon('target','w-3.5 h-3.5 mt-0.5 shrink-0')}<span class="text-[12.5px]" style="color:var(--flame-dark)">${escapeHtml(goal)}</span></div>` : ''}
+    ${allowed && allowed.length ? `<div class="px-3.5 py-2.5 flex flex-wrap gap-1.5" style="background:var(--panel)">
+      ${allowed.map(c => `<button class="cmd-chip chip font-mono text-[11px] px-2.5 py-1.5 rounded-lg" data-cmd="${escapeHtml(c)}" data-prefix="${idPrefix}" style="background:#F3EEE4; color:#5A5449; border:1px solid var(--line)">${escapeHtml(c)}</button>`).join('')}
+    </div>` : ''}
+  </div>`;
+}
+
+function renderLogLine(l) {
+  if (l.type === 'cmd') return `<div class="mt-1"><span style="color:var(--flame)">$</span> <span style="color:#fff">${escapeHtml(l.text)}</span></div>`;
+  if (l.type === 'err') return `<div style="color:#FF8A73">${escapeHtml(l.text)}</div>`;
+  if (l.type === 'ok') return `<div style="color:#7DD3A0">${escapeHtml(l.text)}</div>`;
+  if (l.type === 'sys') return `<div style="color:#8A8375" class="mb-1">${escapeHtml(l.text)}</div>`;
+  return `<div style="color:#C9C4B8; white-space:pre-wrap">${escapeHtml(l.text)}</div>`;
+}
+
+function runCommand(sim, cmd) {
+  const out = [];
+  const c = cmd.trim();
+  const push = (type, text) => out.push({type, text});
+
+  if (!c) return out;
+
+  if (c === 'git init') {
+    sim.inited = true;
+    push('ok', 'Initialized empty Git repository in ~/project/.git/');
+  }
+  else if (c === 'ls' || c === 'ls -a') {
+    const items = sim.files.filter(f=>!f.ignored || c==='ls -a').map(f=>f.name);
+    push('out', (c==='ls -a' ? '.git  ' : '') + (items.join('  ') || '(empty)'));
+  }
+  else if (c === 'git status') {
+    if (!sim.inited) { push('err', 'fatal: not a git repository'); }
+    else {
+      const untracked = sim.files.filter(f=>!f.tracked && !f.staged && !f.ignored);
+      const staged = sim.files.filter(f=>f.staged);
+      const clean = sim.files.length && untracked.length===0 && staged.length===0;
+      push('out', `On branch ${sim.currentBranch}`);
+      if (staged.length) { push('out', 'Changes to be committed:'); staged.forEach(f=>push('ok', '  new file:   ' + f.name)); }
+      if (untracked.length) { push('out', 'Untracked files:'); untracked.forEach(f=>push('err', '  ' + f.name)); }
+      if (clean) push('out', 'nothing to commit, working tree clean');
+    }
+  }
+  else if (c.startsWith('git add')) {
+    const target = c.replace('git add','').trim();
+    if (target === '.') {
+      sim.files.forEach(f => { if (!f.ignored) { f.tracked = true; f.staged = true; } });
+      push('ok', 'Staged all changes.');
+    } else {
+      const f = sim.files.find(f=>f.name===target);
+      if (!f) push('err', `fatal: pathspec '${target}' did not match any files`);
+      else { f.tracked = true; f.staged = true; push('ok', `Staged ${target}`); }
+    }
+  }
+  else if (c.startsWith('git commit')) {
+    const staged = sim.files.filter(f=>f.staged);
+    if (!staged.length) push('err', 'nothing to commit (use "git add" first)');
+    else {
+      const msgMatch = c.match(/-m\s+"([^"]*)"/);
+      const message = msgMatch ? msgMatch[1] : 'Update';
+      const hash = randHash();
+      sim.commits.push({hash, message, branch: sim.currentBranch});
+      staged.forEach(f => { f.committed = true; f.staged = false; f.modifiedAfterStage = false; });
+      push('ok', `[${sim.currentBranch} ${hash}] ${message}`);
+      push('out', ` ${staged.length} file${staged.length>1?'s':''} changed`);
+    }
+  }
+  else if (c === 'git log' || c === 'git log --oneline') {
+    if (!sim.commits.length) push('out', 'No commits yet.');
+    else sim.commits.slice().reverse().forEach(cm => {
+      if (c==='git log --oneline') push('out', `${cm.hash} ${cm.message}`);
+      else { push('out', `commit ${cm.hash}`); push('out', `    ${cm.message}`); }
+    });
+  }
+  else if (c.startsWith('git checkout -b')) {
+    const name = c.replace('git checkout -b','').trim();
+    sim.branches.push(name);
+    sim.currentBranch = name;
+    sim.hasFeatureBranch = true;
+    push('ok', `Switched to a new branch '${name}'`);
+  }
+  else if (c.startsWith('git checkout')) {
+    const name = c.replace('git checkout','').trim();
+    if (!sim.branches.includes(name)) push('err', `error: pathspec '${name}' did not match any file(s) known to git`);
+    else { sim.currentBranch = name; push('ok', `Switched to branch '${name}'`); }
+  }
+  else if (c.startsWith('git merge')) {
+    const name = c.replace('git merge','').trim();
+    if (!sim.hasFeatureBranch && name !== 'main') push('err', `merge: ${name} - not something we can merge`);
+    else { push('ok', `Merge made by the 'ort' strategy.`); push('out', `${name} -> ${sim.currentBranch}`); sim.merged = true; }
+  }
+  else if (c.startsWith('git remote add')) {
+    const parts = c.split(' ');
+    sim.remote = parts[parts.length-1];
+    push('ok', `Remote 'origin' added.`);
+  }
+  else if (c === 'git remote -v') {
+    if (sim.remote) { push('out', `origin  ${sim.remote} (fetch)`); push('out', `origin  ${sim.remote} (push)`); }
+    else push('out', '(no remotes configured)');
+  }
+  else if (c.startsWith('git push')) {
+    if (!sim.remote) push('err', "fatal: 'origin' does not appear to be a git repository");
+    else if (!sim.commits.length) push('err', 'Everything up-to-date');
+    else { push('ok', `Enumerating objects... done.`); push('ok', `To ${sim.remote}`); push('ok', `   ${sim.currentBranch} -> ${sim.currentBranch}`); sim.pushed = true; }
+  }
+  else if (c.startsWith('git restore --staged')) {
+    const target = c.replace('git restore --staged','').trim();
+    const f = sim.files.find(f=>f.name===target);
+    if (f) { f.staged = false; push('ok', `Unstaged changes for '${target}'`); }
+    else push('err', `error: pathspec '${target}' did not match any file(s) known to git`);
+  }
+  else if (c.startsWith('git restore')) {
+    const target = c.replace('git restore','').trim();
+    const f = sim.files.find(f=>f.name===target);
+    if (f) push('ok', `Restored ${target} to last commit.`);
+    else push('err', `error: pathspec '${target}' did not match any file(s) known to git`);
+  }
+  else if (c === 'git branch') {
+    sim.branches.forEach(b => push('out', (b===sim.currentBranch?'* ':'  ') + b));
+  }
+  else if (c.startsWith('git clone')) {
+    push('ok', 'Cloning into \'project\'...'); push('out', 'remote: Enumerating objects, done.'); push('ok', 'done.');
+  }
+  else if (c === 'git pull') {
+    push('ok', 'Already up to date.');
+  }
+  else {
+    push('err', `command not found or not covered in this lesson: ${c}`);
+  }
+  return out;
+}
+
+function wireInteractions() {
+  const back = document.getElementById('back-btn');
+  if (back) back.addEventListener('click', () => { activeLessonId = null; renderPage(); lucide.createIcons(); });
+
+  document.querySelectorAll('.lesson-btn').forEach(b => b.addEventListener('click', () => {
+    if (b.disabled) return;
+    activeLessonId = b.dataset.id;
+    renderPage(); lucide.createIcons();
+  }));
+
+  if (activeLessonId) mountLessonExtras();
+
+  wireTerminal('lesson-term', () => lessonSim, () => lessonSimLog, (l) => { lessonSimLog = l; }, onLessonDemoInteraction);
+  wireTerminal('free-term', () => getFreeSim(), () => getFreeLog(), (l) => setFreeLog(l), () => { if (activeTab==='terminal') refreshFreeTermVisual(); });
+}
+
+function mountLessonExtras() {
+  const l = LESSONS.find(x=>x.id===activeLessonId);
+  if (!l) return;
+  const demoSlot = document.getElementById('demo-slot');
+  if (demoSlot) demoSlot.innerHTML = lessonScreenDemo(l);
+  lucide.createIcons();
+  updateExplainAndQuiz(l);
+}
+
+function onLessonDemoInteraction() {
+  const l = LESSONS.find(x=>x.id===activeLessonId);
+  if (!l) return;
+  updateExplainAndQuiz(l);
+}
+
+function updateExplainAndQuiz(l) {
+  const explainSlot = document.getElementById('explain-slot');
+  const quizSlot = document.getElementById('quiz-slot');
+  const completeSlot = document.getElementById('complete-slot');
+  if (!explainSlot || !quizSlot) return;
+
+  let demoSatisfied = l.demo.type === 'concept';
+  if (l.demo.type === 'terminal' && lessonSim && lessonSim.forId === l.id) {
+    demoSatisfied = checkGoalMet(l, lessonSim);
+  }
+
+  if (demoSatisfied && !lessonProgress.demoDone) {
+    lessonProgress.demoDone = true;
+  }
+
+  explainSlot.innerHTML = (demoSatisfied && l.explainAfter) ? `<div class="anim-in mt-4">${l.explainAfter.map(p=>`<p class="text-[15px] leading-relaxed mb-3" style="color:#3A3630">${mdInline(p)}</p>`).join('')}</div>` : '';
+
+  if (demoSatisfied) {
+    quizSlot.innerHTML = quizHtml(l);
+    lucide.createIcons();
+    wireQuiz(l);
+  } else {
+    quizSlot.innerHTML = '';
+  }
+
+  if (lessonProgress.quizCorrect) {
+    completeSlot.innerHTML = `
+    <button id="complete-lesson-btn" class="w-full mt-2 rounded-xl py-3.5 font-medium text-white flex items-center justify-center gap-2 card-btn anim-pop" style="background:var(--flame)">
+      ${icon('arrow-right','w-4 h-4')} Continue
+    </button>`;
+    lucide.createIcons();
+    const btn = document.getElementById('complete-lesson-btn');
+    if (btn) btn.addEventListener('click', () => {
+      state.completed[l.id] = true;
+      saveState(state);
+      const idx = LESSONS.findIndex(x=>x.id===l.id);
+      const next = LESSONS[idx+1];
+      activeLessonId = next ? next.id : null;
+      renderPage(); lucide.createIcons();
+    });
+  } else {
+    completeSlot.innerHTML = '';
+  }
+}
+
+function checkGoalMet(l, sim) {
+  const d = l.demo;
+  if (d.successCmd === 'git init') return sim.inited;
+  if (d.successCmd === 'git status') return true;
+  if (d.successCmd === 'git add index.html') return sim.files.some(f=>f.name==='index.html' && f.staged);
+  if (d.successCmd === 'git commit -m "Initial commit"') return sim.commits.length > 0;
+  if (d.successCmd === 'git log') return true;
+  if (d.successCmd === 'git checkout -b feature-login') return sim.currentBranch === 'feature-login';
+  if (d.successCmd === 'git merge feature-login') return !!sim.merged;
+  if (d.successCmd === 'git remote add origin https://github.com/you/project.git') return !!sim.remote;
+  if (d.successCmd === 'git push origin main') return !!sim.pushed;
+  if (d.successCmd === 'git restore --staged index.html') return sim.files.some(f=>f.name==='index.html' && !f.staged && f.tracked);
+  return false;
+}
+
+function quizHtml(l) {
+  if (!l.quiz) return '';
+  const answered = lessonProgress.quizAnswered;
+  return `
+  <div class="anim-in rounded-2xl p-4 mt-3" style="background:var(--panel); border:1px solid var(--line)">
+    <div class="flex items-center gap-1.5 mb-2.5"><span class="text-xs font-semibold uppercase tracking-wide" style="color:#8A8375">Quick check</span></div>
+    <p class="text-[14.5px] font-medium mb-3">${escapeHtml(l.quiz.q)}</p>
+    <div class="flex flex-col gap-2">
+      ${l.quiz.options.map((opt,i) => {
+        let styleBg = 'var(--paper)', styleBorder = 'var(--line)', styleColor = 'var(--ink)';
+        if (answered) {
+          if (i === l.quiz.correct) { styleBg = '#EAF4EC'; styleBorder = 'var(--moss)'; styleColor = 'var(--moss)'; }
+          else if (i === lessonProgress.chosenIdx) { styleBg = '#FBEAE6'; styleBorder = '#D84C3E'; styleColor = '#D84C3E'; }
+        }
+        return `<button class="quiz-opt card-btn text-left rounded-lg px-3.5 py-2.5 text-[14px]" data-i="${i}" ${answered?'disabled':''} style="background:${styleBg}; border:1px solid ${styleBorder}; color:${styleColor}">${escapeHtml(opt)}</button>`;
+      }).join('')}
+    </div>
+    ${answered ? `<p class="text-[13px] mt-2.5" style="color:${lessonProgress.quizCorrect?'var(--moss)':'#D84C3E'}">${lessonProgress.quizCorrect ? 'Correct!' : 'Not quite — the highlighted answer is correct.'}</p>` : ''}
+  </div>`;
+}
+
+function wireQuiz(l) {
+  document.querySelectorAll('.quiz-opt').forEach(b => b.addEventListener('click', () => {
+    const i = parseInt(b.dataset.i, 10);
+    lessonProgress.quizAnswered = true;
+    lessonProgress.chosenIdx = i;
+    lessonProgress.quizCorrect = (i === l.quiz.correct);
+    updateExplainAndQuiz(l);
+  }));
+}
+
+let freeSim = null;
+let freeLog = [];
+function getFreeSim() { if (!freeSim) freeSim = makeSim([]); return freeSim; }
+function getFreeLog() { if (!freeLog.length) freeLog = [{type:'sys', text:'Free-play terminal. Try: git init, git status, git add, git commit -m "msg"'}]; return freeLog; }
+function setFreeLog(l) { freeLog = l; }
+
+const FREE_COMMANDS = ['git init','git status','touch file.txt','git add .','git commit -m "My commit"','git log','git checkout -b new-branch','git branch'];
+
+function freeTerminalScreen() {
+  const sim = getFreeSim();
+  return `<div class="anim-in px-5 pt-6 pb-8">
+    <h1 class="font-display text-xl font-semibold mb-1">Free-play terminal</h1>
+    <p class="text-sm mb-4" style="color:#6B6458">Experiment freely — nothing here can break anything real.</p>
+    ${terminalWidget(sim, getFreeLog(), FREE_COMMANDS, 'free-term', null)}
+    <div class="mt-5">
+      <div class="text-xs font-semibold uppercase tracking-wide mb-2" style="color:#8A8375">Live state</div>
+      ${threeTreesVisual(sim, 'free')}
+    </div>
+    <button id="reset-free-term" class="mt-4 w-full rounded-xl py-3 text-sm font-medium card-btn" style="background:var(--panel); border:1px solid var(--line); color:#8A8375">Reset terminal</button>
+  </div>`;
+}
+
+function refreshFreeTermVisual() {
+  const page = document.getElementById('page');
+  if (!page || activeTab !== 'terminal') return;
+  page.innerHTML = freeTerminalScreen();
+  wireInteractions();
+  lucide.createIcons();
+}
+
+function wireTerminal(idPrefix, getSim, getLog, setLog, onAfter) {
+  const input = document.getElementById(`${idPrefix}-input`);
+  const logEl = document.getElementById(`${idPrefix}-log`);
+  if (!input) return;
+
+  function submit(cmdText) {
+    const sim = getSim();
+    if (!sim) return;
+    let log = getLog();
+    log = log.concat([{type:'cmd', text: cmdText}]);
+    const results = runCommand(sim, cmdText);
+    log = log.concat(results);
+    setLog(log);
+    if (logEl) {
+      logEl.innerHTML = log.map(renderLogLine).join('');
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+    if (idPrefix === 'lesson-term') {
+      const dl = document.getElementById('lesson-term-log');
+      if (dl) { dl.innerHTML = log.map(renderLogLine).join(''); dl.scrollTop = dl.scrollHeight; }
+    }
+    input.value = '';
+    onAfter && onAfter();
+  }
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && input.value.trim()) submit(input.value);
+  });
+
+  document.querySelectorAll(`.cmd-chip[data-prefix="${idPrefix}"]`).forEach(chip => {
+    chip.addEventListener('click', () => submit(chip.dataset.cmd));
+  });
+
+  const resetBtn = document.getElementById('reset-free-term');
+  if (resetBtn && idPrefix === 'free-term') {
+    resetBtn.addEventListener('click', () => {
+      freeSim = makeSim([]);
+      freeLog = [{type:'sys', text:'Terminal reset.'}];
+      refreshFreeTermVisual();
+    });
+  }
+}
+
+render();
+})();
+</script>
+</body>
+</html>
