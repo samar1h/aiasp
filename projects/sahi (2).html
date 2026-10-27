@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Sahi</title>
+<meta name="description" content="AI label compliance checker that verifies pharmaceutical labels against approved master data and Rule 96 labelling requirements.">
+<meta name="keywords" content="compliance, labels">
+<meta name="app-icon" content="shield-check">
+<script>
+(function(){function show(m,d){var b=document.getElementById('__eb');if(!b){b=document.createElement('div');b.id='__eb';b.style.cssText='position:fixed;left:0;right:0;bottom:0;z-index:99999;background:#7f1d1d;color:#fff;font:13px system-ui,sans-serif;padding:10px 16px;max-height:50vh;overflow:auto';(document.body||document.documentElement).appendChild(b)}var e=document.createElement('details');e.style.cssText='margin:2px 0';e.innerHTML='<summary style="cursor:pointer"></summary><pre style="white-space:pre-wrap;font-size:12px;margin:6px 0 0"></pre>';e.firstChild.textContent='Something went wrong: '+m+' (tap for details)';e.lastChild.textContent=d;b.appendChild(e)}
+window.onerror=function(m,s,l,c,err){show(String(m),(err&&err.stack)||(s+':'+l+':'+c))};
+window.addEventListener('unhandledrejection',function(ev){var r=ev.reason;show(String((r&&r.message)||r),(r&&r.stack)||String(r))});
+window.__showErr=show})();
+</script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#14202b;--mut:#5b6b7a;--line:#dde3e9;--bg:#f3f5f7;--ac:#0b6e6e;--acd:#084f4f}
+body{font-family:'IBM Plex Sans',system-ui,sans-serif;color:var(--ink);background:var(--bg)}
+.mono{font-family:'IBM Plex Mono',monospace}
+.card{background:#fff;border:1px solid var(--line);border-radius:6px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:5px;font-weight:500;font-size:14px;border:1px solid var(--line);background:#fff;transition:background .15s,transform .1s}
+.btn:hover{background:#f0f3f5}.btn:active{transform:scale(.98)}
+.btn.p{background:var(--ac);border-color:var(--ac);color:#fff}.btn.p:hover{background:var(--acd)}
+.btn:disabled{opacity:.45;pointer-events:none}
+.inp{width:100%;border:1px solid var(--line);border-radius:5px;padding:8px 10px;font-size:14px;background:#fff;outline:none}
+.inp:focus{border-color:var(--ac);box-shadow:0 0 0 3px #0b6e6e22}
+.sev{font-size:11px;font-weight:600;padding:2px 8px;border-radius:3px}
+.critical{background:#fde8e8;color:#9b1c1c}.major{background:#fef0dc;color:#8a4b08}.minor{background:#e8eef5;color:#334e68}
+.spin{animation:sp .8s linear infinite}@keyframes sp{to{transform:rotate(360deg)}}
+.pop{animation:pop .18s ease-out}@keyframes pop{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+</style>
+</head>
+<body class="min-h-screen">
+<div id="app"></div>
+<script>
+const SCHEMA_DATA=`Respond with ONLY a JSON object, no markdown, in exactly this shape:
+{"verdict":"pass"|"fail","summary":"one or two sentences","extracted":{"product_name":"","batch_no":"","mfg_date":"","exp_date":"","mrp":"","mfg_lic_no":"","composition":""},"findings":[{"severity":"critical"|"major"|"minor","category":"spelling|batch|date|composition|price|licence|address|other","location":"where on the label","found":"exact text as printed","expected":"value per master data","issue":"what is wrong","fix":"suggested correction","reference":"master data field"}],"verified_ok":["fields that match"]}
+If nothing is wrong, return an empty findings array and verdict "pass".`;
+const SCHEMA_RULE=SCHEMA_DATA.replace('"reference":"master data field"','"reference":"Rule 96(1)(x) or Rule 97 clause"').replace('"expected":"value per master data"','"expected":"what the rule requires"').replace('category":"spelling|batch|date|composition|price|licence|address|other','category":"name|rx-legend|batch|date|licence|manufacturer|price|storage|composition|other');
+const P_DATA=`You are a senior pharmaceutical label QA auditor. Examine the attached label image (primary or secondary pack). Transcribe every field exactly as printed — never auto-correct spelling or silently fix values. Then compare each field against the APPROVED MASTER DATA supplied below.
+Check, at minimum: product/brand name, generic (proper) names and every spelling, active ingredient names and strengths, batch number, manufacturing date, expiry date (watch for swapped, transposed or altered values), MRP and pack size, manufacturing licence number, manufacturer and marketer names and addresses, storage text, and any other field present in the master data.
+Report only genuine discrepancies. Do not invent problems. Quote the printed text in "found".`;
+const P_RULE=`You are a regulatory affairs auditor for Indian pharmaceutical labelling. Examine the attached label image and check it against the Drugs and Cosmetics Rules, 1945 — Rule 96 (manner of labelling) and, for prescription drugs, Rule 97 (Schedule H/H1/X legends and the Rx symbol).
+Check, at minimum:
+1. The proper (generic) name of each active ingredient is correctly spelled and printed more prominently than any other text other than the brand name, with quantity of each active per unit.
+2. Brand name and the registered trade mark symbol where used.
+3. Batch number, date of manufacture and date of expiry are present, clearly marked, legible and logically consistent (expiry later than manufacture; labels not swapped or mislabelled).
+4. Manufacturing licence number and the name and address of the manufacturer are present.
+5. For Schedule H drugs: the Rx symbol at the top left of the label, and the Schedule H warning legend in a red box.
+6. Retail price (MRP, per pack/strip, inclusive of all taxes), quantity or number of units, and storage conditions as required.
+7. Any ingredient, colour or excipient declarations required on the label.
+8. Typographic or spelling errors in any regulatory text.
+Flag only genuine non-compliance; if uncertain, use severity "minor" and say so in the issue. Do not invent problems.`;
+const SAMPLE=`Product: AMOXYVON-625
+Generic name: Amoxycillin, Potassium Clavulanate & Lactic Acid Bacillus Tablets
+Composition (each film coated tablet): Amoxycillin Trihydrate IP eq. to Amoxycillin 500 mg; Potassium Clavulanate diluted IP eq. to Clavulanic Acid 125 mg; Lactic Acid Bacillus 60 million spores; Excipients q.s.
+Colour: Titanium Dioxide IP
+Batch No.: BMT-25184
+Mfg. Date: 02/2026
+Expiry Date: 07/2027
+MRP: Rs. 225.00 per strip of 6 tablets (incl. of all taxes)
+Mfg. Lic. No.: 4/UA/SC/P-2025
+Schedule: Schedule H, Rx symbol required
+Storage: Store in a cool & dry place, below 25°C. Protect from light & moisture.
+Marketed by: Nava Healthcare Private Limited, C1/10, Lal Sai Marg, Janakpuri, New Delhi-110058
+Manufactured by: Mancare Laboratories Pvt. Ltd. (Unit-III), D-7, UPSIDC Industrial Area, Selaqui, Dehradun-248011 (Uttarakhand)`;
+const MODES={data:{name:'Data check',q:'Does it match approved master data?',icon:'database'},rule:{name:'Rule check',q:'Does it follow Rule 96?',icon:'scale'}};
+const DEF={keys:{groq:'',gemini:''},provider:'groq',models:{groq:'meta-llama/llama-4-scout-17b-16e-instruct',gemini:'gemini-2.5-flash'},prompts:{data:P_DATA,rule:P_RULE},history:[]};
+let db=(()=>{try{const s=JSON.parse(localStorage.getItem('sahi'));return s?{...DEF,...s,keys:{...DEF.keys,...s.keys},models:{...DEF.models,...s.models},prompts:{...DEF.prompts,...s.prompts}}:structuredClone(DEF)}catch(e){return structuredClone(DEF)}})();
+const S={step:1,img:null,thumb:null,name:'',master:'',modes:{data:true,rule:true},results:null,tab:'data',running:false,settings:false,toast:'',showOk:{},mlist:[]};
+const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+const save=()=>{try{localStorage.setItem('sahi',JSON.stringify(db));return true}catch(e){toast('Storage is full — export your data and clear old history.');return false}};
+let tt;const toast=m=>{S.toast=m;render();clearTimeout(tt);tt=setTimeout(()=>{S.toast='';render()},3200)};
+const scale=(url,max,q)=>new Promise((res,rej)=>{const i=new Image();i.onload=()=>{const r=Math.min(1,max/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=Math.round(i.width*r);c.height=Math.round(i.height*r);const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(i,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',q))};i.onerror=()=>rej(new Error('That file could not be read as an image.'));i.src=url});
+const readFile=f=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=()=>rej(new Error('File read failed.'));r.readAsDataURL(f)});
+async function setImage(f){try{if(!f||!f.type.startsWith('image/'))throw new Error('Please choose an image file (PNG, JPG or WebP).');const u=await readFile(f);S.img=await scale(u,1800,.88);S.thumb=await scale(u,220,.6);S.name=f.name.replace(/\.[^.]+$/,'');S.results=null;render()}catch(e){toast(e.message)}}
+function parseJSON(t){t=String(t).replace(/```json|```/g,'').trim();try{return JSON.parse(t)}catch(e){const a=t.indexOf('{'),b=t.lastIndexOf('}');if(a>=0&&b>a)return JSON.parse(t.slice(a,b+1));throw new Error('The model did not return valid JSON.\n\n'+t.slice(0,600))}}
+async function callAI(prompt,img){const p=db.provider,k=db.keys[p].trim(),m=db.models[p].trim();if(!k)throw new Error('No '+(p==='groq'?'Groq':'Google')+' API key set. Open Settings to add one.');let r,j;const b64=img.split(',')[1];
+if(p==='groq'){r=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+k},body:JSON.stringify({model:m,temperature:.1,response_format:{type:'json_object'},messages:[{role:'user',content:[{type:'text',text:prompt},{type:'image_url',image_url:{url:img}}]}]})})}
+else{r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(m)}:generateContent?key=${encodeURIComponent(k)}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:prompt},{inlineData:{mimeType:'image/jpeg',data:b64}}]}],generationConfig:{temperature:.1,responseMimeType:'application/json'}})})}
+const raw=await r.text();try{j=JSON.parse(raw)}catch(e){throw new Error('HTTP '+r.status+': '+raw.slice(0,500))}
+if(!r.ok)throw new Error('HTTP '+r.status+': '+(j.error?.message||raw.slice(0,500)));
+const t=p==='groq'?j.choices?.[0]?.message?.content:j.candidates?.[0]?.content?.parts?.map(x=>x.text).join('');if(!t)throw new Error('Empty response from model: '+raw.slice(0,400));return parseJSON(t)}
+async function run(){const ms=Object.keys(MODES).filter(m=>S.modes[m]);if(!ms.length)return toast('Select at least one check.');if(ms.includes('data')&&!S.master.trim())return toast('Data check needs approved master data.');
+S.running=true;S.results={};S.tab=ms[0];S.step=3;render();
+await Promise.all(ms.map(async m=>{const pr=db.prompts[m]+(m==='data'?'\n\nAPPROVED MASTER DATA:\n'+S.master.trim():(S.master.trim()?'\n\nPRODUCT CONTEXT (for reference):\n'+S.master.trim():''))+'\n\n'+(m==='data'?SCHEMA_DATA:SCHEMA_RULE);
+try{const d=await callAI(pr,S.img);d.findings=Array.isArray(d.findings)?d.findings:[];S.results[m]={ok:true,d}}catch(e){S.results[m]={ok:false,err:e.message,det:e.stack}}render()}));
+S.running=false;const e={id:Date.now(),ts:Date.now(),name:S.name||'Untitled label',thumb:S.thumb,master:S.master,results:S.results};db.history=[e,...db.history].slice(0,25);S.hid=e.id;save();render()}
+const cnt=r=>r&&r.ok?r.d.findings.length:null;
+const sevOrd={critical:0,major:1,minor:2};
+function finding(f){return`<div class="card p-4 pop"><div class="flex items-center gap-2 mb-2"><span class="sev ${esc(f.severity)}">${esc(f.severity||'minor')}</span><span class="text-sm font-semibold">${esc(f.issue)}</span></div>
+<div class="grid grid-cols-2 gap-3 text-sm mb-3"><div class="rounded bg-red-50 p-2.5"><div class="text-xs text-red-800 mb-1">Found on label</div><div class="mono">${esc(f.found||'—')}</div></div><div class="rounded bg-emerald-50 p-2.5"><div class="text-xs text-emerald-800 mb-1">Expected</div><div class="mono">${esc(f.expected||'—')}</div></div></div>
+<div class="text-sm space-y-1"><div><span class="text-[var(--mut)]">Location:</span> ${esc(f.location)}</div><div><span class="text-[var(--mut)]">Suggested fix:</span> ${esc(f.fix)}</div>${f.reference?`<div><span class="text-[var(--mut)]">Reference:</span> ${esc(f.reference)}</div>`:''}</div></div>`}
+function panel(m){const r=S.results[m];if(!r)return`<div class="card p-10 text-center text-[var(--mut)]"><i data-lucide="loader-circle" class="spin inline mb-2"></i><div>Running ${MODES[m].name.toLowerCase()}…</div></div>`;
+if(!r.ok)return`<div class="card p-5 border-red-300"><div class="font-semibold text-red-800 mb-1">${MODES[m].name} failed</div><div class="text-sm mb-3">Check your API key, model name and connection, then retry.</div><details class="text-xs"><summary class="cursor-pointer text-[var(--mut)]">Technical details</summary><pre class="mono whitespace-pre-wrap mt-2 bg-slate-50 p-3 rounded">${esc(r.err)}</pre></details></div>`;
+const d=r.d,fs=[...d.findings].sort((a,b)=>(sevOrd[a.severity]??3)-(sevOrd[b.severity]??3)),pass=!fs.length;
+return`<div class="card p-4 flex items-start gap-3 mb-3 ${pass?'border-emerald-300':'border-red-300'}"><i data-lucide="${pass?'circle-check':'octagon-alert'}" class="${pass?'text-emerald-700':'text-red-700'} shrink-0 mt-0.5"></i><div><div class="font-semibold">${pass?'No issues found':fs.length+' issue'+(fs.length>1?'s':'')+' found'}</div><div class="text-sm text-[var(--mut)]">${esc(d.summary)}</div></div></div>
+<div class="space-y-3">${fs.map(finding).join('')}</div>
+${(d.verified_ok||[]).length?`<div class="mt-4"><button class="text-sm text-[var(--ac)] font-medium" data-act="ok" data-m="${m}">${S.showOk[m]?'Hide':'Show'} ${d.verified_ok.length} verified items</button>${S.showOk[m]?`<ul class="card mt-2 p-3 text-sm space-y-1">${d.verified_ok.map(x=>`<li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-700 shrink-0 mt-0.5"></i>${esc(typeof x==='string'?x:JSON.stringify(x))}</li>`).join('')}</ul>`:''}</div>`:''}`}
+function step1(){return`<div class="grid grid-cols-2 gap-5"><div><div class="font-semibold mb-2">Label image</div>
+<div id="drop" class="card h-[420px] flex items-center justify-center overflow-hidden relative ${S.img?'':'border-dashed'}" >${S.img?`<img src="${S.img}" class="max-h-full max-w-full object-contain">`:`<div class="text-center text-[var(--mut)] px-6"><i data-lucide="image-up" class="w-8 h-8 mx-auto mb-2"></i><div class="font-medium text-[var(--ink)]">Drop a label image here</div><div class="text-sm">or paste from clipboard</div></div>`}</div>
+<div class="flex gap-2 mt-3"><button class="btn" data-act="pick"><i data-lucide="upload" class="w-4 h-4"></i>Upload image</button><button class="btn" data-act="cam"><i data-lucide="camera" class="w-4 h-4"></i>Use camera</button>${S.img?`<button class="btn" data-act="clr"><i data-lucide="x" class="w-4 h-4"></i>Remove</button>`:''}</div></div>
+<div><div class="flex items-center justify-between mb-2"><div class="font-semibold">Approved master data</div><button class="text-sm text-[var(--ac)] font-medium" data-act="sample">Load sample</button></div>
+<textarea id="master" class="inp mono h-[420px] text-[13px] leading-relaxed" placeholder="Paste the approved product data: name, composition, batch, dates, MRP, licence number, addresses…">${esc(S.master)}</textarea>
+<div class="text-xs text-[var(--mut)] mt-2">Required for the data check. The rule check uses it as context only.</div></div></div>
+<div class="flex justify-end mt-5"><button class="btn p" data-act="next" ${S.img?'':'disabled'}>Continue<i data-lucide="arrow-right" class="w-4 h-4"></i></button></div>`}
+function step2(){return`<div class="max-w-2xl"><div class="font-semibold mb-3">Choose checks to run</div><div class="space-y-3">${Object.entries(MODES).map(([k,v])=>`<label class="card p-4 flex items-center gap-4 cursor-pointer ${S.modes[k]?'border-[var(--ac)] bg-teal-50/40':''}"><input type="checkbox" data-mode="${k}" ${S.modes[k]?'checked':''} class="w-4 h-4 accent-teal-700"><i data-lucide="${v.icon}" class="text-[var(--ac)]"></i><div><div class="font-semibold">${v.name}</div><div class="text-sm text-[var(--mut)]">${v.q}</div></div></label>`).join('')}</div>
+<div class="text-sm text-[var(--mut)] mt-4">Model: <span class="mono">${esc(db.models[db.provider])}</span> via ${db.provider==='groq'?'Groq':'Google'}. ${db.keys[db.provider]?'':'<span class="text-red-700 font-medium">No API key set.</span>'}</div>
+<div class="flex gap-2 mt-5"><button class="btn" data-act="back"><i data-lucide="arrow-left" class="w-4 h-4"></i>Back</button><button class="btn p" data-act="run"><i data-lucide="play" class="w-4 h-4"></i>Run checks</button></div></div>`}
+function step3(){const ks=Object.keys(S.results||{}),all=Object.keys(MODES).filter(m=>S.modes[m]||S.results[m]);
+return`<div class="flex gap-5"><div class="w-64 shrink-0"><div class="card p-2"><img src="${S.img||S.thumb}" class="w-full rounded"></div><div class="text-sm font-medium mt-2 truncate">${esc(S.name||'Untitled label')}</div>
+<div class="flex flex-col gap-2 mt-3"><button class="btn justify-center" data-act="back2"><i data-lucide="sliders-horizontal" class="w-4 h-4"></i>Change checks</button><button class="btn justify-center" data-act="new"><i data-lucide="plus" class="w-4 h-4"></i>New label</button></div></div>
+<div class="flex-1 min-w-0"><div class="flex gap-1 border-b border-[var(--line)] mb-4">${all.map(m=>{const c=cnt(S.results[m]),on=S.tab===m;return`<button data-act="tab" data-m="${m}" class="px-4 py-2.5 text-sm font-medium flex items-center gap-2 border-b-2 -mb-px ${on?'border-[var(--ac)] text-[var(--ac)]':'border-transparent text-[var(--mut)]'}">${MODES[m].name}${!S.results[m]?'<i data-lucide="loader-circle" class="w-3.5 h-3.5 spin"></i>':S.results[m].ok?`<span class="sev ${c?'critical':'minor'}">${c}</span>`:'<i data-lucide="triangle-alert" class="w-3.5 h-3.5 text-red-700"></i>'}</button>`}).join('')}</div>
+${panel(S.tab)}</div></div>`}
+function settings(){return`<div class="fixed inset-0 bg-slate-900/40 flex items-center justify-center z-50" data-act="overlay"><div class="card w-[680px] max-h-[88vh] overflow-auto p-6 pop">
+<div class="flex items-center justify-between mb-4"><div class="text-lg font-semibold">Settings</div><button class="btn" data-act="close"><i data-lucide="x" class="w-4 h-4"></i></button></div>
+<div class="grid grid-cols-2 gap-3 mb-3"><label class="text-sm font-medium">Provider<select id="prov" class="inp mt-1" onchange="switchProv(this.value)"><option value="groq" ${db.provider==='groq'?'selected':''}>Groq</option><option value="gemini" ${db.provider==='gemini'?'selected':''}>Google Gemini</option></select></label>
+<label class="text-sm font-medium">Model<input id="model" class="inp mono mt-1" value="${esc(db.models[db.provider])}" placeholder="Model name"></label></div>
+<div class="grid grid-cols-2 gap-3 mb-5"><label class="text-sm font-medium">Groq API key<input id="kg" type="password" class="inp mono mt-1" value="${esc(db.keys.groq)}" placeholder="gsk_…"></label><label class="text-sm font-medium">Google API key<input id="kq" type="password" class="inp mono mt-1" value="${esc(db.keys.gemini)}" placeholder="AIza…"></label></div>
+${Object.entries(MODES).map(([k,v])=>`<div class="mb-4"><div class="flex justify-between mb-1"><div class="text-sm font-medium">${v.name} prompt</div><button class="text-sm text-[var(--ac)]" data-act="rp" data-m="${k}">Reset to default</button></div><textarea id="p_${k}" class="inp text-[13px] h-32">${esc(db.prompts[k])}</textarea></div>`).join('')}
+<div class="text-xs text-[var(--mut)] mb-5">The JSON output schema and master data are appended to each prompt automatically.</div>
+<div class="flex items-center justify-between border-t border-[var(--line)] pt-4"><div class="flex gap-2"><button class="btn" data-act="exp"><i data-lucide="download" class="w-4 h-4"></i>Export data</button><button class="btn" data-act="imp"><i data-lucide="file-up" class="w-4 h-4"></i>Import data</button></div><button class="btn p" data-act="saveset">Save settings</button></div>
+<div class="text-xs text-[var(--mut)] mt-3">Export includes your API keys and history. Keys are stored only in this browser.</div></div></div>`}
+function hist(){return`<aside class="w-64 shrink-0 border-r border-[var(--line)] bg-white h-[calc(100vh-56px)] overflow-auto p-3"><div class="text-sm font-semibold px-1 mb-2">History</div>${db.history.length?db.history.map(h=>{const a=Object.values(h.results).reduce((n,r)=>n+(r.ok?r.d.findings.length:0),0);return`<div class="group flex gap-2 p-2 rounded cursor-pointer hover:bg-slate-100 ${S.hid===h.id?'bg-slate-100':''}" data-act="load" data-id="${h.id}"><img src="${h.thumb}" class="w-11 h-11 object-cover rounded border border-[var(--line)]"><div class="min-w-0 flex-1"><div class="text-sm font-medium truncate">${esc(h.name)}</div><div class="text-xs text-[var(--mut)]">${new Date(h.ts).toLocaleString([], {dateStyle:'short',timeStyle:'short'})} · ${a} issue${a===1?'':'s'}</div></div><button class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-700" data-act="del" data-id="${h.id}" title="Delete"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div>`}).join(''):`<div class="text-sm text-[var(--mut)] px-1">Completed checks appear here.</div>`}</aside>`}
+function render(){const ae=document.activeElement,keep=ae&&ae.id==='master'?ae.selectionStart:null;
+const steps=['Label','Checks','Results'];
+$('#app').innerHTML=`<header class="h-14 bg-white border-b border-[var(--line)] flex items-center px-5 gap-6"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded bg-[var(--ac)] text-white flex items-center justify-center"><i data-lucide="shield-check" class="w-4 h-4"></i></div><div class="font-semibold text-lg tracking-tight">Sahi</div><div class="text-sm text-[var(--mut)] ml-1">Label compliance</div></div>
+<nav class="flex gap-1 mx-auto">${steps.map((s,i)=>`<div class="px-3 py-1.5 text-sm rounded ${S.step===i+1?'bg-slate-100 font-semibold':'text-[var(--mut)]'}">${i+1}. ${s}</div>`).join('')}</nav>
+<button class="btn" data-act="settings"><i data-lucide="settings" class="w-4 h-4"></i>Settings</button></header>
+<div class="flex">${hist()}<main class="flex-1 p-6 min-w-0 h-[calc(100vh-56px)] overflow-auto">${[step1,step2,step3][S.step-1]()}</main></div>
+${S.settings?settings():''}${S.toast?`<div class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-sm px-4 py-2.5 rounded shadow-lg pop z-[60]">${esc(S.toast)}</div>`:''}
+<input type="file" id="fi" accept="image/*" class="hidden"><input type="file" id="fc" accept="image/*" capture="environment" class="hidden"><input type="file" id="fm" accept=".json" class="hidden">`;
+lucide.createIcons();
+$('#fi').onchange=e=>setImage(e.target.files[0]);$('#fc').onchange=e=>setImage(e.target.files[0]);$('#fm').onchange=importData;
+const d=$('#drop');if(d){d.ondragover=e=>e.preventDefault();d.ondrop=e=>{e.preventDefault();setImage(e.dataTransfer.files[0])}}
+const m=$('#master');if(m){m.oninput=e=>S.master=e.target.value;if(keep!==null){m.focus();m.setSelectionRange(keep,keep)}}
+document.querySelectorAll('[data-mode]').forEach(c=>c.onchange=e=>{S.modes[c.dataset.mode]=e.target.checked;render()})}
+function readSettings(np){db.models[db.provider]=$('#model').value.trim()||DEF.models[db.provider];db.keys.groq=$('#kg').value.trim();db.keys.gemini=$('#kq').value.trim();Object.keys(MODES).forEach(k=>db.prompts[k]=$('#p_'+k).value.trim()||DEF.prompts[k]);if(np)db.provider=np}
+function switchProv(v){readSettings(v);S.mlist=[];render()}
+function importData(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const s=JSON.parse(r.result);if(!s||typeof s!=='object'||!s.keys)throw new Error('This file is not a Sahi export.');db={...DEF,...s,keys:{...DEF.keys,...s.keys},models:{...DEF.models,...s.models},prompts:{...DEF.prompts,...s.prompts},history:s.history||[]};save();S.settings=false;toast('Data imported.')}catch(x){toast('Import failed: '+x.message)}};r.readAsText(f)}
+document.addEventListener('click',e=>{const t=e.target.closest('[data-act]');if(!t)return;if(t.dataset.act==='overlay'&&e.target!==t)return;const a=t.dataset.act,m=t.dataset.m,id=+t.dataset.id;
+if(a==='settings'){S.settings=true;render()}
+else if(a==='close'||a==='overlay'){S.settings=false;render()}
+else if(a==='saveset'){readSettings();save();S.settings=false;toast('Settings saved.')}
+else if(a==='rp'){readSettings();db.prompts[m]=DEF.prompts[m];render()}
+else if(a==='exp'){readSettings();save();const l=document.createElement('a');l.href=URL.createObjectURL(new Blob([JSON.stringify(db,null,1)],{type:'application/json'}));l.download='sahi-data-'+new Date().toISOString().slice(0,10)+'.json';l.click();setTimeout(()=>URL.revokeObjectURL(l.href),500)}
+else if(a==='imp')$('#fm').click();
+else if(a==='pick')$('#fi').click();
+else if(a==='cam')$('#fc').click();
+else if(a==='clr'){S.img=S.thumb=null;S.name='';render()}
+else if(a==='sample'){S.master=SAMPLE;render()}
+else if(a==='next'){S.step=2;render()}
+else if(a==='back'){S.step=1;render()}
+else if(a==='back2'){S.step=2;render()}
+else if(a==='run')run();
+else if(a==='tab'){S.tab=m;render()}
+else if(a==='ok'){S.showOk[m]=!S.showOk[m];render()}
+else if(a==='new'){Object.assign(S,{step:1,img:null,thumb:null,name:'',results:null,hid:null});render()}
+else if(a==='load'){const h=db.history.find(x=>x.id===id);if(h){Object.assign(S,{img:null,thumb:h.thumb,name:h.name,master:h.master,results:h.results,hid:h.id,step:3,tab:Object.keys(h.results)[0],running:false});S.modes={data:!!h.results.data,rule:!!h.results.rule};render()}}
+else if(a==='del'){e.stopPropagation();db.history=db.history.filter(x=>x.id!==id);if(S.hid===id)S.hid=null;save();render()}});
+document.addEventListener('paste',e=>{const f=[...(e.clipboardData?.files||[])].find(x=>x.type.startsWith('image/'));if(f&&S.step===1&&!S.settings)setImage(f)});
+render();
+</script>
+</body>
+</html>
