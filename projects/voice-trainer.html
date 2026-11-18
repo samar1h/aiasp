@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>Resonant — Voice Trainer</title>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.js"></script>
+<style>
+:root{
+  --ink:#1C1A17; --paper:#FBF9F6; --line:#E8E3DA; --clay:#C8562E; --clay-dim:#E9C3B2;
+  --moss:#52624F; --sand:#F0EAE0; --charcoal:#4A443C;
+}
+*{-webkit-tap-highlight-color:transparent;}
+html,body{background:var(--paper); color:var(--ink); overscroll-behavior-y:none;}
+body{font-family:'Inter',system-ui,-apple-system,sans-serif; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);}
+.font-display{font-family:'Fraunces',Georgia,serif;}
+::-webkit-scrollbar{display:none;}
+.tab-active{color:var(--ink); border-bottom:2px solid var(--clay);}
+.tab-inactive{color:#9C9388; border-bottom:2px solid transparent;}
+.press{transition:transform .12s ease;}
+.press:active{transform:scale(0.96);}
+.card{background:#fff; border:1px solid var(--line); border-radius:20px;}
+.grain{background-image:radial-gradient(circle,rgba(0,0,0,0.035) 1px,transparent 1px); background-size:3px 3px;}
+.pulse-ring{animation:pulse-ring 1.6s cubic-bezier(.4,0,.6,1) infinite;}
+@keyframes pulse-ring{0%{transform:scale(1); opacity:.5;}70%{transform:scale(1.9); opacity:0;}100%{opacity:0;}}
+.slide-up{animation:slideUp .35s cubic-bezier(.16,1,.3,1);}
+@keyframes slideUp{from{transform:translateY(16px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+.fade-in{animation:fadeIn .3s ease;}
+@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+input[type=range]{-webkit-appearance:none; appearance:none; height:4px; border-radius:2px; background:var(--line);}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; width:20px; height:20px; border-radius:50%; background:var(--clay); border:3px solid #fff; box-shadow:0 1px 4px rgba(0,0,0,.25);}
+@media (prefers-color-scheme: dark){
+  :root{--ink:#F2EEE6; --paper:#17150F; --line:#2E2A22; --clay:#E07A4C; --clay-dim:#4A2F22; --moss:#8FAE87; --sand:#211E17; --charcoal:#C9C2B5;}
+  .card{background:#1D1A14;}
+}
+.font-mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}
+</style>
+</head>
+<body class="min-h-screen" style="height:100%;">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<div id="app" class="max-w-lg mx-auto min-h-screen flex flex-col" style="height:100%;">
+
+  <header class="sticky top-0 z-30 px-5 pt-5 pb-3" style="background:var(--paper); padding-top:calc(env(safe-area-inset-top,0px) + 20px);">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-full flex items-center justify-center" style="background:var(--clay);">
+          <i data-lucide="activity" class="w-5 h-5" style="color:#fff;"></i>
+        </div>
+        <h1 class="font-display text-[22px] font-semibold tracking-tight">Resonant</h1>
+      </div>
+      <button id="streakBtn" class="press flex items-center gap-1.5 px-3 py-1.5 rounded-full" style="background:var(--sand);">
+        <i data-lucide="flame" class="w-4 h-4" style="color:var(--clay);"></i>
+        <span id="streakCount" class="text-sm font-semibold font-mono">0</span>
+      </button>
+    </div>
+    <nav class="flex gap-5 mt-5 text-[15px] font-medium overflow-x-auto" style="border-bottom:1px solid var(--line);">
+      <button data-tab="practice" class="tab-btn tab-active pb-2.5 whitespace-nowrap">Practice</button>
+      <button data-tab="pitch" class="tab-btn tab-inactive pb-2.5 whitespace-nowrap">Pitch</button>
+      <button data-tab="record" class="tab-btn tab-inactive pb-2.5 whitespace-nowrap">Record</button>
+      <button data-tab="library" class="tab-btn tab-inactive pb-2.5 whitespace-nowrap">Library</button>
+      <button data-tab="progress" class="tab-btn tab-inactive pb-2.5 whitespace-nowrap">Progress</button>
+    </nav>
+  </header>
+
+  <main id="main" class="flex-1 px-5 pb-28 pt-4"></main>
+
+  <div id="toast" class="fixed left-1/2 -translate-x-1/2 bottom-24 px-4 py-2.5 rounded-xl text-sm font-medium opacity-0 pointer-events-none z-50 transition-opacity duration-300 max-w-[88%]" style="background:var(--ink); color:var(--paper);"></div>
+</div>
+
+<script>
+lucide.createIcons();
+
+const store = {
+  get(k,d){ try{ const v = localStorage.getItem('vt_'+k); return v===null?d:JSON.parse(v); }catch(e){ return d; } },
+  set(k,v){ try{ localStorage.setItem('vt_'+k, JSON.stringify(v)); }catch(e){} }
+};
+
+function toast(msg, isError){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = isError ? '#A33D2E' : 'var(--ink)';
+  t.style.opacity = '1';
+  clearTimeout(toast._h);
+  toast._h = setTimeout(()=>{ t.style.opacity = '0'; }, 2600);
+}
+
+function errorBanner(container, title, detail){
+  const d = document.createElement('div');
+  d.className = 'card p-4 mb-4 fade-in';
+  d.style.borderColor = '#D98A78';
+  d.innerHTML = `
+    <div class="flex gap-3">
+      <i data-lucide="alert-triangle" class="w-5 h-5 shrink-0 mt-0.5" style="color:var(--clay);"></i>
+      <div class="flex-1 min-w-0">
+        <p class="text-[15px] font-semibold">${title}</p>
+        <p class="text-sm mt-1" style="color:var(--charcoal);">${detail.userMsg || 'Something went wrong.'}</p>
+        ${detail.tech ? `<details class="mt-2"><summary class="text-xs font-medium cursor-pointer" style="color:var(--clay);">Technical details</summary><pre class="text-xs mt-1.5 p-2 rounded-lg overflow-x-auto font-mono" style="background:var(--sand); white-space:pre-wrap;">${detail.tech}</pre></details>` : ''}
+      </div>
+    </div>`;
+  container.prepend(d);
+  lucide.createIcons();
+}
+
+let audioCtx = null;
+function getCtx(){
+  if(!audioCtx || audioCtx.state === 'closed'){
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if(audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+// ---------- Pitch detection (autocorrelation) ----------
+function detectPitch(buf, sampleRate){
+  const SIZE = buf.length;
+  let rms = 0;
+  for(let i=0;i<SIZE;i++) rms += buf[i]*buf[i];
+  rms = Math.sqrt(rms/SIZE);
+  if(rms < 0.01) return -1;
+
+  let r1=0, r2=SIZE-1, thresh=0.2;
+  for(let i=0;i<SIZE/2;i++){ if(Math.abs(buf[i])<thresh){ r1=i; break; } }
+  for(let i=1;i<SIZE/2;i++){ if(Math.abs(buf[SIZE-i])<thresh){ r2=SIZE-i; break; } }
+  const trimmed = buf.slice(r1,r2);
+  const n = trimmed.length;
+  const c = new Array(n).fill(0);
+  for(let lag=0; lag<n; lag++){
+    for(let i=0; i<n-lag; i++) c[lag] += trimmed[i]*trimmed[i+lag];
+  }
+  let d=0; while(c[d]>c[d+1]) d++;
+  let maxval=-1, maxpos=-1;
+  for(let i=d; i<n; i++){ if(c[i]>maxval){ maxval=c[i]; maxpos=i; } }
+  let T0 = maxpos;
+  const x1=c[T0-1]||0, x2=c[T0]||0, x3=c[T0+1]||0;
+  const a=(x1+x3-2*x2)/2, b=(x3-x1)/2;
+  if(a) T0 = T0 - b/(2*a);
+  if(T0<=0) return -1;
+  const freq = sampleRate/T0;
+  if(freq < 60 || freq > 500) return -1;
+  return freq;
+}
+
+function freqToNote(freq){
+  if(freq<=0) return {name:'—', cents:0};
+  const A4=440, names=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+  const n = 12*Math.log2(freq/A4);
+  const rounded = Math.round(n);
+  const cents = Math.round((n-rounded)*100);
+  const noteIdx = ((rounded+9)%12+12)%12;
+  const octave = Math.floor((rounded+9)/12)+4;
+  return {name: names[noteIdx]+octave, cents};
+}
+
+// ---------- Tabs ----------
+const tabs = {};
+function registerTab(name, renderFn){ tabs[name]=renderFn; }
+let currentTab = 'practice';
+let cleanupFn = null;
+
+function switchTab(name){
+  if(cleanupFn){ try{cleanupFn();}catch(e){} cleanupFn=null; }
+  currentTab = name;
+  document.querySelectorAll('.tab-btn').forEach(b=>{
+    if(b.dataset.tab===name){ b.className='tab-btn tab-active pb-2.5 whitespace-nowrap'; }
+    else{ b.className='tab-btn tab-inactive pb-2.5 whitespace-nowrap'; }
+  });
+  const main = document.getElementById('main');
+  main.innerHTML = '';
+  main.classList.add('fade-in');
+  setTimeout(()=>main.classList.remove('fade-in'), 300);
+  cleanupFn = tabs[name](main);
+  lucide.createIcons();
+}
+
+document.querySelectorAll('.tab-btn').forEach(b=>{
+  b.addEventListener('click', ()=> switchTab(b.dataset.tab));
+});
+
+function updateStreak(){
+  const today = new Date().toDateString();
+  const last = store.get('lastPractice', null);
+  let streak = store.get('streak', 0);
+  if(last !== today){
+    const y = new Date(Date.now()-86400000).toDateString();
+    streak = (last===y) ? streak+1 : 1;
+    store.set('streak', streak);
+    store.set('lastPractice', today);
+  }
+  document.getElementById('streakCount').textContent = streak;
+}
+function logSession(kind){
+  const today = new Date().toDateString();
+  const last = store.get('lastPractice', null);
+  if(last !== today) updateStreak();
+  const log = store.get('sessionLog', []);
+  log.push({date: Date.now(), kind});
+  store.set('sessionLog', log.slice(-200));
+  renderStreakBadge();
+}
+function renderStreakBadge(){
+  document.getElementById('streakCount').textContent = store.get('streak',0);
+}
+renderStreakBadge();
+
+// ========================= PRACTICE TAB =========================
+const EXERCISES = [
+  {
+    id:'hum', title:'Chest Hum', minutes:3, icon:'wind', tag:'Warm-up',
+    desc:'Loosens the throat and wakes up chest resonance before anything else.',
+    steps:[
+      'Close your lips, relax your jaw completely.',
+      'Hum a low, comfortable note — no strain, no reaching.',
+      'Place a hand on your chest. Feel for a buzz, not your throat.',
+      'Hold for 5 seconds, rest 2 seconds, repeat for 3 minutes.'
+    ]
+  },
+  {
+    id:'straw', title:'Straw Phonation', minutes:4, icon:'wind', tag:'Warm-up',
+    desc:'A speech-therapy staple. If you have a straw, hum or say "mmm" through it — the back-pressure lets your cords vibrate with less effort, which keeps a lower tone easy to produce.',
+    steps:[
+      'If you have a drinking straw, put one end gently between your lips.',
+      'Hum steadily through the straw at a comfortable low pitch.',
+      'No straw? Purse your lips tight and hum as if through a thin opening.',
+      'Keep airflow steady and slow — no pushing or squeezing.',
+      'Do 6 breaths of this, resting between each.'
+    ]
+  },
+  {
+    id:'larynx', title:'Low Larynx Drop', minutes:3, icon:'arrow-down', tag:'Resonance',
+    desc:'Gently lowering the larynx opens more space in the throat, which darkens tone without forcing pitch down.',
+    steps:[
+      'Yawn gently — notice how your throat opens and larynx drops.',
+      'Hold that open feeling, then softly say "ahh" at a relaxed low pitch.',
+      'Round your lips slightly and relax your jaw — this adds space, not force.',
+      'Repeat 8 times. If your throat feels tight, you are pushing — back off.'
+    ]
+  },
+  {
+    id:'slowread', title:'Slow Read-Aloud', minutes:5, icon:'book-open', tag:'Articulation',
+    desc:'Fast speech reads as higher and thinner no matter your actual pitch. Slowing down and finishing word-endings does more for a grounded, authoritative sound than chasing pitch alone.',
+    steps:[
+      'Pick any paragraph — a text, an article, this app\'s description.',
+      'Read it aloud at half your normal speed, on purpose.',
+      'Finish every word-ending fully — don\'t let the last sound trail off.',
+      'Pause for a full beat at every comma and period.',
+      'Record this one (see the Record tab) and listen back.'
+    ]
+  },
+  {
+    id:'twisters', title:'Tongue Twisters', minutes:4, icon:'type', tag:'Articulation',
+    desc:'Sharpens articulation and clarity — the muscle memory for crisp consonants.',
+    steps:[
+      '"Red leather, yellow leather" — 5 times, slow, then 5 times at normal speed.',
+      '"Unique New York, you need unique New York" — 5 times.',
+      '"The sixth sick sheikh\'s sixth sheep\'s sick" — 5 times, slowly, no rushing.',
+      'If you stumble, slow down rather than pushing through.'
+    ]
+  },
+  {
+    id:'descend', title:'Descending Scale', minutes:4, icon:'trending-down', tag:'Pitch',
+    desc:'Trains your ear and voice to settle at a lower, comfortable starting pitch for everyday speech.',
+    steps:[
+      'Say "ahh" starting at a comfortable pitch, then slide down as far as feels easy.',
+      'Open the Pitch tab to watch the line fall as you go.',
+      'Repeat 8 times, each time starting your everyday sentences slightly lower.',
+      'Never force the bottom note — ease into it.'
+    ]
+  },
+  {
+    id:'everyday', title:'Everyday Speech', minutes:5, icon:'message-circle', tag:'Pitch',
+    desc:'The real goal isn\'t a party trick low note — it\'s your natural pitch shifting down in real sentences.',
+    steps:[
+      'Say your name, then your address, then today\'s date.',
+      'Keep the chest-resonance feeling from your warm-up as you talk.',
+      'Watch the Pitch tab while you do this to see your average settle lower.',
+      'Read your grocery list or a few sentences the same way.'
+    ]
+  }
+];
+
+function renderPractice(main){
+  const completedToday = store.get('completedToday', {date:null, ids:[]});
+  const today = new Date().toDateString();
+  const doneIds = completedToday.date===today ? completedToday.ids : [];
+
+  main.innerHTML = `
+    <div class="mb-5">
+      <p class="font-display text-[26px] font-semibold leading-tight">Today's session</p>
+      <p class="text-sm mt-1" style="color:var(--charcoal);">${doneIds.length}/${EXERCISES.length} exercises · ${EXERCISES.reduce((s,e)=>s+e.minutes,0)} min total</p>
+    </div>
+    <div class="h-1.5 rounded-full overflow-hidden mb-6" style="background:var(--line);">
+      <div class="h-full rounded-full transition-all duration-500" style="background:var(--clay); width:${(doneIds.length/EXERCISES.length*100)}%"></div>
+    </div>
+    <div class="space-y-3" id="exList"></div>
+  `;
+  const list = document.getElementById('exList');
+  EXERCISES.forEach(ex=>{
+    const done = doneIds.includes(ex.id);
+    const card = document.createElement('button');
+    card.className = 'press w-full text-left card p-4 flex items-center gap-3.5';
+    if(done) card.style.opacity = '0.55';
+    card.innerHTML = `
+      <div class="w-11 h-11 rounded-full flex items-center justify-center shrink-0" style="background:${done?'var(--moss)':'var(--sand)'};">
+        <i data-lucide="${done?'check':ex.icon}" class="w-5 h-5" style="color:${done?'#fff':'var(--clay)'};"></i>
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2">
+          <p class="font-semibold text-[15px] truncate">${ex.title}</p>
+          <span class="text-[11px] font-medium px-1.5 py-0.5 rounded-full shrink-0" style="background:var(--sand); color:var(--charcoal);">${ex.tag}</span>
+        </div>
+        <p class="text-[13px] mt-0.5" style="color:var(--charcoal);">${ex.minutes} min</p>
+      </div>
+      <i data-lucide="chevron-right" class="w-5 h-5 shrink-0" style="color:#B3AA9C;"></i>
+    `;
+    card.addEventListener('click', ()=> openExercise(ex));
+    list.appendChild(card);
+  });
+
+  if(doneIds.length===EXERCISES.length){
+    const done = document.createElement('div');
+    done.className = 'card p-5 mt-4 text-center fade-in';
+    done.style.background = 'var(--moss)';
+    done.innerHTML = `<p class="font-display text-lg font-semibold" style="color:#fff;">All done for today</p><p class="text-sm mt-1" style="color:#E4EBDF;">Come back tomorrow to keep the streak going.</p>`;
+    list.appendChild(done);
+  }
+}
+
+function openExercise(ex){
+  const sheet = document.createElement('div');
+  sheet.className = 'fixed inset-0 z-40 flex items-end';
+  sheet.innerHTML = `
+    <div class="absolute inset-0" style="background:rgba(0,0,0,0.4);" id="sheetBg"></div>
+    <div class="relative w-full max-w-lg mx-auto rounded-t-3xl slide-up" style="background:var(--paper); max-height:88vh; overflow-y:auto; padding-bottom:calc(env(safe-area-inset-bottom,0px) + 24px);">
+      <div class="w-10 h-1 rounded-full mx-auto mt-3" style="background:var(--line);"></div>
+      <div class="p-5">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-[11px] font-medium px-2 py-0.5 rounded-full" style="background:var(--sand); color:var(--charcoal);">${ex.tag}</span>
+          <span class="text-xs" style="color:var(--charcoal);">${ex.minutes} min</span>
+        </div>
+        <p class="font-display text-[24px] font-semibold leading-tight">${ex.title}</p>
+        <p class="text-[15px] mt-2" style="color:var(--charcoal);">${ex.desc}</p>
+        <div class="mt-5 space-y-3" id="stepsList"></div>
+        <button id="finishBtn" class="press w-full mt-6 py-3.5 rounded-2xl font-semibold text-[15px]" style="background:var(--clay); color:#fff;">Mark complete</button>
+        <button id="closeSheet" class="press w-full mt-2 py-3 rounded-2xl font-medium text-[15px]" style="color:var(--charcoal);">Close</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(sheet);
+  const stepsList = sheet.querySelector('#stepsList');
+  ex.steps.forEach((s,i)=>{
+    const row = document.createElement('div');
+    row.className = 'flex gap-3';
+    row.innerHTML = `
+      <div class="w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-xs font-semibold mt-0.5" style="background:var(--sand); color:var(--clay);">${i+1}</div>
+      <p class="text-[14px] leading-relaxed" style="color:var(--ink);">${s}</p>
+    `;
+    stepsList.appendChild(row);
+  });
+  const close = ()=> sheet.remove();
+  sheet.querySelector('#sheetBg').addEventListener('click', close);
+  sheet.querySelector('#closeSheet').addEventListener('click', close);
+  sheet.querySelector('#finishBtn').addEventListener('click', ()=>{
+    const today = new Date().toDateString();
+    let completedToday = store.get('completedToday', {date:null, ids:[]});
+    if(completedToday.date !== today) completedToday = {date:today, ids:[]};
+    if(!completedToday.ids.includes(ex.id)) completedToday.ids.push(ex.id);
+    store.set('completedToday', completedToday);
+    logSession(ex.id);
+    toast(`${ex.title} complete`);
+    close();
+    if(currentTab==='practice') switchTab('practice');
+  });
+}
+registerTab('practice', renderPractice);
+
+// ========================= PITCH TAB =========================
+function renderPitch(main){
+  main.innerHTML = `
+    <div class="mb-4">
+      <p class="font-display text-[26px] font-semibold leading-tight">Pitch monitor</p>
+      <p class="text-sm mt-1" style="color:var(--charcoal);">Speak or hum — watch your pitch in real time.</p>
+    </div>
+    <div class="card p-5 mb-4">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <p class="text-[13px] font-medium" style="color:var(--charcoal);">Current note</p>
+          <p id="noteDisplay" class="font-display text-[42px] font-semibold leading-none mt-1">—</p>
+        </div>
+        <div class="text-right">
+          <p class="text-[13px] font-medium" style="color:var(--charcoal);">Frequency</p>
+          <p id="hzDisplay" class="font-mono text-xl font-semibold mt-1">— Hz</p>
+        </div>
+      </div>
+      <canvas id="pitchCanvas" class="w-full rounded-xl" height="160" style="background:var(--sand);"></canvas>
+      <div class="flex items-center justify-between mt-3 text-xs" style="color:var(--charcoal);">
+        <span>Lower ↓</span>
+        <span id="avgDisplay">Session avg: —</span>
+        <span>Higher ↑</span>
+      </div>
+    </div>
+    <button id="micBtn" class="press w-full py-4 rounded-2xl font-semibold text-[15px] flex items-center justify-center gap-2" style="background:var(--clay); color:#fff;">
+      <i data-lucide="mic" class="w-5 h-5"></i><span>Start listening</span>
+    </button>
+    <div id="pitchErr"></div>
+    <div class="card p-4 mt-4" style="background:var(--sand); border:none;">
+      <p class="text-[13px] leading-relaxed" style="color:var(--charcoal);"><span class="font-semibold" style="color:var(--ink);">Tip:</span> a typical adult male speaking voice sits around 100–140 Hz, and a typical adult female voice around 170–220 Hz — but your own comfortable range is what matters. Chase a relaxed, strain-free low note, not a number.</p>
+    </div>
+  `;
+  lucide.createIcons();
+
+  let stream=null, source=null, analyser=null, raf=null, listening=false;
+  const history = [];
+  const canvas = document.getElementById('pitchCanvas');
+  const ctx2d = canvas.getContext('2d');
+  let sessionPitches = [];
+
+  function resizeCanvas(){
+    const dpr = window.devicePixelRatio||1;
+    const w = canvas.clientWidth;
+    canvas.width = w*dpr; canvas.height = 160*dpr;
+    ctx2d.scale(dpr,dpr);
+  }
+  resizeCanvas();
+
+  function drawGraph(){
+    const w = canvas.clientWidth, h=160;
+    ctx2d.clearRect(0,0,w,h);
+    ctx2d.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--sand') || '#F0EAE0';
+    ctx2d.fillRect(0,0,w,h);
+    if(history.length<2) return;
+    const valid = history.filter(v=>v>0);
+    if(valid.length===0) return;
+    const minF = Math.min(...valid)-10, maxF = Math.max(...valid)+10;
+    ctx2d.beginPath();
+    ctx2d.lineWidth=2.5;
+    ctx2d.strokeStyle = '#C8562E';
+    ctx2d.lineCap='round'; ctx2d.lineJoin='round';
+    let started=false;
+    history.forEach((v,i)=>{
+      const x = (i/(history.length-1))*w;
+      if(v<=0){ started=false; return; }
+      const y = h - ((v-minF)/(maxF-minF||1))*h*0.85 - h*0.075;
+      if(!started){ ctx2d.moveTo(x,y); started=true; } else ctx2d.lineTo(x,y);
+    });
+    ctx2d.stroke();
+  }
+
+  function tick(){
+    if(!listening) return;
+    const buf = new Float32Array(analyser.fftSize);
+    analyser.getFloatTimeDomainData(buf);
+    const freq = detectPitch(buf, audioCtx.sampleRate);
+    history.push(freq>0?freq:-1);
+    if(history.length>120) history.shift();
+    if(freq>0){
+      const note = freqToNote(freq);
+      document.getElementById('noteDisplay').textContent = note.name;
+      document.getElementById('hzDisplay').textContent = freq.toFixed(0)+' Hz';
+      sessionPitches.push(freq);
+      if(sessionPitches.length>500) sessionPitches.shift();
+      const avg = sessionPitches.reduce((a,b)=>a+b,0)/sessionPitches.length;
+      document.getElementById('avgDisplay').textContent = 'Session avg: '+avg.toFixed(0)+' Hz';
+    } else {
+      document.getElementById('noteDisplay').textContent = '—';
+      document.getElementById('hzDisplay').textContent = '— Hz';
+    }
+    drawGraph();
+    raf = requestAnimationFrame(tick);
+  }
+
+  async function startMic(){
+    try{
+      stream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false, noiseSuppression:false, autoGainControl:false}});
+      const ctx = getCtx();
+      source = ctx.createMediaStreamSource(stream);
+      analyser = ctx.createAnalyser();
+      analyser.fftSize = 2048;
+      source.connect(analyser);
+      listening = true;
+      document.getElementById('micBtn').innerHTML = '<i data-lucide="square" class="w-5 h-5"></i><span>Stop listening</span>';
+      document.getElementById('micBtn').style.background = 'var(--moss)';
+      lucide.createIcons();
+      tick();
+    }catch(e){
+      let msg = 'Could not access your microphone.';
+      if(e.name==='NotAllowedError') msg = 'Microphone access was denied. Allow microphone access in your browser or device settings, then try again.';
+      if(e.name==='NotFoundError') msg = 'No microphone was found on this device.';
+      errorBanner(document.getElementById('pitchErr'), 'Microphone error', {userMsg: msg, tech: e.name+': '+e.message});
+      toast(msg, true);
+    }
+  }
+  function stopMic(){
+    listening = false;
+    if(raf) cancelAnimationFrame(raf);
+    if(stream) stream.getTracks().forEach(t=>t.stop());
+    document.getElementById('micBtn').innerHTML = '<i data-lucide="mic" class="w-5 h-5"></i><span>Start listening</span>';
+    document.getElementById('micBtn').style.background = 'var(--clay)';
+    lucide.createIcons();
+    if(sessionPitches.length>5) logSession('pitch');
+  }
+  document.getElementById('micBtn').addEventListener('click', ()=>{
+    listening ? stopMic() : startMic();
+  });
+
+  return function cleanup(){ stopMic(); };
+}
+registerTab('pitch', renderPitch);
+
+// ========================= RECORD TAB =========================
+function renderRecord(main){
+  const recordings = store.get('recordings', []);
+  main.innerHTML = `
+    <div class="mb-4">
+      <p class="font-display text-[26px] font-semibold leading-tight">Record & review</p>
+      <p class="text-sm mt-1" style="color:var(--charcoal);">Hearing yourself back is the fastest way to notice change.</p>
+    </div>
+    <div class="card p-6 mb-5 flex flex-col items-center">
+      <div class="relative flex items-center justify-center mb-4" style="width:88px; height:88px;">
+        <div id="pulseRing" class="absolute inset-0 rounded-full hidden" style="background:var(--clay-dim);"></div>
+        <button id="recBtn" class="press relative w-20 h-20 rounded-full flex items-center justify-center z-10" style="background:var(--clay);">
+          <i data-lucide="mic" class="w-8 h-8" style="color:#fff;"></i>
+        </button>
+      </div>
+      <p id="recStatus" class="text-sm font-medium" style="color:var(--charcoal);">Tap to record</p>
+      <p id="recTimer" class="font-mono text-2xl font-semibold mt-1 hidden">0:00</p>
+    </div>
+    <canvas id="waveCanvas" class="w-full rounded-xl mb-5 hidden" height="100" style="background:var(--sand);"></canvas>
+    <div id="recErr"></div>
+    <p class="text-[13px] font-semibold mb-2" style="color:var(--charcoal);">Your recordings</p>
+    <div id="recordingsList" class="space-y-2.5"></div>
+  `;
+  lucide.createIcons();
+
+  let stream=null, mediaRecorder=null, chunks=[], startTime=0, timerInt=null;
+  let analyser2=null, raf2=null;
+  const waveCanvas = document.getElementById('waveCanvas');
+  const wCtx = waveCanvas.getContext('2d');
+
+  function resizeWave(){
+    const dpr = window.devicePixelRatio||1;
+    waveCanvas.width = waveCanvas.clientWidth*dpr; waveCanvas.height=100*dpr;
+    wCtx.scale(dpr,dpr);
+  }
+
+  function drawLiveWave(){
+    if(!analyser2) return;
+    const buf = new Uint8Array(analyser2.fftSize);
+    analyser2.getByteTimeDomainData(buf);
+    const w = waveCanvas.clientWidth, h=100;
+    wCtx.clearRect(0,0,w,h);
+    wCtx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--sand')||'#F0EAE0';
+    wCtx.fillRect(0,0,w,h);
+    wCtx.beginPath();
+    wCtx.lineWidth=2;
+    wCtx.strokeStyle = '#C8562E';
+    for(let i=0;i<buf.length;i++){
+      const x = (i/buf.length)*w;
+      const y = (buf[i]/255)*h;
+      i===0?wCtx.moveTo(x,y):wCtx.lineTo(x,y);
+    }
+    wCtx.stroke();
+    raf2 = requestAnimationFrame(drawLiveWave);
+  }
+
+  function renderList(){
+    const list = document.getElementById('recordingsList');
+    const recs = store.get('recordings', []);
+    if(recs.length===0){
+      list.innerHTML = `<div class="card p-5 text-center" style="border-style:dashed;"><p class="text-sm" style="color:var(--charcoal);">No recordings yet. Your first one will show up here.</p></div>`;
+      return;
+    }
+    list.innerHTML = '';
+    recs.slice().reverse().forEach((r)=>{
+      const row = document.createElement('div');
+      row.className = 'card p-3.5 flex items-center gap-3';
+      const d = new Date(r.date);
+      row.innerHTML = `
+        <button class="playBtn press w-10 h-10 rounded-full flex items-center justify-center shrink-0" style="background:var(--sand);">
+          <i data-lucide="play" class="w-4 h-4" style="color:var(--clay);"></i>
+        </button>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-semibold">${d.toLocaleDateString(undefined,{month:'short',day:'numeric'})} · ${d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'})}</p>
+          <p class="text-xs" style="color:var(--charcoal);">${r.duration}s</p>
+        </div>
+        <button class="delBtn press w-9 h-9 rounded-full flex items-center justify-center shrink-0" style="color:#B3AA9C;">
+          <i data-lucide="trash-2" class="w-4 h-4"></i>
+        </button>
+      `;
+      const audio = new Audio(r.data);
+      const playBtn = row.querySelector('.playBtn');
+      let playing = false;
+      playBtn.addEventListener('click', ()=>{
+        if(playing){ audio.pause(); audio.currentTime=0; playing=false; playBtn.innerHTML='<i data-lucide="play" class="w-4 h-4" style="color:var(--clay);"></i>'; lucide.createIcons(); return; }
+        audio.play().catch(e=>toast('Could not play recording.', true));
+        playing=true;
+        playBtn.innerHTML='<i data-lucide="pause" class="w-4 h-4" style="color:var(--clay);"></i>';
+        lucide.createIcons();
+      });
+      audio.addEventListener('ended', ()=>{ playing=false; playBtn.innerHTML='<i data-lucide="play" class="w-4 h-4" style="color:var(--clay);"></i>'; lucide.createIcons(); });
+      row.querySelector('.delBtn').addEventListener('click', ()=>{
+        const all = store.get('recordings', []).filter(x=>x.id!==r.id);
+        store.set('recordings', all);
+        renderList();
+        toast('Recording deleted');
+      });
+      list.appendChild(row);
+    });
+    lucide.createIcons();
+  }
+  renderList();
+
+  async function startRecording(){
+    try{
+      stream = await navigator.mediaDevices.getUserMedia({audio:true});
+      const ctx = getCtx();
+      const src = ctx.createMediaStreamSource(stream);
+      analyser2 = ctx.createAnalyser();
+      analyser2.fftSize = 1024;
+      src.connect(analyser2);
+      waveCanvas.classList.remove('hidden');
+      resizeWave();
+      drawLiveWave();
+
+      const mime = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : (MediaRecorder.isTypeSupported('audio/mp4')?'audio/mp4':'');
+      mediaRecorder = mime ? new MediaRecorder(stream,{mimeType:mime}) : new MediaRecorder(stream);
+      chunks = [];
+      mediaRecorder.ondataavailable = e=>{ if(e.data.size>0) chunks.push(e.data); };
+      mediaRecorder.onstop = async ()=>{
+        const blob = new Blob(chunks, {type: mediaRecorder.mimeType||'audio/webm'});
+        const duration = Math.round((Date.now()-startTime)/1000);
+        const reader = new FileReader();
+        reader.onload = ()=>{
+          const recs = store.get('recordings', []);
+          recs.push({id: Date.now(), date: Date.now(), duration, data: reader.result});
+          store.set('recordings', recs.slice(-30));
+          renderList();
+          toast('Recording saved');
+        };
+        reader.onerror = ()=> toast('Could not save recording.', true);
+        reader.readAsDataURL(blob);
+        if(stream) stream.getTracks().forEach(t=>t.stop());
+        if(raf2) cancelAnimationFrame(raf2);
+        waveCanvas.classList.add('hidden');
+      };
+      mediaRecorder.start();
+      startTime = Date.now();
+      logSession('record');
+      document.getElementById('recBtn').innerHTML = '<i data-lucide="square" class="w-7 h-7" style="color:#fff;"></i>';
+      document.getElementById('recBtn').style.background = 'var(--moss)';
+      document.getElementById('pulseRing').classList.remove('hidden');
+      document.getElementById('pulseRing').classList.add('pulse-ring');
+      document.getElementById('recStatus').textContent = 'Recording…';
+      document.getElementById('recTimer').classList.remove('hidden');
+      timerInt = setInterval(()=>{
+        const s = Math.floor((Date.now()-startTime)/1000);
+        document.getElementById('recTimer').textContent = Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+      }, 200);
+      lucide.createIcons();
+    }catch(e){
+      let msg = 'Could not access your microphone.';
+      if(e.name==='NotAllowedError') msg = 'Microphone access was denied. Allow microphone access in your browser or device settings, then try again.';
+      if(e.name==='NotFoundError') msg = 'No microphone was found on this device.';
+      errorBanner(document.getElementById('recErr'), 'Recording error', {userMsg: msg, tech: e.name+': '+e.message});
+      toast(msg, true);
+    }
+  }
+  function stopRecording(){
+    if(mediaRecorder && mediaRecorder.state!=='inactive') mediaRecorder.stop();
+    clearInterval(timerInt);
+    document.getElementById('recBtn').innerHTML = '<i data-lucide="mic" class="w-8 h-8" style="color:#fff;"></i>';
+    document.getElementById('recBtn').style.background = 'var(--clay)';
+    document.getElementById('pulseRing').classList.add('hidden');
+    document.getElementById('pulseRing').classList.remove('pulse-ring');
+    document.getElementById('recStatus').textContent = 'Tap to record';
+    document.getElementById('recTimer').classList.add('hidden');
+    lucide.createIcons();
+  }
+
+  let isRecording = false;
+  document.getElementById('recBtn').addEventListener('click', ()=>{
+    isRecording = !isRecording;
+    isRecording ? startRecording() : stopRecording();
+  });
+
+  return function cleanup(){
+    if(mediaRecorder && mediaRecorder.state!=='inactive') mediaRecorder.stop();
+    if(stream) stream.getTracks().forEach(t=>t.stop());
+    if(raf2) cancelAnimationFrame(raf2);
+    clearInterval(timerInt);
+  };
+}
+registerTab('record', renderRecord);
+
+// ========================= LIBRARY TAB =========================
+const PASSAGES = [
+  {title:'The Rainbow Passage (excerpt)', text:'When the sunlight strikes raindrops in the air, they act as a prism and form a rainbow. The rainbow is a division of white light into many beautiful colors. These take the shape of a long round arch, with its path high above, and its two ends apparently beyond the horizon.'},
+  {title:'Grandfather Passage (excerpt)', text:'You wished to know all about my grandfather. Well, he is nearly ninety-three years old, yet he still thinks as swiftly as ever. He dresses himself in an old black frock coat, usually several buttons missing.'},
+  {title:'Comma Pause Drill', text:'Slow down, breathe, and finish the word. Say your name, then your street, then your city, then today\'s date — one full breath between each.'}
+];
+const TWISTERS = [
+  'Red leather, yellow leather.',
+  'Unique New York, you need unique New York.',
+  'The sixth sick sheikh\'s sixth sheep\'s sick.',
+  'She sells seashells by the seashore.',
+  'How can a clam cram in a clean cream can?'
+];
+
+function renderLibrary(main){
+  main.innerHTML = `
+    <div class="mb-4">
+      <p class="font-display text-[26px] font-semibold leading-tight">Reading library</p>
+      <p class="text-sm mt-1" style="color:var(--charcoal);">Read these aloud slowly, with the Record tab open, to build pace and articulation.</p>
+    </div>
+    <p class="text-[13px] font-semibold mb-2" style="color:var(--charcoal);">Passages</p>
+    <div class="space-y-3 mb-6" id="passagesList"></div>
+    <p class="text-[13px] font-semibold mb-2" style="color:var(--charcoal);">Tongue twisters</p>
+    <div class="space-y-2" id="twistersList"></div>
+  `;
+  const pl = document.getElementById('passagesList');
+  PASSAGES.forEach(p=>{
+    const c = document.createElement('div');
+    c.className = 'card p-4';
+    c.innerHTML = `<p class="font-semibold text-[15px] mb-1.5">${p.title}</p><p class="text-[14px] leading-relaxed" style="color:var(--charcoal);">${p.text}</p>`;
+    pl.appendChild(c);
+  });
+  const tl = document.getElementById('twistersList');
+  TWISTERS.forEach(t=>{
+    const c = document.createElement('div');
+    c.className = 'card p-3.5';
+    c.innerHTML = `<p class="text-[14px]" style="color:var(--ink);">${t}</p>`;
+    tl.appendChild(c);
+  });
+}
+registerTab('library', renderLibrary);
+
+// ========================= PROGRESS TAB =========================
+function renderProgress(main){
+  const log = store.get('sessionLog', []);
+  const streak = store.get('streak', 0);
+  const recs = store.get('recordings', []);
+  const days = {};
+  log.forEach(e=>{ const d = new Date(e.date).toDateString(); days[d]=(days[d]||0)+1; });
+  const last14 = [];
+  for(let i=13;i>=0;i--){
+    const d = new Date(Date.now()-i*86400000);
+    last14.push({label: d.toLocaleDateString(undefined,{weekday:'narrow'}), count: days[d.toDateString()]||0});
+  }
+  const maxCount = Math.max(1, ...last14.map(d=>d.count));
+
+  main.innerHTML = `
+    <div class="mb-5">
+      <p class="font-display text-[26px] font-semibold leading-tight">Your progress</p>
+    </div>
+    <div class="grid grid-cols-3 gap-3 mb-5">
+      <div class="card p-4 text-center">
+        <p class="font-display text-2xl font-semibold" style="color:var(--clay);">${streak}</p>
+        <p class="text-xs mt-1" style="color:var(--charcoal);">Day streak</p>
+      </div>
+      <div class="card p-4 text-center">
+        <p class="font-display text-2xl font-semibold">${log.length}</p>
+        <p class="text-xs mt-1" style="color:var(--charcoal);">Sessions logged</p>
+      </div>
+      <div class="card p-4 text-center">
+        <p class="font-display text-2xl font-semibold">${recs.length}</p>
+        <p class="text-xs mt-1" style="color:var(--charcoal);">Recordings</p>
+      </div>
+    </div>
+    <div class="card p-5 mb-5">
+      <p class="text-[13px] font-semibold mb-4" style="color:var(--charcoal);">Last 14 days</p>
+      <div class="flex items-end justify-between gap-1.5" style="height:90px;">
+        ${last14.map(d=>`
+          <div class="flex-1 flex flex-col items-center gap-1.5">
+            <div class="w-full rounded-md" style="height:${Math.max(4,(d.count/maxCount)*64)}px; background:${d.count>0?'var(--clay)':'var(--line)'};"></div>
+            <span class="text-[10px]" style="color:var(--charcoal);">${d.label}</span>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+    <div class="card p-4" style="background:var(--sand); border:none;">
+      <p class="text-[13px] leading-relaxed" style="color:var(--charcoal);"><span class="font-semibold" style="color:var(--ink);">A note on pace:</span> voice training is gradual — think weeks, not days. If anything feels sore, strained, or painful, stop and rest your voice. Persistent hoarseness or pain is worth mentioning to a doctor or speech-language pathologist rather than training through it.</p>
+    </div>
+  `;
+}
+registerTab('progress', renderProgress);
+
+// init
+switchTab('practice');
+</script>
+</body>
+</html>
