@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#faf8f5">
+<title>Zoomer</title>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<style>
+:root{--a:#E0662B;--ink:#201c17;--mut:#7a7168;--ln:#e9e3da;--bg:#faf8f5}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:Roboto,system-ui,sans-serif;-webkit-tap-highlight-color:transparent;overscroll-behavior:none;user-select:none}
+input[type=range]{accent-color:var(--a);width:100%;height:30px;margin:0}
+.lbl{font-size:13px;font-weight:600;color:var(--mut);margin:16px 2px 8px}
+.row{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+.row::-webkit-scrollbar{display:none}
+.chip{flex:none;height:40px;padding:0 16px;border-radius:20px;background:#fff;border:1px solid var(--ln);font-size:14px;transition:all .15s}
+.chip.on{background:var(--a);border-color:var(--a);color:#fff}
+.chip:active,.btn:active,.btn2:active{transform:scale(.97)}
+.card{background:#fff;border:1px solid var(--ln);border-radius:20px;padding:14px}
+.btn{height:52px;border-radius:26px;background:var(--a);color:#fff;font-weight:600;font-size:16px;display:grid;place-items:center;transition:transform .1s;box-shadow:0 4px 14px #e0662b44}
+.btn2{flex:1;height:44px;border-radius:22px;border:1px solid var(--ln);background:#fff;font-size:14px;transition:transform .1s}
+.ib{width:44px;height:44px;display:grid;place-items:center;border-radius:22px}
+.ib:active{background:#0001}
+.round{width:44px;height:44px;flex:none;border-radius:22px;background:var(--a);color:#fff;display:grid;place-items:center}
+canvas{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);touch-action:none}
+#sheet{transition:opacity .2s}
+#sbody{animation:up .25s ease-out}
+@keyframes up{from{transform:translateY(40px);opacity:0}}
+</style>
+</head>
+<body class="flex flex-col">
+<header class="flex items-center gap-1 px-3 h-14 shrink-0" style="padding-top:env(safe-area-inset-top)">
+  <div class="font-semibold text-xl mr-auto tracking-tight">Zoomer</div>
+  <button id="bUndo" class="ib" aria-label="Undo"><i data-lucide="undo-2"></i></button>
+  <button id="bLog" class="ib" aria-label="Problem log"><i data-lucide="bug"></i></button>
+  <button id="bOpen" class="ib" aria-label="Choose image"><i data-lucide="image-plus"></i></button>
+</header>
+<section id="stage" class="relative shrink-0 mx-3 rounded-2xl overflow-hidden" style="height:38vh;background:#efeae3">
+  <canvas id="ec"></canvas><canvas id="oc" style="display:none"></canvas>
+  <div id="empty" class="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center">
+    <i data-lucide="scan-search" class="w-10 h-10" style="color:var(--a)"></i>
+    <div class="text-[15px]">Pick any image, aim the camera, get a zoom clip.</div>
+    <div class="flex gap-2"><button id="bPick" class="chip on">Choose image</button><button id="bSample" class="chip">Try a sample</button></div>
+  </div>
+</section>
+<div class="flex items-center gap-2 px-3 py-2 shrink-0">
+  <button id="bPlay" class="round" aria-label="Play"><span id="ip"><i data-lucide="play"></i></span><span id="ipa" style="display:none"><i data-lucide="pause"></i></span></button>
+  <input id="seek" type="range" min="0" max="1000" value="0">
+  <span id="tl" class="text-xs tabular-nums w-24 text-right" style="color:var(--mut)">0.0 / 0.0s</span>
+  <button id="bMode" class="chip !px-3 !h-9">Preview</button>
+</div>
+<main class="flex-1 min-h-0 overflow-y-auto px-3 pb-28">
+  <h2 class="lbl !mt-2">Presets</h2><div id="cPre" class="row"></div>
+  <h2 class="lbl">Camera moves</h2><div id="cSteps" class="row"></div>
+  <div class="card mt-2">
+    <p id="hint" class="text-sm mb-2" style="color:var(--mut)"></p>
+    <div id="sl"></div>
+    <div class="text-sm mt-2 mb-2">Easing</div><div id="cEase" class="row"></div>
+    <div class="flex gap-2 mt-3"><button id="bAdd" class="btn2">Add move</button><button id="bDel" class="btn2">Delete move</button></div>
+  </div>
+  <h2 class="lbl">Video</h2>
+  <div class="card">
+    <div id="slv"></div>
+    <div class="text-sm mt-2 mb-2">Shape</div><div id="cAsp" class="row"></div>
+    <div class="text-sm mt-2 mb-2">Quality</div><div id="cRes" class="row"></div>
+    <div class="text-sm mt-2 mb-2">Frame rate</div><div id="cFps" class="row"></div>
+  </div>
+</main>
+<footer class="fixed bottom-0 inset-x-0 px-3 pt-6" style="padding-bottom:calc(12px + env(safe-area-inset-bottom));background:linear-gradient(transparent,var(--bg) 40%)">
+  <button id="bExp" class="btn w-full"><span class="flex items-center gap-2"><i data-lucide="clapperboard"></i>Export video</span></button>
+</footer>
+<div id="xo" class="fixed bottom-0 inset-x-0 z-50 bg-white rounded-t-3xl p-5 shadow-2xl" style="display:none">
+  <div id="xt" class="font-medium mb-1">Rendering…</div>
+  <div class="text-xs mb-3" style="color:var(--mut)">Keep this screen open until it finishes.</div>
+  <div class="h-2 rounded-full overflow-hidden" style="background:var(--ln)"><div id="xb" class="h-full" style="width:0;background:var(--a)"></div></div>
+  <button id="xc" class="btn2 w-full mt-4">Cancel</button>
+</div>
+<div id="sheet" class="fixed inset-0 z-50" style="display:none"><div id="sbg" class="absolute inset-0 bg-black/40"></div><div id="sbody" class="absolute bottom-0 inset-x-0 bg-white rounded-t-3xl p-5 overflow-auto" style="max-height:88vh;user-select:text"></div></div>
+<div id="toast" class="fixed inset-x-0 mx-auto w-fit z-[60] text-white text-sm rounded-2xl px-4 py-3 shadow-lg" style="top:64px;max-width:92%;background:var(--ink);display:none"></div>
+<input id="fi" type="file" accept="image/*" class="hidden">
+<script>
+const $=s=>document.querySelector(s),ec=$('#ec'),oc=$('#oc'),clamp=(v,a,b)=>Math.min(b,Math.max(a,v)),sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const E={smooth:u=>.5-Math.cos(Math.PI*u)/2,cine:u=>u<.5?16*u**5:1-(-2*u+2)**5/2,out:u=>1-(1-u)**3,in:u=>u**3,linear:u=>u};
+const EN={smooth:'Smooth',cine:'Cinematic',out:'Ease out',in:'Ease in',linear:'Linear'};
+const AS={orig:0,'16:9':16/9,'9:16':9/16,'1:1':1,'4:5':.8};
+const PV=900,sec=v=>v.toFixed(1)+'s',F={z:v=>v.toFixed(2)+'×',d:sec,h:sec,lead:sec};
+const S=(p,z,d,h,e='smooth')=>({x:p.x,y:p.y,z,d,h,e}),C={x:.5,y:.5};
+const PR={
+'Zoom in':p=>[S(p,2.5,3,1)],
+'Slow cinematic':p=>[S(p,1.8,8,1.5,'cine')],
+'Zoom out':p=>[S(p,3,0,.6),S(C,1,3.5,1,'cine')],
+'Punch in':p=>[S(p,3.5,.7,1,'out')],
+'In & out':p=>[S(p,2.6,2.2,.6),S(C,1,2.2,.5)],
+'Zoom + pan':(p,q)=>[S(p,2.5,2.5,.5),S(q,2.5,3,1,'cine')],
+'Pan & out':(p,q)=>[S(p,2.4,2,.4),S(q,2.4,3,.4,'cine'),S(C,1,2,1)]
+};
+let src=null,iw=0,ih=0,steps=[S(C,2.5,3,1)],sel=0,cfg={aspect:'orig',res:1280,fps:30,lead:.4},t=0,playing=0,raf=0,mode='edit',hist=[],log=[],tt=0,cancelled=0,drag=0;
+try{const o=JSON.parse(localStorage.getItem('zoomer.v1'));if(o&&o.steps&&o.steps.length){steps=o.steps;cfg={...cfg,...o.cfg};sel=clamp(o.sel|0,0,steps.length-1)}}catch(e){}
+const save=()=>{try{localStorage.setItem('zoomer.v1',JSON.stringify({steps,cfg,sel}))}catch(e){}};
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+function toast(m,err){const el=$('#toast');el.innerHTML=`<span>${m}</span>`+(err?'<button id="tD" class="font-semibold underline ml-3">Details</button>':'');el.style.display='block';clearTimeout(tt);tt=setTimeout(()=>el.style.display='none',err?7000:2200);if(err)$('#tD').onclick=openLog}
+function fail(m,e){log.push(`[${new Date().toLocaleTimeString()}] ${m}\n${(e&&(e.stack||e.message))||e||''}`);toast(m,1)}
+window.onerror=(m,s,l,c,e)=>fail('Something unexpected went wrong.',e||m);
+window.onunhandledrejection=e=>fail('Something unexpected went wrong.',e.reason);
+function openSheet(h){$('#sbody').innerHTML=h;$('#sheet').style.display='block';lucide.createIcons()}
+const closeSheet=()=>{$('#sheet').style.display='none';const v=$('#rv');if(v)v.pause()};
+function openLog(){openSheet(`<div class="flex justify-between items-center mb-3"><b>Problem log</b><button id="lc" class="chip !h-9">Clear</button></div><pre class="text-xs whitespace-pre-wrap">${esc(log.join('\n\n')||'Nothing has gone wrong so far.')}</pre>`);$('#lc').onclick=()=>{log=[];openLog()}}
+function chips(el,list,cur,fn){const sl=el.scrollLeft;el.innerHTML=list.map(([k,l])=>`<button class="chip ${k==cur?'on':''}" data-k="${k}">${l}</button>`).join('');el.scrollLeft=sl;el.onclick=e=>{const b=e.target.closest('[data-k]');b&&fn(b.dataset.k)}}
+const slRow=(id,l,mn,mx,st)=>`<div class="mb-1"><div class="flex justify-between text-sm"><span>${l}</span><b id="v_${id}"></b></div><input type="range" id="r_${id}" min="${mn}" max="${mx}" step="${st}"></div>`;
+$('#sl').innerHTML=slRow('z','Zoom',1,8,.05)+slRow('d','Move time',0,12,.1)+slRow('h','Hold after move',0,12,.1);
+$('#slv').innerHTML=slRow('lead','Wait before first move',0,6,.1);
+const asp=()=>cfg.aspect==='orig'?(src?iw/ih:16/9):AS[cfg.aspect];
+const total=()=>cfg.lead+steps.reduce((a,s)=>a+s.d+s.h,0);
+const geo=()=>{const A=asp();return iw/ih>A?{bw:ih*A,bh:ih}:{bw:iw,bh:iw/A}};
+const rectOf=s=>{const{bw,bh}=geo(),w=bw/s.z,h=bh/s.z;return{w,h,l:clamp(s.x*iw-w/2,0,iw-w),t:clamp(s.y*ih-h/2,0,ih-h)}};
+function camAt(tm){let cur={x:.5,y:.5,z:1},T=cfg.lead;if(tm<T)return cur;for(const s of steps){if(tm<T+s.d){const u=E[s.e](clamp((tm-T)/s.d,0,1));return{x:cur.x+(s.x-cur.x)*u,y:cur.y+(s.y-cur.y)*u,z:Math.exp(Math.log(cur.z)+(Math.log(s.z)-Math.log(cur.z))*u)}}T+=s.d;if(tm<T+s.h)return s;T+=s.h;cur=s}return cur}
+function drawFrame(tm){const x=oc.getContext('2d'),r=rectOf(camAt(tm));x.imageSmoothingQuality='high';x.drawImage(src,r.l,r.t,r.w,r.h,0,0,oc.width,oc.height)}
+function drawEdit(){
+const w=ec.width,h=ec.height,x=ec.getContext('2d'),k=w/iw,r=rectOf(steps[sel]);
+x.drawImage(src,0,0,w,h);
+x.fillStyle='rgba(24,18,12,.5)';x.beginPath();x.rect(0,0,w,h);x.rect(r.l*k,r.t*k,r.w*k,r.h*k);x.fill('evenodd');
+x.lineWidth=w/300;x.strokeStyle='#fff';x.strokeRect(r.l*k,r.t*k,r.w*k,r.h*k);
+x.strokeStyle='#E0662B';x.lineWidth=w/220;x.setLineDash([w/80,w/100]);x.beginPath();x.moveTo(w/2,h/2);steps.forEach(q=>x.lineTo(q.x*w,q.y*h));x.stroke();x.setLineDash([]);
+const R=w/42;x.font=`600 ${R*1.1}px Roboto,sans-serif`;x.textAlign='center';x.textBaseline='middle';
+steps.forEach((q,i)=>{x.beginPath();x.arc(q.x*w,q.y*h,R,0,7);x.fillStyle=i===sel?'#E0662B':'#fff';x.fill();x.lineWidth=R/5;x.strokeStyle='#E0662B';x.stroke();x.fillStyle=i===sel?'#fff':'#E0662B';x.fillText(i+1,q.x*w,q.y*h+1)})}
+const redraw=()=>{if(src)mode==='edit'?drawEdit():drawFrame(t)};
+function fit(){const st=$('#stage'),sw=st.clientWidth,sh=st.clientHeight;[ec,oc].forEach(c=>{const s=Math.min(sw/c.width,sh/c.height);c.style.width=c.width*s+'px';c.style.height=c.height*s+'px'})}
+function show(){ec.style.display=src&&mode==='edit'?'block':'none';oc.style.display=src&&mode!=='edit'?'block':'none';$('#bMode').textContent=mode==='edit'?'Preview':'Edit';$('#empty').style.display=src?'none':'flex';fit()}
+function setOut(L){const A=asp();let W=A>=1?L:Math.round(L*A),H=A>=1?Math.round(L/A):L;oc.width=W&~1;oc.height=H&~1;fit()}
+function sync(){const T=total();t=clamp(t,0,T);$('#seek').value=T?t/T*1000:0;$('#tl').textContent=`${sec(t)} / ${sec(T)}`;redraw()}
+function lab(){const s=steps[sel];['z','d','h'].forEach(k=>{$('#r_'+k).value=s[k];$('#v_'+k).textContent=F[k](s[k])});$('#r_lead').value=cfg.lead;$('#v_lead').textContent=F.lead(cfg.lead)}
+function render(){
+chips($('#cPre'),Object.keys(PR).map(k=>[k,k]),null,applyPreset);
+chips($('#cSteps'),steps.map((_,i)=>[i,'Move '+(i+1)]),sel,k=>{sel=+k;render();save()});
+chips($('#cEase'),Object.entries(EN),steps[sel].e,k=>{snap();steps[sel].e=k;render();save()});
+chips($('#cAsp'),Object.keys(AS).map(k=>[k,k==='orig'?'Original':k]),cfg.aspect,k=>{cfg.aspect=k;setOut(PV);render();save()});
+chips($('#cRes'),[[1280,'720p'],[1920,'1080p']],cfg.res,k=>{cfg.res=+k;render();save()});
+chips($('#cFps'),[[24,'24'],[30,'30'],[60,'60']],cfg.fps,k=>{cfg.fps=+k;render();save()});
+$('#hint').textContent=src?`Tap or drag on the image to aim move ${sel+1}.`:'Add an image, then aim each move on it.';
+lab();sync()}
+function snap(){hist.push(JSON.stringify({steps,sel,lead:cfg.lead}));if(hist.length>60)hist.shift()}
+function undo(){const h=hist.pop();if(!h)return toast('Nothing to undo');const o=JSON.parse(h);steps=o.steps;sel=o.sel;cfg.lead=o.lead;render();save()}
+function applyPreset(n){snap();stop();const p={x:steps[sel].x,y:steps[sel].y};let q=steps.length>1?steps[sel?0:1]:C;if(Math.hypot(q.x-p.x,q.y-p.y)<.12)q=Math.hypot(1-p.x-p.x,1-p.y-p.y)>.2?{x:1-p.x,y:1-p.y}:{x:.75,y:.3};steps=PR[n](p,q);cfg.lead=.4;sel=0;t=0;render();save();if(src)play()}
+const pl=on=>{$('#ip').style.display=on?'none':'';$('#ipa').style.display=on?'':'none'};
+function stop(){playing=0;cancelAnimationFrame(raf);pl(0)}
+function play(){if(!src)return toast('Choose an image first');const T=total();if(t>=T-.01)t=0;playing=1;mode='cam';show();pl(1);const st=performance.now()-t*1000;const f=n=>{if(!playing)return;t=Math.min((n-st)/1000,T);sync();if(t>=T)return stop();raf=requestAnimationFrame(f)};raf=requestAnimationFrame(f)}
+function setImage(s,w,h){stop();src=s;iw=w;ih=h;const k=1000/Math.max(w,h);ec.width=Math.round(w*k);ec.height=Math.round(h*k);t=0;mode='edit';setOut(PV);show();render()}
+async function loadFile(f){
+if(!f)return;
+try{
+const im=new Image();im.src=URL.createObjectURL(f);
+try{await im.decode()}catch(e){throw new Error(`The browser can’t open this file (${f.type||f.name}). Try a JPG, PNG, WebP or GIF.`)}
+const w=im.naturalWidth,h=im.naturalHeight,m=Math.max(w,h);
+if(!w||!h)throw new Error('The image has no readable size.');
+if(m>4096){const s=4096/m,c=document.createElement('canvas');c.width=Math.round(w*s);c.height=Math.round(h*s);c.getContext('2d').drawImage(im,0,0,c.width,c.height);setImage(c,c.width,c.height)}else setImage(im,w,h);
+toast(`Loaded ${w}×${h} image`)
+}catch(e){fail(e.message||'Could not load the image.',e)}}
+function sample(){const c=document.createElement('canvas');c.width=1600;c.height=1000;const x=c.getContext('2d'),g=x.createLinearGradient(0,0,0,1000);g.addColorStop(0,'#1d2b64');g.addColorStop(.55,'#f8a05a');g.addColorStop(1,'#ffd9a0');x.fillStyle=g;x.fillRect(0,0,1600,1000);
+for(let i=0;i<90;i++){x.fillStyle=`rgba(255,255,255,${Math.random()*.8})`;x.beginPath();x.arc(Math.random()*1600,Math.random()*450,Math.random()*2.5+.5,0,7);x.fill()}
+x.fillStyle='#fff3c4';x.beginPath();x.arc(1100,560,110,0,7);x.fill();
+[['#6b3a4a',680,260],['#3b2233',780,200],['#1c1424',880,140]].forEach(([f,y,a],i)=>{x.fillStyle=f;x.beginPath();x.moveTo(0,1000);for(let k=0;k<=16;k++)x.lineTo(k*100,y+Math.sin(k*1.3+i*2)*a*.45+Math.cos(k*.7)*a*.3);x.lineTo(1600,1000);x.fill()});
+setImage(c,1600,1000)}
+const pt=e=>{const r=ec.getBoundingClientRect();return{x:clamp((e.clientX-r.left)/r.width,0,1),y:clamp((e.clientY-r.top)/r.height,0,1)}};
+const moveSel=p=>{steps[sel].x=p.x;steps[sel].y=p.y};
+ec.onpointerdown=e=>{if(!src)return;ec.setPointerCapture(e.pointerId);const p=pt(e),k=steps.findIndex((s,i)=>i!==sel&&Math.hypot((s.x-p.x)*iw,(s.y-p.y)*ih)/Math.max(iw,ih)<.05);if(k>=0)sel=k;else{snap();moveSel(p)}drag=1;render()};
+ec.onpointermove=e=>{if(drag){moveSel(pt(e));drawEdit();save()}};
+ec.onpointerup=ec.onpointercancel=()=>{drag=0};
+document.addEventListener('pointerdown',e=>{if(e.target.id&&e.target.id.startsWith('r_'))snap()});
+document.addEventListener('input',e=>{const id=e.target.id;if(!id||!id.startsWith('r_'))return;const k=id.slice(2),v=+e.target.value;k==='lead'?cfg.lead=v:steps[sel][k]=v;lab();sync();save()});
+$('#seek').oninput=e=>{if(!src)return;stop();mode='cam';t=e.target.value/1000*total();show();sync()};
+$('#bPlay').onclick=()=>playing?stop():play();
+$('#bMode').onclick=()=>{if(!src)return toast('Choose an image first');stop();mode=mode==='edit'?'cam':'edit';show();redraw()};
+$('#bAdd').onclick=()=>{snap();const s=steps[sel];steps.splice(sel+1,0,{...s,x:clamp(s.x>.6?s.x-.2:s.x+.2,0,1),d:2,h:.5});sel++;render();save()};
+$('#bDel').onclick=()=>{if(steps.length<2)return toast('Keep at least one move');snap();steps.splice(sel,1);sel=Math.min(sel,steps.length-1);render();save()};
+$('#bUndo').onclick=undo;$('#bLog').onclick=openLog;$('#sbg').onclick=closeSheet;
+$('#bOpen').onclick=$('#bPick').onclick=()=>$('#fi').click();
+$('#bSample').onclick=sample;
+$('#fi').onchange=e=>{loadFile(e.target.files[0]);e.target.value=''};
+window.ondragover=e=>e.preventDefault();
+window.ondrop=e=>{e.preventDefault();loadFile(e.dataTransfer.files[0])};
+window.onpaste=e=>{const f=[...(e.clipboardData?.files||[])].find(f=>f.type.startsWith('image/'));f&&loadFile(f)};
+window.onresize=fit;
+window.onkeydown=e=>{if(e.code==='Space'&&e.target.tagName!=='INPUT'){e.preventDefault();$('#bPlay').click()}if(e.key==='z'&&(e.ctrlKey||e.metaKey))undo()};
+$('#xc').onclick=()=>cancelled=1;
+async function exportVideo(){
+if(!src)return toast('Choose an image first');
+if(!window.MediaRecorder||!oc.captureStream)return fail('This browser can’t record video. Try Chrome, Edge or Firefox.');
+const mime=['video/mp4;codecs=avc1','video/mp4','video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'].find(m=>MediaRecorder.isTypeSupported(m));
+if(!mime)return fail('No supported video format was found in this browser.');
+stop();setOut(cfg.res);mode='cam';show();
+const tot=Math.max(total(),.2),fps=cfg.fps,W=oc.width,H=oc.height;
+let lock=null,url=null;
+$('#xo').style.display='block';$('#xb').style.width='0';$('#xt').textContent='Rendering video…';cancelled=0;
+try{
+try{lock=await navigator.wakeLock?.request('screen')}catch(e){}
+drawFrame(0);
+const rec=new MediaRecorder(oc.captureStream(fps),{mimeType:mime,videoBitsPerSecond:Math.round(W*H*fps*.12)}),ch=[];
+rec.ondataavailable=e=>e.data.size&&ch.push(e.data);
+const done=new Promise((res,rej)=>{rec.onstop=res;rec.onerror=e=>rej(e.error||new Error('The recorder stopped unexpectedly.'))});
+rec.start(250);
+const st=performance.now();
+await new Promise(r=>{const f=n=>{const s=(n-st)/1000;drawFrame(Math.min(s,tot));$('#xb').style.width=Math.min(100,s/tot*100)+'%';if(cancelled||s>=tot)return r();requestAnimationFrame(f)};requestAnimationFrame(f)});
+await sleep(250);rec.stop();await done;
+if(cancelled)return toast('Export cancelled');
+const ext=mime.startsWith('video/mp4')?'mp4':'webm',blob=new Blob(ch,{type:mime.split(';')[0]});
+if(!blob.size)throw new Error('The recording came out empty.');
+url=URL.createObjectURL(blob);
+const file=new File([blob],`zoom-${Date.now()}.${ext}`,{type:blob.type}),can=navigator.canShare&&navigator.canShare({files:[file]});
+openSheet(`<div class="font-semibold text-lg mb-3">Your clip is ready</div><video id="rv" controls playsinline loop class="w-full rounded-2xl bg-black" style="max-height:48vh"></video><div class="flex gap-2 mt-4"><a id="dl" class="btn flex-1">Save video</a>${can?'<button id="sh" class="btn2" style="height:52px;border-radius:26px">Share</button>':''}</div><p class="text-xs mt-3" style="color:var(--mut)">${W}×${H} · ${fps} fps · ${(blob.size/1e6).toFixed(1)} MB · ${ext.toUpperCase()}${ext==='webm'?' (this browser can’t make MP4)':''}</p>`);
+$('#rv').src=url;$('#dl').href=url;$('#dl').download=file.name;
+if(can)$('#sh').onclick=()=>navigator.share({files:[file]}).catch(e=>e.name!=='AbortError'&&fail('Sharing failed.',e));
+}catch(e){fail('Export failed: '+(e.message||'unknown error'),e)}
+finally{$('#xo').style.display='none';if(lock)lock.release().catch(()=>{});setOut(PV);t=0;sync()}}
+$('#bExp').onclick=exportVideo;
+render();show();lucide.createIcons();
+</script>
+</body>
+</html>
